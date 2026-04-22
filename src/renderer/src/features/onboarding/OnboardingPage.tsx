@@ -1,0 +1,143 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import type {
+  CEFRLevel,
+  Interest,
+  LearningGoal,
+  PlacementAnswer,
+  PlacementQuestion,
+  PlacementResult,
+  UserProfile
+} from '@shared/types'
+import { useAppStore } from '../../store/useAppStore'
+import { Card, ProgressBar } from '../../components/ui'
+import { useOnboardingFlow } from './hooks/useOnboardingFlow'
+import { buildEmptyProfile } from './constants/defaultProfile'
+import WelcomeStep from './sections/WelcomeStep'
+import ModelCheckStep from './sections/ModelCheckStep'
+import GoalsStep from './sections/GoalsStep'
+import InterestsStep from './sections/InterestsStep'
+import PlacementStep from './sections/PlacementStep'
+import CompleteStep from './sections/CompleteStep'
+
+const FALLBACK_PLACEMENT: PlacementResult = {
+  level: 'A2',
+  score: 0,
+  weakAreas: [],
+  detail: 'Placement scored without LLM refinement (Ollama not available).'
+}
+
+export default function OnboardingPage(): JSX.Element {
+  const navigate = useNavigate()
+  const { rec, refreshOllama, setProfile } = useAppStore()
+  const flow = useOnboardingFlow('welcome')
+
+  const [name, setName] = useState('')
+  const [goals, setGoals] = useState<LearningGoal[]>([])
+  const [interests, setInterests] = useState<Interest[]>([])
+  const [placementQuestions, setPlacementQuestions] = useState<PlacementQuestion[] | null>(null)
+  const [placementResult, setPlacementResult] = useState<PlacementResult | null>(null)
+
+  useEffect(() => {
+    if (flow.step === 'placement' && !placementQuestions) {
+      window.api.placement.generate().then(setPlacementQuestions)
+    }
+  }, [flow.step, placementQuestions])
+
+  const finishPlacement = async (answers: PlacementAnswer[]): Promise<void> => {
+    if (!rec) {
+      setPlacementResult(FALLBACK_PLACEMENT)
+      flow.goTo('complete')
+      return
+    }
+    try {
+      const result = await window.api.placement.evaluate({
+        model: rec.llm.tag,
+        answers
+      })
+      setPlacementResult(result)
+    } catch {
+      setPlacementResult(FALLBACK_PLACEMENT)
+    }
+    flow.goTo('complete')
+  }
+
+  const saveAndEnter = async (finalLevel: CEFRLevel): Promise<void> => {
+    const base = buildEmptyProfile()
+    const profile: UserProfile = {
+      ...base,
+      name: name.trim() || undefined,
+      goals,
+      interests,
+      level: finalLevel,
+      weakAreas: placementResult?.weakAreas ?? [],
+      settings: {
+        ...base.settings,
+        performanceMode: rec?.mode ?? 'fast',
+        characterId: 'emma'
+      }
+    }
+    await window.api.profile.save(profile)
+    setProfile(profile)
+    navigate('/home', { replace: true })
+  }
+
+  return (
+    <div className="min-h-full p-8 flex flex-col">
+      <div className="max-w-3xl mx-auto w-full">
+        <div className="mb-6">
+          <ProgressBar value={flow.progressPct} />
+          <p className="text-xs text-slate-500 mt-2">
+            Step {flow.index + 1} of {flow.total}
+          </p>
+        </div>
+
+        {flow.step === 'welcome' && (
+          <WelcomeStep name={name} onNameChange={setName} onNext={flow.next} />
+        )}
+        {flow.step === 'modelCheck' && (
+          <ModelCheckStep
+            onReady={() => {
+              refreshOllama()
+              flow.next()
+            }}
+            onSkip={flow.next}
+            onBack={flow.back}
+          />
+        )}
+        {flow.step === 'goals' && (
+          <GoalsStep
+            goals={goals}
+            onChange={setGoals}
+            onNext={flow.next}
+            onBack={flow.back}
+          />
+        )}
+        {flow.step === 'interests' && (
+          <InterestsStep
+            interests={interests}
+            onChange={setInterests}
+            onNext={flow.next}
+            onBack={flow.back}
+          />
+        )}
+        {flow.step === 'placement' && placementQuestions && (
+          <PlacementStep
+            questions={placementQuestions}
+            onDone={finishPlacement}
+            onBack={flow.back}
+          />
+        )}
+        {flow.step === 'placement' && !placementQuestions && (
+          <Card className="text-center text-slate-400">Loading placement…</Card>
+        )}
+        {flow.step === 'complete' && placementResult && (
+          <CompleteStep
+            result={placementResult}
+            onConfirm={(lvl) => void saveAndEnter(lvl)}
+          />
+        )}
+      </div>
+    </div>
+  )
+}

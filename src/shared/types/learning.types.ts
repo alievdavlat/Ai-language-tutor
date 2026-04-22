@@ -1,0 +1,25 @@
+export type LearningGoal =
+  | 'travel'
+  | 'work'
+  | 'ielts'
+  | 'toefl'
+  | 'immigration'
+  | 'school'
+  | 'hobby'
+  | 'general'
+
+export type Interest =
+  | 'tech'
+  | 'sports'
+  | 'movies'
+  | 'music'
+  | 'business'
+  | 'travel'
+  | 'food'
+  | 'science'
+  | 'gaming'
+  | 'books'
+  | 'fashion'
+  | 'health'
+
+export type Accent = 'us' | 'uk' | 'au' | 'in'

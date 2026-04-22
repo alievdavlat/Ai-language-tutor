@@ -1,0 +1,52 @@
+{
+  "name": "speaking-app",
+  "version": "0.0.1",
+  "description": "Offline AI-powered English learning desktop app — speaking, vocabulary, grammar",
+  "main": "./out/main/index.js",
+  "author": "aliev",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "build:win": "electron-vite build && electron-builder --win",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "lint": "eslint . --ext .ts,.tsx --report-unused-disable-directives"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.1",
+    "@electron-toolkit/utils": "^3.0.0",
+    "@huggingface/transformers": "^4.1.0",
+    "@ricky0123/vad-web": "^0.0.30",
+    "@types/three": "^0.184.0",
+    "better-sqlite3": "^11.3.0",
+    "ollama": "^0.5.9",
+    "onnxruntime-web": "^1.24.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "systeminformation": "^5.23.5",
+    "three": "^0.184.0",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^20.16.5",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "electron": "^32.1.2",
+    "electron-builder": "^25.0.5",
+    "electron-vite": "^2.3.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.11",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.6",
+    "vite-plugin-static-copy": "^3.4.0"
+  }
+}
