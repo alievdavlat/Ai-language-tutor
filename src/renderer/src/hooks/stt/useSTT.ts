@@ -29,7 +29,8 @@ export function useSTT(config: UseSTTConfig): STTController {
     onFinal: config.onFinal,
     onInterim: config.onInterim,
     onSpeechStart: config.onSpeechStart,
-    onEngineFallback: config.onEngineFallback
+    onEngineFallback: config.onEngineFallback,
+    micPrefs: config.micPrefs
   })
 
   return config.engine === 'whisper-local' ? whisper : webSpeech

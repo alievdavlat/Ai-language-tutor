@@ -1,4 +1,5 @@
 import type { MicMode, STTEngine } from '@shared/types'
+import type { MicProcessingPrefs } from '../../lib/audio'
 
 export interface STTState {
   listening: boolean
@@ -20,7 +21,11 @@ export interface UseSTTOptions {
   enabled?: boolean
   onFinal: (transcript: string) => void
   onInterim?: (interim: string) => void
-  /** Fires the instant the user starts speaking — wire this to TTS cancel for barge-in. */
+  /**
+   * Fires the moment the engine detects the user has started speaking, before
+   * any transcript is available. Used for barge-in — cancel TTS + abort the
+   * LLM stream the instant the user opens their mouth.
+   */
   onSpeechStart?: () => void
   /**
    * Fires when an engine fails in a way the caller can recover from by
@@ -29,4 +34,6 @@ export interface UseSTTOptions {
    * different backend.
    */
   onEngineFallback?: (reason: string) => void
+  /** Phase 5 — browser-level mic-processing flags (NS/AEC/AGC). */
+  micPrefs?: MicProcessingPrefs
 }

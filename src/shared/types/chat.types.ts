@@ -10,6 +10,8 @@ export interface ChatStreamChunk {
   delta: string
   done: boolean
   error?: string
+  /** `true` on the final chunk when the stream was cancelled via abort(). */
+  aborted?: boolean
 }
 
 export interface ChatStreamRequest {

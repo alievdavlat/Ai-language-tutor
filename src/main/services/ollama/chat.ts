@@ -43,7 +43,18 @@ export async function chat(model: string, messages: ChatMessage[]): Promise<stri
   return res.message.content
 }
 
+/**
+ * Registry of in-flight streams keyed by caller-supplied id. The Ollama JS
+ * client's streaming response is an `AbortableAsyncIterator` — calling
+ * `.abort()` on it terminates the underlying HTTP connection immediately, so
+ * the model actually stops generating (instead of running in the background
+ * for 5–10 s after the user barges in).
+ */
+type Abortable = { abort: () => void }
+const activeStreams = new Map<string, Abortable>()
+
 export async function* chatStream(
+  id: string,
   model: string,
   messages: ChatMessage[]
 ): AsyncGenerator<string, void, unknown> {
@@ -54,7 +65,24 @@ export async function* chatStream(
     keep_alive: KEEP_ALIVE,
     options: CHAT_OPTIONS
   })
-  for await (const chunk of stream) {
-    yield chunk.message.content
+  activeStreams.set(id, stream as unknown as Abortable)
+  try {
+    for await (const chunk of stream) {
+      yield chunk.message.content
+    }
+  } finally {
+    activeStreams.delete(id)
   }
+}
+
+export function abortChatStream(id: string): boolean {
+  const stream = activeStreams.get(id)
+  if (!stream) return false
+  try {
+    stream.abort()
+  } catch {
+    // ignore — iterator may have already completed
+  }
+  activeStreams.delete(id)
+  return true
 }

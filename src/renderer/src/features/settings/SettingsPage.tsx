@@ -10,6 +10,7 @@ import CharacterSection from './sections/CharacterSection'
 import VoiceSection from './sections/VoiceSection'
 import LLMModelSection from './sections/LLMModelSection'
 import STTEngineSection from './sections/STTEngineSection'
+import MicProcessingSection from './sections/MicProcessingSection'
 import SidecarsSection from './sections/SidecarsSection'
 import SystemInfoSection from './sections/SystemInfoSection'
 import DangerZoneSection from './sections/DangerZoneSection'
@@ -27,7 +28,7 @@ export default function SettingsPage(): JSX.Element {
   const hw = useAppStore((s) => s.hw)
   const rec = useAppStore((s) => s.rec)
   const ollama = useAppStore((s) => s.ollama)
-  const { profile, saving, patch } = useSettingsPatch()
+  const { profile, saving, patch, patchProfile } = useSettingsPatch()
   const [tab, setTab] = useState<SettingsTab>('conversation')
 
   if (!profile) {
@@ -60,9 +61,9 @@ export default function SettingsPage(): JSX.Element {
         {tab === 'conversation' && (
           <div className="grid grid-cols-1 gap-4">
             <CharacterSection
-              currentId={s.characterId}
-              currentAccent={s.accent}
+              profile={profile}
               onPick={(characterId, accent) => void patch({ characterId, accent })}
+              onCustomsChange={(customCharacters) => void patchProfile({ customCharacters })}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <AccentSection current={s.accent} onChange={(accent) => void patch({ accent })} />
@@ -88,6 +89,12 @@ export default function SettingsPage(): JSX.Element {
               accent={s.accent}
               currentVoiceURI={s.voiceURI}
               onPick={(voiceURI) => void patch({ voiceURI })}
+            />
+            <MicProcessingSection
+              noiseSuppression={s.noiseSuppression ?? true}
+              echoCancellation={s.echoCancellation ?? true}
+              autoGainControl={s.autoGainControl ?? true}
+              onChange={(p) => void patch(p)}
             />
             <STTEngineSection
               engine={s.sttEngine}

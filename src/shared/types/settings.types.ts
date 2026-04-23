@@ -19,4 +19,10 @@ export interface UserSettings {
   llmModel: string
   /** SpeechSynthesisVoice.voiceURI the user picked. Empty = auto-pick by accent. */
   voiceURI: string
+  /** Browser-level noise suppression on the mic stream (Chromium/WebRTC). */
+  noiseSuppression: boolean
+  /** Browser-level acoustic echo cancellation — stops speaker feedback into the mic. */
+  echoCancellation: boolean
+  /** Browser-level automatic gain control — normalizes mic volume. */
+  autoGainControl: boolean
 }

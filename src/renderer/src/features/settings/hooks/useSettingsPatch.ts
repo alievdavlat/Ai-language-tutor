@@ -6,6 +6,8 @@ interface SettingsPatchHook {
   profile: UserProfile | null
   saving: boolean
   patch: (update: Partial<UserSettings>) => Promise<void>
+  /** Patch top-level profile fields (e.g. `customCharacters`), not just settings. */
+  patchProfile: (update: Partial<UserProfile>) => Promise<void>
 }
 
 export function useSettingsPatch(): SettingsPatchHook {
@@ -24,5 +26,14 @@ export function useSettingsPatch(): SettingsPatchHook {
     setSaving(false)
   }
 
-  return { profile, saving, patch }
+  const patchProfile = async (update: Partial<UserProfile>): Promise<void> => {
+    if (!profile) return
+    setSaving(true)
+    const next: UserProfile = { ...profile, ...update }
+    await window.api.profile.save(next)
+    setProfile(next)
+    setSaving(false)
+  }
+
+  return { profile, saving, patch, patchProfile }
 }

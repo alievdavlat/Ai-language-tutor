@@ -12,6 +12,7 @@ import { useSTT } from '../../hooks/stt'
 import { useTTS } from '../../hooks/tts'
 import { useChatStream } from '../../hooks/useChatStream'
 import { useWhisperModelLoader } from '../../hooks/useWhisperModelLoader'
+import { micPrefsFromSettings } from '../../lib/audio'
 import { ProgressBar } from '../../components/ui'
 import type { AvatarEmotion, AvatarMode } from '../../components/avatar'
 import SpeakingHeader from './sections/SpeakingHeader'
@@ -94,7 +95,7 @@ function SpeakingPageInner({
     rate: profile.settings.ttsSpeed,
     voiceURI: profile.settings.voiceURI
   })
-  const { streaming, error: chatError, send } = useChatStream(model)
+  const { streaming, error: chatError, send, abort: abortChat } = useChatStream(model)
 
   const { turns, handleUserTurn, cancelCurrent } = useTurnHandler({
     profile,
@@ -109,9 +110,12 @@ function SpeakingPageInner({
     mode: micMode,
     lang: ACCENT_TO_LANG[accent],
     whisperModel: profile.settings.whisperModel,
+    micPrefs: micPrefsFromSettings(profile.settings),
     onSpeechStart: () => {
-      // Barge-in — user talks while AI is speaking → drop the queued speech.
+      // Barge-in — user talks while AI is speaking → drop the queued TTS
+      // AND abort the Ollama stream so the model isn't burning CPU.
       if (speaking) cancelCurrent()
+      abortChat()
     },
     onFinal: (transcript) => {
       if (speaking) cancel()
@@ -138,7 +142,8 @@ function SpeakingPageInner({
   useEffect(() => {
     return () => {
       void stt.stop()
-      cancel()
+      cancelCurrent()
+      abortChat()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

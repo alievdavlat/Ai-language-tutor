@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { MicVAD } from '@ricky0123/vad-web'
+import { getAudioConstraints, type MicProcessingPrefs } from '../lib/audio'
 
 interface UseVADOptions {
   enabled: boolean
@@ -8,6 +9,7 @@ interface UseVADOptions {
   positiveSpeechThreshold?: number
   negativeSpeechThreshold?: number
   redemptionMs?: number
+  micPrefs?: MicProcessingPrefs
 }
 
 interface VADController {
@@ -48,6 +50,10 @@ export function useVAD(opts: UseVADOptions): VADController {
         positiveSpeechThreshold: optsRef.current.positiveSpeechThreshold ?? 0.8,
         negativeSpeechThreshold: optsRef.current.negativeSpeechThreshold ?? 0.35,
         redemptionMs: optsRef.current.redemptionMs ?? 1500,
+        getStream: async () =>
+          navigator.mediaDevices.getUserMedia({
+            audio: getAudioConstraints(optsRef.current.micPrefs)
+          }),
         onSpeechStart: () => {
           console.info('[vad] speech start')
           optsRef.current.onSpeechStart?.()

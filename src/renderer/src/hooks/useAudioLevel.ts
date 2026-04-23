@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { getAudioConstraints, type MicProcessingPrefs } from '../lib/audio'
 
 interface UseAudioLevelOptions {
   enabled: boolean
@@ -6,6 +7,7 @@ interface UseAudioLevelOptions {
   fps?: number
   /** Exponential smoothing factor — 0.25 is a nice "alive" feel. */
   smoothing?: number
+  micPrefs?: MicProcessingPrefs
 }
 
 /**
@@ -28,11 +30,7 @@ export function useAudioLevel(opts: UseAudioLevelOptions): number {
     const start = async (): Promise<void> => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          }
+          audio: getAudioConstraints(opts.micPrefs)
         })
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop())
@@ -99,7 +97,14 @@ export function useAudioLevel(opts: UseAudioLevelOptions): number {
       smoothedRef.current = 0
       setLevel(0)
     }
-  }, [opts.enabled, opts.fps, opts.smoothing])
+  }, [
+    opts.enabled,
+    opts.fps,
+    opts.smoothing,
+    opts.micPrefs?.noiseSuppression,
+    opts.micPrefs?.echoCancellation,
+    opts.micPrefs?.autoGainControl
+  ])
 
   return level
 }

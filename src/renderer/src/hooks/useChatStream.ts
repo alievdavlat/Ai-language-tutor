@@ -15,6 +15,8 @@ interface ChatStreamController {
     messages: ChatMessage[],
     onDelta?: (delta: string, full: string) => void
   ) => Promise<string>
+  /** Cancel every in-flight LLM stream. Used for barge-in and page teardown. */
+  abort: () => void
 }
 
 export function useChatStream(model: string): ChatStreamController {
@@ -61,5 +63,20 @@ export function useChatStream(model: string): ChatStreamController {
     [model]
   )
 
-  return { streaming, error, send }
+  const abort = useCallback(() => {
+    // Snapshot the ids so we resolve + delete without mutating mid-iteration.
+    const ids = Array.from(pendingRef.current.keys())
+    if (ids.length === 0) return
+    for (const id of ids) {
+      const handle = pendingRef.current.get(id)
+      if (handle) handle.resolve(handle.full) // resolve with partial text
+      pendingRef.current.delete(id)
+      void window.api.ollama.chatStreamAbort(id).catch(() => {
+        // best-effort — main side may have already finished the stream
+      })
+    }
+    setStreaming(false)
+  }, [])
+
+  return { streaming, error, send, abort }
 }
