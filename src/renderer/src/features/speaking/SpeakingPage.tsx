@@ -96,7 +96,7 @@ function SpeakingPageInner({
   })
   const { streaming, error: chatError, send } = useChatStream(model)
 
-  const { turns, handleUserTurn } = useTurnHandler({
+  const { turns, handleUserTurn, cancelCurrent } = useTurnHandler({
     profile,
     topic,
     sendChat: send,
@@ -109,6 +109,10 @@ function SpeakingPageInner({
     mode: micMode,
     lang: ACCENT_TO_LANG[accent],
     whisperModel: profile.settings.whisperModel,
+    onSpeechStart: () => {
+      // Barge-in — user talks while AI is speaking → drop the queued speech.
+      if (speaking) cancelCurrent()
+    },
     onFinal: (transcript) => {
       if (speaking) cancel()
       void handleUserTurn(transcript)

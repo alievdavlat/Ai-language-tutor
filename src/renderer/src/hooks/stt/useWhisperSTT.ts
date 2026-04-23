@@ -15,7 +15,22 @@ interface UseWhisperSTTOptions {
   language?: string
   onFinal: (transcript: string) => void
   onInterim?: (text: string) => void
+  onSpeechStart?: () => void
+  /**
+   * Fires once when the engine hits an unrecoverable load/transcribe error.
+   * Parent can flip the app-wide STT engine to `web-speech` so the next
+   * utterance actually produces a reply instead of silent failure.
+   */
+  onEngineFallback?: (reason: string) => void
   enabled?: boolean
+}
+
+// Heuristic: treat any error mentioning network / 404 / timeout / load as a
+// signal that Whisper just isn't going to work in this environment.
+function isFatalWhisperError(message: string): boolean {
+  return /timed out|failed to fetch|network|404|Could not load|load failed|ENOTFOUND|ERR_INTERNET/i.test(
+    message
+  )
 }
 
 /**
@@ -35,8 +50,21 @@ export function useWhisperSTT(opts: UseWhisperSTTOptions): STTController {
   const optsRef = useRef(opts)
   optsRef.current = opts
 
+  // Once we've fired the fallback callback we don't want to keep spamming it
+  // for every subsequent utterance — the parent only needs to know once.
+  const fallbackFiredRef = useRef(false)
+
   const setError = useCallback((message: string | null) => {
     setState((prev) => ({ ...prev, error: message }))
+    if (
+      message &&
+      !fallbackFiredRef.current &&
+      isFatalWhisperError(message) &&
+      optsRef.current.onEngineFallback
+    ) {
+      fallbackFiredRef.current = true
+      optsRef.current.onEngineFallback(message)
+    }
   }, [])
 
   const setInterim = useCallback((text: string) => {
@@ -98,6 +126,8 @@ export function useWhisperSTT(opts: UseWhisperSTTOptions): STTController {
     },
     onSpeechStart: () => {
       setState((prev) => ({ ...prev, listening: true }))
+      // Propagate to the caller for TTS barge-in.
+      optsRef.current.onSpeechStart?.()
     }
   })
 

@@ -20,4 +20,13 @@ export interface UseSTTOptions {
   enabled?: boolean
   onFinal: (transcript: string) => void
   onInterim?: (interim: string) => void
+  /** Fires the instant the user starts speaking — wire this to TTS cancel for barge-in. */
+  onSpeechStart?: () => void
+  /**
+   * Fires when an engine fails in a way the caller can recover from by
+   * switching engines (e.g. Whisper model can't download). Parent should
+   * flip the user's `sttEngine` setting so the next utterance uses a
+   * different backend.
+   */
+  onEngineFallback?: (reason: string) => void
 }

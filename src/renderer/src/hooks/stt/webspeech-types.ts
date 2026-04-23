@@ -37,6 +37,9 @@ export interface SpeechRecognitionLike extends EventTarget {
   onresult: ((e: SpeechRecognitionEvent) => void) | null
   onerror: ((e: SpeechRecognitionErrorEvent) => void) | null
   onend: ((e: Event) => void) | null
+  onspeechstart: ((e: Event) => void) | null
+  onspeechend: ((e: Event) => void) | null
+  onsoundstart: ((e: Event) => void) | null
 }
 
 export interface SpeechRecognitionConstructor {

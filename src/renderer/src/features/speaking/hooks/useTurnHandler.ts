@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import type { ChatMessage, CorrectionStyle, GrammarMatch, UserProfile } from '@shared/types'
 import { buildCorrectionFeedback, buildSystemPrompt } from '../../../services/prompts'
 import { createId } from '../../../lib/ids'
+import { useStreamingSpeaker } from '../../../hooks/useStreamingSpeaker'
 import type { ChatTurn } from '../types'
 
 const HISTORY_WINDOW = 20
@@ -20,6 +21,8 @@ interface UseTurnHandlerOptions {
 interface TurnHandler {
   turns: ChatTurn[]
   handleUserTurn: (text: string) => Promise<void>
+  /** Cancels any in-flight streaming speech — use for barge-in / route leave. */
+  cancelCurrent: () => void
 }
 
 function firstMatch(matches: GrammarMatch[] | undefined): GrammarMatch | null {
@@ -27,26 +30,20 @@ function firstMatch(matches: GrammarMatch[] | undefined): GrammarMatch | null {
   return matches[0]
 }
 
-async function speakCorrection(
+async function appendCorrectionSpeech(
   style: CorrectionStyle,
-  reply: string,
   feedback: string | null,
   speak: (text: string) => Promise<void>
 ): Promise<void> {
-  if (style === 'silent' || !feedback) {
-    await speak(reply)
-    return
-  }
+  if (!feedback || style === 'silent' || style === 'inline') return
   if (style === 'strict') {
-    await speak(`Quick correction first. ${feedback}. Now, ${reply}`)
-    return
-  }
-  if (style === 'inline') {
-    await speak(reply)
+    // "Strict" meant "say the correction before the reply." With streaming
+    // the main reply already started, so we say it right after — still
+    // clearly correction-flavoured.
+    await speak(`Quick correction: ${feedback}`)
     return
   }
   // gentle
-  await speak(reply)
   await speak(`By the way — ${feedback}`)
 }
 
@@ -55,6 +52,14 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
   const historyRef = useRef<ChatMessage[]>([])
   const optsRef = useRef(opts)
   optsRef.current = opts
+
+  // Streaming speaker — chunks LLM output into sentences so TTS starts
+  // playing before the model finishes generating. One shared queue per page
+  // so cancel() wipes everything (main reply AND correction follow-up).
+  const streamer = useStreamingSpeaker({
+    speak: (text) => optsRef.current.speak(text),
+    cancel: () => optsRef.current.cancelSpeak()
+  })
 
   const pushTurn = useCallback((turn: ChatTurn) => {
     setTurns((prev) => [...prev, turn])
@@ -66,7 +71,7 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
 
   const handleUserTurn = useCallback(
     async (userText: string): Promise<void> => {
-      const { profile, topic, sendChat, speak } = optsRef.current
+      const { profile, topic, sendChat } = optsRef.current
       const userId = createId('user')
       const assistantId = createId('assistant')
 
@@ -84,10 +89,14 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
         { role: 'user', content: userText }
       ]
 
+      // Cancel any leftover speech from the previous turn before starting.
+      streamer.cancel()
+
       let fullReply = ''
       try {
-        fullReply = await sendChat(messages, (_d, full) => {
+        fullReply = await sendChat(messages, (delta, full) => {
           updateTurn(assistantId, { text: full, pending: false })
+          streamer.feedDelta(delta)
         })
       } catch {
         fullReply = ''
@@ -111,6 +120,10 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
       ]
       historyRef.current = newHistory.slice(-HISTORY_WINDOW)
 
+      // Wait for the streamed main reply to finish speaking before the
+      // correction follow-up.
+      await streamer.flushAndWait()
+
       const grammar = await grammarPromise
       const match = firstMatch(grammar?.matches)
 
@@ -126,14 +139,17 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
         })
 
         const feedback = buildCorrectionFeedback(userText, grammar.matches)
-        await speakCorrection(profile.settings.correctionStyle, fullReply, feedback, speak)
+        await appendCorrectionSpeech(
+          profile.settings.correctionStyle,
+          feedback,
+          optsRef.current.speak
+        )
       } else {
         updateTurn(userId, { pending: false })
-        await speak(fullReply)
       }
     },
-    [pushTurn, updateTurn]
+    [pushTurn, updateTurn, streamer]
   )
 
-  return { turns, handleUserTurn }
+  return { turns, handleUserTurn, cancelCurrent: streamer.cancel }
 }

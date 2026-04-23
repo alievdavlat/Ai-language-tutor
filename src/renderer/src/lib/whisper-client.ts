@@ -41,6 +41,32 @@ interface CacheEntry {
 let cached: CacheEntry | null = null
 let loading: Promise<AutomaticSpeechRecognitionPipeline> | null = null
 
+// Hard ceiling on how long we'll wait for the first model download + compile
+// before giving up. Without this, a flaky HuggingFace fetch can leave the call
+// UI stuck on "Listening…" forever with no feedback.
+const LOAD_TIMEOUT_MS = 60_000
+// Transcription itself should be fast once the model is resident — a stall
+// past 30 s is a real hang, not a slow inference.
+const TRANSCRIBE_TIMEOUT_MS = 30_000
+
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`))
+    }, ms)
+    p.then(
+      (v) => {
+        clearTimeout(t)
+        resolve(v)
+      },
+      (err) => {
+        clearTimeout(t)
+        reject(err)
+      }
+    )
+  })
+}
+
 // Shared event stream — any hook can subscribe once and watch every load.
 const listeners = new Set<ProgressListener>()
 
@@ -80,24 +106,28 @@ export async function loadWhisperPipeline(
     console.info('[whisper] loading pipeline', { tag, modelId })
 
     try {
-      const p = (await pipeline('automatic-speech-recognition', modelId, {
-        progress_callback: (evt: unknown) => {
-          const e = evt as {
-            status?: string
-            file?: string
-            progress?: number
-            loaded?: number
-            total?: number
+      const p = (await withTimeout(
+        pipeline('automatic-speech-recognition', modelId, {
+          progress_callback: (evt: unknown) => {
+            const e = evt as {
+              status?: string
+              file?: string
+              progress?: number
+              loaded?: number
+              total?: number
+            }
+            emit({
+              status: (e.status as WhisperProgressEvent['status']) ?? 'progress',
+              file: e.file,
+              progress: e.progress,
+              loaded: e.loaded,
+              total: e.total
+            })
           }
-          emit({
-            status: (e.status as WhisperProgressEvent['status']) ?? 'progress',
-            file: e.file,
-            progress: e.progress,
-            loaded: e.loaded,
-            total: e.total
-          })
-        }
-      })) as AutomaticSpeechRecognitionPipeline
+        }),
+        LOAD_TIMEOUT_MS,
+        `Whisper model '${tag}' load`
+      )) as AutomaticSpeechRecognitionPipeline
       cached = { tag, pipeline: p }
       loading = null
       emit({ status: 'ready', progress: 100 })
@@ -126,13 +156,17 @@ export async function transcribePCM(
   input: TranscribeInput
 ): Promise<string> {
   const recognizer = await loadWhisperPipeline(tag)
-  const result = (await recognizer(input.samples, {
-    language: input.language ?? 'english',
-    task: 'transcribe',
-    chunk_length_s: 30,
-    stride_length_s: 5,
-    return_timestamps: false
-  })) as { text?: string } | Array<{ text?: string }>
+  const result = (await withTimeout(
+    recognizer(input.samples, {
+      language: input.language ?? 'english',
+      task: 'transcribe',
+      chunk_length_s: 30,
+      stride_length_s: 5,
+      return_timestamps: false
+    }) as Promise<{ text?: string } | Array<{ text?: string }>>,
+    TRANSCRIBE_TIMEOUT_MS,
+    'Whisper transcription'
+  )) as { text?: string } | Array<{ text?: string }>
 
   const text = Array.isArray(result)
     ? result.map((r) => r.text ?? '').join(' ')

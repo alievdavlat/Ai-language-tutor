@@ -48,6 +48,12 @@ export function useWebSpeechSTT(opts: WebSpeechOptions): STTController {
       setState((prev) => ({ ...prev, listening: true, error: null }))
     }
 
+    // Fires as soon as the browser detects the user speaking — this is the
+    // cheapest barge-in trigger since it runs before the transcript arrives.
+    recognition.onspeechstart = () => {
+      optsRef.current.onSpeechStart?.()
+    }
+
     recognition.onresult = (event) => {
       let interim = ''
       let final = ''

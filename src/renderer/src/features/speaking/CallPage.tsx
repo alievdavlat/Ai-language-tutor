@@ -5,10 +5,13 @@ import { ACCENT_TO_LANG, ACCENT_TO_PERSONA_NAME, findCharacter } from '@shared/c
 import { useAppStore } from '../../store/useAppStore'
 import { useAudioLevel } from '../../hooks/useAudioLevel'
 import { useChatStream } from '../../hooks/useChatStream'
+import { useStreamingSpeaker } from '../../hooks/useStreamingSpeaker'
 import { useSTT } from '../../hooks/stt'
 import { useTTS } from '../../hooks/tts'
+import { useWhisperModelLoader } from '../../hooks/useWhisperModelLoader'
 import { buildSystemPrompt } from '../../services/prompts'
 import { cn } from '../../lib/classnames'
+import { ProgressBar } from '../../components/ui'
 import VoiceOrb, { type CallState } from './components/VoiceOrb'
 import WaveVisualizer from './components/WaveVisualizer'
 import CallControls from './sections/CallControls'
@@ -28,7 +31,10 @@ function deriveCallState(params: {
   return 'idle'
 }
 
-function sublabelFor(state: CallState): string {
+function sublabelFor(state: CallState, interim: string): string {
+  // Interim transcription text wins over state defaults — this is what tells
+  // the user "your speech actually made it to the pipeline."
+  if (interim) return interim
   switch (state) {
     case 'listening':
       return 'Listening…'
@@ -48,6 +54,7 @@ export default function CallPage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
   const rec = useAppStore((s) => s.rec)
   const ollama = useAppStore((s) => s.ollama)
+  const setProfile = useAppStore((s) => s.setProfile)
 
   if (!profile) {
     return (
@@ -57,22 +64,55 @@ export default function CallPage(): JSX.Element {
     )
   }
 
-  return <CallPageInner profile={profile} rec={rec} ollama={ollama} />
+  return (
+    <CallPageInner profile={profile} rec={rec} ollama={ollama} setProfile={setProfile} />
+  )
 }
 
 interface InnerProps {
   profile: UserProfile
   rec: ReturnType<typeof useAppStore.getState>['rec']
   ollama: ReturnType<typeof useAppStore.getState>['ollama']
+  setProfile: (p: UserProfile | null) => void
 }
 
-function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
+function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.Element {
   const navigate = useNavigate()
   const model = profile.settings.llmModel || rec?.llm.tag || ''
 
   const [muted, setMuted] = useState(false)
   const [paused, setPaused] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [engineNotice, setEngineNotice] = useState<string | null>(null)
+
+  // Whisper progress — so the user actually sees the first-time download
+  // happening instead of staring at a silent "Listening…" orb.
+  const whisperLoader = useWhisperModelLoader(profile.settings.whisperModel)
+  const whisperEngine = profile.settings.sttEngine === 'whisper-local'
+  const whisperWarming = whisperEngine && !whisperLoader.loaded
+
+  // Auto-fallback: if Whisper can't load (timeout, 404, offline, etc.) flip
+  // the user's engine to Web Speech and tell them why. This is the one real
+  // recovery path on an 8 GB laptop with flaky internet.
+  const switchToWebSpeech = useCallback(
+    async (reason: string): Promise<void> => {
+      if (profile.settings.sttEngine === 'web-speech') return
+      const next: UserProfile = {
+        ...profile,
+        settings: { ...profile.settings, sttEngine: 'web-speech' }
+      }
+      try {
+        await window.api.profile.save(next)
+      } catch (err) {
+        console.error('[call] profile save failed during fallback', err)
+      }
+      setProfile(next)
+      setEngineNotice(
+        `Switched to online Web Speech — Whisper couldn't load (${reason}). You can switch back in Settings once you're online.`
+      )
+    },
+    [profile, setProfile]
+  )
 
   // TTS — drives the orb pulse when the character is talking.
   const { speaking, currentVisemeWeight, speak, cancel } = useTTS({
@@ -83,12 +123,21 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
 
   const { streaming, send } = useChatStream(model)
 
+  // Streaming speaker — chunks the LLM output into sentences so audio starts
+  // ~3× sooner. The same cancel() wipes queue + current utterance for barge-in.
+  const streamer = useStreamingSpeaker({
+    speak: (text) => speak(text),
+    cancel: () => cancel()
+  })
+
   const historyRef = useRef<ChatMessage[]>([])
 
   const handleTurn = useCallback(
     async (transcript: string): Promise<void> => {
       if (!transcript.trim()) return
-      if (speaking) cancel()
+      // New turn — drop any leftover speech from the previous AI reply.
+      streamer.cancel()
+
       const systemPrompt = buildSystemPrompt(profile)
       const messages: ChatMessage[] = [
         { role: 'system', content: systemPrompt },
@@ -97,7 +146,9 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
       ]
       let reply = ''
       try {
-        reply = await send(messages)
+        reply = await send(messages, (delta) => {
+          streamer.feedDelta(delta)
+        })
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
         return
@@ -112,9 +163,9 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
         { role: 'assistant', content: reply }
       ]
       historyRef.current = nextHistory.slice(-20)
-      await speak(reply)
+      await streamer.flushAndWait()
     },
-    [profile, send, speak, speaking, cancel]
+    [profile, send, streamer]
   )
 
   // Mic is only live when the user hasn't muted/paused and Ollama is ready.
@@ -127,8 +178,16 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
     lang: ACCENT_TO_LANG[profile.settings.accent],
     whisperModel: profile.settings.whisperModel,
     enabled: micEnabled,
+    onSpeechStart: () => {
+      // Barge-in — as soon as the user starts talking, drop the AI's queued
+      // speech so they never collide.
+      if (speaking) streamer.cancel()
+    },
     onFinal: (text) => {
       void handleTurn(text)
+    },
+    onEngineFallback: (reason) => {
+      void switchToWebSpeech(reason)
     }
   })
 
@@ -161,10 +220,11 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
   const displayName = character?.name ?? ACCENT_TO_PERSONA_NAME[profile.settings.accent]
 
   const endCall = useCallback((): void => {
+    streamer.cancel()
     cancel()
     void stt.stop()
     navigate('/speaking')
-  }, [cancel, stt, navigate])
+  }, [cancel, streamer, stt, navigate])
 
   // Esc to end the call
   useEffect(() => {
@@ -178,6 +238,7 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
   // Global teardown when leaving
   useEffect(() => {
     return () => {
+      streamer.cancel()
       cancel()
       void stt.stop()
     }
@@ -195,13 +256,48 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
       <EmotionBackdrop state={callState} />
 
       {/* Top — minimal call chrome */}
-      <div className="relative z-10 text-center">
+      <div className="relative z-10 text-center w-full max-w-lg px-6">
         <div className="text-xs uppercase tracking-[0.3em] text-slate-500 mb-1">
           {ollamaReady ? 'Live call' : 'Waiting for Ollama'}
         </div>
         <div className="text-sm text-slate-400">
           {profile.settings.accent.toUpperCase()} accent · Level {profile.level}
         </div>
+
+        {whisperWarming && (
+          <div className="mt-4 rounded-xl bg-brand-500/15 border border-brand-400/30 px-4 py-3 text-left">
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <span className="text-xs text-brand-100">
+                🎧 Loading Whisper <code className="text-brand-200">
+                  {profile.settings.whisperModel}
+                </code> — first time only.
+              </span>
+              <span className="shrink-0 text-xs font-semibold text-brand-100">
+                {Math.round(whisperLoader.progress * 100)}%
+              </span>
+            </div>
+            <ProgressBar value={Math.round(whisperLoader.progress * 100)} />
+            {whisperLoader.error && (
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <span className="text-[11px] text-red-300">
+                  ⚠️ {whisperLoader.error}
+                </span>
+                <button
+                  onClick={() => void switchToWebSpeech(whisperLoader.error ?? 'load failed')}
+                  className="text-[11px] text-brand-200 underline hover:text-brand-100 shrink-0"
+                >
+                  Use Web Speech
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {engineNotice && (
+          <div className="mt-3 rounded-xl bg-amber-500/15 border border-amber-400/30 px-4 py-2 text-[11px] text-amber-100">
+            {engineNotice}
+          </div>
+        )}
       </div>
 
       {/* Middle — orb */}
@@ -210,10 +306,24 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
           state={callState}
           intensity={orbIntensity}
           label={displayName}
-          sublabel={sublabelFor(callState)}
+          sublabel={sublabelFor(callState, stt.state.interim)}
         />
 
-        {error && (
+        {stt.state.error && (
+          <div className="mt-24 max-w-sm text-center">
+            <p className="text-xs text-red-300">⚠️ {stt.state.error}</p>
+            {whisperEngine && (
+              <button
+                onClick={() => void switchToWebSpeech(stt.state.error ?? 'manual switch')}
+                className="mt-2 text-xs text-brand-300 underline hover:text-brand-200"
+              >
+                Switch to Web Speech
+              </button>
+            )}
+          </div>
+        )}
+
+        {error && !stt.state.error && (
           <p className="mt-28 text-xs text-red-300 max-w-sm text-center">
             ⚠️ {error}
           </p>
