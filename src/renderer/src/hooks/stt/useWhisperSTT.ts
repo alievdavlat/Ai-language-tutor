@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MicMode, WhisperModelTag } from '@shared/types'
 import { useVAD } from '../useVAD'
 import { usePTTRecorder } from '../useAudioRecorder'
+import type { MicProcessingPrefs } from '../../lib/audio'
 import {
   loadWhisperPipeline,
   transcribeBlob,
@@ -15,7 +16,9 @@ interface UseWhisperSTTOptions {
   language?: string
   onFinal: (transcript: string) => void
   onInterim?: (text: string) => void
+  onSpeechStart?: () => void
   enabled?: boolean
+  micPrefs?: MicProcessingPrefs
 }
 
 /**
@@ -55,6 +58,7 @@ export function useWhisperSTT(opts: UseWhisperSTTOptions): STTController {
 
   // Push-to-talk path — MediaRecorder emits a compressed blob we decode here.
   const ptt = usePTTRecorder({
+    micPrefs: opts.micPrefs,
     onStop: async (blob) => {
       try {
         setInterim('transcribing…')
@@ -79,6 +83,7 @@ export function useWhisperSTT(opts: UseWhisperSTTOptions): STTController {
   // Always-on path — Silero VAD gives Float32 PCM already at 16 kHz.
   const vad = useVAD({
     enabled: opts.mode === 'always-on' && opts.enabled !== false,
+    micPrefs: opts.micPrefs,
     onSpeechEnd: async (samples) => {
       try {
         setInterim('transcribing…')
@@ -98,6 +103,7 @@ export function useWhisperSTT(opts: UseWhisperSTTOptions): STTController {
     },
     onSpeechStart: () => {
       setState((prev) => ({ ...prev, listening: true }))
+      optsRef.current.onSpeechStart?.()
     }
   })
 

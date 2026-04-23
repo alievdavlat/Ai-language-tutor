@@ -1,7 +1,9 @@
 import { useCallback, useRef } from 'react'
+import { getAudioConstraints, type MicProcessingPrefs } from '../lib/audio'
 
 interface PTTOptions {
   mimeType?: string
+  micPrefs?: MicProcessingPrefs
   onStop: (blob: Blob) => void | Promise<void>
 }
 
@@ -23,7 +25,9 @@ export function usePTTRecorder(opts: PTTOptions): PTTController {
 
   const start = useCallback(async (): Promise<void> => {
     if (recorderRef.current) return
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: getAudioConstraints(optsRef.current.micPrefs)
+    })
     streamRef.current = stream
     const recorder = new MediaRecorder(stream, {
       mimeType: optsRef.current.mimeType ?? 'audio/webm;codecs=opus'

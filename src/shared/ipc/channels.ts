@@ -8,7 +8,8 @@ export const OLLAMA_CHANNELS = {
   PULL: 'ollama:pull',
   PULL_PROGRESS: 'ollama:pull-progress',
   CHAT_STREAM: 'ollama:chat-stream',
-  CHAT_STREAM_CHUNK: 'ollama:chat-stream-chunk'
+  CHAT_STREAM_CHUNK: 'ollama:chat-stream-chunk',
+  CHAT_STREAM_ABORT: 'ollama:chat-stream-abort'
 } as const
 
 export const PROFILE_CHANNELS = {

@@ -11,6 +11,7 @@ export function createDefaultProfile(): UserProfile {
     interests: [],
     level: 'A2',
     weakAreas: [],
+    customCharacters: [],
     settings: {
       accent: 'us',
       correctionStyle: 'gentle',
@@ -23,7 +24,10 @@ export function createDefaultProfile(): UserProfile {
       ttsEngine: 'web-speech',
       whisperModel: 'base.en',
       llmModel: '',
-      voiceURI: ''
+      voiceURI: '',
+      noiseSuppression: true,
+      echoCancellation: true,
+      autoGainControl: true
     }
   }
 }

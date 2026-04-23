@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ChatMessage, UserProfile } from '@shared/types'
-import { ACCENT_TO_LANG, ACCENT_TO_PERSONA_NAME, findCharacter } from '@shared/constants'
+import { ACCENT_TO_LANG, ACCENT_TO_PERSONA_NAME, resolveCharacter } from '@shared/constants'
 import { useAppStore } from '../../store/useAppStore'
 import { useAudioLevel } from '../../hooks/useAudioLevel'
 import { useChatStream } from '../../hooks/useChatStream'
@@ -9,6 +9,7 @@ import { useSTT } from '../../hooks/stt'
 import { useTTS } from '../../hooks/tts'
 import { buildSystemPrompt } from '../../services/prompts'
 import { cn } from '../../lib/classnames'
+import { micPrefsFromSettings } from '../../lib/audio'
 import VoiceOrb, { type CallState } from './components/VoiceOrb'
 import WaveVisualizer from './components/WaveVisualizer'
 import CallControls from './sections/CallControls'
@@ -81,7 +82,14 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
     voiceURI: profile.settings.voiceURI
   })
 
-  const { streaming, send } = useChatStream(model)
+  const { streaming, send, abort: abortChat } = useChatStream(model)
+
+  // Barge-in: the instant STT picks up speech, silence the AI and stop the
+  // LLM from burning CPU finishing a turn the user has already interrupted.
+  const handleBargeIn = useCallback((): void => {
+    cancel()
+    abortChat()
+  }, [cancel, abortChat])
 
   const historyRef = useRef<ChatMessage[]>([])
 
@@ -121,12 +129,16 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
   const ollamaReady = !!ollama?.running && ollama.models.length > 0
   const micEnabled = !muted && !paused && ollamaReady
 
+  const micPrefs = micPrefsFromSettings(profile.settings)
+
   const stt = useSTT({
     engine: profile.settings.sttEngine,
     mode: 'always-on',
     lang: ACCENT_TO_LANG[profile.settings.accent],
     whisperModel: profile.settings.whisperModel,
     enabled: micEnabled,
+    micPrefs,
+    onSpeechStart: handleBargeIn,
     onFinal: (text) => {
       void handleTurn(text)
     }
@@ -140,7 +152,11 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
   }, [micEnabled])
 
   // Mic-level for the voice orb — only when mic is hot
-  const micLevel = useAudioLevel({ enabled: micEnabled && stt.state.listening, fps: 30 })
+  const micLevel = useAudioLevel({
+    enabled: micEnabled && stt.state.listening,
+    fps: 30,
+    micPrefs
+  })
 
   const callState = deriveCallState({
     muted,
@@ -157,14 +173,15 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
     return 0.05
   }, [speaking, currentVisemeWeight, streaming, stt.state.listening, micLevel])
 
-  const character = findCharacter(profile.settings.characterId)
+  const character = resolveCharacter(profile, profile.settings.characterId)
   const displayName = character?.name ?? ACCENT_TO_PERSONA_NAME[profile.settings.accent]
 
   const endCall = useCallback((): void => {
     cancel()
+    abortChat()
     void stt.stop()
     navigate('/speaking')
-  }, [cancel, stt, navigate])
+  }, [cancel, abortChat, stt, navigate])
 
   // Esc to end the call
   useEffect(() => {
@@ -179,6 +196,7 @@ function CallPageInner({ profile, rec, ollama }: InnerProps): JSX.Element {
   useEffect(() => {
     return () => {
       cancel()
+      abortChat()
       void stt.stop()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -12,6 +12,7 @@ import { useSTT } from '../../hooks/stt'
 import { useTTS } from '../../hooks/tts'
 import { useChatStream } from '../../hooks/useChatStream'
 import { useWhisperModelLoader } from '../../hooks/useWhisperModelLoader'
+import { micPrefsFromSettings } from '../../lib/audio'
 import { ProgressBar } from '../../components/ui'
 import type { AvatarEmotion, AvatarMode } from '../../components/avatar'
 import SpeakingHeader from './sections/SpeakingHeader'
@@ -94,7 +95,7 @@ function SpeakingPageInner({
     rate: profile.settings.ttsSpeed,
     voiceURI: profile.settings.voiceURI
   })
-  const { streaming, error: chatError, send } = useChatStream(model)
+  const { streaming, error: chatError, send, abort: abortChat } = useChatStream(model)
 
   const { turns, handleUserTurn } = useTurnHandler({
     profile,
@@ -109,6 +110,12 @@ function SpeakingPageInner({
     mode: micMode,
     lang: ACCENT_TO_LANG[accent],
     whisperModel: profile.settings.whisperModel,
+    micPrefs: micPrefsFromSettings(profile.settings),
+    onSpeechStart: () => {
+      // Barge-in: user started talking, silence the reply and stop the LLM.
+      if (speaking) cancel()
+      abortChat()
+    },
     onFinal: (transcript) => {
       if (speaking) cancel()
       void handleUserTurn(transcript)
@@ -135,6 +142,7 @@ function SpeakingPageInner({
     return () => {
       void stt.stop()
       cancel()
+      abortChat()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

@@ -12,7 +12,10 @@ export interface OllamaBridge {
   status: () => Promise<OllamaStatus>
   pull: (tag: string) => Promise<{ ok: boolean }>
   onPullProgress: (listener: (p: PullProgressPayload) => void) => () => void
-  chatStream: (payload: ChatStreamRequest) => Promise<{ ok: boolean; error?: string }>
+  chatStream: (
+    payload: ChatStreamRequest
+  ) => Promise<{ ok: boolean; error?: string; aborted?: boolean }>
+  chatStreamAbort: (id: string) => Promise<{ aborted: boolean }>
   onChatStreamChunk: (listener: (chunk: ChatStreamChunk) => void) => () => void
 }
 
@@ -27,5 +30,6 @@ export const ollamaBridge: OllamaBridge = {
   pull: (tag) => ipcRenderer.invoke(OLLAMA_CHANNELS.PULL, tag),
   onPullProgress: (listener) => subscribe(OLLAMA_CHANNELS.PULL_PROGRESS, listener),
   chatStream: (payload) => ipcRenderer.invoke(OLLAMA_CHANNELS.CHAT_STREAM, payload),
+  chatStreamAbort: (id) => ipcRenderer.invoke(OLLAMA_CHANNELS.CHAT_STREAM_ABORT, id),
   onChatStreamChunk: (listener) => subscribe(OLLAMA_CHANNELS.CHAT_STREAM_CHUNK, listener)
 }

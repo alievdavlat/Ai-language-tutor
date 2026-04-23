@@ -17,7 +17,8 @@ export function useSTT(config: UseSTTConfig): STTController {
     lang: config.lang,
     enabled: config.engine === 'web-speech' && config.enabled !== false,
     onFinal: config.onFinal,
-    onInterim: config.onInterim
+    onInterim: config.onInterim,
+    onSpeechStart: config.onSpeechStart
   })
 
   const whisper = useWhisperSTT({
@@ -26,7 +27,9 @@ export function useSTT(config: UseSTTConfig): STTController {
     language: 'en',
     enabled: config.engine === 'whisper-local' && config.enabled !== false,
     onFinal: config.onFinal,
-    onInterim: config.onInterim
+    onInterim: config.onInterim,
+    onSpeechStart: config.onSpeechStart,
+    micPrefs: config.micPrefs
   })
 
   return config.engine === 'whisper-local' ? whisper : webSpeech

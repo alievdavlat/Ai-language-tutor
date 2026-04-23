@@ -48,6 +48,10 @@ export function useWebSpeechSTT(opts: WebSpeechOptions): STTController {
       setState((prev) => ({ ...prev, listening: true, error: null }))
     }
 
+    recognition.onspeechstart = () => {
+      optsRef.current.onSpeechStart?.()
+    }
+
     recognition.onresult = (event) => {
       let interim = ''
       let final = ''
