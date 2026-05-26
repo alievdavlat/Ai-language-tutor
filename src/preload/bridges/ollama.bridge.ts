@@ -10,8 +10,11 @@ export interface PullProgressPayload {
 
 export interface OllamaBridge {
   status: () => Promise<OllamaStatus>
+  start: () => Promise<{ running: boolean; status: OllamaStatus }>
   pull: (tag: string) => Promise<{ ok: boolean }>
+  autoPull: (tag: string) => Promise<{ ok: boolean; error?: string }>
   onPullProgress: (listener: (p: PullProgressPayload) => void) => () => void
+  onAutoPullProgress: (listener: (p: PullProgressPayload) => void) => () => void
   chatStream: (
     payload: ChatStreamRequest
   ) => Promise<{ ok: boolean; error?: string; aborted?: boolean }>
@@ -27,8 +30,11 @@ function subscribe<T>(channel: string, listener: (payload: T) => void): () => vo
 
 export const ollamaBridge: OllamaBridge = {
   status: () => ipcRenderer.invoke(OLLAMA_CHANNELS.STATUS),
+  start: () => ipcRenderer.invoke(OLLAMA_CHANNELS.START),
   pull: (tag) => ipcRenderer.invoke(OLLAMA_CHANNELS.PULL, tag),
+  autoPull: (tag) => ipcRenderer.invoke(OLLAMA_CHANNELS.AUTO_PULL, tag),
   onPullProgress: (listener) => subscribe(OLLAMA_CHANNELS.PULL_PROGRESS, listener),
+  onAutoPullProgress: (listener) => subscribe(OLLAMA_CHANNELS.AUTO_PULL_PROGRESS, listener),
   chatStream: (payload) => ipcRenderer.invoke(OLLAMA_CHANNELS.CHAT_STREAM, payload),
   chatStreamAbort: (id) => ipcRenderer.invoke(OLLAMA_CHANNELS.CHAT_STREAM_ABORT, id),
   onChatStreamChunk: (listener) => subscribe(OLLAMA_CHANNELS.CHAT_STREAM_CHUNK, listener)

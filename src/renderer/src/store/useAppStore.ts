@@ -6,6 +6,13 @@ import type {
   UserProfile
 } from '@shared/types'
 
+export type AutoSetupPhase = null | 'starting' | 'pulling' | 'ready' | 'failed'
+
+export interface AutoSetupState {
+  phase: AutoSetupPhase
+  pullPct: number
+}
+
 interface AppState {
   booted: boolean
   bootError: string | null
@@ -13,6 +20,7 @@ interface AppState {
   rec: ModelRecommendation | null
   ollama: OllamaStatus | null
   profile: UserProfile | null
+  autoSetup: AutoSetupState
 
   setProfile: (profile: UserProfile | null) => void
   bootstrap: () => Promise<void>
@@ -39,6 +47,56 @@ function hasApi(): boolean {
   return typeof window !== 'undefined' && !!window.api
 }
 
+/**
+ * Silently start Ollama and pull the recommended model if needed.
+ * Called after the app boots — never blocks the UI.
+ */
+async function runAutoSetup(
+  rec: ModelRecommendation | null,
+  initial: OllamaStatus,
+  update: (patch: Partial<AppState>) => void
+): Promise<void> {
+  if (!rec) return
+  let current = initial
+
+  // Step 1: Start Ollama if installed but not running
+  if (!current.running) {
+    update({ autoSetup: { phase: 'starting', pullPct: 0 } })
+    const result = await safely('ollama.start', () => window.api.ollama.start())
+    if (result?.running) {
+      current = result.status
+      update({ ollama: current })
+    } else {
+      update({ autoSetup: { phase: 'failed', pullPct: 0 } })
+      return
+    }
+  }
+
+  // Step 2: Pull the recommended model if not already downloaded
+  if (!current.models.includes(rec.llm.tag)) {
+    update({ autoSetup: { phase: 'pulling', pullPct: 0 } })
+
+    const unsub = window.api.ollama.onAutoPullProgress((p) => {
+      update({ autoSetup: { phase: 'pulling', pullPct: p.pct ?? 0 } })
+    })
+
+    const pullResult = await safely('ollama.autoPull', () =>
+      window.api.ollama.autoPull(rec.llm.tag)
+    )
+    unsub()
+
+    if (pullResult?.ok) {
+      const fresh = await safely('ollama.status', () => window.api.ollama.status())
+      if (fresh) update({ ollama: fresh })
+      update({ autoSetup: { phase: 'ready', pullPct: 100 } })
+    } else {
+      update({ autoSetup: { phase: 'failed', pullPct: 0 } })
+    }
+  } else {
+    update({ autoSetup: { phase: 'ready', pullPct: 100 } })
+  }
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   booted: false,
   bootError: null,
@@ -46,6 +104,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   rec: null,
   ollama: null,
   profile: null,
+  autoSetup: { phase: null, pullPct: 0 },
 
   setProfile: (profile) => set({ profile }),
 
@@ -60,20 +119,26 @@ export const useAppStore = create<AppState>((set, get) => ({
       return
     }
 
-    const [recResult, ollama, profile] = await Promise.all([
+    const [recResult, ollamaStatus, profile] = await Promise.all([
       safely('hardware.recommend', () => window.api.hardware.recommend()),
       safely('ollama.status', () => window.api.ollama.status()),
       safely('profile.load', () => window.api.profile.load())
     ])
 
+    const ollama = ollamaStatus ?? FALLBACK_OLLAMA
+    const rec = recResult?.rec ?? null
+
     set({
       booted: true,
       bootError: null,
       hw: recResult?.hw ?? null,
-      rec: recResult?.rec ?? null,
-      ollama: ollama ?? FALLBACK_OLLAMA,
+      rec,
+      ollama,
       profile: profile ?? null
     })
+
+    // Auto-setup runs in the background after the UI is painted.
+    void runAutoSetup(rec, ollama, set)
   },
 
   refreshOllama: async () => {

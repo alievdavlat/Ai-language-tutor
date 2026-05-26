@@ -5,8 +5,11 @@ export const HARDWARE_CHANNELS = {
 
 export const OLLAMA_CHANNELS = {
   STATUS: 'ollama:status',
+  START: 'ollama:start',
   PULL: 'ollama:pull',
   PULL_PROGRESS: 'ollama:pull-progress',
+  AUTO_PULL: 'ollama:auto-pull',
+  AUTO_PULL_PROGRESS: 'ollama:auto-pull-progress',
   CHAT_STREAM: 'ollama:chat-stream',
   CHAT_STREAM_CHUNK: 'ollama:chat-stream-chunk',
   CHAT_STREAM_ABORT: 'ollama:chat-stream-abort'
