@@ -45,7 +45,7 @@ export default function SpeakingHeader({
           disabled={!callEnabled}
           title="Enter fullscreen voice call"
         >
-          📞 Call
+          Voice call
         </Button>
         <div className="inline-flex items-center gap-1 p-1 rounded-pill bg-white/[0.04] border border-white/10">
           <Chip

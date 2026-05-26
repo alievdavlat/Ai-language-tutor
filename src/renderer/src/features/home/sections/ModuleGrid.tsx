@@ -3,19 +3,20 @@ import GradientCard, { type GradientTone } from '../../../components/ui/Gradient
 import IconBubble from '../../../components/ui/IconBubble'
 import { cn } from '../../../lib/classnames'
 
-interface ModuleCardProps {
+// ─── Active module card (large) ───────────────────────────────────────────────
+interface ActiveCardProps {
   title: string
   description: string
   icon: string
   tone: GradientTone
   cta: string
-  ctaTo?: string
+  ctaTo: string
   disabled?: boolean
+  disabledReason?: string
   badge?: string
-  progress?: number // 0..1
 }
 
-function ModuleCard({
+function ActiveCard({
   title,
   description,
   icon,
@@ -23,21 +24,21 @@ function ModuleCard({
   cta,
   ctaTo,
   disabled,
-  badge,
-  progress
-}: ModuleCardProps): JSX.Element {
+  disabledReason,
+  badge
+}: ActiveCardProps): JSX.Element {
   const navigate = useNavigate()
-  const pct = progress !== undefined ? Math.round(progress * 100) : null
 
   return (
     <GradientCard
       tone={tone}
       className={cn(
-        'flex flex-col gap-4 min-h-[220px] transition',
-        !disabled && 'cursor-pointer hover:-translate-y-1 hover:brightness-110'
+        'flex flex-col gap-4 min-h-[200px] transition-all duration-200',
+        !disabled && 'cursor-pointer hover:-translate-y-1 hover:shadow-lg hover:brightness-110',
+        disabled && 'opacity-80'
       )}
       onClick={() => {
-        if (disabled || !ctaTo) return
+        if (disabled) return
         navigate(ctaTo)
       }}
     >
@@ -46,45 +47,73 @@ function ModuleCard({
           {icon}
         </IconBubble>
         {badge && (
-          <span className="rounded-pill bg-white/20 text-white text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1">
+          <span className="rounded-full bg-white/25 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1">
             {badge}
           </span>
         )}
       </div>
 
       <div className="flex-1">
-        <h3 className="text-xl font-bold mb-1">{title}</h3>
-        <p className="text-sm text-white/80 leading-relaxed">{description}</p>
+        <h3 className="text-xl font-bold mb-1.5">{title}</h3>
+        <p className="text-sm text-white/75 leading-relaxed">{description}</p>
       </div>
-
-      {pct !== null && (
-        <div>
-          <div className="flex items-center justify-between text-xs text-white/80 mb-1">
-            <span>Progress</span>
-            <span className="font-semibold">{pct}%</span>
-          </div>
-          <div className="h-1.5 rounded-pill bg-white/20 overflow-hidden">
-            <div
-              className="h-full rounded-pill bg-white"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-        </div>
-      )}
 
       <button
         className={cn(
-          'mt-auto rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm font-semibold py-2.5 transition',
-          disabled && 'bg-white/10 text-white/60 cursor-not-allowed'
+          'rounded-xl text-sm font-semibold py-2.5 transition-all duration-150',
+          disabled
+            ? 'bg-white/10 text-white/50 cursor-not-allowed'
+            : 'bg-white/20 hover:bg-white/30 text-white'
         )}
         disabled={disabled}
       >
-        {cta}
+        {disabled && disabledReason ? `⚠ ${disabledReason}` : cta}
       </button>
     </GradientCard>
   )
 }
 
+// ─── Coming-soon chip row ─────────────────────────────────────────────────────
+interface ComingSoonItem {
+  title: string
+  icon: string
+  phase: string
+}
+
+const COMING_SOON: ComingSoonItem[] = [
+  { title: 'Vocabulary', icon: '📚', phase: 'Phase 4' },
+  { title: 'Grammar', icon: '✍️', phase: 'Phase 5' },
+  { title: 'Listening', icon: '🎧', phase: 'Phase 9' },
+  { title: 'Reading', icon: '📖', phase: 'Phase 9' },
+  { title: 'Writing', icon: '✏️', phase: 'Phase 9' }
+]
+
+function ComingSoonStrip(): JSX.Element {
+  return (
+    <div className="mt-2">
+      <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">
+        Coming soon
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {COMING_SOON.map((item) => (
+          <div
+            key={item.title}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.07] text-slate-500 text-sm"
+            title={item.phase}
+          >
+            <span className="text-base opacity-60">{item.icon}</span>
+            <span className="font-medium">{item.title}</span>
+            <span className="text-[10px] text-slate-600 font-semibold uppercase tracking-wide">
+              {item.phase}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
 interface ModuleGridProps {
   speakingEnabled: boolean
   speakingDisabledReason: string
@@ -95,74 +124,35 @@ export default function ModuleGrid({
   speakingDisabledReason
 }: ModuleGridProps): JSX.Element {
   return (
-    <section className="mb-8">
-      <h2 className="section-title">Your modules</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <ModuleCard
-          title="Voice call"
-          description="Fullscreen voice conversation — like calling a friend. Pulsing orb, no chat, just talk."
+    <section className="mb-6">
+      <h2 className="section-title mb-4">Continue learning</h2>
+
+      {/* Active modules — 2 big cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <ActiveCard
+          title="Voice Call"
+          description="Fullscreen conversation — just talk. Pulsing orb, real-time AI, zero distractions."
           icon="📞"
           tone="speak"
-          cta={speakingEnabled ? 'Start call →' : speakingDisabledReason}
+          cta="Start call →"
           ctaTo="/speaking/call"
           disabled={!speakingEnabled}
-          badge="NEW"
+          disabledReason={speakingDisabledReason}
+          badge="Live"
         />
-        <ModuleCard
-          title="Text + voice chat"
-          description="Classic chat view with text bubbles, grammar corrections and avatar lip-sync."
+        <ActiveCard
+          title="Chat + Voice"
+          description="Text bubbles with live grammar corrections and avatar lip-sync. Type or speak."
           icon="💬"
           tone="brand"
-          cta={speakingEnabled ? 'Open chat →' : speakingDisabledReason}
+          cta="Open chat →"
           ctaTo="/speaking"
           disabled={!speakingEnabled}
-        />
-        <ModuleCard
-          title="Vocabulary"
-          description="Review flashcards with spaced repetition and build a personal word list."
-          icon="📚"
-          tone="vocab"
-          cta="Coming in Phase 4"
-          disabled
-          badge="Soon"
-        />
-        <ModuleCard
-          title="Grammar"
-          description="Structured lessons, Duolingo-style skill tree, Murphy-style units."
-          icon="✍️"
-          tone="grammar"
-          cta="Coming in Phase 5"
-          disabled
-          badge="Soon"
-        />
-        <ModuleCard
-          title="Listening"
-          description="Podcasts + audio library with word-tap lookup and dictation mode."
-          icon="🎧"
-          tone="listen"
-          cta="Coming in Phase 9"
-          disabled
-          badge="Soon"
-        />
-        <ModuleCard
-          title="Reading"
-          description="Graded articles, double-click word popups, AI-graded summaries."
-          icon="📖"
-          tone="read"
-          cta="Coming in Phase 9"
-          disabled
-          badge="Soon"
-        />
-        <ModuleCard
-          title="Writing"
-          description="IELTS/TOEFL essay scoring with 4-criterion rubric."
-          icon="✏️"
-          tone="write"
-          cta="Coming in Phase 9"
-          disabled
-          badge="Soon"
+          disabledReason={speakingDisabledReason}
         />
       </div>
+
+      <ComingSoonStrip />
     </section>
   )
 }

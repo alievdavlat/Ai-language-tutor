@@ -11,25 +11,26 @@ export default function HomePage(): JSX.Element {
   const ollama = useAppStore((s) => s.ollama)
 
   const speakingEnabled = !!ollama?.running && (ollama?.models.length ?? 0) > 0
-  const speakingDisabledReason = !ollama?.running ? 'Ollama not running' : 'No model loaded'
+  const speakingDisabledReason = !ollama?.running ? 'Ollama offline' : 'No model loaded'
 
   if (!profile) {
     return (
-      <div className="h-full flex items-center justify-center text-slate-400">
-        Loading profile…
+      <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+        Loading…
       </div>
     )
   }
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-4xl mx-auto px-6 py-7 flex flex-col min-h-full">
         <GreetingHeader profile={profile} />
         <StatsRow profile={profile} />
         <ModuleGrid
           speakingEnabled={speakingEnabled}
           speakingDisabledReason={speakingDisabledReason}
         />
+        {/* System status — collapsed by default, unobtrusive */}
         <SystemStatusStrip hw={hw} rec={rec} ollama={ollama} />
       </div>
     </div>

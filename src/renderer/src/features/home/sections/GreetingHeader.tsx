@@ -13,20 +13,34 @@ function timeGreeting(): string {
   return 'Good evening'
 }
 
+/** Motivational tip shown under the greeting — cycles by day-of-year */
+const DAILY_TIPS = [
+  'Even 10 minutes a day builds fluency.',
+  'Speak out loud — it trains muscle memory.',
+  'Mistakes are data, not failures.',
+  'Consistent beats intense, every time.',
+  'Try a new topic today to stretch your vocab.',
+  'Record yourself once a week — you\'ll be surprised.',
+  'The best time to practice is right now.'
+]
+
+function todayTip(): string {
+  const day = Math.floor(Date.now() / 86_400_000)
+  return DAILY_TIPS[day % DAILY_TIPS.length]
+}
+
 export default function GreetingHeader({ profile }: GreetingHeaderProps): JSX.Element {
   const name = profile.name ?? 'friend'
+
   return (
-    <header className="flex items-center justify-between gap-4 mb-8 animate-fade-in">
-      <div className="flex items-center gap-4">
-        <AvatarCircle name={name} size="lg" />
-        <div>
-          <p className="text-sm text-slate-400">{timeGreeting()} 👋</p>
-          <h1 className="page-title">{name}</h1>
-        </div>
-      </div>
-      <div className="hidden sm:block text-right">
-        <p className="text-sm text-slate-400">Your Smart AI</p>
-        <p className="text-lg font-semibold">Language Coach</p>
+    <header className="flex items-center gap-4 mb-6 animate-fade-in">
+      <AvatarCircle name={name} size="lg" />
+      <div className="min-w-0">
+        <p className="text-xs text-slate-400 mb-0.5">
+          {timeGreeting()} 👋
+        </p>
+        <h1 className="page-title leading-tight truncate">{name}</h1>
+        <p className="text-xs text-slate-500 mt-1 italic truncate">💡 {todayTip()}</p>
       </div>
     </header>
   )
