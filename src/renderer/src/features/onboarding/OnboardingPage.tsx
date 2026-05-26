@@ -24,7 +24,7 @@ const FALLBACK_PLACEMENT: PlacementResult = {
   level: 'A2',
   score: 0,
   weakAreas: [],
-  detail: 'Placement scored without LLM refinement (Ollama not available).'
+  detail: 'Level estimated from your answers.'
 }
 
 export default function OnboardingPage(): JSX.Element {
@@ -84,12 +84,9 @@ export default function OnboardingPage(): JSX.Element {
 
   return (
     <div className="min-h-full p-8 flex flex-col">
-      <div className="max-w-3xl mx-auto w-full">
-        <div className="mb-6">
+      <div className="max-w-2xl mx-auto w-full">
+        <div className="mb-8">
           <ProgressBar value={flow.progressPct} />
-          <p className="text-xs text-slate-500 mt-2">
-            Step {flow.index + 1} of {flow.total}
-          </p>
         </div>
 
         {flow.step === 'welcome' && (
@@ -129,7 +126,10 @@ export default function OnboardingPage(): JSX.Element {
           />
         )}
         {flow.step === 'placement' && !placementQuestions && (
-          <Card className="text-center text-slate-400">Loading placement…</Card>
+          <Card className="text-center text-slate-400 py-12">
+            <div className="text-3xl mb-3">📝</div>
+            <p>Preparing your placement test…</p>
+          </Card>
         )}
         {flow.step === 'complete' && placementResult && (
           <CompleteStep

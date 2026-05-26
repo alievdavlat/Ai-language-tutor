@@ -77,35 +77,30 @@ function ActiveCard({
 interface ComingSoonItem {
   title: string
   icon: string
-  phase: string
 }
 
 const COMING_SOON: ComingSoonItem[] = [
-  { title: 'Vocabulary', icon: '📚', phase: 'Phase 4' },
-  { title: 'Grammar', icon: '✍️', phase: 'Phase 5' },
-  { title: 'Listening', icon: '🎧', phase: 'Phase 9' },
-  { title: 'Reading', icon: '📖', phase: 'Phase 9' },
-  { title: 'Writing', icon: '✏️', phase: 'Phase 9' }
+  { title: 'Vocabulary', icon: '📚' },
+  { title: 'Grammar', icon: '✍️' },
+  { title: 'Listening', icon: '🎧' },
+  { title: 'Reading', icon: '📖' },
+  { title: 'Writing', icon: '✏️' }
 ]
 
 function ComingSoonStrip(): JSX.Element {
   return (
     <div className="mt-2">
       <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">
-        Coming soon
+        More modules coming soon
       </p>
       <div className="flex flex-wrap gap-2">
         {COMING_SOON.map((item) => (
           <div
             key={item.title}
             className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.07] text-slate-500 text-sm"
-            title={item.phase}
           >
             <span className="text-base opacity-60">{item.icon}</span>
             <span className="font-medium">{item.title}</span>
-            <span className="text-[10px] text-slate-600 font-semibold uppercase tracking-wide">
-              {item.phase}
-            </span>
           </div>
         ))}
       </div>

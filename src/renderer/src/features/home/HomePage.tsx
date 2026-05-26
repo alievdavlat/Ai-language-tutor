@@ -2,16 +2,13 @@ import { useAppStore } from '../../store/useAppStore'
 import GreetingHeader from './sections/GreetingHeader'
 import StatsRow from './sections/StatsRow'
 import ModuleGrid from './sections/ModuleGrid'
-import SystemStatusStrip from './sections/SystemStatusStrip'
 
 export default function HomePage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
-  const hw = useAppStore((s) => s.hw)
-  const rec = useAppStore((s) => s.rec)
   const ollama = useAppStore((s) => s.ollama)
 
   const speakingEnabled = !!ollama?.running && (ollama?.models.length ?? 0) > 0
-  const speakingDisabledReason = !ollama?.running ? 'Ollama offline' : 'No model loaded'
+  const speakingDisabledReason = !ollama?.running ? 'Setting up AI…' : 'Loading AI model…'
 
   if (!profile) {
     return (
@@ -23,15 +20,13 @@ export default function HomePage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-4xl mx-auto px-6 py-7 flex flex-col min-h-full">
+      <div className="px-6 py-7 flex flex-col min-h-full max-w-5xl">
         <GreetingHeader profile={profile} />
         <StatsRow profile={profile} />
         <ModuleGrid
           speakingEnabled={speakingEnabled}
           speakingDisabledReason={speakingDisabledReason}
         />
-        {/* System status — collapsed by default, unobtrusive */}
-        <SystemStatusStrip hw={hw} rec={rec} ollama={ollama} />
       </div>
     </div>
   )

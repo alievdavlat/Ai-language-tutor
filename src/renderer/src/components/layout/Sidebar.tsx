@@ -3,7 +3,7 @@ import type { UserProfile } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import AvatarCircle from '../ui/AvatarCircle'
 
-// ─── SVG icons (inline, zero deps) ───────────────────────────────────────────
+// ─── SVG icons ───────────────────────────────────────────────────────────────
 function IconHome({ className }: { className?: string }): JSX.Element {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
@@ -52,16 +52,32 @@ function IconGear({ className }: { className?: string }): JSX.Element {
   )
 }
 
-// ─── Nav items config ─────────────────────────────────────────────────────────
+function IconChevronLeft({ className }: { className?: string }): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
+function IconChevronRight({ className }: { className?: string }): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
+// ─── Nav config ───────────────────────────────────────────────────────────────
 const iconCls = 'w-[18px] h-[18px] shrink-0'
 
 const PRIMARY_ITEMS = [
-  { to: '/home', label: 'Home', Icon: IconHome, enabled: true },
-  { to: '/speaking', label: 'Speaking', Icon: IconMic, enabled: true }
+  { to: '/home', label: 'Home', Icon: IconHome },
+  { to: '/speaking', label: 'Practice', Icon: IconMic }
 ] as const
 
 const BOTTOM_ITEMS = [
-  { to: '/settings', label: 'Settings', Icon: IconGear, enabled: true }
+  { to: '/settings', label: 'Settings', Icon: IconGear }
 ] as const
 
 const LOCKED_ITEMS = [
@@ -74,18 +90,22 @@ const LOCKED_ITEMS = [
 function NavItem({
   to,
   label,
-  Icon
+  Icon,
+  collapsed
 }: {
   to: string
   label: string
   Icon: (p: { className?: string }) => JSX.Element
+  collapsed: boolean
 }): JSX.Element {
   return (
     <NavLink
       to={to}
+      title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
+          'flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-150',
+          collapsed ? 'justify-center px-0 py-2.5 w-full' : 'px-3 py-2.5',
           isActive
             ? 'bg-brand-500/15 text-brand-100 ring-1 ring-brand-400/30'
             : 'text-slate-300 hover:bg-white/5 hover:text-white'
@@ -93,26 +113,38 @@ function NavItem({
       }
     >
       <Icon className={iconCls} />
-      <span>{label}</span>
+      {!collapsed && <span>{label}</span>}
     </NavLink>
   )
 }
 
-// ─── Locked item (tiny, unobtrusive) ─────────────────────────────────────────
+// ─── LockedItem ───────────────────────────────────────────────────────────────
 function LockedItem({
   label,
-  Icon
+  Icon,
+  collapsed
 }: {
   label: string
   Icon: (p: { className?: string }) => JSX.Element
+  collapsed: boolean
 }): JSX.Element {
   return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-slate-600 cursor-not-allowed select-none">
-      <Icon className="w-4 h-4 shrink-0 opacity-40" />
-      <span className="opacity-50">{label}</span>
-      <span className="ml-auto text-[9px] uppercase tracking-wider text-slate-700 font-semibold">
-        soon
-      </span>
+    <div
+      title={collapsed ? `${label} (coming soon)` : undefined}
+      className={cn(
+        'flex items-center gap-3 rounded-xl text-xs text-slate-600 cursor-not-allowed select-none',
+        collapsed ? 'justify-center px-0 py-2 w-full' : 'px-3 py-2'
+      )}
+    >
+      <Icon className="w-4 h-4 shrink-0 opacity-30" />
+      {!collapsed && (
+        <>
+          <span className="opacity-40">{label}</span>
+          <span className="ml-auto text-[9px] uppercase tracking-wider text-slate-700 font-semibold">
+            soon
+          </span>
+        </>
+      )}
     </div>
   )
 }
@@ -120,58 +152,110 @@ function LockedItem({
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 interface SidebarProps {
   profile: UserProfile | null
+  collapsed: boolean
+  onToggle: () => void
 }
 
-export default function Sidebar({ profile }: SidebarProps): JSX.Element {
+export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps): JSX.Element {
   return (
-    <aside className="w-56 shrink-0 hidden md:flex flex-col border-r border-canvas-line bg-canvas-soft/60 backdrop-blur-xl">
+    <aside
+      className={cn(
+        'shrink-0 hidden md:flex flex-col border-r border-canvas-line bg-canvas-soft/60 backdrop-blur-xl transition-all duration-200',
+        collapsed ? 'w-14' : 'w-56'
+      )}
+    >
       {/* Logo */}
-      <div className="px-4 pt-5 pb-4">
-        <div className="flex items-center gap-2.5">
+      <div className={cn('pt-5 pb-4', collapsed ? 'px-0 flex justify-center' : 'px-4')}>
+        {collapsed ? (
           <div className="w-8 h-8 rounded-lg bg-grad-brand flex items-center justify-center shadow-glow shrink-0">
             <IconMic className="w-4 h-4 text-white" />
           </div>
-          <div className="leading-tight">
-            <div className="font-bold text-sm tracking-tight text-white">SpeakAI</div>
-            <div className="text-[10px] uppercase tracking-wider text-slate-500">
-              Offline coach
+        ) : (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-grad-brand flex items-center justify-center shadow-glow shrink-0">
+              <IconMic className="w-4 h-4 text-white" />
+            </div>
+            <div className="leading-tight">
+              <div className="font-bold text-sm tracking-tight text-white">SpeakAI</div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500">
+                Your coach
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Main nav */}
-      <nav className="flex-1 px-3 py-1 space-y-0.5">
-        <p className="section-title px-3 mb-2">Learn</p>
+      <nav className={cn('flex-1 py-1 space-y-0.5', collapsed ? 'px-1' : 'px-3')}>
+        {!collapsed && <p className="section-title px-3 mb-2">Learn</p>}
         {PRIMARY_ITEMS.map((item) => (
-          <NavItem key={item.to} to={item.to} label={item.label} Icon={item.Icon} />
+          <NavItem
+            key={item.to}
+            to={item.to}
+            label={item.label}
+            Icon={item.Icon}
+            collapsed={collapsed}
+          />
         ))}
 
-        {/* Locked items — very subdued */}
+        {/* Locked items */}
         <div className="pt-1 mt-1 border-t border-white/[0.04]">
           {LOCKED_ITEMS.map((item) => (
-            <LockedItem key={item.label} label={item.label} Icon={item.Icon} />
+            <LockedItem
+              key={item.label}
+              label={item.label}
+              Icon={item.Icon}
+              collapsed={collapsed}
+            />
           ))}
         </div>
       </nav>
 
-      {/* Bottom: Settings */}
-      <div className="px-3 pb-2 space-y-0.5">
+      {/* Bottom: Settings + toggle */}
+      <div className={cn('pb-2 space-y-0.5', collapsed ? 'px-1' : 'px-3')}>
         {BOTTOM_ITEMS.map((item) => (
-          <NavItem key={item.to} to={item.to} label={item.label} Icon={item.Icon} />
+          <NavItem
+            key={item.to}
+            to={item.to}
+            label={item.label}
+            Icon={item.Icon}
+            collapsed={collapsed}
+          />
         ))}
+
+        {/* Collapse toggle */}
+        <button
+          onClick={onToggle}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className={cn(
+            'flex items-center gap-3 rounded-xl text-xs text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all duration-150 w-full',
+            collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
+          )}
+        >
+          {collapsed ? (
+            <IconChevronRight className="w-4 h-4 shrink-0" />
+          ) : (
+            <>
+              <IconChevronLeft className="w-4 h-4 shrink-0" />
+              <span>Collapse</span>
+            </>
+          )}
+        </button>
       </div>
 
-      {/* Profile card */}
-      {profile && (
+      {/* Profile card — hidden when collapsed */}
+      {!collapsed && profile && (
         <div className="mx-3 mb-4 p-3 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center gap-3">
           <AvatarCircle name={profile.name ?? 'User'} size="md" />
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate text-white">{profile.name ?? 'You'}</p>
-            <p className="text-[11px] text-slate-400 truncate">
-              {profile.level} · {profile.settings.performanceMode}
-            </p>
+            <p className="text-[11px] text-slate-400 truncate">Level {profile.level}</p>
           </div>
+        </div>
+      )}
+      {collapsed && profile && (
+        <div className="mx-auto mb-4">
+          <AvatarCircle name={profile.name ?? 'User'} size="sm" />
         </div>
       )}
     </aside>

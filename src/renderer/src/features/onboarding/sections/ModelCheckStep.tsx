@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '../../../store/useAppStore'
-import { Button, Card, ProgressBar, StatusBadge } from '../../../components/ui'
+import { Button, Card, ProgressBar } from '../../../components/ui'
 
 interface ModelCheckStepProps {
   onReady: () => void
@@ -32,10 +32,11 @@ export default function ModelCheckStep({
     }
   }, [])
 
-  const ollamaRunning = !!ollama?.running
+  const aiRunning = !!ollama?.running
   const hasModel = !!rec && !!ollama?.models.includes(rec.llm.tag)
+  const allReady = aiRunning && hasModel
 
-  const handlePull = async (): Promise<void> => {
+  const handleInstall = async (): Promise<void> => {
     if (!rec) return
     setPulling(true)
     setError(null)
@@ -51,64 +52,89 @@ export default function ModelCheckStep({
 
   return (
     <Card>
-      <h2 className="text-2xl font-bold mb-2">Local AI engine</h2>
-      <p className="text-slate-400 mb-6 text-sm">
-        This app runs AI entirely on your computer. No tokens, no cloud, your data stays private.
+      <div className="text-4xl mb-4 text-center">🧠</div>
+      <h2 className="text-2xl font-bold mb-2 text-center">Setting up your AI coach</h2>
+      <p className="text-slate-400 mb-6 text-sm text-center max-w-sm mx-auto">
+        SpeakAI runs entirely on your computer — no internet needed during practice, no
+        data sent anywhere.
       </p>
 
-      <div className="rounded-xl bg-white/5 border border-white/10 p-4 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">Ollama service</span>
-          <StatusBadge tone={ollamaRunning ? 'green' : 'amber'}>
-            {ollamaRunning ? 'running' : 'not running'}
-          </StatusBadge>
+      {/* Status row */}
+      <div className="space-y-3 mb-6">
+        <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-4">
+          <div className={[
+            'w-2.5 h-2.5 rounded-full shrink-0',
+            aiRunning ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'
+          ].join(' ')} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">
+              {aiRunning ? 'AI engine ready' : 'AI engine not found'}
+            </p>
+            {!aiRunning && (
+              <p className="text-xs text-slate-400 mt-0.5">
+                Install the free{' '}
+                <a
+                  href="https://ollama.com/download"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline text-brand-300 hover:text-brand-200"
+                >
+                  Ollama app
+                </a>{' '}
+                and start it, then click "Re-check" below.
+              </p>
+            )}
+          </div>
         </div>
-        {!ollamaRunning && (
-          <p className="text-xs text-slate-400">
-            Install Ollama from{' '}
-            <a
-              href="https://ollama.com/download"
-              target="_blank"
-              rel="noreferrer"
-              className="underline"
-            >
-              ollama.com/download
-            </a>
-            , then launch it. Click &quot;Re-check&quot; below.
-          </p>
+
+        {rec && (
+          <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-4">
+            <div className={[
+              'w-2.5 h-2.5 rounded-full shrink-0',
+              hasModel ? 'bg-emerald-500' : 'bg-slate-500'
+            ].join(' ')} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">
+                {hasModel
+                  ? `AI language model ready`
+                  : `AI language model not downloaded yet`}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {rec.llm.name} · about {rec.llm.approxRamGB} GB
+              </p>
+            </div>
+            {!hasModel && aiRunning && !pulling && (
+              <Button className="!py-1.5 !px-4 shrink-0" onClick={handleInstall}>
+                Install
+              </Button>
+            )}
+          </div>
         )}
       </div>
 
-      {rec && (
-        <div className="rounded-xl bg-white/5 border border-white/10 p-4 mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Model: {rec.llm.name}</span>
-            <StatusBadge tone={hasModel ? 'green' : 'slate'}>
-              {hasModel ? 'downloaded' : 'not downloaded'}
-            </StatusBadge>
+      {/* Download progress */}
+      {pulling && progress && (
+        <div className="mb-4 rounded-xl bg-brand-500/10 border border-brand-400/20 p-4">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <span className="text-xs text-brand-200">Downloading AI model…</span>
+            <span className="text-xs font-semibold text-brand-300">
+              {progress.pct ? `${progress.pct}%` : '…'}
+            </span>
           </div>
-          <p className="text-xs text-slate-400">
-            Tag: <code>{rec.llm.tag}</code> · ~{rec.llm.approxRamGB} GB
-          </p>
-          {!hasModel && ollamaRunning && (
-            <Button
-              fullWidth
-              className="mt-3"
-              onClick={handlePull}
-              disabled={pulling}
-            >
-              {pulling ? 'Downloading…' : 'Download model'}
-            </Button>
-          )}
-          {pulling && progress && (
-            <div className="mt-3">
-              <ProgressBar value={progress.pct ?? 0} />
-              <p className="text-xs text-slate-500 mt-1">
-                {progress.status} {progress.pct ? `· ${progress.pct}%` : ''}
-              </p>
-            </div>
-          )}
-          {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
+          <ProgressBar value={progress.pct ?? 0} />
+          <p className="text-[11px] text-slate-500 mt-1.5">{progress.status}</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-200">
+          Download failed. Check your internet connection and try again.
+        </div>
+      )}
+
+      {allReady && (
+        <div className="mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-sm text-emerald-200 text-center">
+          ✓ Your AI coach is ready!
         </div>
       )}
 
@@ -120,10 +146,12 @@ export default function ModelCheckStep({
           <Button variant="ghost" onClick={refreshOllama}>
             Re-check
           </Button>
-          <Button variant="ghost" onClick={onSkip}>
-            Skip for now
-          </Button>
-          <Button onClick={onReady} disabled={!ollamaRunning || !hasModel}>
+          {!allReady && (
+            <Button variant="ghost" onClick={onSkip}>
+              Skip for now
+            </Button>
+          )}
+          <Button onClick={onReady} disabled={!allReady}>
             Continue →
           </Button>
         </div>

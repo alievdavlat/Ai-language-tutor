@@ -8,36 +8,67 @@ interface CompleteStepProps {
   onConfirm: (level: CEFRLevel) => void
 }
 
+const CEFR_DESCRIPTIONS: Record<CEFRLevel, string> = {
+  A1: 'Beginner — you know basic words and can introduce yourself.',
+  A2: 'Elementary — you can handle simple conversations on familiar topics.',
+  B1: 'Intermediate — you can manage most everyday situations in English.',
+  B2: 'Upper-intermediate — you can discuss complex topics with confidence.',
+  C1: 'Advanced — you express yourself fluently and spontaneously.',
+  C2: 'Proficient — you understand virtually everything you read and hear.'
+}
+
+const WEAK_AREA_LABELS: Record<string, string> = {
+  'be-verb': 'To be (am/is/are)',
+  'past-simple': 'Past simple tense',
+  'quantifiers': 'Quantifiers',
+  'first-conditional': 'Conditionals',
+  'present-perfect': 'Present perfect',
+  'third-conditional': 'Advanced conditionals',
+  'passive-voice': 'Passive voice',
+  'inversion': 'Inversion / emphasis',
+  'relative-clauses': 'Relative clauses',
+  'articles': 'Articles (a/an/the)',
+  'prepositions': 'Prepositions',
+  'modal-verbs': 'Modal verbs'
+}
+
+function friendlyArea(raw: string): string {
+  return WEAK_AREA_LABELS[raw] ?? raw.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export default function CompleteStep({ result, onConfirm }: CompleteStepProps): JSX.Element {
   const [level, setLevel] = useState<CEFRLevel>(result.level)
 
   return (
     <Card className="text-center">
       <div className="text-6xl mb-4">🎉</div>
-      <h2 className="text-3xl font-bold mb-2">All set!</h2>
-      <p className="text-slate-400 mb-6">
-        Your estimated level is <span className="font-bold text-brand-300">{result.level}</span>
+      <h2 className="text-3xl font-bold mb-2">Your level: {result.level}</h2>
+      <p className="text-slate-400 mb-2 max-w-sm mx-auto text-sm">
+        {CEFR_DESCRIPTIONS[result.level]}
       </p>
 
-      <div className="rounded-xl bg-white/5 border border-white/10 p-4 mb-6 text-left">
-        <p className="text-xs uppercase tracking-wider text-slate-500 mb-2">Details</p>
-        <p className="text-sm text-slate-300">{result.detail}</p>
-        {result.weakAreas.length > 0 && (
-          <div className="mt-3">
-            <p className="text-xs uppercase tracking-wider text-slate-500 mb-2">Focus areas</p>
-            <div className="flex flex-wrap gap-1.5">
-              {result.weakAreas.map((area) => (
-                <span key={area} className="text-xs rounded-full px-2 py-1 bg-white/10">
-                  {area}
-                </span>
-              ))}
-            </div>
+      {result.weakAreas.length > 0 && (
+        <div className="rounded-xl bg-white/[0.04] border border-white/10 p-4 mb-5 text-left max-w-sm mx-auto">
+          <p className="text-xs font-semibold text-slate-400 mb-2">
+            Areas to focus on
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {result.weakAreas.map((area) => (
+              <span
+                key={area}
+                className="text-xs rounded-full px-2.5 py-1 bg-brand-500/15 border border-brand-400/20 text-brand-200"
+              >
+                {friendlyArea(area)}
+              </span>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="mb-6">
-        <p className="text-sm text-slate-400 mb-2">Not quite right? Pick your level:</p>
+      <div className="mb-6 max-w-sm mx-auto">
+        <p className="text-xs text-slate-500 mb-3">
+          Not quite right? Adjust your level:
+        </p>
         <div className="flex gap-2 justify-center flex-wrap">
           {CEFR_ORDER.map((l) => (
             <Chip key={l} selected={level === l} onClick={() => setLevel(l)}>
@@ -47,8 +78,8 @@ export default function CompleteStep({ result, onConfirm }: CompleteStepProps): 
         </div>
       </div>
 
-      <Button fullWidth onClick={() => onConfirm(level)}>
-        Enter the app →
+      <Button fullWidth onClick={() => onConfirm(level)} className="!px-8">
+        Start learning →
       </Button>
     </Card>
   )

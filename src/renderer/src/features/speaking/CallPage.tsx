@@ -268,19 +268,17 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
       {/* Top — minimal call chrome */}
       <div className="relative z-10 text-center w-full max-w-lg px-6">
         <div className="text-xs uppercase tracking-[0.3em] text-slate-500 mb-1">
-          {ollamaReady ? 'Live call' : 'Waiting for Ollama'}
+          {ollamaReady ? 'Live call' : 'Starting up…'}
         </div>
         <div className="text-sm text-slate-400">
-          {profile.settings.accent.toUpperCase()} accent · Level {profile.level}
+          {displayName} · Level {profile.level}
         </div>
 
         {whisperWarming && (
           <div className="mt-4 rounded-xl bg-brand-500/15 border border-brand-400/30 px-4 py-3 text-left">
             <div className="flex items-center justify-between gap-3 mb-1">
               <span className="text-xs text-brand-100">
-                🎧 Loading Whisper <code className="text-brand-200">
-                  {profile.settings.whisperModel}
-                </code> — first time only.
+                Loading speech recognition — one-time download.
               </span>
               <span className="shrink-0 text-xs font-semibold text-brand-100">
                 {Math.round(whisperLoader.progress * 100)}%
@@ -290,13 +288,13 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
             {whisperLoader.error && (
               <div className="mt-2 flex items-center justify-between gap-2">
                 <span className="text-[11px] text-red-300">
-                  ⚠️ {whisperLoader.error}
+                  Could not load speech recognition. Check your internet connection.
                 </span>
                 <button
                   onClick={() => void switchToWebSpeech(whisperLoader.error ?? 'load failed')}
                   className="text-[11px] text-brand-200 underline hover:text-brand-100 shrink-0"
                 >
-                  Use Web Speech
+                  Use alternative
                 </button>
               </div>
             )}
@@ -305,7 +303,7 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
 
         {engineNotice && (
           <div className="mt-3 rounded-xl bg-amber-500/15 border border-amber-400/30 px-4 py-2 text-[11px] text-amber-100">
-            {engineNotice}
+            Switched to browser speech recognition for better compatibility.
           </div>
         )}
       </div>

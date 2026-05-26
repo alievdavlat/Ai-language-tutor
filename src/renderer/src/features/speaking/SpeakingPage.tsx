@@ -25,10 +25,10 @@ function statusLabel(
   streaming: boolean,
   listening: boolean
 ): string {
-  if (speaking) return '🔊 Speaking…'
-  if (streaming) return '💭 Thinking…'
-  if (listening) return '🎤 Listening…'
-  return '💤 Idle'
+  if (speaking) return 'Speaking…'
+  if (streaming) return 'Thinking…'
+  if (listening) return 'Listening…'
+  return 'Ready'
 }
 
 function emotionFor(speaking: boolean, streaming: boolean): AvatarEmotion {
@@ -46,7 +46,7 @@ export default function SpeakingPage(): JSX.Element {
   const [topic, setTopic] = useState('')
 
   if (!profile) {
-    return <div className="h-full flex items-center justify-center text-slate-400">No profile.</div>
+    return <div className="h-full flex items-center justify-center text-slate-400">Loading…</div>
   }
 
   return (
@@ -85,7 +85,6 @@ function SpeakingPageInner({
   onTopicChange
 }: InnerProps): JSX.Element {
   const navigate = useNavigate()
-  // User's explicit choice wins; fall back to the hardware recommendation.
   const model = profile.settings.llmModel || rec?.llm.tag || ''
   const accent = profile.settings.accent
   const micMode: MicMode = profile.settings.micMode
@@ -112,8 +111,6 @@ function SpeakingPageInner({
     whisperModel: profile.settings.whisperModel,
     micPrefs: micPrefsFromSettings(profile.settings),
     onSpeechStart: () => {
-      // Barge-in — user talks while AI is speaking → drop the queued TTS
-      // AND abort the Ollama stream so the model isn't burning CPU.
       if (speaking) cancelCurrent()
       abortChat()
     },
@@ -159,34 +156,35 @@ function SpeakingPageInner({
         callEnabled={ollamaReady}
       />
 
+      {/* AI warming up — user-friendly, no technical details */}
       {!ollamaReady && (
-        <div className="bg-amber-500/20 border-b border-amber-500/30 px-6 py-2 text-xs text-amber-100">
-          ⚠️ Ollama is not running or no model is loaded. Start Ollama and download{' '}
-          <code>{model}</code> to chat.
+        <div className="bg-brand-500/10 border-b border-brand-400/20 px-6 py-2.5 text-xs text-brand-200 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse shrink-0" />
+          <span>AI is starting up — this takes a moment on first launch.</span>
         </div>
       )}
+
+      {/* First-time speech model download */}
       {whisperWarming && (
-        <div className="bg-brand-500/15 border-b border-brand-400/30 px-6 py-2 text-xs text-brand-100">
-          <div className="flex items-center justify-between gap-3 mb-1">
-            <span>
-              🎧 Loading Whisper model&nbsp;
-              <code className="text-brand-200">{profile.settings.whisperModel}</code> — first
-              time only, cached afterwards.
-            </span>
-            <span className="shrink-0 font-semibold">
+        <div className="bg-white/[0.03] border-b border-white/[0.06] px-6 py-3 text-xs text-slate-300">
+          <div className="flex items-center justify-between gap-3 mb-1.5">
+            <span>Loading speech recognition — one-time download, cached afterwards.</span>
+            <span className="shrink-0 font-semibold text-brand-300">
               {Math.round(whisperLoader.progress * 100)}%
             </span>
           </div>
           <ProgressBar value={Math.round(whisperLoader.progress * 100)} />
         </div>
       )}
+
+      {/* Chat error — user-friendly */}
       {chatError && (
-        <div className="bg-red-500/20 border-b border-red-500/30 px-6 py-2 text-xs text-red-100 flex items-center justify-between gap-3">
+        <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-2.5 text-xs text-red-200 flex items-center justify-between gap-3">
           <span>
-            ⚠️ {chatError}
+            Something went wrong with the AI response.
             {/memory|RAM|out of memory/i.test(chatError) && (
-              <span className="ml-1 text-red-200">
-                Try a smaller LLM in Settings → Language model.
+              <span className="ml-1 text-red-300">
+                {' '}Try closing other apps to free up memory.
               </span>
             )}
           </span>
@@ -194,12 +192,12 @@ function SpeakingPageInner({
             onClick={() => navigate('/settings')}
             className="text-xs underline hover:text-white shrink-0"
           >
-            Open Settings →
+            Settings →
           </button>
         </div>
       )}
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 p-6 overflow-hidden max-w-[1400px] w-full mx-auto">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 p-6 overflow-hidden">
         <AvatarPanel
           mode={avatarMode}
           mouthOpen={speaking ? currentVisemeWeight : 0}
