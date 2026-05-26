@@ -13,6 +13,35 @@ interface PullProgress {
   pct?: number
 }
 
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+interface StatusRowProps {
+  ready: boolean
+  label: string
+  sublabel: string
+  action?: React.ReactNode
+}
+
+function StatusRow({ ready, label, sublabel, action }: StatusRowProps): JSX.Element {
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-4">
+      <div
+        className={[
+          'w-2.5 h-2.5 rounded-full shrink-0',
+          ready ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'
+        ].join(' ')}
+      />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-xs text-slate-400 mt-0.5">{sublabel}</p>
+      </div>
+      {action}
+    </div>
+  )
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function ModelCheckStep({
   onReady,
   onSkip,
@@ -27,9 +56,7 @@ export default function ModelCheckStep({
     const unsub = window.api.ollama.onPullProgress((p) => {
       setProgress({ status: p.status, pct: p.pct })
     })
-    return () => {
-      unsub()
-    }
+    return () => unsub()
   }, [])
 
   const aiRunning = !!ollama?.running
@@ -50,6 +77,14 @@ export default function ModelCheckStep({
     }
   }
 
+  const engineSublabel = aiRunning
+    ? 'Ready'
+    : 'Install the free Ollama app and start it, then click "Re-check" below.'
+
+  const modelSublabel = rec
+    ? `${rec.llm.name} · about ${rec.llm.approxRamGB} GB`
+    : 'Detecting recommended model…'
+
   return (
     <Card>
       <div className="text-4xl mb-4 text-center">🧠</div>
@@ -59,60 +94,45 @@ export default function ModelCheckStep({
         data sent anywhere.
       </p>
 
-      {/* Status row */}
       <div className="space-y-3 mb-6">
-        <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-4">
-          <div className={[
-            'w-2.5 h-2.5 rounded-full shrink-0',
-            aiRunning ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'
-          ].join(' ')} />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">
-              {aiRunning ? 'AI engine ready' : 'AI engine not found'}
-            </p>
-            {!aiRunning && (
-              <p className="text-xs text-slate-400 mt-0.5">
-                Install the free{' '}
-                <a
-                  href="https://ollama.com/download"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline text-brand-300 hover:text-brand-200"
-                >
-                  Ollama app
-                </a>{' '}
-                and start it, then click "Re-check" below.
-              </p>
-            )}
-          </div>
-        </div>
+        <StatusRow
+          ready={aiRunning}
+          label={aiRunning ? 'AI engine ready' : 'AI engine not found'}
+          sublabel={
+            aiRunning
+              ? 'The AI service is running.'
+              : engineSublabel
+          }
+          action={
+            !aiRunning ? (
+              <a
+                href="https://ollama.com/download"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs underline text-brand-300 hover:text-brand-200 shrink-0"
+              >
+                Download
+              </a>
+            ) : undefined
+          }
+        />
 
         {rec && (
-          <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-4">
-            <div className={[
-              'w-2.5 h-2.5 rounded-full shrink-0',
-              hasModel ? 'bg-emerald-500' : 'bg-slate-500'
-            ].join(' ')} />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">
-                {hasModel
-                  ? `AI language model ready`
-                  : `AI language model not downloaded yet`}
-              </p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {rec.llm.name} · about {rec.llm.approxRamGB} GB
-              </p>
-            </div>
-            {!hasModel && aiRunning && !pulling && (
-              <Button className="!py-1.5 !px-4 shrink-0" onClick={handleInstall}>
-                Install
-              </Button>
-            )}
-          </div>
+          <StatusRow
+            ready={hasModel}
+            label={hasModel ? 'AI language model ready' : 'AI language model not installed'}
+            sublabel={modelSublabel}
+            action={
+              !hasModel && aiRunning && !pulling ? (
+                <Button className="!py-1.5 !px-4 shrink-0" onClick={handleInstall}>
+                  Install
+                </Button>
+              ) : undefined
+            }
+          />
         )}
       </div>
 
-      {/* Download progress */}
       {pulling && progress && (
         <div className="mb-4 rounded-xl bg-brand-500/10 border border-brand-400/20 p-4">
           <div className="flex items-center justify-between gap-3 mb-2">

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Accent, CorrectionStyle } from '@shared/types'
 import { ACCENT_LABELS, ACCENT_TO_PERSONA_NAME } from '@shared/constants'
 import { Button, Chip } from '../../../components/ui'
+import { IconPhone } from '../../../components/icons'
 import type { AvatarMode } from '../../../components/avatar'
 
 interface SpeakingHeaderProps {
@@ -11,14 +12,6 @@ interface SpeakingHeaderProps {
   avatarMode: AvatarMode
   onAvatarModeChange: (mode: AvatarMode) => void
   callEnabled: boolean
-}
-
-function IconPhone({ className }: { className?: string }): JSX.Element {
-  return (
-    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-    </svg>
-  )
 }
 
 export default function SpeakingHeader({
@@ -64,7 +57,6 @@ export default function SpeakingHeader({
           </Chip>
         </div>
 
-        {/* Voice call CTA */}
         <Button
           variant="primary"
           className="!py-1.5 !px-4 flex items-center gap-2"

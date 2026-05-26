@@ -54,12 +54,9 @@ export default function CompleteStep({ result, onConfirm }: CompleteStepProps): 
           </p>
           <div className="flex flex-wrap gap-1.5">
             {result.weakAreas.map((area) => (
-              <span
-                key={area}
-                className="text-xs rounded-full px-2.5 py-1 bg-brand-500/15 border border-brand-400/20 text-brand-200"
-              >
+              <Chip key={area} selected={false}>
                 {friendlyArea(area)}
-              </span>
+              </Chip>
             ))}
           </div>
         </div>

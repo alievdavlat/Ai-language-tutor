@@ -27,11 +27,11 @@ interface AppState {
   refreshOllama: () => Promise<void>
 }
 
+/** Used when the status IPC call itself fails — treated the same as "not running". */
 const FALLBACK_OLLAMA: OllamaStatus = {
   installed: false,
   running: false,
-  models: [],
-  error: 'status call failed'
+  models: []
 }
 
 async function safely<T>(label: string, fn: () => Promise<T>): Promise<T | null> {

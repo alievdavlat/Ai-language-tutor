@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { ChatMessage, UserProfile } from '@shared/types'
+import type { ChatMessage, ModelRecommendation, OllamaStatus, UserProfile } from '@shared/types'
 import { ACCENT_TO_LANG, ACCENT_TO_PERSONA_NAME, resolveCharacter } from '@shared/constants'
 import { useAppStore } from '../../store/useAppStore'
 import { useAudioLevel } from '../../hooks/useAudioLevel'
@@ -11,11 +11,19 @@ import { useTTS } from '../../hooks/tts'
 import { useWhisperModelLoader } from '../../hooks/useWhisperModelLoader'
 import { buildSystemPrompt } from '../../services/prompts'
 import { cn } from '../../lib/classnames'
-import { ProgressBar } from '../../components/ui'
 import { micPrefsFromSettings } from '../../lib/audio'
+import AINotReadyBanner from '../../components/speaking/AINotReadyBanner'
+import WhisperLoadingBanner from '../../components/speaking/WhisperLoadingBanner'
 import VoiceOrb, { type CallState } from './components/VoiceOrb'
 import WaveVisualizer from './components/WaveVisualizer'
 import CallControls from './sections/CallControls'
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+/** Maximum conversation turns kept in memory to bound context window usage. */
+const HISTORY_CAP = 20
+
+// ─── Derived state helpers ────────────────────────────────────────────────────
 
 function deriveCallState(params: {
   muted: boolean
@@ -33,23 +41,27 @@ function deriveCallState(params: {
 }
 
 function sublabelFor(state: CallState, interim: string): string {
-  // Interim transcription text wins over state defaults — this is what tells
-  // the user "your speech actually made it to the pipeline."
   if (interim) return interim
-  switch (state) {
-    case 'listening':
-      return 'Listening…'
-    case 'thinking':
-      return 'Thinking…'
-    case 'speaking':
-      return 'Speaking…'
-    case 'muted':
-      return 'Mic muted'
-    case 'idle':
-    default:
-      return 'Say something to start'
+  const labels: Record<CallState, string> = {
+    listening: 'Listening…',
+    thinking: 'Thinking…',
+    speaking: 'Speaking…',
+    muted: 'Mic muted',
+    idle: 'Say something to start'
   }
+  return labels[state]
 }
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface InnerProps {
+  profile: UserProfile
+  rec: ModelRecommendation | null
+  ollama: OllamaStatus | null
+  setProfile: (p: UserProfile | null) => void
+}
+
+// ─── Root component (profile guard) ──────────────────────────────────────────
 
 export default function CallPage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
@@ -60,22 +72,15 @@ export default function CallPage(): JSX.Element {
   if (!profile) {
     return (
       <div className="h-full flex items-center justify-center text-slate-400">
-        No profile loaded.
+        Loading…
       </div>
     )
   }
 
-  return (
-    <CallPageInner profile={profile} rec={rec} ollama={ollama} setProfile={setProfile} />
-  )
+  return <CallPageInner profile={profile} rec={rec} ollama={ollama} setProfile={setProfile} />
 }
 
-interface InnerProps {
-  profile: UserProfile
-  rec: ReturnType<typeof useAppStore.getState>['rec']
-  ollama: ReturnType<typeof useAppStore.getState>['ollama']
-  setProfile: (p: UserProfile | null) => void
-}
+// ─── Inner component (all hooks, all logic) ───────────────────────────────────
 
 function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.Element {
   const navigate = useNavigate()
@@ -84,17 +89,12 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
   const [muted, setMuted] = useState(false)
   const [paused, setPaused] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [engineNotice, setEngineNotice] = useState<string | null>(null)
+  const [engineSwitched, setEngineSwitched] = useState(false)
 
-  // Whisper progress — so the user actually sees the first-time download
-  // happening instead of staring at a silent "Listening…" orb.
   const whisperLoader = useWhisperModelLoader(profile.settings.whisperModel)
   const whisperEngine = profile.settings.sttEngine === 'whisper-local'
   const whisperWarming = whisperEngine && !whisperLoader.loaded
 
-  // Auto-fallback: if Whisper can't load (timeout, 404, offline, etc.) flip
-  // the user's engine to Web Speech and tell them why. This is the one real
-  // recovery path on an 8 GB laptop with flaky internet.
   const switchToWebSpeech = useCallback(
     async (reason: string): Promise<void> => {
       if (profile.settings.sttEngine === 'web-speech') return
@@ -108,14 +108,12 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
         console.error('[call] profile save failed during fallback', err)
       }
       setProfile(next)
-      setEngineNotice(
-        `Switched to online Web Speech — Whisper couldn't load (${reason}). You can switch back in Settings once you're online.`
-      )
+      setEngineSwitched(true)
+      console.info('[call] switched to web-speech:', reason)
     },
     [profile, setProfile]
   )
 
-  // TTS — drives the orb pulse when the character is talking.
   const { speaking, currentVisemeWeight, speak, cancel } = useTTS({
     accent: profile.settings.accent,
     rate: profile.settings.ttsSpeed,
@@ -124,8 +122,6 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
 
   const { streaming, send, abort: abortChat } = useChatStream(model)
 
-  // Streaming speaker — chunks the LLM output into sentences so audio starts
-  // ~3× sooner. The same cancel() wipes queue + current utterance for barge-in.
   const streamer = useStreamingSpeaker({
     speak: (text) => speak(text),
     cancel: () => cancel()
@@ -136,43 +132,40 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
   const handleTurn = useCallback(
     async (transcript: string): Promise<void> => {
       if (!transcript.trim()) return
-      // New turn — drop any leftover speech from the previous AI reply.
       streamer.cancel()
 
-      const systemPrompt = buildSystemPrompt(profile)
       const messages: ChatMessage[] = [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: buildSystemPrompt(profile) },
         ...historyRef.current,
         { role: 'user', content: transcript }
       ]
+
       let reply = ''
       try {
-        reply = await send(messages, (delta) => {
-          streamer.feedDelta(delta)
-        })
+        reply = await send(messages, (delta) => streamer.feedDelta(delta))
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
         return
       }
+
       if (!reply) {
-        setError('No response from the local model — check Settings → AI.')
+        setError('No response from the AI. Check your internet connection or settings.')
         return
       }
+
       const nextHistory: ChatMessage[] = [
         ...historyRef.current,
         { role: 'user', content: transcript },
         { role: 'assistant', content: reply }
       ]
-      historyRef.current = nextHistory.slice(-20)
+      historyRef.current = nextHistory.slice(-HISTORY_CAP)
       await streamer.flushAndWait()
     },
     [profile, send, streamer]
   )
 
-  // Mic is only live when the user hasn't muted/paused and Ollama is ready.
   const ollamaReady = !!ollama?.running && ollama.models.length > 0
   const micEnabled = !muted && !paused && ollamaReady
-
   const micPrefs = micPrefsFromSettings(profile.settings)
 
   const stt = useSTT({
@@ -183,27 +176,19 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
     enabled: micEnabled,
     micPrefs,
     onSpeechStart: () => {
-      // Barge-in — drop the AI's queued speech AND abort the Ollama stream
-      // so the model doesn't keep generating a reply the user interrupted.
       if (speaking) streamer.cancel()
       abortChat()
     },
-    onFinal: (text) => {
-      void handleTurn(text)
-    },
-    onEngineFallback: (reason) => {
-      void switchToWebSpeech(reason)
-    }
+    onFinal: (text) => void handleTurn(text),
+    onEngineFallback: (reason) => void switchToWebSpeech(reason)
   })
 
-  // Start/stop STT loop based on mic enable flag
   useEffect(() => {
     if (micEnabled) void stt.start()
     else void stt.stop()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [micEnabled])
 
-  // Mic-level for the voice orb — only when mic is hot
   const micLevel = useAudioLevel({
     enabled: micEnabled && stt.state.listening,
     fps: 30,
@@ -218,12 +203,12 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
     speaking
   })
 
+  // orbIntensity: TTS viseme weight, mic level, or a breathing animation
   const orbIntensity = useMemo(() => {
     if (speaking) return 0.5 + currentVisemeWeight * 0.5
-    if (streaming) return 0.3 + Math.abs(Math.sin(Date.now() / 250)) * 0.3
     if (stt.state.listening) return micLevel
     return 0.05
-  }, [speaking, currentVisemeWeight, streaming, stt.state.listening, micLevel])
+  }, [speaking, currentVisemeWeight, stt.state.listening, micLevel])
 
   const character = resolveCharacter(profile, profile.settings.characterId)
   const displayName = character?.name ?? ACCENT_TO_PERSONA_NAME[profile.settings.accent]
@@ -235,16 +220,14 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
     navigate('/speaking')
   }, [streamer, abortChat, stt, navigate])
 
-  // Esc to end the call
   useEffect(() => {
-    const handler = (e: KeyboardEvent): void => {
+    const onKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') endCall()
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
   }, [endCall])
 
-  // Global teardown when leaving
   useEffect(() => {
     return () => {
       streamer.cancel()
@@ -262,102 +245,189 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
         'flex flex-col items-center justify-between py-14'
       )}
     >
-      {/* Emotional gradient backdrop — shifts with call state */}
       <EmotionBackdrop state={callState} />
 
-      {/* Top — minimal call chrome */}
-      <div className="relative z-10 text-center w-full max-w-lg px-6">
-        <div className="text-xs uppercase tracking-[0.3em] text-slate-500 mb-1">
-          {ollamaReady ? 'Live call' : 'Starting up…'}
+      <CallHeader
+        displayName={displayName}
+        level={profile.level}
+        ollamaReady={ollamaReady}
+        whisperWarming={whisperWarming}
+        whisperProgress={Math.round(whisperLoader.progress * 100)}
+        whisperError={whisperLoader.error}
+        engineSwitched={engineSwitched}
+        onSwitchToWebSpeech={() => void switchToWebSpeech(whisperLoader.error ?? 'manual')}
+      />
+
+      <OrbSection
+        callState={callState}
+        orbIntensity={orbIntensity}
+        displayName={displayName}
+        sublabel={sublabelFor(callState, stt.state.interim)}
+        sttError={stt.state.error}
+        chatError={error}
+        onSwitchToWebSpeech={() => void switchToWebSpeech(stt.state.error ?? 'manual')}
+        showWebSpeechSwitch={whisperEngine}
+      />
+
+      <CallFooter
+        callState={callState}
+        orbIntensity={orbIntensity}
+        muted={muted}
+        paused={paused}
+        onToggleMute={() => setMuted((v) => !v)}
+        onTogglePause={() => setPaused((v) => !v)}
+        onEndCall={endCall}
+      />
+    </div>
+  )
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+interface CallHeaderProps {
+  displayName: string
+  level: string
+  ollamaReady: boolean
+  whisperWarming: boolean
+  whisperProgress: number
+  whisperError?: string | null
+  engineSwitched: boolean
+  onSwitchToWebSpeech: () => void
+}
+
+function CallHeader({
+  displayName,
+  level,
+  ollamaReady,
+  whisperWarming,
+  whisperProgress,
+  whisperError,
+  engineSwitched,
+  onSwitchToWebSpeech
+}: CallHeaderProps): JSX.Element {
+  return (
+    <div className="relative z-10 text-center w-full max-w-lg px-6">
+      <div className="text-xs uppercase tracking-[0.3em] text-slate-500 mb-1">
+        {ollamaReady ? 'Live call' : 'Starting up…'}
+      </div>
+      <div className="text-sm text-slate-400">
+        {displayName} · Level {level}
+      </div>
+
+      {!ollamaReady && (
+        <div className="mt-3">
+          <AINotReadyBanner />
         </div>
-        <div className="text-sm text-slate-400">
-          {displayName} · Level {profile.level}
+      )}
+
+      {whisperWarming && (
+        <div className="mt-4">
+          <WhisperLoadingBanner
+            progress={whisperProgress}
+            error={whisperError}
+            onFallback={onSwitchToWebSpeech}
+          />
         </div>
+      )}
 
-        {whisperWarming && (
-          <div className="mt-4 rounded-xl bg-brand-500/15 border border-brand-400/30 px-4 py-3 text-left">
-            <div className="flex items-center justify-between gap-3 mb-1">
-              <span className="text-xs text-brand-100">
-                Loading speech recognition — one-time download.
-              </span>
-              <span className="shrink-0 text-xs font-semibold text-brand-100">
-                {Math.round(whisperLoader.progress * 100)}%
-              </span>
-            </div>
-            <ProgressBar value={Math.round(whisperLoader.progress * 100)} />
-            {whisperLoader.error && (
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <span className="text-[11px] text-red-300">
-                  Could not load speech recognition. Check your internet connection.
-                </span>
-                <button
-                  onClick={() => void switchToWebSpeech(whisperLoader.error ?? 'load failed')}
-                  className="text-[11px] text-brand-200 underline hover:text-brand-100 shrink-0"
-                >
-                  Use alternative
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+      {engineSwitched && (
+        <div className="mt-3 rounded-xl bg-amber-500/15 border border-amber-400/30 px-4 py-2 text-[11px] text-amber-100">
+          Switched to browser speech recognition for better compatibility.
+        </div>
+      )}
+    </div>
+  )
+}
 
-        {engineNotice && (
-          <div className="mt-3 rounded-xl bg-amber-500/15 border border-amber-400/30 px-4 py-2 text-[11px] text-amber-100">
-            Switched to browser speech recognition for better compatibility.
-          </div>
-        )}
-      </div>
+interface OrbSectionProps {
+  callState: CallState
+  orbIntensity: number
+  displayName: string
+  sublabel: string
+  sttError?: string | null
+  chatError?: string | null
+  showWebSpeechSwitch: boolean
+  onSwitchToWebSpeech: () => void
+}
 
-      {/* Middle — orb */}
-      <div className="relative z-10 flex flex-col items-center">
-        <VoiceOrb
-          state={callState}
-          intensity={orbIntensity}
-          label={displayName}
-          sublabel={sublabelFor(callState, stt.state.interim)}
-        />
+function OrbSection({
+  callState,
+  orbIntensity,
+  displayName,
+  sublabel,
+  sttError,
+  chatError,
+  showWebSpeechSwitch,
+  onSwitchToWebSpeech
+}: OrbSectionProps): JSX.Element {
+  return (
+    <div className="relative z-10 flex flex-col items-center">
+      <VoiceOrb
+        state={callState}
+        intensity={orbIntensity}
+        label={displayName}
+        sublabel={sublabel}
+      />
 
-        {stt.state.error && (
-          <div className="mt-24 max-w-sm text-center">
-            <p className="text-xs text-red-300">⚠️ {stt.state.error}</p>
-            {whisperEngine && (
-              <button
-                onClick={() => void switchToWebSpeech(stt.state.error ?? 'manual switch')}
-                className="mt-2 text-xs text-brand-300 underline hover:text-brand-200"
-              >
-                Switch to Web Speech
-              </button>
-            )}
-          </div>
-        )}
+      {sttError && (
+        <div className="mt-24 max-w-sm text-center">
+          <p className="text-xs text-red-300">{sttError}</p>
+          {showWebSpeechSwitch && (
+            <button
+              onClick={onSwitchToWebSpeech}
+              className="mt-2 text-xs text-brand-300 underline hover:text-brand-200"
+            >
+              Use alternative speech recognition
+            </button>
+          )}
+        </div>
+      )}
 
-        {error && !stt.state.error && (
-          <p className="mt-28 text-xs text-red-300 max-w-sm text-center">
-            ⚠️ {error}
-          </p>
-        )}
-      </div>
+      {chatError && !sttError && (
+        <p className="mt-28 text-xs text-red-300 max-w-sm text-center">{chatError}</p>
+      )}
+    </div>
+  )
+}
 
-      {/* Wave + controls */}
-      <div className="relative z-10 w-full max-w-md flex flex-col gap-6">
-        <WaveVisualizer
-          intensity={orbIntensity}
-          active={callState === 'listening' || callState === 'speaking'}
-          color={callState === 'speaking' ? '#c084fc' : '#6ee7b7'}
-        />
+interface CallFooterProps {
+  callState: CallState
+  orbIntensity: number
+  muted: boolean
+  paused: boolean
+  onToggleMute: () => void
+  onTogglePause: () => void
+  onEndCall: () => void
+}
 
-        <CallControls
-          muted={muted}
-          paused={paused}
-          onToggleMute={() => setMuted((v) => !v)}
-          onTogglePause={() => setPaused((v) => !v)}
-          onEndCall={endCall}
-        />
+function CallFooter({
+  callState,
+  orbIntensity,
+  muted,
+  paused,
+  onToggleMute,
+  onTogglePause,
+  onEndCall
+}: CallFooterProps): JSX.Element {
+  return (
+    <div className="relative z-10 w-full max-w-md flex flex-col gap-6">
+      <WaveVisualizer
+        intensity={orbIntensity}
+        active={callState === 'listening' || callState === 'speaking'}
+        color={callState === 'speaking' ? '#c084fc' : '#6ee7b7'}
+      />
 
-        <p className="text-[10px] text-slate-500 text-center">
-          Press Esc or tap End-call to return · This call stays fully on this device
-        </p>
-      </div>
+      <CallControls
+        muted={muted}
+        paused={paused}
+        onToggleMute={onToggleMute}
+        onTogglePause={onTogglePause}
+        onEndCall={onEndCall}
+      />
+
+      <p className="text-[10px] text-slate-500 text-center">
+        Press Esc or tap End call to return · This call stays fully on this device
+      </p>
     </div>
   )
 }
@@ -370,6 +440,7 @@ function EmotionBackdrop({ state }: { state: CallState }): JSX.Element {
     speaking: 'from-violet-950/70 via-slate-950 to-black',
     muted: 'from-rose-950/60 via-slate-950 to-black'
   }
+
   return (
     <div
       aria-hidden

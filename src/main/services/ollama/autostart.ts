@@ -4,10 +4,16 @@ import path from 'path'
 import os from 'os'
 import { getOllamaStatus } from './status.js'
 
+/** How long to wait between readiness polls after spawning Ollama (ms). */
+const POLL_INTERVAL_MS = 2_000
+
+/** How many times to poll before giving up. Total wait = POLL_ATTEMPTS × POLL_INTERVAL_MS. */
+const POLL_ATTEMPTS = 6
+
 /**
  * Candidate Ollama binary paths, in priority order.
  * We try the user's local Programs install first (typical Windows install),
- * then the system Programs Files, then rely on PATH.
+ * then System Program Files, then fall back to PATH.
  */
 function candidatePaths(): string[] {
   const home = os.homedir()
@@ -56,9 +62,9 @@ export async function ensureOllamaRunning(): Promise<boolean> {
     return false
   }
 
-  // Poll for up to 12 seconds (6 attempts × 2 s) waiting for the service to be ready.
-  for (let i = 0; i < 6; i++) {
-    await new Promise<void>((r) => setTimeout(r, 2000))
+  // Poll until ready or timeout.
+  for (let i = 0; i < POLL_ATTEMPTS; i++) {
+    await new Promise<void>((r) => setTimeout(r, POLL_INTERVAL_MS))
     const status = await getOllamaStatus()
     if (status.running) {
       console.info('[ollama:autostart] service is up')

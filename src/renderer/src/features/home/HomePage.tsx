@@ -1,7 +1,20 @@
+import type { OllamaStatus } from '@shared/types'
 import { useAppStore } from '../../store/useAppStore'
+import type { AutoSetupState } from '../../store/useAppStore'
 import GreetingHeader from './sections/GreetingHeader'
 import StatsRow from './sections/StatsRow'
 import ModuleGrid from './sections/ModuleGrid'
+
+// ─── Pure helpers ─────────────────────────────────────────────────────────────
+
+function deriveDisabledReason(autoSetup: AutoSetupState, ollama: OllamaStatus | null): string {
+  if (autoSetup.phase === 'starting') return 'AI is starting…'
+  if (autoSetup.phase === 'pulling') return `Downloading AI (${autoSetup.pullPct}%)`
+  if (autoSetup.phase === 'failed') return 'AI could not start'
+  if (!ollama?.installed) return 'AI not installed'
+  if (!ollama?.running) return 'AI is starting…'
+  return 'AI model loading…'
+}
 
 function AISetupBanner(): JSX.Element | null {
   const autoSetup = useAppStore((s) => s.autoSetup)
@@ -46,10 +59,9 @@ export default function HomePage(): JSX.Element {
   const ollama = useAppStore((s) => s.ollama)
   const autoSetup = useAppStore((s) => s.autoSetup)
 
-  const aiReady = (!!ollama?.running && (ollama?.models.length ?? 0) > 0) ||
-    autoSetup.phase === 'ready'
-  const speakingEnabled = aiReady
-  const speakingDisabledReason = 'AI is starting up…'
+  const ollamaReady = !!ollama?.running && (ollama?.models.length ?? 0) > 0
+  const speakingEnabled = ollamaReady || autoSetup.phase === 'ready'
+  const speakingDisabledReason = deriveDisabledReason(autoSetup, ollama)
 
   if (!profile) {
     return (
