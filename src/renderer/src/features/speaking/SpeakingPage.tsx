@@ -172,7 +172,7 @@ function SpeakingPageInner({
         />
       )}
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 p-6 overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5 p-5 overflow-hidden">
         <AvatarPanel
           mode={avatarMode}
           mouthOpen={speaking ? currentVisemeWeight : 0}
@@ -181,6 +181,7 @@ function SpeakingPageInner({
           topic={topic}
           onTopicChange={onTopicChange}
           statusLabel={statusLabel(speaking, streaming, stt.state.listening)}
+          listening={stt.state.listening}
         />
         <ChatPanel
           turns={turns}

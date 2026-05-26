@@ -52,6 +52,13 @@ function sublabelFor(state: CallState, interim: string): string {
   return labels[state]
 }
 
+/** Format elapsed seconds as mm:ss */
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface InnerProps {
@@ -90,6 +97,13 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
   const [paused, setPaused] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [engineSwitched, setEngineSwitched] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+
+  // Call timer
+  useEffect(() => {
+    const id = setInterval(() => setElapsed((s) => s + 1), 1_000)
+    return () => clearInterval(id)
+  }, [])
 
   const whisperLoader = useWhisperModelLoader(profile.settings.whisperModel)
   const whisperEngine = profile.settings.sttEngine === 'whisper-local'
@@ -203,7 +217,6 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
     speaking
   })
 
-  // orbIntensity: TTS viseme weight, mic level, or a breathing animation
   const orbIntensity = useMemo(() => {
     if (speaking) return 0.5 + currentVisemeWeight * 0.5
     if (stt.state.listening) return micLevel
@@ -242,7 +255,7 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
     <div
       className={cn(
         'h-full w-full relative overflow-hidden animate-fade-in',
-        'flex flex-col items-center justify-between py-14'
+        'flex flex-col items-center justify-between py-10'
       )}
     >
       <EmotionBackdrop state={callState} />
@@ -250,6 +263,7 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
       <CallHeader
         displayName={displayName}
         level={profile.level}
+        elapsed={elapsed}
         ollamaReady={ollamaReady}
         whisperWarming={whisperWarming}
         whisperProgress={Math.round(whisperLoader.progress * 100)}
@@ -287,6 +301,7 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
 interface CallHeaderProps {
   displayName: string
   level: string
+  elapsed: number
   ollamaReady: boolean
   whisperWarming: boolean
   whisperProgress: number
@@ -298,6 +313,7 @@ interface CallHeaderProps {
 function CallHeader({
   displayName,
   level,
+  elapsed,
   ollamaReady,
   whisperWarming,
   whisperProgress,
@@ -307,11 +323,23 @@ function CallHeader({
 }: CallHeaderProps): JSX.Element {
   return (
     <div className="relative z-10 text-center w-full max-w-lg px-6">
-      <div className="text-xs uppercase tracking-[0.3em] text-slate-500 mb-1">
-        {ollamaReady ? 'Live call' : 'Starting up…'}
+      {/* Top row: name + timer */}
+      <div className="flex items-center justify-center gap-3 mb-1">
+        <div className="text-base font-semibold text-slate-200">{displayName}</div>
+        <div className="text-slate-600 text-xs">·</div>
+        <div className="text-xs text-slate-500">Level {level}</div>
       </div>
-      <div className="text-sm text-slate-400">
-        {displayName} · Level {level}
+
+      {/* Call status + duration */}
+      <div className="flex items-center justify-center gap-2 mb-1">
+        {ollamaReady ? (
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+        ) : (
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+        )}
+        <span className="text-xs text-slate-500">
+          {ollamaReady ? formatDuration(elapsed) : 'Starting up…'}
+        </span>
       </div>
 
       {!ollamaReady && (
@@ -321,7 +349,7 @@ function CallHeader({
       )}
 
       {whisperWarming && (
-        <div className="mt-4">
+        <div className="mt-3">
           <WhisperLoadingBanner
             progress={whisperProgress}
             error={whisperError}
@@ -370,7 +398,7 @@ function OrbSection({
       />
 
       {sttError && (
-        <div className="mt-24 max-w-sm text-center">
+        <div className="mt-28 max-w-sm text-center">
           <p className="text-xs text-red-300">{sttError}</p>
           {showWebSpeechSwitch && (
             <button
@@ -410,7 +438,7 @@ function CallFooter({
   onEndCall
 }: CallFooterProps): JSX.Element {
   return (
-    <div className="relative z-10 w-full max-w-md flex flex-col gap-6">
+    <div className="relative z-10 w-full max-w-md flex flex-col gap-5">
       <WaveVisualizer
         intensity={orbIntensity}
         active={callState === 'listening' || callState === 'speaking'}
@@ -425,8 +453,8 @@ function CallFooter({
         onEndCall={onEndCall}
       />
 
-      <p className="text-[10px] text-slate-500 text-center">
-        Press Esc or tap End call to return · This call stays fully on this device
+      <p className="text-[10px] text-slate-600 text-center">
+        Press Esc or tap End call · Everything stays on this device
       </p>
     </div>
   )
@@ -435,10 +463,10 @@ function CallFooter({
 function EmotionBackdrop({ state }: { state: CallState }): JSX.Element {
   const gradient: Record<CallState, string> = {
     idle: 'from-slate-900 via-slate-950 to-black',
-    listening: 'from-emerald-950/70 via-slate-950 to-black',
-    thinking: 'from-amber-950/60 via-slate-950 to-black',
-    speaking: 'from-violet-950/70 via-slate-950 to-black',
-    muted: 'from-rose-950/60 via-slate-950 to-black'
+    listening: 'from-emerald-950/60 via-slate-950 to-black',
+    thinking: 'from-amber-950/50 via-slate-950 to-black',
+    speaking: 'from-violet-950/65 via-slate-950 to-black',
+    muted: 'from-rose-950/55 via-slate-950 to-black'
   }
 
   return (

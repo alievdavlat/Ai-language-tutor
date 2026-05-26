@@ -1,5 +1,6 @@
+import { cn } from '../../../lib/classnames'
 import { Avatar, type AvatarEmotion, type AvatarMode } from '../../../components/avatar'
-import { Card, Input } from '../../../components/ui'
+import { Input } from '../../../components/ui'
 
 interface AvatarPanelProps {
   mode: AvatarMode
@@ -9,6 +10,14 @@ interface AvatarPanelProps {
   topic: string
   onTopicChange: (topic: string) => void
   statusLabel: string
+  listening?: boolean
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  'Listening…': 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]',
+  'Speaking…': 'bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.7)]',
+  'Thinking…': 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]',
+  'Ready': 'bg-slate-500'
 }
 
 export default function AvatarPanel({
@@ -18,34 +27,58 @@ export default function AvatarPanel({
   name,
   topic,
   onTopicChange,
-  statusLabel
+  statusLabel,
+  listening = false
 }: AvatarPanelProps): JSX.Element {
+  const dotClass = STATUS_COLORS[statusLabel] ?? 'bg-slate-500'
+  const isActive = statusLabel !== 'Ready'
+
   return (
-    <Card className="relative flex flex-col items-center overflow-hidden !p-5">
-      {/* Glow behind the avatar */}
+    <div className="relative rounded-2xl border border-white/[0.07] overflow-hidden flex flex-col"
+      style={{
+        background: 'linear-gradient(160deg, rgba(139,92,246,0.12) 0%, rgba(15,23,42,0.6) 60%, rgba(15,23,42,0.4) 100%)'
+      }}
+    >
+      {/* Glow blob behind the avatar */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-speak-500/30 blur-3xl"
+        className={cn(
+          'pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full blur-3xl transition-opacity duration-700',
+          isActive ? 'opacity-100 bg-speak-500/25' : 'opacity-50 bg-brand-500/15'
+        )}
       />
 
-      <div className="relative w-full flex justify-center py-4 animate-fade-in">
+      {/* Avatar area */}
+      <div className="relative flex-1 flex items-center justify-center py-6 px-4 animate-fade-in min-h-[260px]">
         <Avatar mode={mode} mouthOpen={mouthOpen} emotion={emotion} name={name} />
       </div>
 
-      <div className="relative w-full">
-        <label className="text-[11px] uppercase tracking-wider text-slate-500 block mb-1.5">
-          Today's topic
-        </label>
-        <Input
-          placeholder="e.g. your last trip, tech news…"
-          value={topic}
-          onChange={(e) => onTopicChange(e.target.value)}
-        />
-      </div>
+      {/* Bottom panel */}
+      <div className="relative px-4 pb-4 flex flex-col gap-3">
+        {/* Status indicator */}
+        <div className="flex items-center justify-center gap-2 py-2 rounded-xl bg-black/20 backdrop-blur border border-white/[0.06]">
+          <span
+            className={cn(
+              'w-2 h-2 rounded-full shrink-0 transition-all duration-300',
+              dotClass,
+              listening && 'animate-pulse'
+            )}
+          />
+          <span className="text-xs font-medium text-slate-300">{statusLabel}</span>
+        </div>
 
-      <div className="relative mt-4 w-full flex items-center justify-center gap-2 py-2 rounded-pill bg-white/[0.03] border border-white/10 text-xs">
-        <span>{statusLabel}</span>
+        {/* Topic input */}
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-slate-500 block mb-1.5 font-semibold">
+            Today's topic
+          </label>
+          <Input
+            placeholder="e.g. your last trip, tech news…"
+            value={topic}
+            onChange={(e) => onTopicChange(e.target.value)}
+          />
+        </div>
       </div>
-    </Card>
+    </div>
   )
 }

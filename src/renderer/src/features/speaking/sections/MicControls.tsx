@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { MicMode } from '@shared/types'
-import { Button, Chip, Input } from '../../../components/ui'
+import { Chip, Input } from '../../../components/ui'
+import { cn } from '../../../lib/classnames'
 
 interface MicControlsProps {
   mode: MicMode
@@ -34,9 +35,6 @@ export default function MicControls({
   const [text, setText] = useState('')
 
   useEffect(() => {
-    // Global shortcuts:
-    //   - Esc always cancels active listening
-    //   - Space toggles listening in tap-to-talk (push-to-talk) mode
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (isTypingTarget(e.target)) return
 
@@ -54,8 +52,6 @@ export default function MicControls({
     }
 
     const handleBlur = (): void => {
-      // Safer to drop recording when the window loses focus — prevents the mic
-      // staying hot in the background.
       if (listening) onStop()
     }
 
@@ -80,14 +76,10 @@ export default function MicControls({
 
   const textDisabled = disabled && !listening
 
-  const modeHint =
-    mode === 'push-to-talk'
-      ? 'Tap the mic (or press Space) to start. Tap again to stop. Esc cancels.'
-      : 'Speak any time — the mic waits for ~1.5 s of silence before sending. Tap Stop or press Esc to turn off.'
-
   return (
-    <div className="border-t border-white/10 pt-3">
-      <div className="flex items-center gap-2 mb-2">
+    <div className="border-t border-white/[0.08] pt-4">
+      {/* Mode toggle + live indicator */}
+      <div className="flex items-center gap-2 mb-4">
         <Chip selected={mode === 'push-to-talk'} onClick={() => onModeChange('push-to-talk')}>
           👆 Tap-to-talk
         </Chip>
@@ -97,7 +89,7 @@ export default function MicControls({
         {listening && (
           <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-red-300 font-medium">
             <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse shadow-[0_0_8px_#f87171]" />
-            {mode === 'always-on' ? 'Listening continuously' : 'Recording — tap to stop'}
+            {mode === 'always-on' ? 'Listening…' : 'Recording…'}
           </span>
         )}
         {!listening && interim && (
@@ -107,21 +99,36 @@ export default function MicControls({
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button
-          variant={listening ? 'record' : 'primary'}
-          className="px-6 min-w-[180px]"
-          disabled={disabled && !listening}
+      {/* Main controls row: big circular mic + text input + send */}
+      <div className="flex items-center gap-3">
+        {/* Circular mic button */}
+        <button
+          type="button"
           onClick={handleMicClick}
-          title={modeHint}
+          disabled={disabled && !listening}
+          title={
+            mode === 'push-to-talk'
+              ? 'Tap to speak (or hold Space)'
+              : 'Toggle always-on mic (Esc to stop)'
+          }
+          className={cn(
+            'relative shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-xl transition-all duration-200',
+            'ring-2 focus-visible:outline-none',
+            disabled && !listening
+              ? 'bg-white/[0.06] ring-white/10 text-slate-600 cursor-not-allowed opacity-50'
+              : listening
+                ? 'bg-red-500/90 ring-red-400/60 text-white shadow-[0_0_20px_rgba(239,68,68,0.5)] scale-110'
+                : 'bg-brand-600/80 ring-brand-400/50 text-white hover:bg-brand-500/90 hover:scale-105 shadow-[0_0_15px_rgba(139,92,246,0.3)]'
+          )}
         >
-          {listening
-            ? '● Stop'
-            : mode === 'push-to-talk'
-              ? '🎤 Tap to speak'
-              : '🎤 Start listening'}
-        </Button>
+          {/* Pulse ring when listening */}
+          {listening && (
+            <span className="absolute inset-0 rounded-full bg-red-400/30 animate-ping" />
+          )}
+          <span className="relative">{listening ? '⏹' : '🎤'}</span>
+        </button>
 
+        {/* Text input */}
         <Input
           className="flex-1"
           placeholder="…or type to chat"
@@ -135,16 +142,29 @@ export default function MicControls({
           }}
           disabled={textDisabled}
         />
-        <Button
-          variant="ghost"
+
+        {/* Send button */}
+        <button
+          type="button"
           onClick={submitText}
           disabled={textDisabled || !text.trim()}
+          className={cn(
+            'shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm transition-all duration-150',
+            textDisabled || !text.trim()
+              ? 'bg-white/[0.04] text-slate-600 cursor-not-allowed'
+              : 'bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white hover:scale-105'
+          )}
+          title="Send message"
         >
-          Send
-        </Button>
+          ↑
+        </button>
       </div>
 
-      <p className="text-[10px] text-slate-500 mt-2 text-center">{modeHint}</p>
+      <p className="text-[10px] text-slate-600 mt-2 text-center">
+        {mode === 'push-to-talk'
+          ? 'Tap mic or press Space to speak · Esc to cancel'
+          : 'Always listening — tap mic or press Esc to stop'}
+      </p>
     </div>
   )
 }

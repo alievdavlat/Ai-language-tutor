@@ -33,14 +33,31 @@ export default function GreetingHeader({ profile }: GreetingHeaderProps): JSX.El
   const name = profile.name ?? 'friend'
 
   return (
-    <header className="flex items-center gap-4 mb-6 animate-fade-in">
+    <header
+      className="rounded-2xl border border-white/[0.07] px-5 py-4 flex items-center gap-4 animate-fade-in overflow-hidden relative"
+      style={{
+        background: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(99,102,241,0.08) 40%, transparent 100%)'
+      }}
+    >
+      {/* Subtle glow blob */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-10 -left-10 w-48 h-48 rounded-full bg-brand-500/15 blur-3xl"
+      />
+
       <AvatarCircle name={name} size="lg" />
-      <div className="min-w-0">
-        <p className="text-xs text-slate-400 mb-0.5">
-          {timeGreeting()} 👋
-        </p>
-        <h1 className="page-title leading-tight truncate">{name}</h1>
+
+      <div className="min-w-0 flex-1 relative">
+        <p className="text-xs text-slate-400 mb-0.5">{timeGreeting()} 👋</p>
+        <h1 className="text-2xl font-bold tracking-tight leading-tight truncate">{name}</h1>
         <p className="text-xs text-slate-500 mt-1 italic truncate">💡 {todayTip()}</p>
+      </div>
+
+      {/* Level badge */}
+      <div className="shrink-0 hidden sm:block relative">
+        <div className="rounded-full bg-brand-500/20 border border-brand-400/30 px-4 py-1.5 text-sm font-bold text-brand-300">
+          Level {profile.level}
+        </div>
       </div>
     </header>
   )

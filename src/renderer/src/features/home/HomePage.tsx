@@ -2,8 +2,9 @@ import type { OllamaStatus } from '@shared/types'
 import { useAppStore } from '../../store/useAppStore'
 import type { AutoSetupState } from '../../store/useAppStore'
 import GreetingHeader from './sections/GreetingHeader'
-import StatsRow from './sections/StatsRow'
 import ModuleGrid from './sections/ModuleGrid'
+import DailyProgressCard from './sections/DailyProgressCard'
+import WeekStreakCard from './sections/WeekStreakCard'
 
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
 
@@ -15,6 +16,8 @@ function deriveDisabledReason(autoSetup: AutoSetupState, ollama: OllamaStatus | 
   if (!ollama?.running) return 'AI is starting…'
   return 'AI model loading…'
 }
+
+// ─── AI setup status banner ───────────────────────────────────────────────────
 
 function AISetupBanner(): JSX.Element | null {
   const autoSetup = useAppStore((s) => s.autoSetup)
@@ -31,12 +34,14 @@ function AISetupBanner(): JSX.Element | null {
   const isFailed = autoSetup.phase === 'failed'
 
   return (
-    <div className={[
-      'flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs mb-4',
-      isFailed
-        ? 'bg-amber-500/10 border border-amber-500/20 text-amber-200'
-        : 'bg-brand-500/10 border border-brand-400/20 text-brand-200'
-    ].join(' ')}>
+    <div
+      className={[
+        'flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs',
+        isFailed
+          ? 'bg-amber-500/10 border border-amber-500/20 text-amber-200'
+          : 'bg-brand-500/10 border border-brand-400/20 text-brand-200'
+      ].join(' ')}
+    >
       {!isFailed && (
         <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse shrink-0" />
       )}
@@ -53,6 +58,8 @@ function AISetupBanner(): JSX.Element | null {
     </div>
   )
 }
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
@@ -73,14 +80,21 @@ export default function HomePage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-7 flex flex-col min-h-full max-w-5xl">
+      <div className="px-6 py-6 flex flex-col gap-5">
         <GreetingHeader profile={profile} />
         <AISetupBanner />
-        <StatsRow profile={profile} />
-        <ModuleGrid
-          speakingEnabled={speakingEnabled}
-          speakingDisabledReason={speakingDisabledReason}
-        />
+
+        {/* Main content — modules (left) + progress widgets (right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_272px] gap-5">
+          <ModuleGrid
+            speakingEnabled={speakingEnabled}
+            speakingDisabledReason={speakingDisabledReason}
+          />
+          <div className="flex flex-col gap-4">
+            <DailyProgressCard current={0} goal={10} />
+            <WeekStreakCard streak={0} />
+          </div>
+        </div>
       </div>
     </div>
   )
