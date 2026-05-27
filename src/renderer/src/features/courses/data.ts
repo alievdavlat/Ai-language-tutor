@@ -42,6 +42,19 @@ export const BOOK_COURSES: Course[] = [
   { id: 'vocabinuse', type: 'book', title: 'Vocabulary in Use', subtitle: 'Cambridge', level: 'B2', lessons: 100, progress: 8, cover: 'from-amber-500 to-amber-700' }
 ]
 
+// Teacher-made courses (appear on their channel + here).
+export const TEACHER_COURSES: Course[] = [
+  { id: 'tc1', type: 'level', title: 'IELTS Speaking Bootcamp', subtitle: 'James Lee', level: 'B1–B2', lessons: 24, progress: 0, cover: 'from-rose-500 to-pink-700' },
+  { id: 'tc2', type: 'level', title: 'Everyday Conversation', subtitle: 'Emma Carter', level: 'A2–B1', lessons: 30, progress: 12, cover: 'from-sky-500 to-blue-700' },
+  { id: 'tc3', type: 'level', title: 'Business English Pro', subtitle: 'Sara Kim', level: 'B2', lessons: 28, progress: 0, cover: 'from-violet-500 to-purple-700' }
+]
+
+// Student-shared / community courses.
+export const STUDENT_COURSES: Course[] = [
+  { id: 'sc1', type: 'level', title: 'My A2 → B1 roadmap', subtitle: 'shared by Bekzod', level: 'A2–B1', lessons: 18, progress: 0, cover: 'from-emerald-500 to-teal-700' },
+  { id: 'sc2', type: 'level', title: 'Movies for listening', subtitle: 'shared by Dilnoza', level: 'B1', lessons: 14, progress: 0, cover: 'from-amber-500 to-orange-700' }
+]
+
 // A representative learning path reused for any selected course (visual shell).
 export const SAMPLE_UNITS: Unit[] = [
   {

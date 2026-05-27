@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { ProgressBar, SectionHeading } from '../../components/ui'
+import { ProgressBar, SectionHeading, Tabs, type TabItem } from '../../components/ui'
 import {
   IconBolt,
   IconBook,
@@ -15,12 +15,22 @@ import {
 import {
   BOOK_COURSES,
   LEVEL_COURSES,
+  STUDENT_COURSES,
+  TEACHER_COURSES,
   SAMPLE_UNITS,
   type Course,
   type NodeKind,
   type NodeState,
   type PathNode
 } from './data'
+
+type Source = 'all' | 'official' | 'teachers' | 'students'
+const SOURCE_FILTERS: TabItem<Source>[] = [
+  { id: 'all', label: 'All' },
+  { id: 'official', label: 'Official' },
+  { id: 'teachers', label: 'Teachers' },
+  { id: 'students', label: 'Students' }
+]
 
 const KIND_ICON: Record<NodeKind, (p: IconProps) => JSX.Element> = {
   video: IconPlay,
@@ -104,6 +114,7 @@ function PathNodeButton({ node, onOpen }: { node: PathNode; onOpen: () => void }
 export default function CoursesPage(): JSX.Element {
   const navigate = useNavigate()
   const [selected, setSelected] = useState<Course | null>(null)
+  const [source, setSource] = useState<Source>('all')
 
   // ── Path view ────────────────────────────────────────────────────────────
   if (selected) {
@@ -158,27 +169,54 @@ export default function CoursesPage(): JSX.Element {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Courses</h1>
           <p className="text-sm text-slate-400 mt-1">
-            Pick a course and follow the path — video lessons, vocabulary and practice in order.
+            Official courses, teacher channels and community picks — follow the path in order.
           </p>
         </div>
 
-        <div>
-          <SectionHeading title="Level courses" subtitle="Video-led, A1 → C1 — learn step by step" />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {LEVEL_COURSES.map((c) => (
-              <CourseCard key={c.id} course={c} onOpen={() => setSelected(c)} />
-            ))}
-          </div>
-        </div>
+        <Tabs items={SOURCE_FILTERS} active={source} onChange={setSource} className="self-start" />
 
-        <div>
-          <SectionHeading title="Coursebooks" subtitle="Study a full textbook unit by unit" />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {BOOK_COURSES.map((c) => (
-              <CourseCard key={c.id} course={c} onOpen={() => setSelected(c)} />
-            ))}
+        {(source === 'all' || source === 'official') && (
+          <>
+            <div>
+              <SectionHeading title="Level courses" subtitle="Video-led, A1 → C1 — learn step by step" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {LEVEL_COURSES.map((c) => (
+                  <CourseCard key={c.id} course={c} onOpen={() => setSelected(c)} />
+                ))}
+              </div>
+            </div>
+            <div>
+              <SectionHeading title="Coursebooks" subtitle="Study a full textbook unit by unit" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {BOOK_COURSES.map((c) => (
+                  <CourseCard key={c.id} course={c} onOpen={() => setSelected(c)} />
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {(source === 'all' || source === 'teachers') && (
+          <div>
+            <SectionHeading title="From teachers" subtitle="Made by teachers on the platform" action={<button onClick={() => navigate('/channel')} className="text-xs font-semibold text-brand-300 hover:text-brand-200">Browse teachers</button>} />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {TEACHER_COURSES.map((c) => (
+                <CourseCard key={c.id} course={c} onOpen={() => navigate('/course')} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {(source === 'all' || source === 'students') && (
+          <div>
+            <SectionHeading title="From the community" subtitle="Shared by other learners" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {STUDENT_COURSES.map((c) => (
+                <CourseCard key={c.id} course={c} onOpen={() => navigate('/course')} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

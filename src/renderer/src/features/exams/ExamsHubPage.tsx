@@ -19,6 +19,7 @@ interface ExamDef {
   scale: string
   cover: string
   to: string
+  soon?: boolean
   sections: { label: string; Icon: (p: IconProps) => JSX.Element }[]
 }
 
@@ -52,7 +53,41 @@ const EXAMS: ExamDef[] = [
       { label: 'Speaking', Icon: IconMic },
       { label: 'Writing', Icon: IconPencilEdit }
     ]
+  },
+  {
+    id: 'sat',
+    title: 'SAT',
+    subtitle: 'Reading, Writing & Math',
+    meta: '2 sections · ~2h 14m',
+    scale: 'Score 400–1600',
+    cover: 'from-emerald-600 to-teal-800',
+    to: '/exams/ielts',
+    soon: true,
+    sections: [
+      { label: 'Reading', Icon: IconBook },
+      { label: 'Writing', Icon: IconPencilEdit }
+    ]
+  },
+  {
+    id: 'gmat',
+    title: 'GMAT',
+    subtitle: 'Verbal & quantitative',
+    meta: '4 sections · ~3h 7m',
+    scale: 'Score 200–800',
+    cover: 'from-violet-600 to-purple-800',
+    to: '/exams/ielts',
+    soon: true,
+    sections: [
+      { label: 'Verbal', Icon: IconBook },
+      { label: 'Writing', Icon: IconPencilEdit }
+    ]
   }
+]
+
+const COMMUNITY_MOCKS = [
+  { name: 'IELTS Writing — Task 2 set', author: 'Emma Carter', role: 'teacher', tries: '1.2k' },
+  { name: 'B1 Grammar mock #4', author: 'Bekzod', role: 'student', tries: '340' },
+  { name: 'TOEFL Speaking drills', author: 'James Lee', role: 'teacher', tries: '880' }
 ]
 
 const RECENT = [
@@ -85,9 +120,15 @@ function ExamCard({ exam }: { exam: ExamDef }): JSX.Element {
             </div>
           ))}
         </div>
-        <button onClick={() => navigate(exam.to)} className="btn-primary w-full py-2.5 mt-auto">
-          Start mock test →
-        </button>
+        {exam.soon ? (
+          <button disabled className="btn-ghost w-full py-2.5 mt-auto opacity-60 cursor-not-allowed">
+            Coming soon
+          </button>
+        ) : (
+          <button onClick={() => navigate(exam.to)} className="btn-primary w-full py-2.5 mt-auto">
+            Start mock test →
+          </button>
+        )}
       </div>
     </div>
   )
@@ -125,6 +166,24 @@ export default function ExamsHubPage(): JSX.Element {
           </div>
           <IconArrowRight className="w-5 h-5 text-brand-300 shrink-0" />
         </button>
+
+        {/* Community mocks */}
+        <div>
+          <SectionHeading title="Community mock tests" subtitle="Created by teachers and learners" />
+          <div className="flex flex-col gap-2">
+            {COMMUNITY_MOCKS.map((m) => (
+              <button key={m.name} onClick={() => navigate('/exams/ielts')} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-left hover:bg-white/[0.06] transition">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">{m.name}</p>
+                  <p className="text-xs text-slate-500">
+                    {m.author} <span className={cn('uppercase tracking-wider', m.role === 'teacher' ? 'text-brand-300' : 'text-slate-400')}>· {m.role}</span> · {m.tries} attempts
+                  </p>
+                </div>
+                <IconArrowRight className="w-4 h-4 text-slate-500 shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Recent results */}
         <div>

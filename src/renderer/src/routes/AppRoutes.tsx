@@ -26,6 +26,7 @@ import ExercisePlayer from '../features/exercise/ExercisePlayer'
 import LevelTestPage from '../features/leveltest/LevelTestPage'
 import ExamsHubPage from '../features/exams/ExamsHubPage'
 import ExamMock from '../features/exams/ExamMock'
+import AccountPage from '../features/account/AccountPage'
 
 /**
  * After bootstrap completes, send the user from the Boot splash into the app.
@@ -163,6 +164,14 @@ export default function AppRoutes(): JSX.Element {
       />
       <Route path="/live/room" element={<LiveRoomPage />} />
       <Route path="/live/group" element={<LiveRoomPage group />} />
+      <Route
+        path="/account"
+        element={
+          <AppShell>
+            <AccountPage />
+          </AppShell>
+        }
+      />
       <Route
         path="/vocabulary"
         element={

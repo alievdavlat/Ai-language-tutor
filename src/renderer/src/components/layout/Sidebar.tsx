@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import type { UserProfile } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import AvatarCircle from '../ui/AvatarCircle'
+import LanguageSwitcher from './LanguageSwitcher'
 import {
   IconBook,
   IconBookmark,
@@ -117,20 +118,23 @@ interface ProfileCardProps {
 function ProfileCard({ profile, collapsed }: ProfileCardProps): JSX.Element {
   if (collapsed) {
     return (
-      <div className="mx-auto mb-4">
+      <NavLink to="/account" className="mx-auto mb-4" title="Account">
         <AvatarCircle name={profile.name ?? 'User'} size="sm" />
-      </div>
+      </NavLink>
     )
   }
 
   return (
-    <div className="mx-3 mb-4 p-3 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center gap-3">
+    <NavLink
+      to="/account"
+      className="mx-3 mb-4 p-3 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center gap-3 hover:bg-white/[0.08] transition"
+    >
       <AvatarCircle name={profile.name ?? 'User'} size="md" />
       <div className="min-w-0">
         <p className="text-sm font-semibold truncate text-white">{profile.name ?? 'You'}</p>
         <p className="text-[11px] text-slate-400 truncate">Level {profile.level}</p>
       </div>
-    </div>
+    </NavLink>
   )
 }
 
@@ -165,6 +169,13 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
           </div>
         )}
       </div>
+
+      {/* Language picker */}
+      {!collapsed && (
+        <div className="px-3 pb-3">
+          <LanguageSwitcher />
+        </div>
+      )}
 
       {/* Primary navigation */}
       <nav className={cn('flex-1 py-1 overflow-y-auto', collapsed ? 'px-1' : 'px-3')}>
