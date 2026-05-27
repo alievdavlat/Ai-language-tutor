@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import {
   ProgressBar,
   ProgressRing,
@@ -59,6 +60,7 @@ const BADGES: Badge[] = [
 ]
 
 export default function ProgressPage(): JSX.Element {
+  const navigate = useNavigate()
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
@@ -85,6 +87,12 @@ export default function ProgressPage(): JSX.Element {
             <p className="text-sm text-slate-400 mt-1.5">
               Keep practicing speaking daily — it's your fastest path to the next level.
             </p>
+            <button
+              onClick={() => navigate('/level-test')}
+              className="inline-flex items-center gap-2 mt-3 rounded-pill bg-white/[0.06] hover:bg-white/10 border border-white/10 px-4 py-2 text-xs font-semibold text-slate-200 transition"
+            >
+              <IconTarget className="w-4 h-4 text-brand-300" /> Take the level test
+            </button>
           </div>
         </div>
 

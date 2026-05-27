@@ -17,6 +17,7 @@ import PronunciationPage from '../features/pronunciation/PronunciationPage'
 import ScenariosPage from '../features/scenarios/ScenariosPage'
 import CoursebooksPage from '../features/coursebooks/CoursebooksPage'
 import ExercisePlayer from '../features/exercise/ExercisePlayer'
+import LevelTestPage from '../features/leveltest/LevelTestPage'
 
 /**
  * After bootstrap completes, send the user from the Boot splash into the app.
@@ -69,6 +70,7 @@ export default function AppRoutes(): JSX.Element {
       />
       <Route path="/speaking/call" element={<CallPage />} />
       <Route path="/learn/exercise" element={<ExercisePlayer />} />
+      <Route path="/level-test" element={<LevelTestPage />} />
       <Route
         path="/lessons"
         element={
