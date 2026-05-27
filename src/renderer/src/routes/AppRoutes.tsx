@@ -27,6 +27,7 @@ import LevelTestPage from '../features/leveltest/LevelTestPage'
 import ExamsHubPage from '../features/exams/ExamsHubPage'
 import ExamMock from '../features/exams/ExamMock'
 import ExamPracticeHub from '../features/exams/ExamPracticeHub'
+import CefrHubPage from '../features/exams/CefrHubPage'
 import AccountPage from '../features/account/AccountPage'
 import TeacherDashboardPage from '../features/teacher/TeacherDashboardPage'
 import CourseAuthoringPage from '../features/teacher/CourseAuthoringPage'
@@ -112,6 +113,7 @@ export default function AppRoutes(): JSX.Element {
       <Route path="/exams/toefl" element={<AppShell><ExamPracticeHub examId="toefl" /></AppShell>} />
       <Route path="/exams/ielts/mock" element={<ExamMock kind="ielts" />} />
       <Route path="/exams/toefl/mock" element={<ExamMock kind="toefl" />} />
+      <Route path="/exams/cefr" element={<AppShell><CefrHubPage /></AppShell>} />
       <Route
         path="/exams"
         element={

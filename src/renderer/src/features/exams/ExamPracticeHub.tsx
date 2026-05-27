@@ -122,6 +122,12 @@ export default function ExamPracticeHub({ examId }: { examId: ExamId }): JSX.Ele
           <p className="text-sm text-slate-400 mt-1">
             Full mock tests and skill-by-skill practice with an AI examiner — {c.scale}.
           </p>
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <span className="text-[11px] text-slate-500">Free practice from</span>
+            {['British Council', 'IDP', 'Cambridge', 'Recent actual'].map((p) => (
+              <span key={p} className="text-[11px] font-medium rounded-full bg-white/[0.05] border border-white/10 px-2.5 py-1 text-slate-300">{p}</span>
+            ))}
+          </div>
         </div>
 
         {/* Stats */}
@@ -175,15 +181,25 @@ export default function ExamPracticeHub({ examId }: { examId: ExamId }): JSX.Ele
               )}
               {c.sets[skill].map((s) => {
                 const Icon = SKILL_ICON[skill]
+                const resources = ['Answer key', ...(skill === 'writing' || skill === 'speaking' ? ['Sample answer'] : []), 'Tips']
                 return (
-                  <button key={s.name} onClick={() => navigate(mock)} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-left hover:bg-white/[0.06] transition">
-                    <span className="w-10 h-10 rounded-xl bg-white/[0.06] text-slate-300 flex items-center justify-center shrink-0"><Icon className="w-5 h-5" /></span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{s.name}</p>
-                      <p className="text-xs text-slate-500">{s.meta}</p>
+                  <div key={s.name} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="w-10 h-10 rounded-xl bg-white/[0.06] text-slate-300 flex items-center justify-center shrink-0"><Icon className="w-5 h-5" /></span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{s.name}</p>
+                        <p className="text-xs text-slate-500">{s.meta}</p>
+                      </div>
+                      <button onClick={() => navigate(mock)} className="text-xs font-semibold text-brand-300 shrink-0">Practice →</button>
                     </div>
-                    <span className="text-xs font-semibold text-brand-300 shrink-0">Practice →</span>
-                  </button>
+                    <div className="flex flex-wrap gap-1.5 mt-2.5 pl-[52px]">
+                      {resources.map((r) => (
+                        <button key={r} className="text-[11px] font-medium rounded-full bg-white/[0.05] border border-white/10 px-2.5 py-1 text-slate-400 hover:text-slate-200 hover:bg-white/10 transition">
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )
               })}
             </div>

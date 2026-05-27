@@ -44,18 +44,22 @@ const COMMUNITY_NAV = [
   { to: '/live', label: 'Live', Icon: IconLive }
 ] as const
 
-// Teacher-mode navigation
+// Teacher-mode navigation — teachers also learn, so they keep a Learn group.
 const TEACHER_MANAGE = [
   { to: '/teacher', label: 'Dashboard', Icon: IconHome },
-  { to: '/courses', label: 'My courses', Icon: IconBook },
-  { to: '/channel', label: 'My channel', Icon: IconUsers },
-  { to: '/library', label: 'Library', Icon: IconLibrary }
+  { to: '/channel', label: 'My channel', Icon: IconUsers }
+] as const
+
+const TEACHER_LEARN = [
+  { to: '/courses', label: 'Courses', Icon: IconBook },
+  { to: '/library', label: 'Library', Icon: IconLibrary },
+  { to: '/speaking', label: 'Speaking', Icon: IconMic },
+  { to: '/exams', label: 'Exams', Icon: IconClipboard }
 ] as const
 
 const TEACHER_ENGAGE = [
   { to: '/live', label: 'Live', Icon: IconLive },
-  { to: '/community', label: 'Community', Icon: IconChat },
-  { to: '/exams', label: 'Exams', Icon: IconClipboard }
+  { to: '/community', label: 'Community', Icon: IconChat }
 ] as const
 
 const BOTTOM_NAV = [
@@ -210,6 +214,13 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
             {!collapsed && <p className="section-title px-3 mb-2">Manage</p>}
             <div className="space-y-0.5">
               {TEACHER_MANAGE.map((item) => (
+                <NavItem key={item.to} {...item} collapsed={collapsed} />
+              ))}
+            </div>
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Learn</p>}
+            {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
+            <div className="space-y-0.5">
+              {TEACHER_LEARN.map((item) => (
                 <NavItem key={item.to} {...item} collapsed={collapsed} />
               ))}
             </div>

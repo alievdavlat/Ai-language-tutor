@@ -152,20 +152,40 @@ export default function ExamsHubPage(): JSX.Element {
           ))}
         </div>
 
-        {/* CEFR quick test */}
+        {/* CEFR hub */}
         <button
-          onClick={() => navigate('/level-test')}
+          onClick={() => navigate('/exams/cefr')}
           className="rounded-card border border-white/10 bg-white/[0.03] p-5 flex items-center gap-4 text-left hover:bg-white/[0.06] transition"
         >
           <span className="w-12 h-12 rounded-2xl bg-grad-brand flex items-center justify-center shadow-glow-sm shrink-0">
             <IconTarget className="w-6 h-6 text-white" />
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-bold text-white">CEFR placement test</p>
-            <p className="text-sm text-slate-400">Quick 12-question test → your A1–C2 level + IELTS estimate</p>
+            <p className="text-base font-bold text-white">CEFR English test</p>
+            <p className="text-sm text-slate-400">Find your A1–C2 level, then practise by level or skill</p>
           </div>
           <IconArrowRight className="w-5 h-5 text-brand-300 shrink-0" />
         </button>
+
+        {/* Free practice by provider */}
+        <div>
+          <SectionHeading title="Free practice by provider" subtitle="Official section practice, answer keys, sample answers & tips" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { name: 'British Council', sub: 'IELTS', to: '/exams/ielts', tone: 'from-rose-600 to-red-800' },
+              { name: 'IDP', sub: 'IELTS', to: '/exams/ielts', tone: 'from-blue-600 to-indigo-800' },
+              { name: 'Cambridge', sub: 'IELTS · books', to: '/exams/ielts', tone: 'from-violet-600 to-purple-800' },
+              { name: 'College Board', sub: 'SAT', to: '/exams', tone: 'from-emerald-600 to-teal-800' }
+            ].map((p) => (
+              <button key={p.name} onClick={() => navigate(p.to)} className="rounded-2xl p-1 ring-1 ring-white/10 hover:ring-white/25 transition text-left">
+                <div className={cn('rounded-xl bg-gradient-to-br h-16 flex items-end p-3', p.tone)}>
+                  <span className="text-sm font-bold text-white leading-tight">{p.name}</span>
+                </div>
+                <p className="text-[11px] text-slate-400 px-1.5 pt-1.5">{p.sub}</p>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Community mocks */}
         <div>
