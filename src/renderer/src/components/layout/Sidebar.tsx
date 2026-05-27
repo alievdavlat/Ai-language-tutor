@@ -11,9 +11,7 @@ import {
   IconGear,
   IconHome,
   IconLibrary,
-  IconMasks,
   IconMic,
-  IconTarget,
   type IconProps
 } from '../icons'
 
@@ -23,16 +21,14 @@ const NAV_ICON_CLS = 'w-[18px] h-[18px] shrink-0'
 // ─── Nav / item config ────────────────────────────────────────────────────────
 const LEARN_NAV = [
   { to: '/home', label: 'Home', Icon: IconHome },
-  { to: '/lessons', label: 'Lessons', Icon: IconBook },
-  { to: '/coursebooks', label: 'Coursebooks', Icon: IconLibrary },
+  { to: '/courses', label: 'Courses', Icon: IconBook },
+  { to: '/library', label: 'Library', Icon: IconLibrary },
   { to: '/vocabulary', label: 'Vocabulary', Icon: IconBookmark },
   { to: '/progress', label: 'Progress', Icon: IconChart }
 ] as const
 
 const PRACTICE_NAV = [
-  { to: '/speaking', label: 'Speaking', Icon: IconMic },
-  { to: '/pronunciation', label: 'Pronunciation', Icon: IconTarget },
-  { to: '/scenarios', label: 'Roleplay', Icon: IconMasks }
+  { to: '/speaking', label: 'Speaking', Icon: IconMic }
 ] as const
 
 const BOTTOM_NAV = [

@@ -1,57 +1,21 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import type { MicMode, ModelRecommendation, OllamaStatus, UserProfile } from '@shared/types'
-import { ACCENT_TO_LANG, ACCENT_TO_PERSONA_NAME } from '@shared/constants'
+import { useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
-import { useSTT } from '../../hooks/stt'
-import { useTTS } from '../../hooks/tts'
-import { useChatStream } from '../../hooks/useChatStream'
-import { useWhisperModelLoader } from '../../hooks/useWhisperModelLoader'
-import { micPrefsFromSettings } from '../../lib/audio'
-import type { AvatarEmotion, AvatarMode } from '../../components/avatar'
-import AINotReadyBanner from '../../components/speaking/AINotReadyBanner'
-import WhisperLoadingBanner from '../../components/speaking/WhisperLoadingBanner'
-import SpeakingHeader from './sections/SpeakingHeader'
-import AvatarPanel from './sections/AvatarPanel'
-import ChatPanel from './sections/ChatPanel'
-import { useTurnHandler } from './hooks/useTurnHandler'
+import { Tabs, type TabItem } from '../../components/ui'
+import ConversationMode from './modes/ConversationMode'
+import RoleplayMode from './modes/RoleplayMode'
+import PronunciationPage from '../pronunciation/PronunciationPage'
 
-// ─── Derived state helpers ────────────────────────────────────────────────────
+type Mode = 'conversation' | 'roleplay' | 'pronunciation'
 
-function statusLabel(speaking: boolean, streaming: boolean, listening: boolean): string {
-  if (speaking) return 'Speaking…'
-  if (streaming) return 'Thinking…'
-  if (listening) return 'Listening…'
-  return 'Ready'
-}
-
-function emotionFor(speaking: boolean, streaming: boolean): AvatarEmotion {
-  if (speaking) return 'happy'
-  if (streaming) return 'thinking'
-  return 'neutral'
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface InnerProps {
-  profile: UserProfile
-  rec: ModelRecommendation | null
-  ollama: OllamaStatus | null
-  setProfile: (p: UserProfile | null) => void
-  avatarMode: AvatarMode
-  onAvatarModeChange: (m: AvatarMode) => void
-  topic: string
-  onTopicChange: (t: string) => void
-}
-
-// ─── Root component (profile guard) ──────────────────────────────────────────
+const MODES: TabItem<Mode>[] = [
+  { id: 'conversation', label: 'Conversation' },
+  { id: 'roleplay', label: 'Roleplay' },
+  { id: 'pronunciation', label: 'Pronunciation' }
+]
 
 export default function SpeakingPage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
-  const rec = useAppStore((s) => s.rec)
-  const ollama = useAppStore((s) => s.ollama)
-  const setProfile = useAppStore((s) => s.setProfile)
-  const [avatarMode, setAvatarMode] = useState<AvatarMode>('2d')
+  const [mode, setMode] = useState<Mode>('conversation')
   const [topic, setTopic] = useState('')
 
   if (!profile) {
@@ -59,173 +23,24 @@ export default function SpeakingPage(): JSX.Element {
   }
 
   return (
-    <SpeakingPageInner
-      profile={profile}
-      rec={rec}
-      ollama={ollama}
-      setProfile={setProfile}
-      avatarMode={avatarMode}
-      onAvatarModeChange={setAvatarMode}
-      topic={topic}
-      onTopicChange={setTopic}
-    />
-  )
-}
-
-// ─── Inner component (all hooks, all logic) ───────────────────────────────────
-
-function SpeakingPageInner({
-  profile,
-  rec,
-  ollama,
-  setProfile,
-  avatarMode,
-  onAvatarModeChange,
-  topic,
-  onTopicChange
-}: InnerProps): JSX.Element {
-  const navigate = useNavigate()
-  const model = profile.settings.llmModel || rec?.llm.tag || ''
-  const accent = profile.settings.accent
-  const micMode: MicMode = profile.settings.micMode
-
-  const { speaking, currentVisemeWeight, speak, cancel } = useTTS({
-    accent,
-    rate: profile.settings.ttsSpeed,
-    voiceURI: profile.settings.voiceURI
-  })
-
-  const { streaming, error: chatError, send, abort: abortChat } = useChatStream(model)
-
-  const { turns, handleUserTurn, cancelCurrent } = useTurnHandler({
-    profile,
-    topic,
-    sendChat: send,
-    speak,
-    cancelSpeak: cancel
-  })
-
-  const stt = useSTT({
-    engine: profile.settings.sttEngine,
-    mode: micMode,
-    lang: ACCENT_TO_LANG[accent],
-    whisperModel: profile.settings.whisperModel,
-    micPrefs: micPrefsFromSettings(profile.settings),
-    onSpeechStart: () => {
-      if (speaking) cancelCurrent()
-      abortChat()
-    },
-    onFinal: (transcript) => {
-      if (speaking) cancel()
-      void handleUserTurn(transcript)
-    }
-  })
-
-  const setMicMode = async (m: MicMode): Promise<void> => {
-    const next: UserProfile = { ...profile, settings: { ...profile.settings, micMode: m } }
-    await window.api.profile.save(next)
-    setProfile(next)
-    void stt.stop()
-  }
-
-  const whisperLoader = useWhisperModelLoader(profile.settings.whisperModel)
-  const whisperWarming =
-    profile.settings.sttEngine === 'whisper-local' && !whisperLoader.loaded
-
-  const ollamaReady = !!ollama?.running && ollama.models.length > 0
-  const disabled = !ollamaReady || streaming
-  const avatarName = useMemo(() => ACCENT_TO_PERSONA_NAME[accent], [accent])
-
-  useEffect(() => {
-    return () => {
-      void stt.stop()
-      cancelCurrent()
-      abortChat()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  return (
     <div className="h-full flex flex-col">
-      <SpeakingHeader
-        accent={accent}
-        level={profile.level}
-        correctionStyle={profile.settings.correctionStyle}
-        avatarMode={avatarMode}
-        onAvatarModeChange={onAvatarModeChange}
-        callEnabled={ollamaReady}
-      />
-
-      {!ollamaReady && <AINotReadyBanner />}
-
-      {whisperWarming && (
-        <WhisperLoadingBanner
-          progress={Math.round(whisperLoader.progress * 100)}
-          error={whisperLoader.error}
-        />
-      )}
-
-      {chatError && (
-        <ChatErrorBanner
-          message={chatError}
-          onOpenSettings={() => navigate('/settings')}
-        />
-      )}
-
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5 p-5 overflow-hidden">
-        <AvatarPanel
-          mode={avatarMode}
-          mouthOpen={speaking ? currentVisemeWeight : 0}
-          emotion={emotionFor(speaking, streaming)}
-          name={avatarName}
-          topic={topic}
-          onTopicChange={onTopicChange}
-          statusLabel={statusLabel(speaking, streaming, stt.state.listening)}
-          listening={stt.state.listening}
-        />
-        <ChatPanel
-          turns={turns}
-          micMode={micMode}
-          listening={stt.state.listening}
-          interim={stt.state.interim}
-          disabled={disabled}
-          onMicModeChange={(m) => void setMicMode(m)}
-          onStartMic={() => {
-            if (speaking) cancel()
-            void stt.start()
-          }}
-          onStopMic={() => void stt.stop()}
-          onTextSubmit={(t) => void handleUserTurn(t)}
-        />
+      <div className="px-6 pt-4 pb-3 border-b border-white/10 flex items-center justify-between gap-3 backdrop-blur-xl bg-canvas-soft/40">
+        <Tabs items={MODES} active={mode} onChange={setMode} />
+        <span className="hidden sm:block text-xs text-slate-500">Practice · speak freely, role-play, or check your pronunciation</span>
       </div>
-    </div>
-  )
-}
 
-// ─── Local sub-component ──────────────────────────────────────────────────────
-
-interface ChatErrorBannerProps {
-  message: string
-  onOpenSettings: () => void
-}
-
-function ChatErrorBanner({ message, onOpenSettings }: ChatErrorBannerProps): JSX.Element {
-  const isMemoryError = /memory|RAM|out of memory/i.test(message)
-
-  return (
-    <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-2.5 text-xs text-red-200 flex items-center justify-between gap-3">
-      <span>
-        Something went wrong with the AI response.
-        {isMemoryError && (
-          <span className="ml-1 text-red-300">Try closing other apps to free up memory.</span>
+      <div className="flex-1 overflow-hidden">
+        {mode === 'conversation' && <ConversationMode topic={topic} onTopicChange={setTopic} />}
+        {mode === 'roleplay' && (
+          <RoleplayMode
+            onPick={(prompt) => {
+              setTopic(prompt)
+              setMode('conversation')
+            }}
+          />
         )}
-      </span>
-      <button
-        onClick={onOpenSettings}
-        className="text-xs underline hover:text-white shrink-0"
-      >
-        Settings →
-      </button>
+        {mode === 'pronunciation' && <PronunciationPage />}
+      </div>
     </div>
   )
 }

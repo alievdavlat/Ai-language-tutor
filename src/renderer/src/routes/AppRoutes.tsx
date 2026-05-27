@@ -11,11 +11,9 @@ import SpeakingPage from '../features/speaking/SpeakingPage'
 import CallPage from '../features/speaking/CallPage'
 import SettingsPage from '../features/settings/SettingsPage'
 import VocabularyPage from '../features/vocabulary/VocabularyPage'
-import LessonsPage from '../features/lessons/LessonsPage'
 import ProgressPage from '../features/progress/ProgressPage'
-import PronunciationPage from '../features/pronunciation/PronunciationPage'
-import ScenariosPage from '../features/scenarios/ScenariosPage'
-import CoursebooksPage from '../features/coursebooks/CoursebooksPage'
+import CoursesPage from '../features/courses/CoursesPage'
+import LibraryPage from '../features/library/LibraryPage'
 import ExercisePlayer from '../features/exercise/ExercisePlayer'
 import LevelTestPage from '../features/leveltest/LevelTestPage'
 
@@ -72,34 +70,18 @@ export default function AppRoutes(): JSX.Element {
       <Route path="/learn/exercise" element={<ExercisePlayer />} />
       <Route path="/level-test" element={<LevelTestPage />} />
       <Route
-        path="/lessons"
+        path="/courses"
         element={
           <AppShell>
-            <LessonsPage />
+            <CoursesPage />
           </AppShell>
         }
       />
       <Route
-        path="/coursebooks"
+        path="/library"
         element={
           <AppShell>
-            <CoursebooksPage />
-          </AppShell>
-        }
-      />
-      <Route
-        path="/pronunciation"
-        element={
-          <AppShell>
-            <PronunciationPage />
-          </AppShell>
-        }
-      />
-      <Route
-        path="/scenarios"
-        element={
-          <AppShell>
-            <ScenariosPage />
+            <LibraryPage />
           </AppShell>
         }
       />
