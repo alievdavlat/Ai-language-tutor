@@ -1,6 +1,11 @@
 /** @type {import('tailwindcss').Config} */
+// Renderer-local Tailwind config for standalone Vite preview.
+// Content paths are relative to THIS file's location (src/renderer/).
 export default {
-  content: ['./src/renderer/**/*.{html,ts,tsx}'],
+  content: [
+    './index.html',
+    './src/**/*.{html,ts,tsx}'
+  ],
   darkMode: 'class',
   theme: {
     extend: {
@@ -25,6 +30,7 @@ export default {
         listen: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' },
         read: { 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7' },
         write: { 400: '#c084fc', 500: '#a855f7', 600: '#9333ea' },
+        // Surfaces — dark navy canvas with progressively lighter raised layers.
         canvas: {
           DEFAULT: '#080b1a',
           soft: '#0d1124',

@@ -118,7 +118,7 @@ export default function MicControls({
               ? 'bg-white/[0.06] ring-white/10 text-slate-600 cursor-not-allowed opacity-50'
               : listening
                 ? 'bg-red-500/90 ring-red-400/60 text-white shadow-[0_0_20px_rgba(239,68,68,0.5)] scale-110'
-                : 'bg-brand-600/80 ring-brand-400/50 text-white hover:bg-brand-500/90 hover:scale-105 shadow-[0_0_15px_rgba(139,92,246,0.3)]'
+                : 'bg-brand-600/80 ring-brand-400/50 text-white hover:bg-brand-500/90 hover:scale-105 shadow-[0_0_15px_rgba(59,130,246,0.35)]'
           )}
         >
           {/* Pulse ring when listening */}

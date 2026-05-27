@@ -15,7 +15,7 @@ interface AvatarPanelProps {
 
 const STATUS_COLORS: Record<string, string> = {
   'Listening…': 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]',
-  'Speaking…': 'bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.7)]',
+  'Speaking…': 'bg-brand-400 shadow-[0_0_8px_rgba(96,165,250,0.7)]',
   'Thinking…': 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]',
   'Ready': 'bg-slate-500'
 }
@@ -36,7 +36,7 @@ export default function AvatarPanel({
   return (
     <div className="relative rounded-2xl border border-white/[0.07] overflow-hidden flex flex-col"
       style={{
-        background: 'linear-gradient(160deg, rgba(139,92,246,0.12) 0%, rgba(15,23,42,0.6) 60%, rgba(15,23,42,0.4) 100%)'
+        background: 'linear-gradient(160deg, rgba(59,130,246,0.12) 0%, rgba(15,23,42,0.6) 60%, rgba(15,23,42,0.4) 100%)'
       }}
     >
       {/* Glow blob behind the avatar */}

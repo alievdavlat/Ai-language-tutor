@@ -465,7 +465,7 @@ function EmotionBackdrop({ state }: { state: CallState }): JSX.Element {
     idle: 'from-slate-900 via-slate-950 to-black',
     listening: 'from-emerald-950/60 via-slate-950 to-black',
     thinking: 'from-amber-950/50 via-slate-950 to-black',
-    speaking: 'from-violet-950/65 via-slate-950 to-black',
+    speaking: 'from-brand-950/65 via-slate-950 to-black',
     muted: 'from-rose-950/55 via-slate-950 to-black'
   }
 

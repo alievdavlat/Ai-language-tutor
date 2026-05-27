@@ -31,7 +31,7 @@ function ChoiceOption({ letter, label, selected, onSelect }: ChoiceOptionProps):
       className={cn(
         'text-left rounded-xl border px-4 py-3 transition-all duration-150 flex items-center gap-3',
         selected
-          ? 'border-brand-400 bg-brand-500/20 text-white shadow-[0_0_0_1px_rgba(139,92,246,0.3)]'
+          ? 'border-brand-400 bg-brand-500/20 text-white shadow-[0_0_0_1px_rgba(59,130,246,0.35)]'
           : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.07] text-slate-200'
       )}
     >

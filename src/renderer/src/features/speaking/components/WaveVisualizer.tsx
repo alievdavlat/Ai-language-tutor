@@ -22,7 +22,7 @@ export default function WaveVisualizer({
   active,
   className,
   bars = 24,
-  color = '#a78bfa'
+  color = '#60a5fa'
 }: WaveVisualizerProps): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const smoothedRef = useRef<number[]>(Array.from({ length: bars }, () => 0))

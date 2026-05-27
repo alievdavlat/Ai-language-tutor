@@ -39,12 +39,12 @@ const STATE_THEME: Record<
     ripple: 'rgba(251,191,36,0.15)'
   },
   speaking: {
-    halo: 'from-violet-300/40 to-fuchsia-600/12',
-    core: 'from-violet-200 via-fuchsia-300 to-brand-400',
-    glow: 'shadow-[0_0_110px_45px_rgba(139,92,246,0.45)]',
-    ring: 'ring-violet-300/50',
-    text: 'text-violet-100',
-    ripple: 'rgba(139,92,246,0.18)'
+    halo: 'from-brand-300/40 to-sky-600/12',
+    core: 'from-sky-200 via-brand-300 to-brand-500',
+    glow: 'shadow-[0_0_110px_45px_rgba(59,130,246,0.45)]',
+    ring: 'ring-brand-300/50',
+    text: 'text-brand-100',
+    ripple: 'rgba(59,130,246,0.18)'
   },
   muted: {
     halo: 'from-rose-400/25 to-red-600/10',

@@ -36,7 +36,7 @@ export default function GreetingHeader({ profile }: GreetingHeaderProps): JSX.El
     <header
       className="rounded-2xl border border-white/[0.07] px-5 py-4 flex items-center gap-4 animate-fade-in overflow-hidden relative"
       style={{
-        background: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(99,102,241,0.08) 40%, transparent 100%)'
+        background: 'linear-gradient(135deg, rgba(59,130,246,0.16) 0%, rgba(37,99,235,0.08) 40%, transparent 100%)'
       }}
     >
       {/* Subtle glow blob */}

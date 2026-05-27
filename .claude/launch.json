@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "renderer",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd src\\renderer && npx vite --port 5175"],
+      "port": 5175
+    }
+  ]
+}

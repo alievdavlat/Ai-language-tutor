@@ -55,7 +55,7 @@ export default function WeekStreakCard({
                 className={cn(
                   'w-full aspect-square max-w-[34px] rounded-full flex items-center justify-center text-[11px] transition-all duration-300',
                   done
-                    ? 'bg-brand-500 shadow-[0_0_10px_rgba(139,92,246,0.5)] text-white font-bold'
+                    ? 'bg-brand-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] text-white font-bold'
                     : isToday
                       ? 'bg-white/[0.06] ring-2 ring-brand-400/60 text-brand-400'
                       : isPast

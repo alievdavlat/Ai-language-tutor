@@ -4,13 +4,13 @@ import { cn } from '../../lib/classnames'
 import AvatarCircle from '../ui/AvatarCircle'
 import {
   IconBook,
+  IconBookmark,
   IconChart,
   IconChevronLeft,
   IconChevronRight,
   IconGear,
   IconHome,
   IconMic,
-  IconPencil,
   type IconProps
 } from '../icons'
 
@@ -20,17 +20,14 @@ const NAV_ICON_CLS = 'w-[18px] h-[18px] shrink-0'
 // ─── Nav / item config ────────────────────────────────────────────────────────
 const PRIMARY_NAV = [
   { to: '/home', label: 'Home', Icon: IconHome },
-  { to: '/speaking', label: 'Practice', Icon: IconMic }
+  { to: '/speaking', label: 'Practice', Icon: IconMic },
+  { to: '/lessons', label: 'Lessons', Icon: IconBook },
+  { to: '/vocabulary', label: 'Vocabulary', Icon: IconBookmark },
+  { to: '/progress', label: 'Progress', Icon: IconChart }
 ] as const
 
 const BOTTOM_NAV = [
   { to: '/settings', label: 'Settings', Icon: IconGear }
-] as const
-
-const LOCKED_ITEMS = [
-  { label: 'Vocabulary', Icon: IconBook },
-  { label: 'Grammar', Icon: IconPencil },
-  { label: 'Progress', Icon: IconChart }
 ] as const
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -60,34 +57,6 @@ function NavItem({ to, label, Icon, collapsed }: NavItemProps): JSX.Element {
       <Icon className={NAV_ICON_CLS} />
       {!collapsed && <span>{label}</span>}
     </NavLink>
-  )
-}
-
-interface LockedItemProps {
-  label: string
-  Icon: (p: IconProps) => JSX.Element
-  collapsed: boolean
-}
-
-function LockedItem({ label, Icon, collapsed }: LockedItemProps): JSX.Element {
-  return (
-    <div
-      title={collapsed ? `${label} (coming soon)` : undefined}
-      className={cn(
-        'flex items-center gap-3 rounded-xl text-xs text-slate-600 cursor-not-allowed select-none',
-        collapsed ? 'justify-center px-0 py-2 w-full' : 'px-3 py-2'
-      )}
-    >
-      <Icon className="w-4 h-4 shrink-0 opacity-30" />
-      {!collapsed && (
-        <>
-          <span className="opacity-40">{label}</span>
-          <span className="ml-auto text-[9px] uppercase tracking-wider text-slate-700 font-semibold">
-            soon
-          </span>
-        </>
-      )}
-    </div>
   )
 }
 
@@ -188,12 +157,6 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
         {PRIMARY_NAV.map((item) => (
           <NavItem key={item.to} {...item} collapsed={collapsed} />
         ))}
-
-        <div className="pt-1 mt-1 border-t border-white/[0.04]">
-          {LOCKED_ITEMS.map((item) => (
-            <LockedItem key={item.label} {...item} collapsed={collapsed} />
-          ))}
-        </div>
       </nav>
 
       {/* Bottom: settings + collapse toggle */}

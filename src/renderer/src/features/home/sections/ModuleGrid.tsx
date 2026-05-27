@@ -1,11 +1,20 @@
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../../lib/classnames'
+import { IconBubble, type IconBubbleTone } from '../../../components/ui'
+import {
+  IconChat,
+  IconHeadphones,
+  IconMic,
+  IconPhone,
+  type IconProps
+} from '../../../components/icons'
 
 // ─── Module definitions ───────────────────────────────────────────────────────
 
 interface ModuleDef {
   id: string
-  icon: string
+  Icon: (p: IconProps) => JSX.Element
+  tone: IconBubbleTone
   title: string
   description: string
   cta: string
@@ -19,36 +28,36 @@ interface ModuleDef {
 const ACTIVE_MODULES: ModuleDef[] = [
   {
     id: 'call',
-    icon: '📞',
+    Icon: IconPhone,
+    tone: 'brand',
     title: 'Voice Call',
     description: 'Fullscreen immersive conversation — just talk. Real-time AI, pulsing orb, zero distractions.',
     cta: 'Start call',
     to: '/speaking/call',
     badge: 'LIVE',
-    gradient: 'from-violet-600/30 via-fuchsia-600/20 to-transparent',
-    border: 'border-violet-500/25',
-    glow: 'hover:shadow-[0_8px_30px_rgba(139,92,246,0.25)]'
+    gradient: 'from-brand-600/30 via-brand-500/12 to-transparent',
+    border: 'border-brand-500/25',
+    glow: 'hover:shadow-[0_8px_30px_rgba(37,99,235,0.25)]'
   },
   {
     id: 'chat',
-    icon: '💬',
+    Icon: IconChat,
+    tone: 'read',
     title: 'Chat + Voice',
     description: 'Text bubbles with live grammar corrections and AI feedback. Type or speak.',
     cta: 'Open chat',
     to: '/speaking',
     badge: null,
-    gradient: 'from-blue-600/25 via-cyan-600/15 to-transparent',
-    border: 'border-blue-500/20',
-    glow: 'hover:shadow-[0_8px_30px_rgba(59,130,246,0.2)]'
+    gradient: 'from-sky-600/22 via-cyan-600/10 to-transparent',
+    border: 'border-sky-500/20',
+    glow: 'hover:shadow-[0_8px_30px_rgba(14,165,233,0.2)]'
   }
 ]
 
-const COMING_SOON = [
-  { title: 'Vocabulary', icon: '📚' },
-  { title: 'Grammar', icon: '✍️' },
-  { title: 'Listening', icon: '🎧' },
-  { title: 'Reading', icon: '📖' },
-  { title: 'Writing', icon: '✏️' }
+const COMING_SOON: { title: string; Icon: (p: IconProps) => JSX.Element }[] = [
+  { title: 'Listening', Icon: IconHeadphones },
+  { title: 'Reading', Icon: IconChat },
+  { title: 'Writing', Icon: IconMic }
 ]
 
 // ─── Module card ──────────────────────────────────────────────────────────────
@@ -59,7 +68,8 @@ interface ModuleCardProps extends ModuleDef {
 }
 
 function ModuleCard({
-  icon,
+  Icon,
+  tone,
   title,
   description,
   cta,
@@ -95,7 +105,9 @@ function ModuleCard({
       )}
 
       {/* Icon */}
-      <div className="text-4xl leading-none">{icon}</div>
+      <IconBubble tone={tone} size="lg">
+        <Icon className="w-6 h-6" />
+      </IconBubble>
 
       {/* Body */}
       <div className="flex-1">
@@ -152,13 +164,13 @@ export default function ModuleGrid({
           More modules coming soon
         </p>
         <div className="flex flex-wrap gap-2">
-          {COMING_SOON.map((item) => (
+          {COMING_SOON.map(({ title, Icon }) => (
             <div
-              key={item.title}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-600 text-sm"
+              key={title}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-500 text-sm"
             >
-              <span className="opacity-50">{item.icon}</span>
-              <span className="font-medium">{item.title}</span>
+              <Icon className="w-4 h-4 opacity-50" />
+              <span className="font-medium">{title}</span>
             </div>
           ))}
         </div>
