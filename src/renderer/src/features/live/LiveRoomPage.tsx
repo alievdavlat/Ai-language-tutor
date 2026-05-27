@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { cn } from '../../lib/classnames'
 import { AvatarCircle } from '../../components/ui'
 import { IconHeart, IconUsers, IconX } from '../../components/icons'
 
@@ -11,21 +12,34 @@ const CHAT = [
   { name: 'Sardor', text: '🔥🔥🔥' }
 ]
 
-export default function LiveRoomPage(): JSX.Element {
+const GROUP_HOSTS = ['Sara Kim', 'Bekzod', 'Dilnoza', 'Tom Reed']
+
+export default function LiveRoomPage({ group = false }: { group?: boolean }): JSX.Element {
   const navigate = useNavigate()
   const [msg, setMsg] = useState('')
 
   return (
     <div className="h-full flex flex-col lg:flex-row bg-black">
       {/* Stage */}
-      <div className="flex-1 relative flex items-center justify-center bg-gradient-to-br from-slate-900 to-black min-h-[40vh]">
-        <div className="text-center">
-          <AvatarCircle name="Emma Carter" size="lg" className="!w-24 !h-24 !text-3xl mx-auto" />
-          <p className="text-white font-semibold mt-3">Emma Carter</p>
-          <p className="text-slate-400 text-sm">Everyday English: Small Talk</p>
-        </div>
+      <div className="flex-1 relative flex items-center justify-center bg-gradient-to-br from-slate-900 to-black min-h-[40vh] p-4">
+        {group ? (
+          <div className="grid grid-cols-2 gap-3 w-full max-w-2xl">
+            {GROUP_HOSTS.map((h, i) => (
+              <div key={h} className={cn('relative rounded-2xl aspect-video flex items-center justify-center ring-1 ring-white/10 bg-gradient-to-br', ['from-brand-700 to-indigo-900', 'from-emerald-700 to-teal-900', 'from-rose-700 to-pink-900', 'from-amber-600 to-orange-900'][i % 4])}>
+                <AvatarCircle name={h} size="md" />
+                <span className="absolute bottom-2 left-2 text-xs font-medium text-white bg-black/50 rounded px-2 py-0.5">{h}{i === 0 ? ' · host' : ''}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center">
+            <AvatarCircle name="Emma Carter" size="lg" className="!w-24 !h-24 !text-3xl mx-auto" />
+            <p className="text-white font-semibold mt-3">Emma Carter</p>
+            <p className="text-slate-400 text-sm">Everyday English: Small Talk</p>
+          </div>
+        )}
         <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest bg-rose-600 text-white rounded-full px-2.5 py-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {group ? 'Group live' : 'Live'}
         </span>
         <span className="absolute top-4 right-4 inline-flex items-center gap-1 text-xs text-white bg-black/50 rounded-full px-3 py-1.5">
           <IconUsers className="w-3.5 h-3.5" /> 342

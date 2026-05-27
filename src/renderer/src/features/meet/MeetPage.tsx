@@ -12,6 +12,7 @@ export default function MeetPage(): JSX.Element {
   const [phase, setPhase] = useState<Phase>('lobby')
   const [level, setLevel] = useState('Any')
   const [topic, setTopic] = useState('Free talk')
+  const [mode, setMode] = useState<'solo' | 'group'>('solo')
 
   useEffect(() => {
     if (phase !== 'matching') return
@@ -33,6 +34,16 @@ export default function MeetPage(): JSX.Element {
           </div>
 
           <div className="rounded-card border border-white/10 bg-white/[0.03] p-5 flex flex-col gap-5">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Mode</p>
+              <div className="inline-flex rounded-pill bg-white/[0.04] border border-white/10 p-1">
+                {(['solo', 'group'] as const).map((m) => (
+                  <button key={m} onClick={() => setMode(m)} className={cn('px-4 py-1.5 rounded-pill text-sm font-medium transition', m === mode ? 'bg-grad-brand text-white' : 'text-slate-400 hover:text-slate-200')}>
+                    {m === 'solo' ? '1-on-1' : 'Group'}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div>
               <p className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Partner level</p>
               <div className="flex flex-wrap gap-2">
@@ -75,22 +86,39 @@ export default function MeetPage(): JSX.Element {
   // ── Call ─────────────────────────────────────────────────────────────────
   return (
     <div className="h-full flex flex-col bg-black">
-      <div className="flex-1 relative flex items-center justify-center bg-gradient-to-br from-indigo-950 via-slate-900 to-black">
-        <div className="text-center">
-          <AvatarCircle name="Lucas B" size="lg" className="!w-24 !h-24 !text-3xl mx-auto" />
-          <p className="text-white font-semibold mt-3">Lucas · B1</p>
-          <p className="text-slate-400 text-sm">🇧🇷 Brazil · learning English</p>
-        </div>
+      <div className="flex-1 relative flex items-center justify-center bg-gradient-to-br from-indigo-950 via-slate-900 to-black p-4">
+        {mode === 'group' ? (
+          <div className="grid grid-cols-2 gap-3 w-full max-w-2xl">
+            {[
+              { name: 'Lucas · B1', tone: 'from-emerald-700 to-teal-900' },
+              { name: 'Aiko · B2', tone: 'from-rose-700 to-pink-900' },
+              { name: 'Omar · B1', tone: 'from-amber-600 to-orange-900' },
+              { name: 'You', tone: 'from-brand-600 to-indigo-800' }
+            ].map((p) => (
+              <div key={p.name} className={cn('relative rounded-2xl aspect-video flex items-center justify-center ring-1 ring-white/10 bg-gradient-to-br', p.tone)}>
+                <AvatarCircle name={p.name} size="md" />
+                <span className="absolute bottom-2 left-2 text-xs font-medium text-white bg-black/50 rounded px-2 py-0.5">{p.name}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center">
+            <AvatarCircle name="Lucas B" size="lg" className="!w-24 !h-24 !text-3xl mx-auto" />
+            <p className="text-white font-semibold mt-3">Lucas · B1</p>
+            <p className="text-slate-400 text-sm">🇧🇷 Brazil · learning English</p>
+          </div>
+        )}
 
         {/* topic card */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-black/50 backdrop-blur px-4 py-2 text-sm text-white">
           Talk about: <b>{topic}</b>
         </div>
 
-        {/* self PiP */}
-        <div className="absolute bottom-4 right-4 w-32 h-44 rounded-2xl bg-gradient-to-br from-brand-600 to-indigo-800 ring-2 ring-white/20 flex items-center justify-center">
-          <span className="text-xs text-white/80">You</span>
-        </div>
+        {mode === 'solo' && (
+          <div className="absolute bottom-4 right-4 w-32 h-44 rounded-2xl bg-gradient-to-br from-brand-600 to-indigo-800 ring-2 ring-white/20 flex items-center justify-center">
+            <span className="text-xs text-white/80">You</span>
+          </div>
+        )}
       </div>
 
       {/* Controls */}

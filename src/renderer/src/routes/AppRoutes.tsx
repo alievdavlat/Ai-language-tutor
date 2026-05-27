@@ -162,6 +162,7 @@ export default function AppRoutes(): JSX.Element {
         }
       />
       <Route path="/live/room" element={<LiveRoomPage />} />
+      <Route path="/live/group" element={<LiveRoomPage group />} />
       <Route
         path="/vocabulary"
         element={
