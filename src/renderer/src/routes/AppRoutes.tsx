@@ -17,6 +17,7 @@ import ClassroomPage from '../features/courses/ClassroomPage'
 import CourseDetailPage from '../features/courses/CourseDetailPage'
 import LibraryPage from '../features/library/LibraryPage'
 import TeacherChannelPage from '../features/channel/TeacherChannelPage'
+import CommunityPage from '../features/community/CommunityPage'
 import ExercisePlayer from '../features/exercise/ExercisePlayer'
 import LevelTestPage from '../features/leveltest/LevelTestPage'
 import ExamsHubPage from '../features/exams/ExamsHubPage'
@@ -121,6 +122,14 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <TeacherChannelPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/community"
+        element={
+          <AppShell>
+            <CommunityPage />
           </AppShell>
         }
       />
