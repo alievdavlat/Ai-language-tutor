@@ -28,6 +28,9 @@ import ExamsHubPage from '../features/exams/ExamsHubPage'
 import ExamMock from '../features/exams/ExamMock'
 import ExamPracticeHub from '../features/exams/ExamPracticeHub'
 import AccountPage from '../features/account/AccountPage'
+import TeacherDashboardPage from '../features/teacher/TeacherDashboardPage'
+import CourseAuthoringPage from '../features/teacher/CourseAuthoringPage'
+import RoleSelectPage from '../features/auth/RoleSelectPage'
 
 /**
  * After bootstrap completes, send the user from the Boot splash into the app.
@@ -172,6 +175,23 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <AccountPage />
+          </AppShell>
+        }
+      />
+      <Route path="/role" element={<RoleSelectPage />} />
+      <Route
+        path="/teacher"
+        element={
+          <AppShell>
+            <TeacherDashboardPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/teacher/new"
+        element={
+          <AppShell>
+            <CourseAuthoringPage />
           </AppShell>
         }
       />

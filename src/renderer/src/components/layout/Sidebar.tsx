@@ -1,6 +1,7 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import type { UserProfile } from '@shared/types'
 import { cn } from '../../lib/classnames'
+import { useAppStore } from '../../store/useAppStore'
 import AvatarCircle from '../ui/AvatarCircle'
 import LanguageSwitcher from './LanguageSwitcher'
 import {
@@ -41,6 +42,20 @@ const PRACTICE_NAV = [
 const COMMUNITY_NAV = [
   { to: '/community', label: 'Community', Icon: IconChat },
   { to: '/live', label: 'Live', Icon: IconLive }
+] as const
+
+// Teacher-mode navigation
+const TEACHER_MANAGE = [
+  { to: '/teacher', label: 'Dashboard', Icon: IconHome },
+  { to: '/courses', label: 'My courses', Icon: IconBook },
+  { to: '/channel', label: 'My channel', Icon: IconUsers },
+  { to: '/library', label: 'Library', Icon: IconLibrary }
+] as const
+
+const TEACHER_ENGAGE = [
+  { to: '/live', label: 'Live', Icon: IconLive },
+  { to: '/community', label: 'Community', Icon: IconChat },
+  { to: '/exams', label: 'Exams', Icon: IconClipboard }
 ] as const
 
 const BOTTOM_NAV = [
@@ -147,6 +162,17 @@ export interface SidebarProps {
 }
 
 export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps): JSX.Element {
+  const role = useAppStore((s) => s.role)
+  const setRole = useAppStore((s) => s.setRole)
+  const navigate = useNavigate()
+  const isTeacher = role === 'teacher'
+
+  const switchRole = (): void => {
+    const next = isTeacher ? 'student' : 'teacher'
+    setRole(next)
+    navigate(next === 'teacher' ? '/teacher' : '/home')
+  }
+
   return (
     <aside
       className={cn(
@@ -179,29 +205,61 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
 
       {/* Primary navigation */}
       <nav className={cn('flex-1 py-1 overflow-y-auto', collapsed ? 'px-1' : 'px-3')}>
-        {!collapsed && <p className="section-title px-3 mb-2">Learn</p>}
-        <div className="space-y-0.5">
-          {LEARN_NAV.map((item) => (
-            <NavItem key={item.to} {...item} collapsed={collapsed} />
-          ))}
-        </div>
+        {isTeacher ? (
+          <>
+            {!collapsed && <p className="section-title px-3 mb-2">Manage</p>}
+            <div className="space-y-0.5">
+              {TEACHER_MANAGE.map((item) => (
+                <NavItem key={item.to} {...item} collapsed={collapsed} />
+              ))}
+            </div>
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Engage</p>}
+            {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
+            <div className="space-y-0.5">
+              {TEACHER_ENGAGE.map((item) => (
+                <NavItem key={item.to} {...item} collapsed={collapsed} />
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            {!collapsed && <p className="section-title px-3 mb-2">Learn</p>}
+            <div className="space-y-0.5">
+              {LEARN_NAV.map((item) => (
+                <NavItem key={item.to} {...item} collapsed={collapsed} />
+              ))}
+            </div>
 
-        {!collapsed && <p className="section-title px-3 mb-2 mt-5">Practice</p>}
-        {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
-        <div className="space-y-0.5">
-          {PRACTICE_NAV.map((item) => (
-            <NavItem key={item.to} {...item} collapsed={collapsed} />
-          ))}
-        </div>
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Practice</p>}
+            {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
+            <div className="space-y-0.5">
+              {PRACTICE_NAV.map((item) => (
+                <NavItem key={item.to} {...item} collapsed={collapsed} />
+              ))}
+            </div>
 
-        {!collapsed && <p className="section-title px-3 mb-2 mt-5">Community</p>}
-        {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
-        <div className="space-y-0.5">
-          {COMMUNITY_NAV.map((item) => (
-            <NavItem key={item.to} {...item} collapsed={collapsed} />
-          ))}
-        </div>
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Community</p>}
+            {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
+            <div className="space-y-0.5">
+              {COMMUNITY_NAV.map((item) => (
+                <NavItem key={item.to} {...item} collapsed={collapsed} />
+              ))}
+            </div>
+          </>
+        )}
       </nav>
+
+      {/* Role switch */}
+      {!collapsed && (
+        <div className="px-3 pb-2">
+          <button
+            onClick={switchRole}
+            className="w-full rounded-xl bg-white/[0.04] border border-white/[0.07] px-3 py-2 text-xs font-medium text-slate-300 hover:bg-white/[0.08] transition"
+          >
+            {isTeacher ? '← Switch to student' : 'Switch to teacher mode →'}
+          </button>
+        </div>
+      )}
 
       {/* Bottom: settings + collapse toggle */}
       <div className={cn('pb-2 space-y-0.5', collapsed ? 'px-1' : 'px-3')}>

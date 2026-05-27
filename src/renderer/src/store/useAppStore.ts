@@ -13,6 +13,9 @@ export interface AutoSetupState {
   pullPct: number
 }
 
+/** UI-level role until real auth (Clerk) lands in a later phase. */
+export type UserRole = 'student' | 'teacher'
+
 interface AppState {
   booted: boolean
   bootError: string | null
@@ -21,8 +24,10 @@ interface AppState {
   ollama: OllamaStatus | null
   profile: UserProfile | null
   autoSetup: AutoSetupState
+  role: UserRole
 
   setProfile: (profile: UserProfile | null) => void
+  setRole: (role: UserRole) => void
   bootstrap: () => Promise<void>
   refreshOllama: () => Promise<void>
 }
@@ -105,8 +110,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   ollama: null,
   profile: null,
   autoSetup: { phase: null, pullPct: 0 },
+  role: 'student',
 
   setProfile: (profile) => set({ profile }),
+  setRole: (role) => set({ role }),
 
   bootstrap: async () => {
     if (get().booted) return
