@@ -13,6 +13,7 @@ import SettingsPage from '../features/settings/SettingsPage'
 import VocabularyPage from '../features/vocabulary/VocabularyPage'
 import ProgressPage from '../features/progress/ProgressPage'
 import CoursesPage from '../features/courses/CoursesPage'
+import ClassroomPage from '../features/courses/ClassroomPage'
 import LibraryPage from '../features/library/LibraryPage'
 import ExercisePlayer from '../features/exercise/ExercisePlayer'
 import LevelTestPage from '../features/leveltest/LevelTestPage'
@@ -70,6 +71,14 @@ export default function AppRoutes(): JSX.Element {
       />
       <Route path="/speaking/call" element={<CallPage />} />
       <Route path="/learn/exercise" element={<ExercisePlayer />} />
+      <Route
+        path="/learn/lesson"
+        element={
+          <AppShell>
+            <ClassroomPage />
+          </AppShell>
+        }
+      />
       <Route path="/level-test" element={<LevelTestPage />} />
       <Route path="/exams/ielts" element={<ExamMock kind="ielts" />} />
       <Route path="/exams/toefl" element={<ExamMock kind="toefl" />} />
