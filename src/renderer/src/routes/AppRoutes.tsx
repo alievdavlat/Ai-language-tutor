@@ -26,6 +26,7 @@ import ExercisePlayer from '../features/exercise/ExercisePlayer'
 import LevelTestPage from '../features/leveltest/LevelTestPage'
 import ExamsHubPage from '../features/exams/ExamsHubPage'
 import ExamMock from '../features/exams/ExamMock'
+import ExamPracticeHub from '../features/exams/ExamPracticeHub'
 import AccountPage from '../features/account/AccountPage'
 
 /**
@@ -104,8 +105,10 @@ export default function AppRoutes(): JSX.Element {
         }
       />
       <Route path="/level-test" element={<LevelTestPage />} />
-      <Route path="/exams/ielts" element={<ExamMock kind="ielts" />} />
-      <Route path="/exams/toefl" element={<ExamMock kind="toefl" />} />
+      <Route path="/exams/ielts" element={<AppShell><ExamPracticeHub examId="ielts" /></AppShell>} />
+      <Route path="/exams/toefl" element={<AppShell><ExamPracticeHub examId="toefl" /></AppShell>} />
+      <Route path="/exams/ielts/mock" element={<ExamMock kind="ielts" />} />
+      <Route path="/exams/toefl/mock" element={<ExamMock kind="toefl" />} />
       <Route
         path="/exams"
         element={
