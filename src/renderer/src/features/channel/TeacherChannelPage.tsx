@@ -84,7 +84,7 @@ export default function TeacherChannelPage(): JSX.Element {
           {tab === 'courses' && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {COURSES.map((c) => (
-                <button key={c.title} onClick={() => navigate('/courses')} className="text-left">
+                <button key={c.title} onClick={() => navigate('/course')} className="text-left">
                   <div className={cn('rounded-2xl bg-gradient-to-br h-28 ring-1 ring-white/10', c.cover)} />
                   <p className="text-sm font-semibold text-white mt-2 truncate">{c.title}</p>
                   <p className="text-xs text-slate-400">{c.level} · <span className="text-amber-300">★ {c.rating}</span></p>

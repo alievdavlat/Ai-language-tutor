@@ -14,6 +14,7 @@ import VocabularyPage from '../features/vocabulary/VocabularyPage'
 import ProgressPage from '../features/progress/ProgressPage'
 import CoursesPage from '../features/courses/CoursesPage'
 import ClassroomPage from '../features/courses/ClassroomPage'
+import CourseDetailPage from '../features/courses/CourseDetailPage'
 import LibraryPage from '../features/library/LibraryPage'
 import TeacherChannelPage from '../features/channel/TeacherChannelPage'
 import ExercisePlayer from '../features/exercise/ExercisePlayer'
@@ -77,6 +78,14 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <ClassroomPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/course"
+        element={
+          <AppShell>
+            <CourseDetailPage />
           </AppShell>
         }
       />

@@ -25,10 +25,10 @@ const POPULAR = [
   { title: 'Grammar Foundations', teacher: 'Tom Reed', rating: '4.9', cover: 'from-amber-500 to-orange-700' }
 ]
 
-function CourseCard({ c, progress }: { c: { title: string; cover: string; teacher?: string; course?: string; rating?: string }; progress?: number }): JSX.Element {
+function CourseCard({ c, progress, to = '/course' }: { c: { title: string; cover: string; teacher?: string; course?: string; rating?: string }; progress?: number; to?: string }): JSX.Element {
   const navigate = useNavigate()
   return (
-    <button onClick={() => navigate('/courses')} className="shrink-0 w-56 text-left snap-start">
+    <button onClick={() => navigate(to)} className="shrink-0 w-56 text-left snap-start">
       <div className={cn('rounded-2xl bg-gradient-to-br h-28 ring-1 ring-white/10', c.cover)} />
       <p className="text-sm font-semibold text-white mt-2 truncate">{c.title}</p>
       <p className="text-xs text-slate-400 truncate">{c.teacher ?? c.course}</p>
@@ -142,7 +142,7 @@ export default function FeedRails(): JSX.Element {
   return (
     <div className="flex flex-col gap-7">
       <Rail title="Continue learning">
-        {CONTINUE.map((c) => <CourseCard key={c.title} c={c} progress={c.progress} />)}
+        {CONTINUE.map((c) => <CourseCard key={c.title} c={c} progress={c.progress} to="/learn/lesson" />)}
       </Rail>
       <Rail title="Popular courses" action={<SeeAll onClick={() => navigate('/courses')} />}>
         {POPULAR.map((c) => <CourseCard key={c.title} c={c} />)}
