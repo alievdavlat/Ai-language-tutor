@@ -139,7 +139,7 @@ export default function CoursesPage(): JSX.Element {
                   nodeIdx += 1
                   return (
                     <div key={i} style={{ transform: `translateX(${offset}px)` }}>
-                      <PathNodeButton node={node} onOpen={() => navigate('/learn/lesson')} />
+                      <PathNodeButton node={node} onOpen={() => navigate(selected.type === 'book' ? '/learn/book' : '/learn/lesson')} />
                     </div>
                   )
                 })}

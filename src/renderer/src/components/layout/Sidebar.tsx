@@ -13,7 +13,9 @@ import {
   IconGear,
   IconHome,
   IconLibrary,
+  IconLive,
   IconMic,
+  IconUsers,
   type IconProps
 } from '../icons'
 
@@ -31,8 +33,13 @@ const LEARN_NAV = [
 
 const PRACTICE_NAV = [
   { to: '/speaking', label: 'Speaking', Icon: IconMic },
-  { to: '/exams', label: 'Exams', Icon: IconClipboard },
-  { to: '/community', label: 'Community', Icon: IconChat }
+  { to: '/meet', label: 'Speaking partner', Icon: IconUsers },
+  { to: '/exams', label: 'Exams', Icon: IconClipboard }
+] as const
+
+const COMMUNITY_NAV = [
+  { to: '/community', label: 'Community', Icon: IconChat },
+  { to: '/live', label: 'Live', Icon: IconLive }
 ] as const
 
 const BOTTOM_NAV = [
@@ -172,6 +179,14 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
         {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
         <div className="space-y-0.5">
           {PRACTICE_NAV.map((item) => (
+            <NavItem key={item.to} {...item} collapsed={collapsed} />
+          ))}
+        </div>
+
+        {!collapsed && <p className="section-title px-3 mb-2 mt-5">Community</p>}
+        {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
+        <div className="space-y-0.5">
+          {COMMUNITY_NAV.map((item) => (
             <NavItem key={item.to} {...item} collapsed={collapsed} />
           ))}
         </div>

@@ -269,6 +269,23 @@ export function IconDownload({ className }: IconProps): JSX.Element {
   )
 }
 
+export function IconLive({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M10 8a2 2 0 100 4 2 2 0 000-4z" />
+      <path fillRule="evenodd" d="M5.05 4.05a1 1 0 010 1.414 6 6 0 000 8.486 1 1 0 01-1.414 1.414 8 8 0 010-11.314 1 1 0 011.414 0zm9.9 0a1 1 0 011.414 0 8 8 0 010 11.314 1 1 0 01-1.414-1.414 6 6 0 000-8.486 1 1 0 010-1.414zM7.879 6.879a1 1 0 010 1.414 2.5 2.5 0 000 3.414 1 1 0 11-1.415 1.414 4.5 4.5 0 010-6.242 1 1 0 011.415 0zm4.242 0a1 1 0 011.415 0 4.5 4.5 0 010 6.242 1 1 0 01-1.415-1.414 2.5 2.5 0 000-3.414 1 1 0 010-1.414z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
+export function IconUsers({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.5 16a5.5 5.5 0 0111 0 1 1 0 01-1 1h-9a1 1 0 01-1-1zM14.5 11c-.84 0-1.62.26-2.26.7A7 7 0 0113.93 16h4.07a1 1 0 001-1 4.5 4.5 0 00-4.5-4z" />
+    </svg>
+  )
+}
+
 export function IconYouTube({ className }: IconProps): JSX.Element {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>

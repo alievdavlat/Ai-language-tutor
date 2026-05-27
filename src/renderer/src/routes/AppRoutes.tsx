@@ -15,9 +15,13 @@ import ProgressPage from '../features/progress/ProgressPage'
 import CoursesPage from '../features/courses/CoursesPage'
 import ClassroomPage from '../features/courses/ClassroomPage'
 import CourseDetailPage from '../features/courses/CourseDetailPage'
+import BookReaderPage from '../features/courses/BookReaderPage'
 import LibraryPage from '../features/library/LibraryPage'
 import TeacherChannelPage from '../features/channel/TeacherChannelPage'
 import CommunityPage from '../features/community/CommunityPage'
+import LivePage from '../features/live/LivePage'
+import LiveRoomPage from '../features/live/LiveRoomPage'
+import MeetPage from '../features/meet/MeetPage'
 import ExercisePlayer from '../features/exercise/ExercisePlayer'
 import LevelTestPage from '../features/leveltest/LevelTestPage'
 import ExamsHubPage from '../features/exams/ExamsHubPage'
@@ -90,6 +94,14 @@ export default function AppRoutes(): JSX.Element {
           </AppShell>
         }
       />
+      <Route
+        path="/learn/book"
+        element={
+          <AppShell>
+            <BookReaderPage />
+          </AppShell>
+        }
+      />
       <Route path="/level-test" element={<LevelTestPage />} />
       <Route path="/exams/ielts" element={<ExamMock kind="ielts" />} />
       <Route path="/exams/toefl" element={<ExamMock kind="toefl" />} />
@@ -133,6 +145,23 @@ export default function AppRoutes(): JSX.Element {
           </AppShell>
         }
       />
+      <Route
+        path="/meet"
+        element={
+          <AppShell>
+            <MeetPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/live"
+        element={
+          <AppShell>
+            <LivePage />
+          </AppShell>
+        }
+      />
+      <Route path="/live/room" element={<LiveRoomPage />} />
       <Route
         path="/vocabulary"
         element={
