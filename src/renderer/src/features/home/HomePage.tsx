@@ -5,6 +5,7 @@ import GreetingHeader from './sections/GreetingHeader'
 import ModuleGrid from './sections/ModuleGrid'
 import DailyProgressCard from './sections/DailyProgressCard'
 import WeekStreakCard from './sections/WeekStreakCard'
+import DailyQuestCard from './sections/DailyQuestCard'
 
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ export default function HomePage(): JSX.Element {
           />
           <div className="flex flex-col gap-4">
             <DailyProgressCard current={0} goal={10} />
+            <DailyQuestCard />
             <WeekStreakCard streak={0} />
           </div>
         </div>

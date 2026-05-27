@@ -10,7 +10,10 @@ import {
   IconChevronRight,
   IconGear,
   IconHome,
+  IconLibrary,
+  IconMasks,
   IconMic,
+  IconTarget,
   type IconProps
 } from '../icons'
 
@@ -18,12 +21,18 @@ import {
 const NAV_ICON_CLS = 'w-[18px] h-[18px] shrink-0'
 
 // ─── Nav / item config ────────────────────────────────────────────────────────
-const PRIMARY_NAV = [
+const LEARN_NAV = [
   { to: '/home', label: 'Home', Icon: IconHome },
-  { to: '/speaking', label: 'Practice', Icon: IconMic },
   { to: '/lessons', label: 'Lessons', Icon: IconBook },
+  { to: '/coursebooks', label: 'Coursebooks', Icon: IconLibrary },
   { to: '/vocabulary', label: 'Vocabulary', Icon: IconBookmark },
   { to: '/progress', label: 'Progress', Icon: IconChart }
+] as const
+
+const PRACTICE_NAV = [
+  { to: '/speaking', label: 'Speaking', Icon: IconMic },
+  { to: '/pronunciation', label: 'Pronunciation', Icon: IconTarget },
+  { to: '/scenarios', label: 'Roleplay', Icon: IconMasks }
 ] as const
 
 const BOTTOM_NAV = [
@@ -151,12 +160,21 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
       </div>
 
       {/* Primary navigation */}
-      <nav className={cn('flex-1 py-1 space-y-0.5', collapsed ? 'px-1' : 'px-3')}>
+      <nav className={cn('flex-1 py-1 overflow-y-auto', collapsed ? 'px-1' : 'px-3')}>
         {!collapsed && <p className="section-title px-3 mb-2">Learn</p>}
+        <div className="space-y-0.5">
+          {LEARN_NAV.map((item) => (
+            <NavItem key={item.to} {...item} collapsed={collapsed} />
+          ))}
+        </div>
 
-        {PRIMARY_NAV.map((item) => (
-          <NavItem key={item.to} {...item} collapsed={collapsed} />
-        ))}
+        {!collapsed && <p className="section-title px-3 mb-2 mt-5">Practice</p>}
+        {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
+        <div className="space-y-0.5">
+          {PRACTICE_NAV.map((item) => (
+            <NavItem key={item.to} {...item} collapsed={collapsed} />
+          ))}
+        </div>
       </nav>
 
       {/* Bottom: settings + collapse toggle */}

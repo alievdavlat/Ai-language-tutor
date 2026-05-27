@@ -6,7 +6,17 @@ import {
   WeekStudyTracker,
   type StudyDay
 } from '../../components/ui'
-import { IconFlame, IconHeart, IconStar, IconTrophy } from '../../components/icons'
+import { cn } from '../../lib/classnames'
+import {
+  IconBolt,
+  IconChat,
+  IconFlame,
+  IconHeart,
+  IconStar,
+  IconTarget,
+  IconTrophy,
+  type IconProps
+} from '../../components/icons'
 
 const WEEK: StudyDay[] = [
   { label: 'Mo', state: 'done' },
@@ -30,6 +40,22 @@ const STATS = [
   { value: 342, label: 'Words learned', tone: 'emerald' as const, icon: <IconHeart /> },
   { value: 7, label: 'Day streak', tone: 'amber' as const, icon: <IconFlame /> },
   { value: 2, label: 'Certificates', tone: 'violet' as const, icon: <IconTrophy /> }
+]
+
+interface Badge {
+  name: string
+  Icon: (p: IconProps) => JSX.Element
+  unlocked: boolean
+  tint: string
+}
+
+const BADGES: Badge[] = [
+  { name: 'First chat', Icon: IconChat, unlocked: true, tint: 'bg-brand-500/15 text-brand-300' },
+  { name: '7-day streak', Icon: IconFlame, unlocked: true, tint: 'bg-amber-500/15 text-amber-300' },
+  { name: '100 words', Icon: IconStar, unlocked: true, tint: 'bg-emerald-500/15 text-emerald-300' },
+  { name: 'Sharp tongue', Icon: IconTarget, unlocked: false, tint: 'bg-rose-500/15 text-rose-300' },
+  { name: '1000 XP', Icon: IconBolt, unlocked: false, tint: 'bg-violet-500/15 text-violet-300' },
+  { name: 'Grammar master', Icon: IconTrophy, unlocked: false, tint: 'bg-sky-500/15 text-sky-300' }
 ]
 
 export default function ProgressPage(): JSX.Element {
@@ -91,6 +117,29 @@ export default function ProgressPage(): JSX.Element {
                   <span className="text-xs font-semibold text-slate-400">{s.value}%</span>
                 </div>
                 <ProgressBar value={s.value} color={s.color} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Achievements */}
+        <div>
+          <SectionHeading title="Achievements" subtitle="3 of 6 unlocked" />
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {BADGES.map((b) => (
+              <div
+                key={b.name}
+                className={cn(
+                  'rounded-2xl border p-3 flex flex-col items-center gap-2 text-center',
+                  b.unlocked
+                    ? 'border-white/10 bg-white/[0.03]'
+                    : 'border-white/[0.05] bg-white/[0.015] opacity-50'
+                )}
+              >
+                <span className={cn('w-11 h-11 rounded-full flex items-center justify-center', b.tint)}>
+                  <b.Icon className="w-5 h-5" />
+                </span>
+                <span className="text-[11px] font-medium text-slate-300 leading-tight">{b.name}</span>
               </div>
             ))}
           </div>

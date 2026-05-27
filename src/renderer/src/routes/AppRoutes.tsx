@@ -13,6 +13,10 @@ import SettingsPage from '../features/settings/SettingsPage'
 import VocabularyPage from '../features/vocabulary/VocabularyPage'
 import LessonsPage from '../features/lessons/LessonsPage'
 import ProgressPage from '../features/progress/ProgressPage'
+import PronunciationPage from '../features/pronunciation/PronunciationPage'
+import ScenariosPage from '../features/scenarios/ScenariosPage'
+import CoursebooksPage from '../features/coursebooks/CoursebooksPage'
+import ExercisePlayer from '../features/exercise/ExercisePlayer'
 
 /**
  * After bootstrap completes, send the user from the Boot splash into the app.
@@ -64,11 +68,36 @@ export default function AppRoutes(): JSX.Element {
         }
       />
       <Route path="/speaking/call" element={<CallPage />} />
+      <Route path="/learn/exercise" element={<ExercisePlayer />} />
       <Route
         path="/lessons"
         element={
           <AppShell>
             <LessonsPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/coursebooks"
+        element={
+          <AppShell>
+            <CoursebooksPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/pronunciation"
+        element={
+          <AppShell>
+            <PronunciationPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/scenarios"
+        element={
+          <AppShell>
+            <ScenariosPage />
           </AppShell>
         }
       />

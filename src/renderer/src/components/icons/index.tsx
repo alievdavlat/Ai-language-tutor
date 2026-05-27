@@ -196,3 +196,51 @@ export function IconChat({ className }: IconProps): JSX.Element {
     </svg>
   )
 }
+
+export function IconLibrary({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M3 3a1 1 0 011-1h2a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V3zM8 3a1 1 0 011-1h2a1 1 0 011 1v14a1 1 0 01-1 1H9a1 1 0 01-1-1V3zM13.83 4.4a1 1 0 011.27-.63l1.9.66a1 1 0 01.62 1.27l-3.6 10.38a1 1 0 01-1.27.62l-.74-.25 1.82-12.05.0z" />
+    </svg>
+  )
+}
+
+export function IconTarget({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 2.5a5.5 5.5 0 110 11 5.5 5.5 0 010-11zm0 2.5a3 3 0 100 6 3 3 0 000-6zm0 2a1 1 0 110 2 1 1 0 010-2z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
+export function IconMasks({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M4 3h8a1 1 0 011 1v5a5 5 0 01-10 0V4a1 1 0 011-1zm2.5 3a.75.75 0 100 1.5.75.75 0 000-1.5zm3 0a.75.75 0 100 1.5.75.75 0 000-1.5zM6 9.2c.7.6 1.5.9 2 .9s1.3-.3 2-.9c-.3.7-1.1 1.3-2 1.3s-1.7-.6-2-1.3zM15 7h1a1 1 0 011 1v3a4 4 0 01-4.4 3.98A6 6 0 0015 9V7z" />
+    </svg>
+  )
+}
+
+export function IconBolt({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path fillRule="evenodd" d="M11.3 1.046a1 1 0 01.7 1.19L10.4 8h4.6a1 1 0 01.78 1.625l-7 8.75a1 1 0 01-1.76-.86L8.6 12H4a1 1 0 01-.78-1.625l7-8.75a1 1 0 011.08-.579z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
+export function IconMedal({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M6.5 2h7l-2.2 5.2a4 4 0 10-2.6 0L6.5 2zM10 9a3 3 0 100 6 3 3 0 000-6zm0 1.6l.65 1.32 1.46.21-1.05 1.03.25 1.45L10 13.93l-1.31.68.25-1.45-1.05-1.03 1.46-.21L10 10.6z" />
+    </svg>
+  )
+}
+
+export function IconRefresh({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7 7 0 0111.601 2.566 1 1 0 11-1.885.666A5 5 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.184 8.448a1 1 0 01.929 1.07A5 5 0 0014 13.001H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7 7 0 01-11.601-2.566 1 1 0 01.785-1.886z" clipRule="evenodd" />
+    </svg>
+  )
+}
