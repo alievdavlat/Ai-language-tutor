@@ -8,6 +8,7 @@ import {
   IconChart,
   IconChevronLeft,
   IconChevronRight,
+  IconClipboard,
   IconGear,
   IconHome,
   IconLibrary,
@@ -28,7 +29,8 @@ const LEARN_NAV = [
 ] as const
 
 const PRACTICE_NAV = [
-  { to: '/speaking', label: 'Speaking', Icon: IconMic }
+  { to: '/speaking', label: 'Speaking', Icon: IconMic },
+  { to: '/exams', label: 'Exams', Icon: IconClipboard }
 ] as const
 
 const BOTTOM_NAV = [

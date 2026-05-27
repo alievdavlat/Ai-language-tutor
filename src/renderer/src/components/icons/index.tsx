@@ -244,3 +244,19 @@ export function IconRefresh({ className }: IconProps): JSX.Element {
     </svg>
   )
 }
+
+export function IconClipboard({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M8 2a2 2 0 00-2 2H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2h-1a2 2 0 00-2-2H8zm0 2h4v1H8V4zm-1 6.5a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm1 2.5a1 1 0 100 2h2a1 1 0 100-2H8z" />
+    </svg>
+  )
+}
+
+export function IconPencilEdit({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+    </svg>
+  )
+}
