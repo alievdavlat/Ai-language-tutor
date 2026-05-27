@@ -113,8 +113,10 @@ export default function ClassroomPage(): JSX.Element {
               <div className="min-w-0">
                 <h1 className="text-xl font-bold tracking-tight">{LESSON.videoTitle}</h1>
                 <div className="flex items-center gap-2 mt-2">
-                  <AvatarCircle name={LESSON.teacher} size="sm" />
-                  <span className="text-sm text-slate-300">{LESSON.teacher}</span>
+                  <button onClick={() => navigate('/channel')} className="flex items-center gap-2 hover:opacity-80 transition">
+                    <AvatarCircle name={LESSON.teacher} size="sm" />
+                    <span className="text-sm text-slate-300">{LESSON.teacher}</span>
+                  </button>
                   <button className="ml-1 text-xs font-semibold text-brand-300 hover:text-brand-200 rounded-full border border-brand-400/30 bg-brand-500/10 px-3 py-1">
                     Follow
                   </button>

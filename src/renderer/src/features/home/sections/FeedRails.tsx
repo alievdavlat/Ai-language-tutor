@@ -99,13 +99,16 @@ const TEACHERS = [
 ]
 
 function TeacherCard({ t }: { t: (typeof TEACHERS)[number] }): JSX.Element {
+  const navigate = useNavigate()
   return (
     <div className="shrink-0 w-40 snap-start rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 flex flex-col items-center text-center gap-2">
-      <AvatarCircle name={t.name} size="lg" />
-      <div>
-        <p className="text-sm font-semibold text-white leading-tight">{t.name}</p>
-        <p className="text-xs text-slate-500">{t.followers} followers</p>
-      </div>
+      <button onClick={() => navigate('/channel')} className="flex flex-col items-center gap-2">
+        <AvatarCircle name={t.name} size="lg" />
+        <div>
+          <p className="text-sm font-semibold text-white leading-tight">{t.name}</p>
+          <p className="text-xs text-slate-500">{t.followers} followers</p>
+        </div>
+      </button>
       <button className="text-xs font-semibold text-brand-300 hover:text-white rounded-full border border-brand-400/30 bg-brand-500/10 px-4 py-1.5 w-full">
         Follow
       </button>
