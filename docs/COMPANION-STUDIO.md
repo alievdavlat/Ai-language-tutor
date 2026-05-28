@@ -282,7 +282,32 @@ Estimated session count: 4-5 batches similar in size to Y1-Y5.
 ## 9 · Linked memory + tasks
 
 - `docs/PLAN.md` §3 Fling AI / SeaArt observations
-- TaskCreate #53–#58 (character gallery / 3D studio / age verify /
-  workshop / scope doc) — all created `2026-05-28`.
+- TaskCreate #53–#60 (character gallery / 3D studio / age verify /
+  workshop / scope doc / asset sourcing / batch coordinator) — all
+  created `2026-05-28`.
 - Memory: `[[feedback_capture_asks_immediately]]` — the rule that
   forced this whole doc to be saved instead of getting lost.
+
+## 10 · Approved execution plan (saved 2026-05-28)
+
+User confirmed the following scope for the upcoming session. Saved as
+TaskCreate entries so it survives across sessions:
+
+1. **#53 — 20-character gallery** (expand Emma/James/… → 20 diverse
+   conversation partners). NO sexualization. Language-learning context.
+2. **#56 — Move Settings → Companion into `/companion-studio`** (or
+   `/companions`) as a dedicated area, with the per-character config
+   workshop pulled out of Settings.
+3. **#55 — Age verification** (DOB picker in onboarding + 3 bands +
+   per-feature content gates).
+4. **#54 — 3D avatar studio shell** (Three.js, sliders + placeholder
+   mesh). Real GLTF/VRM meshes deferred to a follow-up.
+5. **#59 — Asset sourcing decision** — open-licensed (Pravatar /
+   DiceBear / Notion-style / self-generated via Flux) OR the user
+   supplies a specific folder. **Default: D (Flux self-generated)**
+   unless user picks otherwise.
+
+**#60** tracks executing all 5 as a single mini-phase. Awaiting user's
+"Ha" before kicking off — once given, the batch runs the same way Y1-Y5
+did (file-by-file commits, typecheck pass, preview verification, mini
+session-log entry in `status.md`).
