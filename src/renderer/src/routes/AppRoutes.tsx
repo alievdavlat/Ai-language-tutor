@@ -35,6 +35,8 @@ import TeacherAnalyticsPage from '../features/teacher/TeacherAnalyticsPage'
 import TeacherStudentsPage from '../features/teacher/TeacherStudentsPage'
 import TeacherMonetizationPage from '../features/teacher/TeacherMonetizationPage'
 import TeacherLiveHostPage from '../features/teacher/TeacherLiveHostPage'
+import AITutorPage from '../features/aitutor/AITutorPage'
+import TutorsPage from '../features/tutors/TutorsPage'
 import RoleSelectPage from '../features/auth/RoleSelectPage'
 import LeaderboardPage from '../features/gamification/LeaderboardPage'
 import QuestsPage from '../features/gamification/QuestsPage'
@@ -191,6 +193,15 @@ export default function AppRoutes(): JSX.Element {
         }
       />
       <Route path="/role" element={<RoleSelectPage />} />
+      <Route path="/ai-tutor" element={<AITutorPage />} />
+      <Route
+        path="/tutors"
+        element={
+          <AppShell>
+            <TutorsPage />
+          </AppShell>
+        }
+      />
       <Route
         path="/teacher"
         element={
