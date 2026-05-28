@@ -4,9 +4,11 @@ import { AvatarCircle, StatCard } from '../../components/ui'
 import {
   IconArrowRight,
   IconBolt,
+  IconChart,
   IconLive,
   IconPlus,
   IconStar,
+  IconTrophy,
   IconUsers,
   type IconProps
 } from '../../components/icons'
@@ -20,9 +22,16 @@ const STATS = [
 
 const ACTIONS: { label: string; Icon: (p: IconProps) => JSX.Element; to: string; tone: string }[] = [
   { label: 'New course', Icon: IconPlus, to: '/teacher/new', tone: 'bg-grad-brand text-white' },
-  { label: 'Go live', Icon: IconLive, to: '/live/room', tone: 'bg-rose-500/15 text-rose-300 border border-rose-400/30' },
-  { label: 'Upload material', Icon: IconBolt, to: '/account', tone: 'bg-white/[0.06] text-slate-200 border border-white/10' },
-  { label: 'Post announcement', Icon: IconUsers, to: '/live', tone: 'bg-white/[0.06] text-slate-200 border border-white/10' }
+  { label: 'Go live', Icon: IconLive, to: '/teacher/live', tone: 'bg-rose-500/15 text-rose-300 border border-rose-400/30' },
+  { label: 'Analytics', Icon: IconChart, to: '/teacher/analytics', tone: 'bg-white/[0.06] text-slate-200 border border-white/10' },
+  { label: 'Earnings', Icon: IconTrophy, to: '/teacher/monetization', tone: 'bg-white/[0.06] text-slate-200 border border-white/10' }
+]
+
+const SECONDARY_NAV: { label: string; to: string; Icon: (p: IconProps) => JSX.Element }[] = [
+  { label: 'Students', to: '/teacher/students', Icon: IconUsers },
+  { label: 'Analytics', to: '/teacher/analytics', Icon: IconChart },
+  { label: 'Earnings', to: '/teacher/monetization', Icon: IconTrophy },
+  { label: 'Live & clips', to: '/teacher/live', Icon: IconLive }
 ]
 
 const COURSES = [
@@ -66,6 +75,19 @@ export default function TeacherDashboardPage(): JSX.Element {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {STATS.map((s) => <StatCard key={s.label} value={s.value} label={s.label} tone={s.tone} />)}
+        </div>
+
+        {/* Section nav */}
+        <div className="flex flex-wrap gap-2">
+          {SECONDARY_NAV.map((s) => (
+            <button
+              key={s.to}
+              onClick={() => navigate(s.to)}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/[0.08]"
+            >
+              <s.Icon className="w-3.5 h-3.5 text-brand-300" /> {s.label}
+            </button>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">

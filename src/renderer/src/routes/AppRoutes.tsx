@@ -31,6 +31,10 @@ import CefrHubPage from '../features/exams/CefrHubPage'
 import AccountPage from '../features/account/AccountPage'
 import TeacherDashboardPage from '../features/teacher/TeacherDashboardPage'
 import CourseAuthoringPage from '../features/teacher/CourseAuthoringPage'
+import TeacherAnalyticsPage from '../features/teacher/TeacherAnalyticsPage'
+import TeacherStudentsPage from '../features/teacher/TeacherStudentsPage'
+import TeacherMonetizationPage from '../features/teacher/TeacherMonetizationPage'
+import TeacherLiveHostPage from '../features/teacher/TeacherLiveHostPage'
 import RoleSelectPage from '../features/auth/RoleSelectPage'
 import LeaderboardPage from '../features/gamification/LeaderboardPage'
 import QuestsPage from '../features/gamification/QuestsPage'
@@ -200,6 +204,38 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <CourseAuthoringPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/teacher/analytics"
+        element={
+          <AppShell>
+            <TeacherAnalyticsPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/teacher/students"
+        element={
+          <AppShell>
+            <TeacherStudentsPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/teacher/monetization"
+        element={
+          <AppShell>
+            <TeacherMonetizationPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/teacher/live"
+        element={
+          <AppShell>
+            <TeacherLiveHostPage />
           </AppShell>
         }
       />
