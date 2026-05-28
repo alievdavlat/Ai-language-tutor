@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
-import { Tabs, type TabItem } from '../../components/ui'
+import { AIGate, Tabs, type TabItem } from '../../components/ui'
 import ConversationMode from './modes/ConversationMode'
 import RoleplayMode from './modes/RoleplayMode'
 import PronunciationPage from '../pronunciation/PronunciationPage'
@@ -23,24 +23,29 @@ export default function SpeakingPage(): JSX.Element {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="px-6 pt-4 pb-3 border-b border-white/10 flex items-center justify-between gap-3 backdrop-blur-xl bg-canvas-soft/40">
-        <Tabs items={MODES} active={mode} onChange={setMode} />
-        <span className="hidden sm:block text-xs text-slate-500">Practice · speak freely, role-play, or check your pronunciation</span>
-      </div>
+    <AIGate
+      featureName="Speaking practice"
+      description="Conversation, roleplay and pronunciation feedback all need a cloud AI to listen and respond."
+    >
+      <div className="h-full flex flex-col">
+        <div className="px-6 pt-4 pb-3 border-b border-white/10 flex items-center justify-between gap-3 backdrop-blur-xl bg-canvas-soft/40">
+          <Tabs items={MODES} active={mode} onChange={setMode} />
+          <span className="hidden sm:block text-xs text-slate-500">Practice · speak freely, role-play, or check your pronunciation</span>
+        </div>
 
-      <div className="flex-1 overflow-hidden">
-        {mode === 'conversation' && <ConversationMode topic={topic} onTopicChange={setTopic} />}
-        {mode === 'roleplay' && (
-          <RoleplayMode
-            onPick={(prompt) => {
-              setTopic(prompt)
-              setMode('conversation')
-            }}
-          />
-        )}
-        {mode === 'pronunciation' && <PronunciationPage />}
+        <div className="flex-1 overflow-hidden">
+          {mode === 'conversation' && <ConversationMode topic={topic} onTopicChange={setTopic} />}
+          {mode === 'roleplay' && (
+            <RoleplayMode
+              onPick={(prompt) => {
+                setTopic(prompt)
+                setMode('conversation')
+              }}
+            />
+          )}
+          {mode === 'pronunciation' && <PronunciationPage />}
+        </div>
       </div>
-    </div>
+    </AIGate>
   )
 }

@@ -49,6 +49,9 @@ import SignInPage from '../features/auth/SignInPage'
 import GrammarPage from '../features/grammar/GrammarPage'
 import RoleSelectPage from '../features/auth/RoleSelectPage'
 import LeaderboardPage from '../features/gamification/LeaderboardPage'
+import AdminPage from '../features/admin/AdminPage'
+import ExplorePage from '../features/explore/ExplorePage'
+import IeltsSpeakingSimPage from '../features/ieltssim/IeltsSpeakingSimPage'
 import QuestsPage from '../features/gamification/QuestsPage'
 import AchievementsPage from '../features/gamification/AchievementsPage'
 import ProfilePage from '../features/profile/ProfilePage'
@@ -159,6 +162,7 @@ export default function AppRoutes(): JSX.Element {
       <Route path="/exams/ielts" element={<AppShell><ExamPracticeHub examId="ielts" /></AppShell>} />
       <Route path="/exams/toefl" element={<AppShell><ExamPracticeHub examId="toefl" /></AppShell>} />
       <Route path="/exams/ielts/mock" element={<ExamMock kind="ielts" />} />
+      <Route path="/exams/ielts/speaking" element={<IeltsSpeakingSimPage />} />
       <Route path="/exams/toefl/mock" element={<ExamMock kind="toefl" />} />
       <Route path="/exams/cefr" element={<AppShell><CefrHubPage /></AppShell>} />
       <Route
@@ -334,6 +338,20 @@ export default function AppRoutes(): JSX.Element {
           <RequireRole role="teacher">
             <AppShell><TeacherLiveHostPage /></AppShell>
           </RequireRole>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <RequireRole role="admin">
+            <AppShell><AdminPage /></AppShell>
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/explore"
+        element={
+          <AppShell><ExplorePage /></AppShell>
         }
       />
       <Route

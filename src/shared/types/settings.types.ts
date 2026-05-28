@@ -4,6 +4,22 @@ import type { MicMode, STTEngine, TTSEngine, WhisperModelTag } from './voice.typ
 
 export type CorrectionStyle = 'gentle' | 'strict' | 'silent' | 'inline'
 
+/**
+ * Cloud AI provider configuration. The renderer-level routing layer picks the
+ * active provider for every AI-dependent feature (Speaking, IELTS simulator,
+ * writing rubric, vocab translations). When `activeProviderId` is null every
+ * one of those features is gated until the user configures a provider in
+ * Settings → AI.
+ */
+export interface AIConfig {
+  /** Currently-active provider — null when nothing is configured yet. */
+  activeProviderId: string | null
+  /** Per-provider API key. Stored locally; not synced anywhere. */
+  tokens: Record<string, string>
+  /** Per-provider chosen model id. Falls back to the first model in the catalog. */
+  models: Record<string, string>
+}
+
 export interface UserSettings {
   accent: Accent
   correctionStyle: CorrectionStyle
@@ -25,4 +41,7 @@ export interface UserSettings {
   echoCancellation: boolean
   /** Browser-level automatic gain control — normalizes mic volume. */
   autoGainControl: boolean
+  /** Cloud-AI provider configuration. Optional for backwards-compat — code
+   *  treats `ai === undefined` as "no provider configured". */
+  ai?: AIConfig
 }

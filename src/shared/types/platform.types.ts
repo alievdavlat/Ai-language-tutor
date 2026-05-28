@@ -73,16 +73,56 @@ export interface Lesson {
 
 // ─── Social / community ───────────────────────────────────────────────────
 
+export type PostKind = 'text' | 'question' | 'resource' | 'achievement' | 'poll' | 'study-session' | 'voice'
+
+export interface Poll {
+  question: string
+  options: { id: string; label: string; votes: number }[]
+  closesAt?: string
+}
+
+export interface StudySessionMeta {
+  topic: string
+  language: TargetLanguage
+  level: string
+  whenISO: string
+  durationMin: number
+  capacity: number
+  joinedIds: ID[]
+}
+
+export interface AchievementMeta {
+  title: string
+  emoji: string
+  /** e.g. "100-word streak" or "First IELTS mock at band 7". */
+  description: string
+}
+
+export interface VoiceMeta {
+  durationSec: number
+  /** Optional auto-transcript shown under the player. */
+  transcript?: string
+}
+
 export interface Post {
   id: ID
   authorId: ID
-  /** Text body of the post. */
+  kind: PostKind
+  /** Text body. For polls and study-sessions, often the longer description. */
   text: string
-  /** Optional attached resource. */
+  /** Optional attached resource (youtube/pdf/audio). */
   resource?: { kind: 'youtube' | 'pdf' | 'audio'; url: string; title?: string }
+  poll?: Poll
+  studySession?: StudySessionMeta
+  achievement?: AchievementMeta
+  voice?: VoiceMeta
   createdAt: string
   likeCount: number
   commentCount: number
+  /** Emoji reactions map: { '❤️': 24, '👍': 12, '🎯': 5 }. */
+  reactions?: Record<string, number>
+  /** Number of times shared. */
+  shareCount?: number
 }
 
 export interface Follow {

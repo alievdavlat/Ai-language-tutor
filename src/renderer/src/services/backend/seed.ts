@@ -90,35 +90,87 @@ export const SEED_POSTS: Post[] = [
   {
     id: 'p_1',
     authorId: 'u_emma',
-    text: 'Going live tonight 7pm with Part 2 practice — bring a topic!',
+    kind: 'study-session',
+    text: 'Open IELTS Speaking Part 2 group · cue cards + 2-min talks · everyone welcome.',
+    studySession: {
+      topic: 'IELTS Speaking Part 2 group',
+      language: 'en',
+      level: 'B1',
+      whenISO: t(-60 * 6),
+      durationMin: 60,
+      capacity: 8,
+      joinedIds: ['u_priya', 'u_wei']
+    },
     createdAt: t(15),
     likeCount: 24,
-    commentCount: 8
+    commentCount: 8,
+    reactions: { '🔥': 12, '🎯': 6, '👍': 4 }
   },
   {
     id: 'p_2',
     authorId: 'u_wei',
+    kind: 'resource',
     text: 'How I memorize 20 words a day — my exact routine 👇',
     resource: { kind: 'youtube', url: 'https://youtu.be/dQw4w9WgXcQ', title: 'My vocab routine' },
     createdAt: t(60),
     likeCount: 142,
-    commentCount: 31
+    commentCount: 31,
+    reactions: { '👍': 88, '🎯': 30, '🧠': 18 },
+    shareCount: 24
   },
   {
     id: 'p_3',
     authorId: 'u_james',
-    text: 'New IELTS Writing pack just dropped — covers Task 2 band 7+ structure.',
+    kind: 'poll',
+    text: 'Which IELTS Writing prep style works best for you?',
+    poll: {
+      question: 'Which IELTS Writing prep style works best for you?',
+      options: [
+        { id: 'a', label: 'Daily one short essay (250w)', votes: 84 },
+        { id: 'b', label: 'Weekly long essay + teacher review', votes: 142 },
+        { id: 'c', label: 'Sample answers + sentence patterns', votes: 56 },
+        { id: 'd', label: 'AI examiner band-feedback loop', votes: 198 }
+      ]
+    },
     createdAt: t(60 * 3),
     likeCount: 88,
-    commentCount: 19
+    commentCount: 41,
+    reactions: { '🤔': 22, '👍': 60 }
   },
   {
     id: 'p_4',
     authorId: 'u_priya',
-    text: 'Anyone wants to do shadowing practice this weekend? B1+ welcome.',
+    kind: 'achievement',
+    text: 'Hit a 30-day streak! 🔥 Three months ago I couldn\'t order coffee in English.',
+    achievement: { title: '30-day streak', emoji: '🔥', description: '30 consecutive days · 720 XP · 4 mastered words/day average' },
     createdAt: t(60 * 8),
-    likeCount: 12,
-    commentCount: 4
+    likeCount: 120,
+    commentCount: 18,
+    reactions: { '🔥': 88, '👏': 24, '❤️': 32 }
+  },
+  {
+    id: 'p_5',
+    authorId: 'u_marco',
+    kind: 'question',
+    text: "What's the difference between 'I have been' and 'I had been' in everyday speech? I always confuse them when telling stories.",
+    createdAt: t(60 * 12),
+    likeCount: 18,
+    commentCount: 24,
+    reactions: { '🤔': 12, '👍': 4 }
+  },
+  {
+    id: 'p_6',
+    authorId: 'u_yui',
+    kind: 'voice',
+    text: 'My first ever 2-minute Part 2 attempt — be gentle in the comments 🙏',
+    voice: {
+      durationSec: 124,
+      transcript: 'Today I will describe a memorable trip I took with my family to Kyoto last spring. We visited several temples...'
+    },
+    createdAt: t(60 * 18),
+    likeCount: 34,
+    commentCount: 12,
+    reactions: { '🎯': 14, '👏': 10, '❤️': 8 }
   }
 ]
 

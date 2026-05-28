@@ -27,7 +27,8 @@ export function buildEmptyProfile(): UserProfile {
       voiceURI: '',
       noiseSuppression: true,
       echoCancellation: true,
-      autoGainControl: true
+      autoGainControl: true,
+      ai: { activeProviderId: null, tokens: {}, models: {} }
     }
   }
 }

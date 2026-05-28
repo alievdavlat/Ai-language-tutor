@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
+import { AIGate } from '../../components/ui'
 import { IconChat, IconMic, IconUsers, IconVolume, IconX } from '../../components/icons'
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking'
@@ -43,6 +44,7 @@ export default function AITutorPage(): JSX.Element {
   const ss = String(callSeconds % 60).padStart(2, '0')
 
   return (
+    <AIGate featureName="AI tutor video call" description="The AI tutor needs a cloud model to listen, think, and reply in real time." fullscreen>
     <div className="h-full w-full relative overflow-hidden bg-slate-950">
       {/* Emotion gradient backdrop */}
       <div
@@ -139,5 +141,6 @@ export default function AITutorPage(): JSX.Element {
         </div>
       </div>
     </div>
+    </AIGate>
   )
 }

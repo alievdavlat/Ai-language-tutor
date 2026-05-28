@@ -16,6 +16,7 @@ import {
   IconLibrary,
   IconLive,
   IconMic,
+  IconSearch,
   IconUsers,
   type IconProps
 } from '../icons'
@@ -39,6 +40,7 @@ const PRACTICE_NAV = [
 ] as const
 
 const COMMUNITY_NAV = [
+  { to: '/explore', label: 'Explore', Icon: IconSearch },
   { to: '/community', label: 'Community', Icon: IconChat },
   { to: '/live', label: 'Live', Icon: IconLive }
 ] as const

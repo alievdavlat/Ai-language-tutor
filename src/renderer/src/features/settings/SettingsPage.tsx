@@ -12,10 +12,12 @@ import MicProcessingSection from './sections/MicProcessingSection'
 import STTEngineSection from './sections/STTEngineSection'
 import DangerZoneSection from './sections/DangerZoneSection'
 import LanguageSection from './sections/LanguageSection'
+import AISection from './sections/AISection'
 
-type SettingsTab = 'language' | 'companion' | 'conversation' | 'microphone'
+type SettingsTab = 'ai' | 'language' | 'companion' | 'conversation' | 'microphone'
 
 const TABS: readonly TabItem<SettingsTab>[] = [
+  { id: 'ai', label: 'AI' },
   { id: 'language', label: 'Language' },
   { id: 'companion', label: 'Companion' },
   { id: 'conversation', label: 'Conversation' },
@@ -24,7 +26,7 @@ const TABS: readonly TabItem<SettingsTab>[] = [
 
 export default function SettingsPage(): JSX.Element {
   const { profile, saving, patch, patchProfile } = useSettingsPatch()
-  const [tab, setTab] = useState<SettingsTab>('language')
+  const [tab, setTab] = useState<SettingsTab>('ai')
 
   if (!profile) {
     return (
@@ -57,6 +59,14 @@ export default function SettingsPage(): JSX.Element {
         <div className="mb-6">
           <Tabs items={TABS} active={tab} onChange={setTab} />
         </div>
+
+        {/* ── AI providers ──────────────────────────────────────────────── */}
+        {tab === 'ai' && (
+          <AISection
+            ai={s.ai}
+            onChange={(ai) => void patch({ ai })}
+          />
+        )}
 
         {/* ── Language ──────────────────────────────────────────────────── */}
         {tab === 'language' && (

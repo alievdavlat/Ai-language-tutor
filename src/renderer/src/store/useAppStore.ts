@@ -15,7 +15,7 @@ export interface AutoSetupState {
 }
 
 /** UI-level role until real auth (Clerk) lands in a later phase. */
-export type UserRole = 'student' | 'teacher'
+export type UserRole = 'student' | 'teacher' | 'admin'
 
 interface AppState {
   booted: boolean
@@ -127,7 +127,9 @@ function readBool(key: string, fallback: boolean): boolean {
 function readRole(): UserRole {
   if (typeof window === 'undefined') return 'student'
   const v = window.localStorage?.getItem(LS_ROLE)
-  return v === 'teacher' ? 'teacher' : 'student'
+  if (v === 'teacher') return 'teacher'
+  if (v === 'admin') return 'admin'
+  return 'student'
 }
 function readRoleSelected(): boolean {
   if (typeof window === 'undefined') return false
@@ -230,10 +232,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       const email = `${(migrated?.name ?? 'aziz').toLowerCase().replace(/\s+/g, '.')}@speakai.app`
       const existing = await backend.signIn(email).catch(() => null)
       if (!existing) {
+        const r = get().role
         await backend.signUp({
           name: migrated?.name ?? 'You',
           email,
-          role: get().role
+          // Backend distinguishes only student vs teacher; admin still has a backend user as 'teacher' for content authoring.
+          role: r === 'teacher' ? 'teacher' : 'student'
         }).catch(() => null)
       }
     }
