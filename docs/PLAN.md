@@ -370,6 +370,17 @@ layout with a sticky mic footer. That's a different category of product
 These are visual rebuilds — the Part 1/2/3 conversational structure we
 shipped is correct.
 
+**Audio transcription** (Whisper small, local) confirmed the conversational
+behaviour. Snippet from video 2:
+
+> AI examiner: "Describe your typical day."
+> User: "I wake up, and then I brush my teeth, and I have my morning coffee."
+
+→ Confirms IELTS Part 1 personal-question pattern. Our `PART1` question
+bank already covers Hometown / Work / Free time / Technology — matches
+the style. No structural changes needed; the difference is purely the
+shell (orb-centric vs chat-bubble), which we've now fixed.
+
 ---
 
 ## 4 · Update protocol
