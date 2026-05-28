@@ -4,6 +4,7 @@ import type { AIConfig } from '@shared/types'
 import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 import { IconArrowRight, IconCheck, IconLock } from '../../../components/icons'
+import { testProvider, type TestResult } from '../../../services/ai/test'
 
 interface AISectionProps {
   ai: AIConfig | undefined
@@ -38,6 +39,19 @@ function ProviderCard({ p, ai, open, onToggleOpen, onChange }: CardProps): JSX.E
   const token = ai.tokens?.[p.id] ?? ''
   const modelId = ai.models?.[p.id] ?? p.models[0].id
   const hasToken = token.trim().length > 0
+  const [testing, setTesting] = useState(false)
+  const [result, setResult] = useState<TestResult | null>(null)
+
+  const runTest = async (): Promise<void> => {
+    if (!hasToken || testing) return
+    setTesting(true)
+    setResult(null)
+    const res = await testProvider({ provider: p.id, model: modelId, apiKey: token.trim() })
+    setResult(res)
+    setTesting(false)
+    // Auto-activate on a successful test if no provider is active yet.
+    if (res.ok && !ai.activeProviderId) onChange({ ...ai, activeProviderId: p.id })
+  }
 
   const setToken = (next: string): void => {
     onChange({ ...ai, tokens: { ...(ai.tokens ?? {}), [p.id]: next } })
@@ -159,18 +173,35 @@ function ProviderCard({ p, ai, open, onToggleOpen, onChange }: CardProps): JSX.E
                 className="input flex-1 font-mono text-xs"
               />
               {hasToken && (
-                <button
-                  onClick={setActive}
-                  disabled={isActive}
-                  className={cn(
-                    'btn-primary text-xs px-4 py-2.5 disabled:cursor-not-allowed disabled:opacity-60',
-                    isActive && '!bg-white/[0.06] !text-emerald-300 !shadow-none'
-                  )}
-                >
-                  {isActive ? '✓ Active' : 'Use this AI'}
-                </button>
+                <>
+                  <button
+                    onClick={() => void runTest()}
+                    disabled={testing}
+                    className="rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-xs px-3 py-2.5 text-slate-200 disabled:opacity-60"
+                  >
+                    {testing ? 'Testing…' : 'Test'}
+                  </button>
+                  <button
+                    onClick={setActive}
+                    disabled={isActive}
+                    className={cn(
+                      'btn-primary text-xs px-4 py-2.5 disabled:cursor-not-allowed disabled:opacity-60',
+                      isActive && '!bg-white/[0.06] !text-emerald-300 !shadow-none'
+                    )}
+                  >
+                    {isActive ? '✓ Active' : 'Use this AI'}
+                  </button>
+                </>
               )}
             </div>
+            {result && (
+              <p className={cn(
+                'text-[11px] mt-2 font-mono',
+                result.ok ? 'text-emerald-300' : 'text-rose-300'
+              )}>
+                {result.ok ? '✓' : '✗'} {result.detail} <span className="text-slate-500">· {result.ms}ms</span>
+              </p>
+            )}
             <p className="text-[10px] text-slate-500 mt-1.5">Stored locally on this device · never uploaded.</p>
           </div>
         </div>

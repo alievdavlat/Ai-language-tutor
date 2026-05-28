@@ -15,6 +15,7 @@ import SpeakingHeader from '../sections/SpeakingHeader'
 import AvatarPanel from '../sections/AvatarPanel'
 import ChatPanel from '../sections/ChatPanel'
 import { useTurnHandler } from '../hooks/useTurnHandler'
+import { useActiveAI } from '../../../lib/ai'
 
 function statusLabel(speaking: boolean, streaming: boolean, listening: boolean): string {
   if (speaking) return 'Speaking…'
@@ -93,8 +94,11 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
   const whisperLoader = useWhisperModelLoader(profile.settings.whisperModel)
   const whisperWarming = profile.settings.sttEngine === 'whisper-local' && !whisperLoader.loaded
 
-  const ollamaReady = !!ollama?.running && ollama.models.length > 0
-  const disabled = !ollamaReady || streaming
+  const activeAI = useActiveAI()
+  const localReady = !!ollama?.running && ollama.models.length > 0
+  // Cloud AI (Gemini/Claude/etc) overrides the local Ollama gate.
+  const aiReady = !!activeAI || localReady
+  const disabled = !aiReady || streaming
   const avatarName = useMemo(() => ACCENT_TO_PERSONA_NAME[accent], [accent])
 
   useEffect(() => {
@@ -114,10 +118,10 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
         correctionStyle={profile.settings.correctionStyle}
         avatarMode={avatarMode}
         onAvatarModeChange={setAvatarMode}
-        callEnabled={ollamaReady}
+        callEnabled={aiReady}
       />
 
-      {!ollamaReady && <AINotReadyBanner />}
+      {!aiReady && <AINotReadyBanner />}
 
       {whisperWarming && (
         <WhisperLoadingBanner progress={Math.round(whisperLoader.progress * 100)} error={whisperLoader.error} />

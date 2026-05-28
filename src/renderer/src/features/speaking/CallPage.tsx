@@ -12,6 +12,7 @@ import { useWhisperModelLoader } from '../../hooks/useWhisperModelLoader'
 import { buildSystemPrompt } from '../../services/prompts'
 import { cn } from '../../lib/classnames'
 import { micPrefsFromSettings } from '../../lib/audio'
+import { useActiveAI } from '../../lib/ai'
 import AINotReadyBanner from '../../components/speaking/AINotReadyBanner'
 import WhisperLoadingBanner from '../../components/speaking/WhisperLoadingBanner'
 import VoiceOrb, { type CallState } from './components/VoiceOrb'
@@ -178,7 +179,8 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
     [profile, send, streamer]
   )
 
-  const ollamaReady = !!ollama?.running && ollama.models.length > 0
+  const activeAI = useActiveAI()
+  const ollamaReady = !!activeAI || (!!ollama?.running && ollama.models.length > 0)
   const micEnabled = !muted && !paused && ollamaReady
   const micPrefs = micPrefsFromSettings(profile.settings)
 
