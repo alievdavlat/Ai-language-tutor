@@ -120,14 +120,20 @@ export default function FlashcardsPage(): JSX.Element {
               <p className="text-3xl font-black text-white mt-2">{DECK[idx].front}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {[DECK[idx].back, DECK[(idx + 1) % DECK.length].back, DECK[(idx + 2) % DECK.length].back, DECK[(idx + 3) % DECK.length].back]
-                .sort()
-                .map((opt, i) => {
-                  const isCorrect = opt === DECK[idx].back
+              {(() => {
+                // Use a deck-index-stable identity so duplicate translations
+                // don't collide. The truth is `deckIdx`, the visible text is
+                // `back`. We dedupe by deckIdx, then sort by `back` for layout.
+                const optionIndices = [idx, (idx + 1) % DECK.length, (idx + 2) % DECK.length, (idx + 3) % DECK.length]
+                const options = Array.from(new Set(optionIndices))
+                  .map((di) => ({ deckIdx: di, back: DECK[di].back }))
+                  .sort((a, b) => a.back.localeCompare(b.back))
+                return options.map((opt, i) => {
+                  const isCorrect = opt.deckIdx === idx
                   const isSel = selected === i
                   return (
                     <button
-                      key={i}
+                      key={opt.deckIdx}
                       disabled={selected != null}
                       onClick={() => {
                         setSelected(i)
@@ -145,10 +151,11 @@ export default function FlashcardsPage(): JSX.Element {
                         !isSel && selected != null && isCorrect && 'border-emerald-400/60 bg-emerald-500/10 text-emerald-200'
                       )}
                     >
-                      {opt}
+                      {opt.back}
                     </button>
                   )
-                })}
+                })
+              })()}
             </div>
           </div>
         )}

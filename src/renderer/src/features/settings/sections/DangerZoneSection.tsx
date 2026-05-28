@@ -4,13 +4,16 @@ import { useAppStore } from '../../../store/useAppStore'
 
 export default function DangerZoneSection(): JSX.Element {
   const navigate = useNavigate()
-  const setProfile = useAppStore((s) => s.setProfile)
+  const signOut = useAppStore((s) => s.signOut)
 
   const handleReset = async (): Promise<void> => {
     if (!window.confirm('Delete all progress and restart onboarding?')) return
     await window.api.profile.reset()
-    setProfile(null)
-    navigate('/', { replace: true })
+    // signOut clears authenticated/roleSelected/onboardingComplete + profile,
+    // so the post-boot redirect sends the user back to /signin instead of
+    // stranding them at /home with a null profile.
+    signOut()
+    navigate('/signin', { replace: true })
   }
 
   return (

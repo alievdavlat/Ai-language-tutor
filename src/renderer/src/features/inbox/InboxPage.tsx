@@ -44,7 +44,9 @@ export default function InboxPage(): JSX.Element {
   const [active, setActive] = useState<string>('t1')
   const [draft, setDraft] = useState('')
   const msgs = MSGS[active] ?? []
-  const thread = THREADS.find((t) => t.id === active)!
+  // Guard with a fallback so a future feature (URL-param active id, dynamic
+  // thread list, etc.) cannot crash the page with a stale id.
+  const thread = THREADS.find((t) => t.id === active) ?? THREADS[0]
   const navigate = useNavigate()
 
   return (

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
+import { useAppStore } from '../../store/useAppStore'
+import { useTargetLanguage } from '../../lib/language'
 import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
 import {
   IconBook,
@@ -57,17 +59,21 @@ function MediaTile({ item }: { item: { kind: string; title: string; sub: string;
 
 export default function AccountPage(): JSX.Element {
   const navigate = useNavigate()
+  const profile = useAppStore((s) => s.profile)
+  const lang = useTargetLanguage()
   const [tab, setTab] = useState<Tab>('saved')
+  const displayName = profile?.name?.trim() || 'You'
+  const level = profile?.level ?? 'B1'
 
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
         {/* Profile header */}
         <div className="flex items-center gap-4">
-          <AvatarCircle name="Aziz" size="lg" className="!w-20 !h-20 !text-2xl" />
+          <AvatarCircle name={displayName} size="lg" className="!w-20 !h-20 !text-2xl" />
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight">Aziz</h1>
-            <p className="text-sm text-slate-400">Level B1 · learning English</p>
+            <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+            <p className="text-sm text-slate-400">Level {level} · learning {lang.name} {lang.flag}</p>
             <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
               <span><b className="text-white">12</b> following</span>
               <span><b className="text-white">3</b> followers</span>

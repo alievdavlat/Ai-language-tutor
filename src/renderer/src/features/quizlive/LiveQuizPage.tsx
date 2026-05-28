@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, SectionHeading } from '../../components/ui'
@@ -56,6 +56,13 @@ export default function LiveQuizPage(): JSX.Element {
   const [phase, setPhase] = useState<Phase>('lobby')
   const [selected, setSelected] = useState<number | null>(null)
   const navigate = useNavigate()
+  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Clear any pending reveal timer when the component unmounts so setPhase
+  // doesn't fire after navigate('/community') closes the quiz.
+  useEffect(() => () => {
+    if (revealTimerRef.current) clearTimeout(revealTimerRef.current)
+  }, [])
 
   return (
     <div className="h-full w-full bg-slate-950 relative overflow-hidden">
@@ -126,7 +133,10 @@ export default function LiveQuizPage(): JSX.Element {
                 return (
                   <button
                     key={i}
-                    onClick={() => { setSelected(i); setTimeout(() => setPhase('leaderboard'), 800) }}
+                    onClick={() => {
+                      setSelected(i)
+                      revealTimerRef.current = setTimeout(() => setPhase('leaderboard'), 800)
+                    }}
                     disabled={selected != null}
                     className={cn(
                       'rounded-2xl p-5 text-left font-bold text-white shadow-lg transition flex items-center gap-3 min-h-[88px]',

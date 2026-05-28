@@ -189,13 +189,36 @@ export const useAppStore = create<AppState>((set, get) => ({
     const ollama = ollamaStatus ?? FALLBACK_OLLAMA
     const rec = recResult?.rec ?? null
 
+    // Migrate legacy `targetLanguage: 'english'` (pre-multi-language type widening)
+    // to the new ISO code 'en'. Same persistence flag check applies.
+    let migrated = profile
+    if (profile && (profile.targetLanguage as unknown) === 'english') {
+      migrated = { ...profile, targetLanguage: 'en' }
+      try { await window.api.profile.save(migrated) } catch { /* swallow — display lookup falls back to 'en' anyway */ }
+    }
+
+    // Auto-seed the first-launch flags for users who have a complete profile from
+    // a pre-PR install (no LS_AUTH/LS_ONBOARDING/LS_ROLE keys yet). Without this
+    // they'd be forced through the funnel again, overwriting their existing
+    // profile with empty defaults at the end of onboarding.
+    const hasCompleteProfile = !!migrated && migrated.goals.length > 0
+    const state = get()
+    if (hasCompleteProfile && !state.authenticated && !state.onboardingComplete && !state.roleSelected) {
+      writeBool(LS_AUTH, true)
+      writeBool(LS_ONBOARDING, true)
+      if (typeof window !== 'undefined') window.localStorage?.setItem(LS_ROLE, 'student')
+    }
+
     set({
       booted: true,
       bootError: null,
       hw: recResult?.hw ?? null,
       rec,
       ollama,
-      profile: profile ?? null
+      profile: migrated ?? null,
+      authenticated: hasCompleteProfile ? true : state.authenticated,
+      onboardingComplete: hasCompleteProfile ? true : state.onboardingComplete,
+      roleSelected: hasCompleteProfile ? true : state.roleSelected
     })
 
     // Auto-setup runs in the background after the UI is painted.

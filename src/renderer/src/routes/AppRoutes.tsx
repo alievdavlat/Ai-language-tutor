@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import type { UserRole } from '../store/useAppStore'
 import { useAppStore } from '../store/useAppStore'
 import { useBootstrap } from '../hooks/useBootstrap'
 import { useAdminShortcut } from '../hooks/useAdminShortcut'
@@ -62,6 +63,18 @@ import InboxPage from '../features/inbox/InboxPage'
  * would kick the user back every time an unrelated store update happened
  * (ollama polling, sidecar state, language switch, etc).
  */
+/**
+ * Wraps a route so only users with the matching role can render it. Students
+ * who deep-link to a teacher URL (or vice-versa) are bounced to their own home.
+ */
+function RequireRole({ role: required, children }: { role: UserRole; children: ReactNode }): JSX.Element {
+  const role = useAppStore((s) => s.role)
+  const roleSelected = useAppStore((s) => s.roleSelected)
+  if (!roleSelected) return <Navigate to="/role" replace />
+  if (role !== required) return <Navigate to={role === 'teacher' ? '/teacher' : '/home'} replace />
+  return <>{children}</>
+}
+
 function usePostBootRedirect(): void {
   const booted = useAppStore((s) => s.booted)
   const authenticated = useAppStore((s) => s.authenticated)
@@ -278,49 +291,49 @@ export default function AppRoutes(): JSX.Element {
       <Route
         path="/teacher"
         element={
-          <AppShell>
-            <TeacherDashboardPage />
-          </AppShell>
+          <RequireRole role="teacher">
+            <AppShell><TeacherDashboardPage /></AppShell>
+          </RequireRole>
         }
       />
       <Route
         path="/teacher/new"
         element={
-          <AppShell>
-            <CourseAuthoringPage />
-          </AppShell>
+          <RequireRole role="teacher">
+            <AppShell><CourseAuthoringPage /></AppShell>
+          </RequireRole>
         }
       />
       <Route
         path="/teacher/analytics"
         element={
-          <AppShell>
-            <TeacherAnalyticsPage />
-          </AppShell>
+          <RequireRole role="teacher">
+            <AppShell><TeacherAnalyticsPage /></AppShell>
+          </RequireRole>
         }
       />
       <Route
         path="/teacher/students"
         element={
-          <AppShell>
-            <TeacherStudentsPage />
-          </AppShell>
+          <RequireRole role="teacher">
+            <AppShell><TeacherStudentsPage /></AppShell>
+          </RequireRole>
         }
       />
       <Route
         path="/teacher/monetization"
         element={
-          <AppShell>
-            <TeacherMonetizationPage />
-          </AppShell>
+          <RequireRole role="teacher">
+            <AppShell><TeacherMonetizationPage /></AppShell>
+          </RequireRole>
         }
       />
       <Route
         path="/teacher/live"
         element={
-          <AppShell>
-            <TeacherLiveHostPage />
-          </AppShell>
+          <RequireRole role="teacher">
+            <AppShell><TeacherLiveHostPage /></AppShell>
+          </RequireRole>
         }
       />
       <Route

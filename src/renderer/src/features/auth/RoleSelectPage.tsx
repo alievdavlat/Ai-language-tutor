@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../../store/useAppStore'
 import { IconBook, IconUsers } from '../../components/icons'
 
@@ -6,6 +6,9 @@ export default function RoleSelectPage(): JSX.Element {
   const navigate = useNavigate()
   const setRole = useAppStore((s) => s.setRole)
   const onboardingComplete = useAppStore((s) => s.onboardingComplete)
+  const authenticated = useAppStore((s) => s.authenticated)
+  // Block unauthenticated direct access to /role (URL deep-link).
+  if (!authenticated) return <Navigate to="/signin" replace />
 
   const pick = (role: 'student' | 'teacher'): void => {
     setRole(role)

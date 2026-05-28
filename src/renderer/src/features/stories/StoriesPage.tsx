@@ -19,15 +19,17 @@ interface Story {
   parts: number
   done?: number
   cover: string
+  /** 'reading' = text-only; 'listening' = audio-only; 'mixed' = both. */
+  kind: 'reading' | 'listening' | 'mixed'
 }
 
 const STORIES: Story[] = [
-  { title: 'A Day in Tokyo', emoji: '🗼', level: 'A2', minutes: 8, xp: 40, parts: 5, done: 3, cover: 'from-rose-500 to-orange-500' },
-  { title: 'The Coffee Mystery', emoji: '☕', level: 'B1', minutes: 12, xp: 60, parts: 6, cover: 'from-amber-500 to-rose-500' },
-  { title: 'Lost in Translation', emoji: '🌍', level: 'B1', minutes: 10, xp: 50, parts: 5, cover: 'from-sky-500 to-blue-700' },
-  { title: 'My First Job', emoji: '💼', level: 'A2', minutes: 9, xp: 40, parts: 4, cover: 'from-emerald-500 to-teal-700' },
-  { title: 'The Sleepless Astronaut', emoji: '🚀', level: 'B2', minutes: 15, xp: 80, parts: 7, cover: 'from-indigo-500 to-violet-700' },
-  { title: 'Family Dinner', emoji: '🍝', level: 'A1', minutes: 6, xp: 30, parts: 3, done: 3, cover: 'from-orange-500 to-red-700' }
+  { title: 'A Day in Tokyo', emoji: '🗼', level: 'A2', minutes: 8, xp: 40, parts: 5, done: 3, cover: 'from-rose-500 to-orange-500', kind: 'reading' },
+  { title: 'The Coffee Mystery', emoji: '☕', level: 'B1', minutes: 12, xp: 60, parts: 6, cover: 'from-amber-500 to-rose-500', kind: 'mixed' },
+  { title: 'Lost in Translation', emoji: '🌍', level: 'B1', minutes: 10, xp: 50, parts: 5, cover: 'from-sky-500 to-blue-700', kind: 'listening' },
+  { title: 'My First Job', emoji: '💼', level: 'A2', minutes: 9, xp: 40, parts: 4, cover: 'from-emerald-500 to-teal-700', kind: 'reading' },
+  { title: 'The Sleepless Astronaut', emoji: '🚀', level: 'B2', minutes: 15, xp: 80, parts: 7, cover: 'from-indigo-500 to-violet-700', kind: 'listening' },
+  { title: 'Family Dinner', emoji: '🍝', level: 'A1', minutes: 6, xp: 30, parts: 3, done: 3, cover: 'from-orange-500 to-red-700', kind: 'mixed' }
 ]
 
 const LEVELS = ['All', 'A1', 'A2', 'B1', 'B2', 'C1']
@@ -105,13 +107,30 @@ export default function StoriesPage(): JSX.Element {
           </div>
         </div>
 
-        <SectionHeading
-          title={tab === 'reading' ? 'Reading stories' : tab === 'listening' ? 'Listening stories' : 'All stories'}
-          subtitle={`${STORIES.length} available`}
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {STORIES.map((s) => <StoryCard key={s.title} s={s} />)}
-        </div>
+        {(() => {
+          const filtered = STORIES.filter((s) => {
+            if (level !== 'All' && s.level !== level) return false
+            if (tab === 'mixed') return true
+            return s.kind === tab || s.kind === 'mixed'
+          })
+          return (
+            <>
+              <SectionHeading
+                title={tab === 'reading' ? 'Reading stories' : tab === 'listening' ? 'Listening stories' : 'All stories'}
+                subtitle={`${filtered.length} of ${STORIES.length} stories`}
+              />
+              {filtered.length === 0 ? (
+                <div className="rounded-card border border-white/10 bg-white/[0.025] p-8 text-center">
+                  <p className="text-sm text-slate-400">No stories match this filter yet.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filtered.map((s) => <StoryCard key={s.title} s={s} />)}
+                </div>
+              )}
+            </>
+          )
+        })()}
 
         {/* Categories rail */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

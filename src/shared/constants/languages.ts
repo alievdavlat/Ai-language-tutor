@@ -26,6 +26,12 @@ export const SUPPORTED_LANGUAGES: LanguageDef[] = [
   { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷', hue: 'sky' }
 ]
 
-export function getLanguage(code: TargetLanguage): LanguageDef {
-  return SUPPORTED_LANGUAGES.find((l) => l.code === code) ?? SUPPORTED_LANGUAGES[0]
+/**
+ * Looks up a language by code. Accepts the legacy literal `'english'`
+ * (pre-multi-language schema) as an alias for `'en'`. Falls back to English
+ * for anything unrecognised so callers never see undefined.
+ */
+export function getLanguage(code: TargetLanguage | string): LanguageDef {
+  const normalized = code === 'english' ? 'en' : code
+  return SUPPORTED_LANGUAGES.find((l) => l.code === normalized) ?? SUPPORTED_LANGUAGES[0]
 }

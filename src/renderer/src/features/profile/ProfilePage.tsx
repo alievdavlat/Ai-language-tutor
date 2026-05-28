@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
+import { useAppStore } from '../../store/useAppStore'
+import { useTargetLanguage } from '../../lib/language'
 import { AvatarCircle, PageHeader, ProgressBar, SectionHeading, StatCard, Tabs, type TabItem } from '../../components/ui'
 import {
   IconBolt,
@@ -126,7 +128,11 @@ function CertCard({ c }: { c: typeof CERTS[number] }): JSX.Element {
 
 export default function ProfilePage(): JSX.Element {
   const navigate = useNavigate()
+  const profile = useAppStore((s) => s.profile)
+  const lang = useTargetLanguage()
   const [tab, setTab] = useState<Tab>('overview')
+  const displayName = profile?.name?.trim() || 'You'
+  const level = profile?.level ?? 'B1'
 
   return (
     <div className="h-full overflow-y-auto">
@@ -140,15 +146,15 @@ export default function ProfilePage(): JSX.Element {
         />
         {/* Header */}
         <div className="rounded-card border border-white/10 bg-white/[0.025] p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
-          <AvatarCircle name="Aziz" size="lg" className="!w-24 !h-24 !text-3xl" />
+          <AvatarCircle name={displayName} size="lg" className="!w-24 !h-24 !text-3xl" />
           <div className="flex-1 min-w-0 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">Aziz</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
               <span className="inline-flex items-center rounded-full bg-brand-500/15 text-brand-200 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 ring-1 ring-brand-400/30">
-                B1
+                {level}
               </span>
             </div>
-            <p className="text-sm text-slate-400 mt-1">Learning English · Tashkent · joined Apr 2026</p>
+            <p className="text-sm text-slate-400 mt-1">Learning {lang.name} {lang.flag}</p>
             <p className="text-sm text-slate-300 mt-2 max-w-md">
               Software dev practicing daily — aiming for IELTS 7.0 this year.
             </p>

@@ -158,22 +158,35 @@ export default function ExamsHubPage(): JSX.Element {
         <div>
           <SectionHeading title={`Official ${lang.name} certifications`} subtitle={`${langExams.length} exam types for ${lang.name}`} />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {langExams.map((e) => (
-              <button
-                key={e.id}
-                onClick={() => {
-                  if (e.id === 'cefr') navigate('/exams/cefr')
-                  else if (e.id === 'ielts' || e.id === 'toefl') navigate(`/exams/${e.id}`)
-                }}
-                className={cn('rounded-2xl p-1 ring-1 ring-white/10 hover:ring-white/25 transition text-left bg-gradient-to-br', e.tint)}
-              >
-                <div className="rounded-xl bg-black/20 px-3 py-3 h-full">
-                  <span className="text-xl">{e.flag}</span>
-                  <p className="text-sm font-bold text-white mt-1">{e.name}</p>
-                  <p className="text-[10px] text-white/80 mt-0.5">{e.description}</p>
-                </div>
-              </button>
-            ))}
+            {langExams.map((e) => {
+              const supported = e.id === 'cefr' || e.id === 'ielts' || e.id === 'toefl'
+              return (
+                <button
+                  key={e.id}
+                  disabled={!supported}
+                  onClick={() => {
+                    if (e.id === 'cefr') navigate('/exams/cefr')
+                    else if (e.id === 'ielts' || e.id === 'toefl') navigate(`/exams/${e.id}`)
+                  }}
+                  className={cn(
+                    'rounded-2xl p-1 ring-1 transition text-left bg-gradient-to-br relative',
+                    supported ? 'ring-white/10 hover:ring-white/25 cursor-pointer' : 'ring-white/5 opacity-50 cursor-not-allowed',
+                    e.tint
+                  )}
+                >
+                  <div className="rounded-xl bg-black/20 px-3 py-3 h-full">
+                    <span className="text-xl">{e.flag}</span>
+                    <p className="text-sm font-bold text-white mt-1">{e.name}</p>
+                    <p className="text-[10px] text-white/80 mt-0.5">{e.description}</p>
+                    {!supported && (
+                      <span className="absolute top-2 right-2 inline-flex items-center rounded-full bg-black/40 backdrop-blur text-white/90 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5">
+                        Soon
+                      </span>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </div>
 

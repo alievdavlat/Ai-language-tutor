@@ -31,13 +31,15 @@ const FALLBACK_PLACEMENT: PlacementResult = {
 
 export default function OnboardingPage(): JSX.Element {
   const navigate = useNavigate()
-  const { rec, refreshOllama, setProfile } = useAppStore()
+  const { rec, refreshOllama, setProfile, profile } = useAppStore()
   const setOnboardingComplete = useAppStore((s) => s.setOnboardingComplete)
   const role = useAppStore((s) => s.role)
   const flow = useOnboardingFlow('welcome')
 
-  const [name, setName] = useState('')
-  const [targetLanguage, setTargetLanguage] = useState<TargetLanguage>('en')
+  // Seed from existing profile so a returning user (e.g. coming back via
+  // DangerZone reset → re-onboarding) doesn't have to re-pick everything.
+  const [name, setName] = useState(profile?.name ?? '')
+  const [targetLanguage, setTargetLanguage] = useState<TargetLanguage>(profile?.targetLanguage ?? 'en')
   const [goals, setGoals] = useState<LearningGoal[]>([])
   const [interests, setInterests] = useState<Interest[]>([])
   const [placementQuestions, setPlacementQuestions] = useState<PlacementQuestion[] | null>(null)
