@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../lib/classnames'
-import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
+import { AvatarCircle, PageHeader, Tabs, type TabItem } from '../../components/ui'
 import { IconBolt, IconFlame, IconTrophy } from '../../components/icons'
 
 type Scope = 'global' | 'friends'
@@ -61,16 +61,18 @@ export default function LeaderboardPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Leaderboard</h1>
-            <p className="text-sm text-slate-400 mt-1">Weekly XP race — resets Sunday at midnight.</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[11px] uppercase tracking-widest text-slate-500">Resets in</p>
-            <p className="text-sm font-bold text-white">2d 14h</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Leaderboard"
+          subtitle="Weekly XP race — resets Sunday at midnight."
+          back="/progress"
+          crumbs={[{ label: 'Progress', to: '/progress' }, { label: 'Leaderboard' }]}
+          action={
+            <div className="text-right">
+              <p className="text-[11px] uppercase tracking-widest text-slate-500">Resets in</p>
+              <p className="text-sm font-bold text-white">2d 14h</p>
+            </div>
+          }
+        />
 
         {/* Your league */}
         <div className={cn('rounded-card border border-white/10 p-5 bg-gradient-to-br', currentLeague.tint)}>

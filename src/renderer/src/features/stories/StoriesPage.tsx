@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../lib/classnames'
-import { SectionHeading, Tabs, type TabItem } from '../../components/ui'
+import { PageHeader, SectionHeading, Tabs, type TabItem } from '../../components/ui'
 import { IconBolt, IconBook, IconHeadphones, IconStar } from '../../components/icons'
 
 type Tab = 'reading' | 'listening' | 'mixed'
@@ -68,11 +68,13 @@ export default function StoriesPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-6xl mx-auto w-full flex flex-col gap-6">
-        <div>
-          <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">Mini-fiction</p>
-          <h1 className="text-2xl font-bold tracking-tight mt-0.5">Stories</h1>
-          <p className="text-sm text-slate-400 mt-1">Short reading and listening stories with comprehension checks.</p>
-        </div>
+        <PageHeader
+          eyebrow="Mini-fiction"
+          title="Stories"
+          subtitle="Short reading and listening stories with comprehension checks."
+          back="/library"
+          crumbs={[{ label: 'Library', to: '/library' }, { label: 'Stories' }]}
+        />
 
         {/* Continue */}
         <div className="rounded-card p-5 bg-gradient-to-br from-brand-500/20 to-violet-500/20 border border-brand-400/20 flex items-center gap-4">

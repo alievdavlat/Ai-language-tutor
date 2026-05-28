@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { AvatarCircle, SectionHeading, Tabs, type TabItem } from '../../components/ui'
+import { AvatarCircle, PageHeader, SectionHeading, Tabs, type TabItem } from '../../components/ui'
 import { IconBolt, IconHeart, IconMic, IconPencilEdit, IconStar, IconTrophy } from '../../components/icons'
 
 type Tab = 'give' | 'received' | 'submit'
@@ -41,17 +41,19 @@ export default function FeedbackExchangePage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">Community</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Feedback exchange</h1>
-            <p className="text-sm text-slate-400 mt-1">Help others write & speak better — they help you back.</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Your karma</p>
-            <p className="text-2xl font-black text-amber-300 inline-flex items-center gap-1"><IconTrophy className="w-5 h-5" /> 248</p>
-          </div>
-        </div>
+        <PageHeader
+          eyebrow="Community"
+          title="Feedback exchange"
+          subtitle="Help others write & speak better — they help you back."
+          back="/community"
+          crumbs={[{ label: 'Community', to: '/community' }, { label: 'Feedback' }]}
+          action={
+            <div className="text-right">
+              <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Your karma</p>
+              <p className="text-2xl font-black text-amber-300 inline-flex items-center gap-1"><IconTrophy className="w-5 h-5" /> 248</p>
+            </div>
+          }
+        />
 
         {/* Karma banner */}
         <div className="rounded-card p-5 bg-gradient-to-br from-amber-500/15 to-rose-500/15 border border-amber-400/20 flex items-center gap-4">

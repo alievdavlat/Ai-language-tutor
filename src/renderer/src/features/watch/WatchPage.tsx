@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../lib/classnames'
-import { SectionHeading } from '../../components/ui'
+import { PageHeader, SectionHeading } from '../../components/ui'
 import { IconBookmark, IconPlay, IconVolume, IconYouTube } from '../../components/icons'
 
 interface Segment {
@@ -38,7 +38,14 @@ export default function WatchPage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+      <div className="px-6 py-6 max-w-6xl mx-auto w-full flex flex-col gap-5">
+        <PageHeader
+          title="Watch & learn"
+          subtitle="Subtitled video player — click any word to save it."
+          back="/library"
+          crumbs={[{ label: 'Library', to: '/library' }, { label: 'Watch' }]}
+        />
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         <div className="flex flex-col gap-5">
           {/* Player */}
           <div className="rounded-2xl overflow-hidden bg-black ring-1 ring-white/10">
@@ -177,6 +184,7 @@ export default function WatchPage(): JSX.Element {
             </div>
           </div>
         </aside>
+        </div>
       </div>
     </div>
   )

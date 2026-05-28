@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { AvatarCircle, StatCard, Tabs, type TabItem } from '../../components/ui'
+import { AvatarCircle, PageHeader, StatCard, Tabs, type TabItem } from '../../components/ui'
 import {
   IconArrowRight,
   IconBolt,
@@ -117,17 +117,18 @@ export default function ExamPracticeHub({ examId }: { examId: ExamId }): JSX.Ele
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{c.title} practice</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Full mock tests and skill-by-skill practice with an AI examiner — {c.scale}.
-          </p>
-          <div className="flex flex-wrap items-center gap-2 mt-3">
-            <span className="text-[11px] text-slate-500">Free practice from</span>
-            {['British Council', 'IDP', 'Cambridge', 'Recent actual'].map((p) => (
-              <span key={p} className="text-[11px] font-medium rounded-full bg-white/[0.05] border border-white/10 px-2.5 py-1 text-slate-300">{p}</span>
-            ))}
-          </div>
+        <PageHeader
+          eyebrow={`${c.title} · Practice`}
+          title={`${c.title} practice`}
+          subtitle={`Full mock tests and skill-by-skill practice with an AI examiner — ${c.scale}.`}
+          back="/exams"
+          crumbs={[{ label: 'Exams', to: '/exams' }, { label: c.title }]}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] text-slate-500">Free practice from</span>
+          {['British Council', 'IDP', 'Cambridge', 'Recent actual'].map((p) => (
+            <span key={p} className="text-[11px] font-medium rounded-full bg-white/[0.05] border border-white/10 px-2.5 py-1 text-slate-300">{p}</span>
+          ))}
         </div>
 
         {/* Stats */}

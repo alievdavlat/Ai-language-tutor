@@ -1,5 +1,5 @@
 import { cn } from '../../lib/classnames'
-import { ProgressBar, SectionHeading } from '../../components/ui'
+import { PageHeader, ProgressBar, SectionHeading } from '../../components/ui'
 import {
   IconBolt,
   IconChat,
@@ -75,15 +75,17 @@ export default function QuestsPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Quests</h1>
-            <p className="text-sm text-slate-400 mt-1">Daily, weekly and monthly challenges for bonus XP.</p>
-          </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 text-amber-200 text-xs font-bold px-3 py-1.5">
-            <IconBolt className="w-3.5 h-3.5" /> 1,240 XP
-          </span>
-        </div>
+        <PageHeader
+          title="Quests"
+          subtitle="Daily, weekly and monthly challenges for bonus XP."
+          back="/home"
+          crumbs={[{ label: 'Home', to: '/home' }, { label: 'Quests' }]}
+          action={
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 text-amber-200 text-xs font-bold px-3 py-1.5">
+              <IconBolt className="w-3.5 h-3.5" /> 1,240 XP
+            </span>
+          }
+        />
 
         {/* Treasure chest preview */}
         <div className="rounded-card p-5 bg-gradient-to-br from-amber-500/20 to-rose-500/20 border border-amber-400/20 flex items-center gap-4">

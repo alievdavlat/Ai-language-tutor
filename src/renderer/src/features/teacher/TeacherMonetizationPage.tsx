@@ -1,4 +1,4 @@
-import { ProgressBar, SectionHeading, StatCard } from '../../components/ui'
+import { PageHeader, ProgressBar, SectionHeading, StatCard } from '../../components/ui'
 import { IconBolt, IconDownload, IconHeart, IconTrophy, IconUsers } from '../../components/icons'
 
 const SOURCES = [
@@ -26,14 +26,14 @@ export default function TeacherMonetizationPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-5xl mx-auto w-full flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-violet-300 font-bold">Teacher · Monetization</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Earnings</h1>
-            <p className="text-sm text-slate-400 mt-1">This month → next payout 2026-06-01</p>
-          </div>
-          <button className="btn-ghost text-xs px-4 py-2">Payout settings</button>
-        </div>
+        <PageHeader
+          eyebrow="Teacher · Monetization"
+          title="Earnings"
+          subtitle="This month → next payout 2026-06-01"
+          back="/teacher"
+          crumbs={[{ label: 'Teacher', to: '/teacher' }, { label: 'Monetization' }]}
+          action={<button className="btn-ghost text-xs px-4 py-2">Payout settings</button>}
+        />
 
         {/* Big balance card */}
         <div className="rounded-card p-6 bg-gradient-to-br from-emerald-500/20 to-brand-500/20 border border-emerald-400/20">

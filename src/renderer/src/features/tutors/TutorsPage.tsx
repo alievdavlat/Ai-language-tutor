@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../lib/classnames'
-import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
+import { AvatarCircle, PageHeader, Tabs, type TabItem } from '../../components/ui'
 import { IconLive, IconSearch, IconStar, IconUsers } from '../../components/icons'
 
 type Tab = 'pro' | 'community'
@@ -87,16 +87,18 @@ export default function TutorsPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-6xl mx-auto w-full flex flex-col gap-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Tutors</h1>
-            <p className="text-sm text-slate-400 mt-1">Live 1:1 lessons with native and certified tutors.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="btn-ghost text-xs px-3 py-2">Calendar</button>
-            <button className="btn-primary text-xs px-3 py-2">Instant call</button>
-          </div>
-        </div>
+        <PageHeader
+          title="Tutors"
+          subtitle="Live 1:1 lessons with native and certified tutors."
+          back="/meet"
+          crumbs={[{ label: 'Speaking partner', to: '/meet' }, { label: 'Tutors' }]}
+          action={
+            <div className="flex items-center gap-2">
+              <button className="btn-ghost text-xs px-3 py-2">Calendar</button>
+              <button className="btn-primary text-xs px-3 py-2">Instant call</button>
+            </div>
+          }
+        />
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">

@@ -1,4 +1,4 @@
-import { ProgressBar, SectionHeading, StatCard } from '../../components/ui'
+import { PageHeader, ProgressBar, SectionHeading, StatCard } from '../../components/ui'
 import { IconBolt, IconChart, IconHeart, IconStar, IconTrophy, IconUsers } from '../../components/icons'
 
 const TOP_COURSES = [
@@ -29,11 +29,13 @@ export default function TeacherAnalyticsPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-5xl mx-auto w-full flex flex-col gap-6">
-        <div>
-          <p className="text-[11px] uppercase tracking-widest text-violet-300 font-bold">Teacher · Analytics</p>
-          <h1 className="text-2xl font-bold tracking-tight mt-0.5">Channel performance</h1>
-          <p className="text-sm text-slate-400 mt-1">Last 30 days · 6 May → 28 May</p>
-        </div>
+        <PageHeader
+          eyebrow="Teacher · Analytics"
+          title="Channel performance"
+          subtitle="Last 30 days · 6 May → 28 May"
+          back="/teacher"
+          crumbs={[{ label: 'Teacher', to: '/teacher' }, { label: 'Analytics' }]}
+        />
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard value="26,160" label="Total views" tone="brand" icon={<IconChart />} />

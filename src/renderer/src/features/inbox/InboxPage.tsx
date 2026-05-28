@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { cn } from '../../lib/classnames'
+import { useNavigate } from 'react-router-dom'
 import { AvatarCircle } from '../../components/ui'
-import { IconSearch } from '../../components/icons'
+import { IconChevronLeft, IconSearch } from '../../components/icons'
 
 interface Thread {
   id: string
@@ -44,13 +45,23 @@ export default function InboxPage(): JSX.Element {
   const [draft, setDraft] = useState('')
   const msgs = MSGS[active] ?? []
   const thread = THREADS.find((t) => t.id === active)!
+  const navigate = useNavigate()
 
   return (
     <div className="h-full flex overflow-hidden">
       {/* Thread list */}
       <aside className="w-72 shrink-0 border-r border-white/[0.07] bg-white/[0.015] flex flex-col">
         <div className="p-4 border-b border-white/[0.06]">
-          <h1 className="text-xl font-bold tracking-tight">Inbox</h1>
+          <div className="flex items-center gap-2 mb-1">
+            <button
+              onClick={() => navigate('/home')}
+              title="Back"
+              className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white flex items-center justify-center"
+            >
+              <IconChevronLeft className="w-4 h-4" />
+            </button>
+            <h1 className="text-xl font-bold tracking-tight">Inbox</h1>
+          </div>
           <div className="relative mt-3">
             <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { AvatarCircle, ProgressBar, SectionHeading, StatCard, Tabs, type TabItem } from '../../components/ui'
+import { AvatarCircle, PageHeader, ProgressBar, SectionHeading, StatCard, Tabs, type TabItem } from '../../components/ui'
 import {
   IconBolt,
   IconChat,
@@ -131,6 +131,13 @@ export default function ProfilePage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
+        <PageHeader
+          eyebrow="Account · Profile"
+          title="Your profile"
+          subtitle="Public page · stats, badges, certificates"
+          back="/home"
+          crumbs={[{ label: 'Home', to: '/home' }, { label: 'Profile' }]}
+        />
         {/* Header */}
         <div className="rounded-card border border-white/10 bg-white/[0.025] p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
           <AvatarCircle name="Aziz" size="lg" className="!w-24 !h-24 !text-3xl" />

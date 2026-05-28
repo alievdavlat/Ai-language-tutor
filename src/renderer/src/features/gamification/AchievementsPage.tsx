@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../lib/classnames'
-import { ProgressBar, SectionHeading } from '../../components/ui'
+import { PageHeader, ProgressBar, SectionHeading } from '../../components/ui'
 import {
   IconBolt,
   IconBook,
@@ -107,12 +107,12 @@ export default function AchievementsPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-5xl mx-auto w-full flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Achievements</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            <b className="text-white">{unlocked}</b> of <b className="text-white">{total}</b> badges unlocked
-          </p>
-        </div>
+        <PageHeader
+          title="Achievements"
+          subtitle={`${unlocked} of ${total} badges unlocked`}
+          back="/progress"
+          crumbs={[{ label: 'Progress', to: '/progress' }, { label: 'Achievements' }]}
+        />
 
         {/* Filter chips */}
         <div className="flex flex-wrap gap-2">

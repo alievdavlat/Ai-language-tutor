@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { ProgressBar, SectionHeading } from '../../components/ui'
+import { PageHeader, ProgressBar, SectionHeading } from '../../components/ui'
 import { IconBook, IconClipboard, IconStar, IconTrophy, IconUsers } from '../../components/icons'
 
 interface Path {
@@ -121,11 +121,13 @@ export default function PathsPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-6xl mx-auto w-full flex flex-col gap-6">
-        <div>
-          <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">Career tracks</p>
-          <h1 className="text-2xl font-bold tracking-tight mt-0.5">Learning paths</h1>
-          <p className="text-sm text-slate-400 mt-1">Multi-course specializations that end with a capstone project and a certificate.</p>
-        </div>
+        <PageHeader
+          eyebrow="Career tracks"
+          title="Learning paths"
+          subtitle="Multi-course specializations that end with a capstone project and a certificate."
+          back="/courses"
+          crumbs={[{ label: 'Courses', to: '/courses' }, { label: 'Paths' }]}
+        />
 
         {/* Banner */}
         <div className="rounded-card p-5 bg-gradient-to-br from-brand-500/15 to-violet-500/15 border border-brand-400/20 flex items-center gap-4">

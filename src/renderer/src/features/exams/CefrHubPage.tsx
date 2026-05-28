@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { ProgressRing } from '../../components/ui'
+import { PageHeader, ProgressRing } from '../../components/ui'
 import {
   IconArrowRight,
   IconBook,
@@ -33,12 +33,13 @@ export default function CefrHubPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">CEFR English test</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Find your level (A1–C2), then practise by level or skill — instant scoring & breakdown.
-          </p>
-        </div>
+        <PageHeader
+          eyebrow="Exams · CEFR"
+          title="CEFR English test"
+          subtitle="Find your level (A1–C2), then practise by level or skill — instant scoring & breakdown."
+          back="/exams"
+          crumbs={[{ label: 'Exams', to: '/exams' }, { label: 'CEFR' }]}
+        />
 
         {/* Hero — current level + take test */}
         <div className="rounded-card border border-white/10 bg-white/[0.03] p-6 flex flex-col sm:flex-row items-center gap-6">

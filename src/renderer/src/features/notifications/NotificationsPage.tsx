@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
+import { AvatarCircle, PageHeader, Tabs, type TabItem } from '../../components/ui'
 import {
   IconBolt,
   IconChat,
@@ -57,13 +57,15 @@ export default function NotificationsPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-3xl mx-auto w-full flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
-            <p className="text-sm text-slate-400 mt-1">{unread} unread</p>
-          </div>
-          <button className="text-xs font-semibold text-brand-300 hover:text-brand-200">Mark all read</button>
-        </div>
+        <PageHeader
+          title="Notifications"
+          subtitle={`${unread} unread`}
+          back="/home"
+          crumbs={[{ label: 'Home', to: '/home' }, { label: 'Notifications' }]}
+          action={
+            <button className="text-xs font-semibold text-brand-300 hover:text-brand-200">Mark all read</button>
+          }
+        />
 
         <Tabs items={FILTERS} active={filter} onChange={setFilter} className="self-start" />
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../lib/classnames'
-import { AvatarCircle, ProgressBar, Tabs, type TabItem } from '../../components/ui'
+import { AvatarCircle, PageHeader, ProgressBar, Tabs, type TabItem } from '../../components/ui'
 import { IconChat, IconSearch, IconStar } from '../../components/icons'
 
 type Tab = 'all' | 'active' | 'lagging' | 'finished'
@@ -44,14 +44,14 @@ export default function TeacherStudentsPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-5xl mx-auto w-full flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-violet-300 font-bold">Teacher · Students</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Your students</h1>
-            <p className="text-sm text-slate-400 mt-1">142 enrolled · 96 active this week</p>
-          </div>
-          <button className="btn-primary text-xs px-4 py-2">Invite student</button>
-        </div>
+        <PageHeader
+          eyebrow="Teacher · Students"
+          title="Your students"
+          subtitle="142 enrolled · 96 active this week"
+          back="/teacher"
+          crumbs={[{ label: 'Teacher', to: '/teacher' }, { label: 'Students' }]}
+          action={<button className="btn-primary text-xs px-4 py-2">Invite student</button>}
+        />
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 min-w-0">

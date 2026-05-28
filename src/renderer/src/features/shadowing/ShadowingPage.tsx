@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../lib/classnames'
-import { ProgressBar, SectionHeading } from '../../components/ui'
+import { PageHeader, ProgressBar, SectionHeading } from '../../components/ui'
 import { IconHeadphones, IconMic, IconPlay, IconStar, IconVolume } from '../../components/icons'
 
 type Step = 'listen' | 'record' | 'compare'
@@ -37,11 +37,13 @@ export default function ShadowingPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
-        <div>
-          <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">Speaking · Shadowing</p>
-          <h1 className="text-2xl font-bold tracking-tight mt-0.5">Shadow native speakers</h1>
-          <p className="text-sm text-slate-400 mt-1">Listen, repeat, compare. Train rhythm and intonation, not just pronunciation.</p>
-        </div>
+        <PageHeader
+          eyebrow="Speaking · Shadowing"
+          title="Shadow native speakers"
+          subtitle="Listen, repeat, compare. Train rhythm and intonation, not just pronunciation."
+          back="/speaking"
+          crumbs={[{ label: 'Speaking', to: '/speaking' }, { label: 'Shadowing' }]}
+        />
 
         {/* Stepper */}
         <div className="flex items-center gap-2">

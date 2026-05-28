@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { ProgressBar, SectionHeading, StatCard } from '../../components/ui'
+import { PageHeader, ProgressBar, SectionHeading, StatCard } from '../../components/ui'
 import {
   IconBolt,
   IconBook,
@@ -82,14 +82,14 @@ export default function GrammarPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto pb-24">
       <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold">Skill tree</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Grammar</h1>
-            <p className="text-sm text-slate-400 mt-1">Aziz's Learning Path · 8 units · CEFR A1 → B2</p>
-          </div>
-          <button onClick={() => navigate('/courses')} className="btn-ghost text-xs px-3 py-2">All courses</button>
-        </div>
+        <PageHeader
+          eyebrow="Skill tree"
+          title="Grammar"
+          subtitle="Aziz's Learning Path · 8 units · CEFR A1 → B2"
+          back="/courses"
+          crumbs={[{ label: 'Courses', to: '/courses' }, { label: 'Grammar' }]}
+          action={<button onClick={() => navigate('/courses')} className="btn-ghost text-xs px-3 py-2">All courses</button>}
+        />
 
         <div className="grid grid-cols-3 gap-3">
           {STATS.map((s) => <StatCard key={s.label} value={s.value} label={s.label} tone={s.tone} icon={s.icon} />)}

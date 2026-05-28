@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../lib/classnames'
-import { SectionHeading, StatCard, Tabs, type TabItem } from '../../components/ui'
+import { PageHeader, SectionHeading, StatCard, Tabs, type TabItem } from '../../components/ui'
 import { IconLive, IconStar, IconUsers, IconYouTube } from '../../components/icons'
 
 type Tab = 'schedule' | 'history' | 'clips'
@@ -35,16 +35,18 @@ export default function TeacherLiveHostPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-5xl mx-auto w-full flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-violet-300 font-bold">Teacher · Live</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Host & broadcast</h1>
-            <p className="text-sm text-slate-400 mt-1">Go live, schedule, or post a short.</p>
-          </div>
-          <button className="inline-flex items-center gap-2 rounded-xl bg-red-500 hover:bg-red-400 text-white text-sm font-bold px-4 py-2.5 shadow-lg shadow-red-500/30">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Go live now
-          </button>
-        </div>
+        <PageHeader
+          eyebrow="Teacher · Live"
+          title="Host & broadcast"
+          subtitle="Go live, schedule, or post a short."
+          back="/teacher"
+          crumbs={[{ label: 'Teacher', to: '/teacher' }, { label: 'Live & clips' }]}
+          action={
+            <button className="inline-flex items-center gap-2 rounded-xl bg-red-500 hover:bg-red-400 text-white text-sm font-bold px-4 py-2.5 shadow-lg shadow-red-500/30">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Go live now
+            </button>
+          }
+        />
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard value="32" label="Streams hosted" tone="brand" icon={<IconLive />} />
