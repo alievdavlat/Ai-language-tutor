@@ -1,28 +1,61 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { SignIn, SignUp, useUser, useAuth } from '@clerk/clerk-react'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
+import { backend } from '../../services/backend'
 import { IconMic } from '../../components/icons'
 
 type Mode = 'signin' | 'signup'
 
+// Detects whether Clerk is actually wired up. When the env flag is off we
+// fall back to the original in-app email form (still useful for offline dev).
+const useClerk = import.meta.env.VITE_USE_CLERK === '1' && !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+
 export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mode } = {}): JSX.Element {
   const navigate = useNavigate()
   const setAuthenticated = useAppStore((s) => s.setAuthenticated)
+  const setProfile = useAppStore((s) => s.setProfile)
+  const profile = useAppStore((s) => s.profile)
   const roleSelected = useAppStore((s) => s.roleSelected)
   const onboardingComplete = useAppStore((s) => s.onboardingComplete)
   const role = useAppStore((s) => s.role)
   const [mode, setMode] = useState<Mode>(defaultMode)
 
+  // ── Clerk session sync ─────────────────────────────────────────────────
+  // When Clerk reports the user is signed in, mirror that into our local
+  // store and (if not already) into the backend.users row.
+  const clerk = useClerk ? useUser() : null
+  const auth = useClerk ? useAuth() : null
+  useEffect(() => {
+    if (!useClerk || !clerk?.isSignedIn || !clerk.user) return
+    const sync = async (): Promise<void> => {
+      const email = clerk.user!.primaryEmailAddress?.emailAddress || `${clerk.user!.id}@clerk.local`
+      const name = [clerk.user!.firstName, clerk.user!.lastName].filter(Boolean).join(' ') || clerk.user!.username || 'Learner'
+      let bUser = await backend.signIn(email).catch(() => null)
+      if (!bUser) {
+        bUser = await backend.signUp({ name, email, role: 'student' }).catch(() => null)
+      }
+      setAuthenticated(true)
+      // Patch our app-level profile name from Clerk if missing
+      if (profile && !profile.name && bUser) {
+        setProfile({ ...profile, name: bUser.name, updatedAt: new Date().toISOString() })
+      }
+      route()
+    }
+    void sync()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clerk?.isSignedIn])
+
+  const route = (): void => {
+    if (!roleSelected) navigate('/role', { replace: true })
+    else if (!onboardingComplete) navigate('/onboarding', { replace: true })
+    else navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
+  }
+
   const handleAuth = (): void => {
     setAuthenticated(true)
-    if (!roleSelected) {
-      navigate('/role', { replace: true })
-    } else if (!onboardingComplete) {
-      navigate('/onboarding', { replace: true })
-    } else {
-      navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
-    }
+    route()
   }
 
   return (
@@ -90,6 +123,19 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
             {mode === 'signin' ? 'Pick up where you left off.' : 'Start learning in 30 seconds — free forever for the basics.'}
           </p>
 
+          {/* Real Clerk component when wired, fallback below */}
+          {useClerk && (
+            <div className="mt-6">
+              {mode === 'signin' ? (
+                <SignIn routing="virtual" signUpUrl="#" appearance={{ elements: { rootBox: 'w-full', card: 'bg-transparent shadow-none border-0' } }} />
+              ) : (
+                <SignUp routing="virtual" signInUrl="#" appearance={{ elements: { rootBox: 'w-full', card: 'bg-transparent shadow-none border-0' } }} />
+              )}
+            </div>
+          )}
+
+          {/* Mock OAuth — shown only when Clerk is disabled */}
+          {!useClerk && (<>
           {/* OAuth */}
           <div className="flex flex-col gap-2 mt-6">
             <button onClick={handleAuth} className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition">
@@ -125,6 +171,7 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
               {mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </div>
+          </>)}
 
           <p className="text-[11px] text-slate-500 text-center mt-6">
             {mode === 'signin' ? (
