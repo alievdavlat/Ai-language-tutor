@@ -28,7 +28,7 @@ interface Badge {
   tint: string
 }
 
-const CATEGORIES = {
+const CATEGORIES: Record<string, Badge[]> = {
   Speaking: [
     { name: 'First chat', desc: 'Send your first message', Icon: IconChat, unlocked: true, tint: 'bg-brand-500/15 text-brand-300' },
     { name: 'Smooth talker', desc: 'Complete 10 chats', Icon: IconMic, unlocked: true, tint: 'bg-emerald-500/15 text-emerald-300' },
@@ -61,9 +61,9 @@ const CATEGORIES = {
     { name: 'Gold league', desc: 'Reach Gold', Icon: IconMedal, unlocked: false, tint: 'bg-amber-400/20 text-amber-200' },
     { name: 'Diamond league', desc: 'Reach Diamond', Icon: IconTrophy, unlocked: false, tint: 'bg-cyan-300/20 text-cyan-200' }
   ]
-} as const
+}
 
-type Cat = keyof typeof CATEGORIES
+type Cat = string
 
 function BadgeCard({ b }: { b: Badge }): JSX.Element {
   return (

@@ -95,7 +95,7 @@ function RadarChart({ values, labels }: { values: number[]; labels: readonly str
             fontSize={11}
             fontWeight={600}
             textAnchor={Math.abs(lx - cx) < 5 ? 'middle' : lx > cx ? 'start' : 'end'}
-            dominantBaseline={ly < cy - 5 ? 'baseline' : ly > cy + 5 ? 'hanging' : 'middle'}
+            dominantBaseline={ly < cy - 5 ? 'alphabetic' : ly > cy + 5 ? 'hanging' : 'middle'}
           >
             {l}
           </text>
