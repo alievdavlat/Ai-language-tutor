@@ -221,9 +221,12 @@ function InnerSim(): JSX.Element {
 
   return (
     <div className="h-full w-full relative overflow-hidden bg-[radial-gradient(900px_700px_at_50%_30%,rgba(40,55,120,0.35),transparent_60%),radial-gradient(900px_700px_at_50%_120%,rgba(244,114,182,0.18),transparent_60%),#0a0e1f]">
-      {/* Brand + total exam timer (top-left) — matches ielts.gg layout */}
+      {/* Total exam timer (top-left). We use our own SpeakAI brand + Speaking exam
+       *  label here — never the third-party ielts.gg name — to keep clean of
+       *  any trademark friction.
+       */}
       <header className="absolute top-5 left-6 z-10">
-        <p className="text-sm font-light text-white tracking-wide">ielts.gg</p>
+        <p className="text-sm font-bold text-white tracking-wide">SpeakAI <span className="font-light text-white/60">· Speaking exam</span></p>
         <p className="text-xs text-white/60 mt-0.5 font-mono tabular-nums">{fmtTime(elapsed)} / {fmtTime(TOTAL_BUDGET_SEC)}</p>
       </header>
 
