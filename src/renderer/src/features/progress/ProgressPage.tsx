@@ -30,10 +30,19 @@ const WEEK: StudyDay[] = [
 ]
 
 const SKILLS = [
-  { label: 'Speaking', value: 64, color: 'brand' as const },
-  { label: 'Listening', value: 48, color: 'brand' as const },
-  { label: 'Grammar', value: 71, color: 'green' as const },
-  { label: 'Vocabulary', value: 55, color: 'amber' as const }
+  { label: 'Speaking', value: 64, color: 'brand' as const, crown: 2 },
+  { label: 'Listening', value: 48, color: 'brand' as const, crown: 1 },
+  { label: 'Grammar', value: 71, color: 'green' as const, crown: 3 },
+  { label: 'Vocabulary', value: 55, color: 'amber' as const, crown: 2 }
+]
+
+// Khan-style mastery crowns: 0=none, 1=bronze, 2=silver, 3=gold, 4=diamond
+const CROWN_TIERS: { tint: string; label: string }[] = [
+  { tint: 'bg-white/[0.05] text-slate-500', label: 'Locked' },
+  { tint: 'bg-amber-700/30 text-amber-300', label: 'Bronze' },
+  { tint: 'bg-slate-300/20 text-slate-200', label: 'Silver' },
+  { tint: 'bg-amber-400/25 text-amber-200', label: 'Gold' },
+  { tint: 'bg-cyan-300/25 text-cyan-200', label: 'Diamond' }
 ]
 
 const STATS = [
@@ -114,19 +123,32 @@ export default function ProgressPage(): JSX.Element {
           <WeekStudyTracker days={WEEK} />
         </div>
 
-        {/* Skills breakdown */}
+        {/* Skills breakdown — with mastery crowns */}
         <div>
-          <SectionHeading title="Skills" subtitle="Estimated from your recent sessions" />
+          <SectionHeading title="Skills · mastery" subtitle="Crown tier rises as you score 90%+ over time" />
           <div className="rounded-card border border-white/10 bg-white/[0.03] p-5 flex flex-col gap-4">
-            {SKILLS.map((s) => (
-              <div key={s.label}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm font-medium text-slate-200">{s.label}</span>
-                  <span className="text-xs font-semibold text-slate-400">{s.value}%</span>
+            {SKILLS.map((s) => {
+              const tier = CROWN_TIERS[s.crown]
+              return (
+                <div key={s.label}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-medium text-slate-200 inline-flex items-center gap-2">
+                      {s.label}
+                      <span className={cn('inline-flex items-center gap-1 rounded-full text-[10px] font-bold uppercase tracking-wider px-2 py-0.5', tier.tint)} title={`Mastery crown: ${tier.label}`}>
+                        <IconTrophy className="w-3 h-3" /> {tier.label}
+                      </span>
+                    </span>
+                    <span className="text-xs font-semibold text-slate-400 inline-flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-0.5">{Array.from({ length: 4 }).map((_, i) => (
+                        <span key={i} className={cn('text-[10px]', i < s.crown ? 'text-amber-300' : 'text-slate-700')}>♛</span>
+                      ))}</span>
+                      {s.value}%
+                    </span>
+                  </div>
+                  <ProgressBar value={s.value} color={s.color} />
                 </div>
-                <ProgressBar value={s.value} color={s.color} />
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 

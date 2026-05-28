@@ -42,6 +42,8 @@ import LiveQuizPage from '../features/quizlive/LiveQuizPage'
 import StoriesPage from '../features/stories/StoriesPage'
 import ShadowingPage from '../features/shadowing/ShadowingPage'
 import WatchPage from '../features/watch/WatchPage'
+import FeedbackExchangePage from '../features/feedback/FeedbackExchangePage'
+import FlashcardsPage from '../features/flashcards/FlashcardsPage'
 import RoleSelectPage from '../features/auth/RoleSelectPage'
 import LeaderboardPage from '../features/gamification/LeaderboardPage'
 import QuestsPage from '../features/gamification/QuestsPage'
@@ -229,6 +231,22 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <WatchPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/feedback"
+        element={
+          <AppShell>
+            <FeedbackExchangePage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/flashcards"
+        element={
+          <AppShell>
+            <FlashcardsPage />
           </AppShell>
         }
       />
