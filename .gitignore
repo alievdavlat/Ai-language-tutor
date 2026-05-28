@@ -14,3 +14,5 @@ userData
 txt.txt
 .cloude/
 *.tsbuildinfo
+.tmp-audio/
+.tmp-frames/
