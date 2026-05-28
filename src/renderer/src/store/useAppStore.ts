@@ -25,9 +25,20 @@ interface AppState {
   profile: UserProfile | null
   autoSetup: AutoSetupState
   role: UserRole
+  /** Whether the user has explicitly picked a role. The default `role` field
+   *  is 'student' for typing convenience — `roleSelected` tells us if that
+   *  is the real pick or just the placeholder. */
+  roleSelected: boolean
+  /** Until real Clerk lands this is a local flag toggled by /signin. */
+  authenticated: boolean
+  /** True once the user has finished onboarding (picked role + goals). */
+  onboardingComplete: boolean
 
   setProfile: (profile: UserProfile | null) => void
   setRole: (role: UserRole) => void
+  setAuthenticated: (authenticated: boolean) => void
+  setOnboardingComplete: (complete: boolean) => void
+  signOut: () => void
   bootstrap: () => Promise<void>
   refreshOllama: () => Promise<void>
 }
@@ -102,6 +113,29 @@ async function runAutoSetup(
   }
 }
 
+// localStorage keys for the lightweight stand-in for real auth & onboarding state.
+const LS_AUTH = 'speakai.authenticated'
+const LS_ONBOARDING = 'speakai.onboardingComplete'
+const LS_ROLE = 'speakai.role'
+
+function readBool(key: string, fallback: boolean): boolean {
+  if (typeof window === 'undefined') return fallback
+  const v = window.localStorage?.getItem(key)
+  return v === null ? fallback : v === '1'
+}
+function readRole(): UserRole {
+  if (typeof window === 'undefined') return 'student'
+  const v = window.localStorage?.getItem(LS_ROLE)
+  return v === 'teacher' ? 'teacher' : 'student'
+}
+function readRoleSelected(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.localStorage?.getItem(LS_ROLE) !== null
+}
+function writeBool(key: string, v: boolean): void {
+  if (typeof window !== 'undefined') window.localStorage?.setItem(key, v ? '1' : '0')
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   booted: false,
   bootError: null,
@@ -110,10 +144,30 @@ export const useAppStore = create<AppState>((set, get) => ({
   ollama: null,
   profile: null,
   autoSetup: { phase: null, pullPct: 0 },
-  role: 'student',
+  role: readRole(),
+  roleSelected: readRoleSelected(),
+  authenticated: readBool(LS_AUTH, false),
+  onboardingComplete: readBool(LS_ONBOARDING, false),
 
   setProfile: (profile) => set({ profile }),
-  setRole: (role) => set({ role }),
+  setRole: (role) => {
+    if (typeof window !== 'undefined') window.localStorage?.setItem(LS_ROLE, role)
+    set({ role, roleSelected: true })
+  },
+  setAuthenticated: (authenticated) => {
+    writeBool(LS_AUTH, authenticated)
+    set({ authenticated })
+  },
+  setOnboardingComplete: (complete) => {
+    writeBool(LS_ONBOARDING, complete)
+    set({ onboardingComplete: complete })
+  },
+  signOut: () => {
+    writeBool(LS_AUTH, false)
+    writeBool(LS_ONBOARDING, false)
+    if (typeof window !== 'undefined') window.localStorage?.removeItem(LS_ROLE)
+    set({ authenticated: false, onboardingComplete: false, profile: null, role: 'student', roleSelected: false })
+  },
 
   bootstrap: async () => {
     if (get().booted) return

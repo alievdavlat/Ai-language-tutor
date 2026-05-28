@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import type { UserProfile } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
@@ -167,15 +167,7 @@ export interface SidebarProps {
 
 export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps): JSX.Element {
   const role = useAppStore((s) => s.role)
-  const setRole = useAppStore((s) => s.setRole)
-  const navigate = useNavigate()
   const isTeacher = role === 'teacher'
-
-  const switchRole = (): void => {
-    const next = isTeacher ? 'student' : 'teacher'
-    setRole(next)
-    navigate(next === 'teacher' ? '/teacher' : '/home')
-  }
 
   return (
     <aside
@@ -260,15 +252,18 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
         )}
       </nav>
 
-      {/* Role switch */}
+      {/* Role badge (read-only — role is fixed at onboarding) */}
       {!collapsed && (
         <div className="px-3 pb-2">
-          <button
-            onClick={switchRole}
-            className="w-full rounded-xl bg-white/[0.04] border border-white/[0.07] px-3 py-2 text-xs font-medium text-slate-300 hover:bg-white/[0.08] transition"
-          >
-            {isTeacher ? '← Switch to student' : 'Switch to teacher mode →'}
-          </button>
+          <div className={cn(
+            'w-full rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-widest flex items-center gap-2',
+            isTeacher
+              ? 'bg-emerald-500/10 border border-emerald-400/20 text-emerald-200'
+              : 'bg-brand-500/10 border border-brand-400/20 text-brand-200'
+          )}>
+            <span className={cn('w-1.5 h-1.5 rounded-full', isTeacher ? 'bg-emerald-400' : 'bg-brand-400')} />
+            {isTeacher ? 'Teacher' : 'Student'} account
+          </div>
         </div>
       )}
 

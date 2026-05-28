@@ -32,6 +32,8 @@ const FALLBACK_PLACEMENT: PlacementResult = {
 export default function OnboardingPage(): JSX.Element {
   const navigate = useNavigate()
   const { rec, refreshOllama, setProfile } = useAppStore()
+  const setOnboardingComplete = useAppStore((s) => s.setOnboardingComplete)
+  const role = useAppStore((s) => s.role)
   const flow = useOnboardingFlow('welcome')
 
   const [name, setName] = useState('')
@@ -83,7 +85,8 @@ export default function OnboardingPage(): JSX.Element {
     }
     await window.api.profile.save(profile)
     setProfile(profile)
-    navigate('/home', { replace: true })
+    setOnboardingComplete(true)
+    navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
   }
 
   return (

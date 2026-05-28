@@ -55,14 +55,19 @@ import NotificationsPage from '../features/notifications/NotificationsPage'
 import InboxPage from '../features/inbox/InboxPage'
 
 /**
- * After bootstrap completes, send the user from the Boot splash into the app.
- * This MUST only run while the user is on "/" — if it fires from any other
- * route it kicks the user back to /home every time an unrelated store update
- * happens (ollama polling, sidecar state change, etc).
+ * After bootstrap completes, send the user through the first-launch funnel:
+ *   /  →  /signin  →  /role  →  /onboarding  →  /home (or /teacher)
+ *
+ * Only runs while the user is on "/" — if it fired from any other route it
+ * would kick the user back every time an unrelated store update happened
+ * (ollama polling, sidecar state, language switch, etc).
  */
 function usePostBootRedirect(): void {
   const booted = useAppStore((s) => s.booted)
-  const profile = useAppStore((s) => s.profile)
+  const authenticated = useAppStore((s) => s.authenticated)
+  const role = useAppStore((s) => s.role)
+  const roleSelected = useAppStore((s) => s.roleSelected)
+  const onboardingComplete = useAppStore((s) => s.onboardingComplete)
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -70,12 +75,20 @@ function usePostBootRedirect(): void {
     if (!booted) return
     if (location.pathname !== '/') return
 
-    if (!profile || profile.goals.length === 0) {
-      navigate('/onboarding', { replace: true })
-    } else {
-      navigate('/home', { replace: true })
+    if (!authenticated) {
+      navigate('/signin', { replace: true })
+      return
     }
-  }, [booted, profile, location.pathname, navigate])
+    if (!roleSelected) {
+      navigate('/role', { replace: true })
+      return
+    }
+    if (!onboardingComplete) {
+      navigate('/onboarding', { replace: true })
+      return
+    }
+    navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
+  }, [booted, authenticated, roleSelected, onboardingComplete, role, location.pathname, navigate])
 }
 
 export default function AppRoutes(): JSX.Element {

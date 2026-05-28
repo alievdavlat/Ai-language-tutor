@@ -1,13 +1,29 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
+import { useAppStore } from '../../store/useAppStore'
 import { IconMic } from '../../components/icons'
 
 type Mode = 'signin' | 'signup'
 
 export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mode } = {}): JSX.Element {
   const navigate = useNavigate()
+  const setAuthenticated = useAppStore((s) => s.setAuthenticated)
+  const roleSelected = useAppStore((s) => s.roleSelected)
+  const onboardingComplete = useAppStore((s) => s.onboardingComplete)
+  const role = useAppStore((s) => s.role)
   const [mode, setMode] = useState<Mode>(defaultMode)
+
+  const handleAuth = (): void => {
+    setAuthenticated(true)
+    if (!roleSelected) {
+      navigate('/role', { replace: true })
+    } else if (!onboardingComplete) {
+      navigate('/onboarding', { replace: true })
+    } else {
+      navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
+    }
+  }
 
   return (
     <div className="h-full w-full flex bg-slate-950 overflow-hidden">
@@ -76,11 +92,11 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
 
           {/* OAuth */}
           <div className="flex flex-col gap-2 mt-6">
-            <button className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition">
+            <button onClick={handleAuth} className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition">
               <span className="w-5 h-5 rounded-full bg-white text-slate-900 text-[10px] font-black flex items-center justify-center">G</span>
               Continue with Google
             </button>
-            <button className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition">
+            <button onClick={handleAuth} className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition">
               <span className="w-5 h-5 rounded-full bg-white text-slate-900 text-sm flex items-center justify-center"></span>
               Continue with Apple
             </button>
@@ -103,7 +119,7 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
               <button className="text-[11px] font-semibold text-brand-300 hover:text-brand-200 self-end -mt-1">Forgot password?</button>
             )}
             <button
-              onClick={() => navigate('/role')}
+              onClick={handleAuth}
               className="btn-primary py-2.5 mt-2"
             >
               {mode === 'signin' ? 'Sign in' : 'Create account'}
