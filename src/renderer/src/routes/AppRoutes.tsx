@@ -52,6 +52,7 @@ import LeaderboardPage from '../features/gamification/LeaderboardPage'
 import AdminPage from '../features/admin/AdminPage'
 import ExplorePage from '../features/explore/ExplorePage'
 import IeltsSpeakingSimPage from '../features/ieltssim/IeltsSpeakingSimPage'
+import CompanionGalleryPage from '../features/companions/CompanionGalleryPage'
 import QuestsPage from '../features/gamification/QuestsPage'
 import AchievementsPage from '../features/gamification/AchievementsPage'
 import ProfilePage from '../features/profile/ProfilePage'
@@ -235,6 +236,7 @@ export default function AppRoutes(): JSX.Element {
       <Route path="/signin" element={<SignInPage mode="signin" />} />
       <Route path="/signup" element={<SignInPage mode="signup" />} />
       <Route path="/ai-tutor" element={<AITutorPage />} />
+      <Route path="/companions" element={<CompanionGalleryPage />} />
       <Route path="/quiz/live" element={<LiveQuizPage />} />
       <Route
         path="/paths"

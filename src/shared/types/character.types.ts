@@ -44,6 +44,18 @@ export interface CharacterInfo {
   speakingStyle?: SpeakingStyle
   /** `true` when the character was authored by the user (vs shipped preset). */
   isCustom?: boolean
+  /**
+   * DiceBear seed for the generated portrait. When set, UIs render the SVG
+   * portrait instead of the emoji. Open licence — DiceBear is MIT and the
+   * generated art is CC0. See `@shared/utils/avatar`.
+   */
+  avatarSeed?: string
+  /** Which DiceBear style to use. Defaults to `lorelei`. */
+  avatarStyle?: 'lorelei' | 'micah' | 'avataaars' | 'personas' | 'thumbs'
+  /** Hex backdrop tinted behind the portrait on cards (no #, lowercase). */
+  cardTint?: string
+  /** Language the character is best for tutoring (en-US, es-MX, fr-FR, …). */
+  language?: string
 }
 
 export const DEFAULT_PERSONALITY: PersonalityTraits = {

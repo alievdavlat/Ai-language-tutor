@@ -41,4 +41,14 @@ export interface UserProfile {
    * Emma with their own tweaked version.
    */
   customCharacters?: CharacterInfo[]
+  /**
+   * COPPA-style age verification. Stored as an ISO date (yyyy-mm-dd) and
+   * derived into `AgeBand` by `lib/age.ts`. Missing = unconfirmed; the gate
+   * UI asks the user before they can browse companions.
+   */
+  dateOfBirth?: string
+  /** Convenience cache so we don't recompute on every render. */
+  ageBand?: AgeBand
 }
+
+export type AgeBand = 'under13' | 'teen' | 'adult'

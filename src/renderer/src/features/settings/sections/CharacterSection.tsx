@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Accent, CharacterInfo, UserProfile } from '@shared/types'
 import { ACCENT_LABELS, CHARACTERS, listAllCharacters } from '@shared/constants'
+import { characterAvatarUrl } from '@shared/utils/avatar'
 import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 import CharacterEditor from './CharacterEditor'
@@ -116,7 +117,24 @@ export default function CharacterSection({
                       Active
                     </span>
                   )}
-                  <div className="text-4xl mb-2">{c.emoji}</div>
+                  <div className="mb-2">
+                    {c.avatarSeed ? (
+                      <div
+                        className="w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-white/20"
+                        style={{ background: c.cardTint ? `#${c.cardTint}` : 'rgba(255,255,255,0.06)' }}
+                      >
+                        <img
+                          src={characterAvatarUrl(c, 96)}
+                          alt={c.name}
+                          className="w-full h-full"
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-4xl">{c.emoji}</div>
+                    )}
+                  </div>
                   <div className="font-bold text-base truncate flex items-center gap-1.5">
                     {c.name}
                     {isCustom && (
