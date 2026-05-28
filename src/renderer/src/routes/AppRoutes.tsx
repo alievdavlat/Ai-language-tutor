@@ -36,6 +36,8 @@ import LeaderboardPage from '../features/gamification/LeaderboardPage'
 import QuestsPage from '../features/gamification/QuestsPage'
 import AchievementsPage from '../features/gamification/AchievementsPage'
 import ProfilePage from '../features/profile/ProfilePage'
+import NotificationsPage from '../features/notifications/NotificationsPage'
+import InboxPage from '../features/inbox/InboxPage'
 
 /**
  * After bootstrap completes, send the user from the Boot splash into the app.
@@ -214,6 +216,22 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <ProgressPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <AppShell>
+            <NotificationsPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/inbox"
+        element={
+          <AppShell>
+            <InboxPage />
           </AppShell>
         }
       />
