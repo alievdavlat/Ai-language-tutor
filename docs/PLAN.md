@@ -330,11 +330,45 @@ and streams real responses.
 - **Stripe payouts to teachers** — P9.
 - **Free-tier prioritization in AI picker** — ✅ shipped (filter chip).
 
-### Open asks waiting for clarification
-- The user mentioned two Instagram videos showing live IELTS speaking
-  practice on ielts.gg. The agent cannot watch MP4 files directly. **TODO**:
-  user describes any specific behavior in text that's not already
-  modelled, then we add a P5 sub-task.
+### ielts.gg analysis (from Instagram videos, frames extracted via ffmpeg 2026-05-28)
+
+Frames extracted from the two videos the user supplied. Confirmed UI patterns
+of the real ielts.gg interface — our current IELTS sim diverges on the
+visual layer and needs to be rebuilt to match.
+
+**What ielts.gg actually shows:**
+- **Fullscreen dark navy gradient** background. No chrome, no sidebar, no menu.
+- **Top-left**: `ielts.gg` brand text (small) with current elapsed timer below
+  it in the format `02:19 / 10:00` — total exam duration is visible the
+  whole time.
+- **Top-right**: small mic / volume icon (the only chrome).
+- **Center**: a **single huge granular particle-sphere** ("orb") that takes
+  up ~40% of the screen height. The orb is made of thousands of small dots
+  in a polar distribution, with a soft inner glow and a bright tiny dot at
+  the center.
+- **Orb color encodes state**:
+  - **Blue** (v1zoom_003) = listening / waiting for the user to speak.
+  - **Red / magenta** (v1zoom_004, v2_005, v2_006) = examiner speaking.
+  - Pulse/expansion is reactive to audio level.
+- **No chat bubbles. No persistent transcript on screen.** Voice-first UX.
+- **Bottom-right**: small caption with the current question or part
+  indicator (very subtle, barely visible).
+
+**Implications for our IELTS sim** — currently the sim is a chat-bubble
+layout with a sticky mic footer. That's a different category of product
+(Cluely / Cambly) — not ielts.gg. To match the brief we need:
+
+1. **Build `ParticleOrb` component** — reusable, state-driven, used by IELTS
+   sim AND the existing `AITutorPage` (which currently uses a butterfly
+   emoji). Task #51 covers this.
+2. **Redesign IELTS sim to be orb-centric** — fullscreen, voice-first,
+   total exam timer top-left. Task #50.
+3. **Optional toggle**: "Show transcript" button (bottom-right) so
+   accessibility users can still read every turn.
+4. **Background**: match the dark navy gradient (not our brand-blue).
+
+These are visual rebuilds — the Part 1/2/3 conversational structure we
+shipped is correct.
 
 ---
 

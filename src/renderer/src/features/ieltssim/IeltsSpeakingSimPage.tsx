@@ -1,31 +1,27 @@
 /**
- * Conversational IELTS Speaking simulator modelled on ielts.gg's flow:
+ * Conversational IELTS Speaking simulator modelled on ielts.gg's UX:
+ * fullscreen dark navy backdrop, a single huge particle-orb in the centre,
+ * total-exam timer top-left, voice-first interface, no chat bubbles by
+ * default (optional transcript toggle for accessibility).
+ *
+ * Flow:
  *   1. Examiner greeting + ID question
  *   2. Part 1 — 4-5 personal questions (home, work, hobbies)
  *   3. Part 2 — cue card, 1-minute prep timer, 2-minute talk, 1 follow-up
  *   4. Part 3 — abstract discussion (4-5 turns) tied to the Part 2 topic
  *   5. Result — overall band + per-criterion (Fluency / Lexical / Grammar /
  *      Pronunciation) + transcript + retry button.
- *
- * The actual LLM call goes to `useActiveAI()`. While AI integration is being
- * wired this page simulates the back-and-forth from a scripted question bank
- * so the UX is fully reviewable end-to-end.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AIGate, AvatarCircle, ProgressBar, SectionHeading } from '../../components/ui'
+import { AIGate, ParticleOrb, SectionHeading, type OrbState } from '../../components/ui'
 import { cn } from '../../lib/classnames'
 import { useActiveAI } from '../../lib/ai'
-import { IconBolt, IconChat, IconMic, IconPlay, IconStar, IconVolume, IconX } from '../../components/icons'
+import { IconBolt, IconChat, IconMic, IconStar, IconX } from '../../components/icons'
 
 type Phase = 'intro' | 'part1' | 'part2-prep' | 'part2-talk' | 'part2-followup' | 'part3' | 'done'
 
-interface Turn {
-  who: 'examiner' | 'me'
-  text: string
-  /** Optional inline correction surfaced under the user turn after the exam. */
-  correction?: { issue: string; fix: string }
-}
+interface Turn { who: 'examiner' | 'me'; text: string }
 
 // ─── Question bank ─────────────────────────────────────────────────────────
 
@@ -87,151 +83,122 @@ const PART3: { topic: string; qs: string[] }[] = [
   }
 ]
 
-// ─── Component ─────────────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────
 
-function Timer({ seconds, onElapsed }: { seconds: number; onElapsed: () => void }): JSX.Element {
+function fmtTime(s: number): string {
+  const mm = String(Math.floor(s / 60)).padStart(2, '0')
+  const ss = String(s % 60).padStart(2, '0')
+  return `${mm}:${ss}`
+}
+
+function CountdownTimer({ seconds, onElapsed, color = 'amber' }: { seconds: number; onElapsed: () => void; color?: 'amber' | 'brand' }): JSX.Element {
   const [left, setLeft] = useState(seconds)
   const ref = useRef<ReturnType<typeof setInterval> | null>(null)
   useEffect(() => {
     ref.current = setInterval(() => {
       setLeft((s) => {
-        if (s <= 1) {
-          if (ref.current) clearInterval(ref.current)
-          onElapsed()
-          return 0
-        }
+        if (s <= 1) { if (ref.current) clearInterval(ref.current); onElapsed(); return 0 }
         return s - 1
       })
     }, 1000)
     return () => { if (ref.current) clearInterval(ref.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const mm = String(Math.floor(left / 60)).padStart(2, '0')
-  const ss = String(left % 60).padStart(2, '0')
   const danger = left <= 10
   return (
     <div className={cn(
       'inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold tabular-nums',
-      danger ? 'bg-rose-500/20 text-rose-200 animate-pulse' : 'bg-white/[0.06] text-slate-200'
+      danger ? 'bg-rose-500/20 text-rose-200 animate-pulse'
+        : color === 'brand' ? 'bg-brand-500/15 text-brand-200'
+        : 'bg-amber-500/15 text-amber-200'
     )}>
-      ⏱ {mm}:{ss}
+      ⏱ {fmtTime(left)}
     </div>
   )
 }
 
-function ExaminerTurn({ text, onContinue }: { text: string; onContinue?: () => void }): JSX.Element {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-400 to-violet-500 shrink-0 flex items-center justify-center text-lg">🦋</div>
-      <div className="flex-1">
-        <p className="text-[10px] uppercase tracking-widest text-brand-300 font-bold">Examiner</p>
-        <p className="text-base text-white leading-relaxed mt-1">{text}</p>
-        {onContinue && (
-          <button onClick={onContinue} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-slate-200 text-xs font-semibold px-3 py-1.5">
-            <IconVolume className="w-3.5 h-3.5" /> Hear again
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function MyTurn({ text }: { text: string }): JSX.Element {
-  return (
-    <div className="flex items-start gap-3 ml-auto max-w-[80%] flex-row-reverse">
-      <AvatarCircle name="You" size="sm" />
-      <div className="rounded-2xl bg-brand-500/15 ring-1 ring-brand-400/20 text-slate-100 px-4 py-2.5 text-sm leading-relaxed">
-        {text}
-      </div>
-    </div>
-  )
-}
-
-function MockMicBar({ recording, onTap }: { recording: boolean; onTap: () => void }): JSX.Element {
-  return (
-    <div className="flex items-center justify-center gap-4">
-      <button
-        onClick={onTap}
-        className={cn(
-          'w-16 h-16 rounded-full flex items-center justify-center text-white shadow-2xl transition',
-          recording ? 'bg-rose-500 ring-4 ring-rose-400/40 animate-pulse' : 'bg-grad-brand ring-4 ring-brand-400/30 hover:brightness-110'
-        )}
-      >
-        <IconMic className="w-7 h-7" />
-      </button>
-      {recording && (
-        <div className="flex items-end gap-0.5 h-8">
-          {Array.from({ length: 24 }).map((_, i) => (
-            <span key={i} className="w-0.5 rounded-full bg-rose-400" style={{ height: `${20 + Math.abs(Math.sin(i * 0.4 + Date.now() / 200)) * 80}%`, opacity: 0.4 + Math.random() * 0.5 }} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
+// ─── Inner sim ─────────────────────────────────────────────────────────────
 
 function InnerSim(): JSX.Element {
   const navigate = useNavigate()
   const ai = useActiveAI()
   const [phase, setPhase] = useState<Phase>('intro')
   const [transcript, setTranscript] = useState<Turn[]>([])
+  const [showTranscript, setShowTranscript] = useState(false)
   const [introIdx, setIntroIdx] = useState(0)
   const [part1Idx, setPart1Idx] = useState(0)
-  const [recording, setRecording] = useState(false)
-  const [card] = useState(() => PART2_CARDS[Math.floor(Math.random() * PART2_CARDS.length)])
+  const [orb, setOrb] = useState<OrbState>('speaking')
   const [part3Idx, setPart3Idx] = useState(0)
-
   const part3 = useMemo(() => PART3[Math.floor(Math.random() * PART3.length)], [])
+  const [card] = useState(() => PART2_CARDS[Math.floor(Math.random() * PART2_CARDS.length)])
+  const [recording, setRecording] = useState(false)
 
-  const pushExaminer = (text: string): void => setTranscript((t) => [...t, { who: 'examiner', text }])
-  const pushMe = (text: string): void => setTranscript((t) => [...t, { who: 'me', text }])
+  // Total exam elapsed timer — same pattern as ielts.gg's "02:19 / 10:00".
+  const TOTAL_BUDGET_SEC = 11 * 60 // 11 min budget per IELTS Speaking
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    if (phase === 'done') return
+    const t = setInterval(() => setElapsed((s) => s + 1), 1000)
+    return () => clearInterval(t)
+  }, [phase])
 
-  // ── Phase transitions ────────────────────────────────────────────────────
-
-  const startInterview = (): void => {
-    pushExaminer(INTRO[0])
-    setIntroIdx(1)
+  // Examiner-says vs listening: after pushing an examiner turn we keep orb red
+  // for a short window then flip back to blue/listening.
+  const pushExaminer = (text: string): void => {
+    setTranscript((t) => [...t, { who: 'examiner', text }])
+    setOrb('speaking')
+    setTimeout(() => setOrb('listening'), 1800)
+  }
+  const pushMe = (text: string): void => {
+    setTranscript((t) => [...t, { who: 'me', text }])
+    setOrb('thinking')
+    setTimeout(() => setOrb('listening'), 600)
   }
 
+  const startedRef = useRef(false)
+  useEffect(() => {
+    if (startedRef.current) return
+    startedRef.current = true
+    pushExaminer(INTRO[0])
+    setIntroIdx(1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Phase transitions ────────────────────────────────────────────────────
   const acceptCannedAnswer = (): void => {
-    // For preview without real STT, we synthesize a plausible answer.
     if (phase === 'intro') {
       const ans = ['My name is Aziz Karimov.', "You can call me Aziz.", 'Here you are.'][introIdx - 1] ?? 'Thanks.'
       pushMe(ans)
       if (introIdx < INTRO.length) {
-        pushExaminer(INTRO[introIdx])
+        setTimeout(() => pushExaminer(INTRO[introIdx]), 900)
         setIntroIdx((i) => i + 1)
       } else {
         setPhase('part1')
-        setTimeout(() => pushExaminer(PART1[0].q), 200)
+        setTimeout(() => pushExaminer(PART1[0].q), 900)
       }
     } else if (phase === 'part1') {
       pushMe("I'm from Tashkent. It's the capital of Uzbekistan — quite green for a Central Asian city, with very hot summers.")
       const next = part1Idx + 1
       if (next < PART1.length) {
-        pushExaminer(PART1[next].q)
-        setPart1Idx(next)
+        setTimeout(() => { pushExaminer(PART1[next].q); setPart1Idx(next) }, 900)
       } else {
         setPhase('part2-prep')
-        pushExaminer("Now I'm going to give you a topic. You have one minute to prepare. You can make notes if you wish. Here's your topic:")
+        setTimeout(() => pushExaminer("Now I'm going to give you a topic. You have one minute to prepare. You can make notes if you wish. Here's your topic:"), 600)
       }
     } else if (phase === 'part2-talk') {
       pushMe('I would like to talk about a trip I took to Samarkand last summer. I went with two of my closest friends from university...')
-      pushExaminer('Thank you. Did you enjoy the trip?')
-      setPhase('part2-followup')
+      setTimeout(() => { pushExaminer('Thank you. Did you enjoy the trip?'); setPhase('part2-followup') }, 1000)
     } else if (phase === 'part2-followup') {
       pushMe('Yes, very much — it gave me a real appreciation for the Silk-Road history.')
       setPhase('part3')
-      setTimeout(() => pushExaminer(part3.qs[0]), 200)
+      setTimeout(() => pushExaminer(part3.qs[0]), 900)
     } else if (phase === 'part3') {
       pushMe('I think travel has become popular partly because flights are cheaper and partly because social media inspires people to see new places.')
       const next = part3Idx + 1
       if (next < part3.qs.length) {
-        pushExaminer(part3.qs[next])
-        setPart3Idx(next)
+        setTimeout(() => { pushExaminer(part3.qs[next]); setPart3Idx(next) }, 900)
       } else {
-        pushExaminer('That brings us to the end of the speaking test. Thank you very much.')
-        setPhase('done')
+        setTimeout(() => { pushExaminer('That brings us to the end of the speaking test. Thank you very much.'); setPhase('done') }, 1000)
       }
     }
   }
@@ -240,168 +207,184 @@ function InnerSim(): JSX.Element {
     setPhase('part2-talk')
     pushExaminer("Time's up. Please start speaking. You have up to two minutes.")
   }
-  const endPart2Talk = (): void => {
-    // Force-advance after 2 min even if user hasn't tapped
-    if (phase === 'part2-talk') acceptCannedAnswer()
-  }
-
-  // Auto-kick the intro on mount. The ref guards against React 18 StrictMode's
-  // double-invocation in dev, which would otherwise push the first question twice.
-  const startedRef = useRef(false)
-  useEffect(() => {
-    if (startedRef.current) return
-    startedRef.current = true
-    startInterview()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // ── Header / progress ────────────────────────────────────────────────────
-
-  const progressByPhase: Record<Phase, number> = {
-    intro: 5,
-    part1: 25,
-    'part2-prep': 45,
-    'part2-talk': 60,
-    'part2-followup': 65,
-    part3: 85,
-    done: 100
-  }
+  const endPart2Talk = (): void => { if (phase === 'part2-talk') acceptCannedAnswer() }
 
   // Mock scoring at the end
-  const scoring = {
-    overall: 7.0,
-    fluency: 7.5,
-    lexical: 6.5,
-    grammar: 7.0,
-    pronunciation: 7.0
-  }
+  const scoring = { overall: 7.0, fluency: 7.5, lexical: 6.5, grammar: 7.0, pronunciation: 7.0 }
+
+  // Current examiner caption — bottom-right of the orb screen
+  const currentExaminerText = [...transcript].reverse().find((t) => t.who === 'examiner')?.text
+
+  // ── Render ───────────────────────────────────────────────────────────────
+
+  if (phase === 'done') return <ResultScreen scoring={scoring} transcript={transcript} />
 
   return (
-    <div className="h-full overflow-y-auto bg-slate-950">
-      <div className="max-w-4xl mx-auto px-6 py-5 flex flex-col gap-4">
-        {/* Top status bar */}
-        <header className="flex items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/90 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Exam in progress
-            </span>
-            <span className="text-xs text-slate-400">IELTS Speaking mock · {ai?.provider.name ?? 'AI'} ({ai?.modelId.split('/').pop() ?? 'live'})</span>
+    <div className="h-full w-full relative overflow-hidden bg-[radial-gradient(900px_700px_at_50%_30%,rgba(40,55,120,0.35),transparent_60%),radial-gradient(900px_700px_at_50%_120%,rgba(244,114,182,0.18),transparent_60%),#0a0e1f]">
+      {/* Brand + total exam timer (top-left) — matches ielts.gg layout */}
+      <header className="absolute top-5 left-6 z-10">
+        <p className="text-sm font-light text-white tracking-wide">ielts.gg</p>
+        <p className="text-xs text-white/60 mt-0.5 font-mono tabular-nums">{fmtTime(elapsed)} / {fmtTime(TOTAL_BUDGET_SEC)}</p>
+      </header>
+
+      {/* Top-right minimal controls */}
+      <div className="absolute top-5 right-6 z-10 flex items-center gap-2">
+        <button
+          onClick={() => setShowTranscript((v) => !v)}
+          title="Toggle transcript"
+          className={cn(
+            'w-9 h-9 rounded-full backdrop-blur flex items-center justify-center transition border',
+            showTranscript ? 'bg-white/20 border-white/30 text-white' : 'bg-white/[0.06] border-white/10 text-white/70 hover:bg-white/[0.12]'
+          )}
+        >
+          <IconChat className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => navigate('/exams/ielts')}
+          title="End"
+          className="w-9 h-9 rounded-full bg-white/[0.06] hover:bg-white/[0.12] backdrop-blur text-white/70 hover:text-white flex items-center justify-center border border-white/10"
+        >
+          <IconX className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* The orb — centerpiece */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <ParticleOrb state={orb} size={420} audioLevel={recording ? 0.8 : 0.3} />
+      </div>
+
+      {/* Part 2 prep card — overlays the orb when in prep phase */}
+      {phase === 'part2-prep' && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-[min(90vw,28rem)] rounded-card border border-amber-400/30 bg-black/60 backdrop-blur-xl p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] uppercase tracking-widest text-amber-300 font-bold">Part 2 · cue card</p>
+            <CountdownTimer seconds={60} onElapsed={endPart2Prep} color="amber" />
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">
-              {phase.replace('-', ' · ').toUpperCase()}
-            </span>
-            <button onClick={() => navigate('/exams/ielts')} title="End" className="w-9 h-9 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-slate-300 flex items-center justify-center">
-              <IconX className="w-4 h-4" />
-            </button>
-          </div>
-        </header>
-        <ProgressBar value={progressByPhase[phase]} color="brand" />
+          <p className="text-lg font-bold text-white">{card.cue}</p>
+          <ul className="text-sm text-slate-200 flex flex-col gap-1">
+            {card.bullets.map((b) => (
+              <li key={b} className="flex items-start gap-2"><span className="text-amber-300">·</span>{b}</li>
+            ))}
+          </ul>
+          <button onClick={endPart2Prep} className="btn-primary text-xs px-4 py-2 self-end">I'm ready — start talking</button>
+        </div>
+      )}
 
-        {/* Conversation transcript */}
-        {phase !== 'done' && (
-          <div className="flex flex-col gap-4">
-            {transcript.map((t, i) => t.who === 'examiner' ? <ExaminerTurn key={i} text={t.text} /> : <MyTurn key={i} text={t.text} />)}
-          </div>
-        )}
+      {/* Part 2 talk timer — overlay during the 2-min slot */}
+      {phase === 'part2-talk' && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2">
+          <p className="text-[10px] uppercase tracking-widest text-brand-300 font-bold">Part 2 · your 2 minutes</p>
+          <CountdownTimer seconds={120} onElapsed={endPart2Talk} color="brand" />
+          <p className="text-sm font-bold text-white max-w-md text-center">{card.cue}</p>
+        </div>
+      )}
 
-        {/* Phase-specific UI */}
-        {phase === 'part2-prep' && (
-          <div className="rounded-card border border-amber-400/30 bg-gradient-to-br from-amber-500/10 to-rose-500/10 p-5 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] uppercase tracking-widest text-amber-300 font-bold">Part 2 · cue card</p>
-              <Timer seconds={60} onElapsed={endPart2Prep} />
-            </div>
-            <p className="text-lg font-bold text-white">{card.cue}</p>
-            <ul className="text-sm text-slate-200 flex flex-col gap-1">
-              {card.bullets.map((b) => (
-                <li key={b} className="flex items-start gap-2">
-                  <span className="text-amber-300">·</span>{b}
-                </li>
-              ))}
-            </ul>
-            <p className="text-[11px] text-amber-200/80">1 minute to prepare · jot down notes if you wish.</p>
-            <button onClick={endPart2Prep} className="btn-primary self-start text-xs px-4 py-2">I'm ready · start talking</button>
-          </div>
-        )}
+      {/* Examiner caption (very subtle — matches ielts.gg's bottom-right text) */}
+      {!showTranscript && currentExaminerText && phase !== 'part2-prep' && (
+        <p className="absolute bottom-32 left-1/2 -translate-x-1/2 z-10 max-w-2xl px-6 text-center text-base text-white/85 leading-relaxed">
+          {currentExaminerText}
+        </p>
+      )}
 
-        {phase === 'part2-talk' && (
-          <div className="rounded-card border border-brand-400/30 bg-brand-500/[0.08] p-5 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] uppercase tracking-widest text-brand-300 font-bold">Part 2 · your 2 minutes</p>
-              <Timer seconds={120} onElapsed={endPart2Talk} />
-            </div>
-            <p className="text-sm text-slate-200">Speak for up to 2 minutes on:</p>
-            <p className="text-base font-bold text-white">{card.cue}</p>
-            <MockMicBar recording={recording} onTap={() => setRecording((v) => !v)} />
-          </div>
-        )}
-
-        {phase === 'done' && (
-          <div className="rounded-card border border-emerald-400/30 bg-gradient-to-br from-emerald-500/15 to-brand-500/15 p-6 flex flex-col gap-5">
-            <div className="text-center">
-              <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold">Mock complete</p>
-              <p className="text-5xl font-black text-white mt-2">Band {scoring.overall.toFixed(1)}</p>
-              <p className="text-sm text-slate-300 mt-1">Estimated overall band score</p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: 'Fluency & coherence', v: scoring.fluency },
-                { label: 'Lexical resource', v: scoring.lexical },
-                { label: 'Grammar', v: scoring.grammar },
-                { label: 'Pronunciation', v: scoring.pronunciation }
-              ].map((c) => (
-                <div key={c.label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center">
-                  <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{c.label}</p>
-                  <p className="text-2xl font-black text-brand-200 mt-1">{c.v.toFixed(1)}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
-              <SectionHeading title="Examiner feedback" subtitle="From your responses" />
-              <ul className="text-sm text-slate-200 flex flex-col gap-2">
-                <li className="flex items-start gap-2"><span className="text-emerald-300">✓</span> Strong topic development on the Samarkand trip — you used personal detail well.</li>
-                <li className="flex items-start gap-2"><span className="text-amber-300">!</span> Watch for over-using "very" — substitute "extremely / particularly" for higher lexical band.</li>
-                <li className="flex items-start gap-2"><span className="text-amber-300">!</span> A few articles missing in Part 3 — "in social media" → "on social media".</li>
-                <li className="flex items-start gap-2"><span className="text-emerald-300">✓</span> Clear, confident delivery · /θ/ and /ð/ recognisably distinct.</li>
-              </ul>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
-              <SectionHeading title="Full transcript" subtitle={`${transcript.length} turns`} />
-              <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
-                {transcript.map((t, i) => (
-                  <div key={i} className="text-sm">
-                    <span className={cn('text-[10px] uppercase tracking-widest font-bold', t.who === 'examiner' ? 'text-brand-300' : 'text-emerald-300')}>{t.who === 'examiner' ? 'Examiner' : 'You'}: </span>
-                    <span className="text-slate-200">{t.text}</span>
-                  </div>
-                ))}
+      {/* Transcript drawer (accessibility opt-in) */}
+      {showTranscript && (
+        <aside className="absolute top-20 right-6 bottom-28 w-80 z-10 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-4 overflow-y-auto">
+          <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-2">Transcript · {transcript.length} turns</p>
+          <div className="flex flex-col gap-3">
+            {transcript.map((t, i) => (
+              <div key={i}>
+                <p className={cn('text-[9px] uppercase tracking-widest font-bold', t.who === 'examiner' ? 'text-brand-300' : 'text-emerald-300')}>
+                  {t.who === 'examiner' ? 'Examiner' : 'You'}
+                </p>
+                <p className="text-sm text-slate-200 leading-snug">{t.text}</p>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button onClick={() => navigate('/exams/ielts')} className="btn-ghost text-sm px-4 py-2">Back to exams</button>
-              <button onClick={() => window.location.reload()} className="btn-primary flex-1 text-sm py-2 inline-flex items-center justify-center gap-1.5">
-                <IconStar className="w-4 h-4" /> Try another card
-              </button>
-            </div>
+            ))}
           </div>
-        )}
+        </aside>
+      )}
 
-        {/* Footer action — common across phases except prep / talk / done */}
-        {(phase === 'intro' || phase === 'part1' || phase === 'part3' || phase === 'part2-followup') && (
-          <div className="sticky bottom-0 bg-slate-950/95 backdrop-blur pt-3 pb-2 border-t border-white/[0.06]">
-            <div className="flex items-center gap-3">
-              <p className="text-xs text-slate-400 flex-1">Tap the mic, speak, then submit · or tap "Answer" to simulate.</p>
-              <MockMicBar recording={recording} onTap={() => setRecording((v) => !v)} />
-              <button onClick={acceptCannedAnswer} className="btn-primary text-sm px-5 py-2.5 inline-flex items-center gap-1.5">
-                <IconBolt className="w-4 h-4" /> Answer
-              </button>
+      {/* Footer mic + Answer (voice-first; Answer is a dev-only canned-response shortcut) */}
+      <footer className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
+        <button
+          onClick={() => setRecording((v) => !v)}
+          title={recording ? 'Stop' : 'Talk'}
+          className={cn(
+            'w-16 h-16 rounded-full flex items-center justify-center text-white shadow-2xl transition',
+            recording ? 'bg-rose-500 ring-4 ring-rose-400/40 animate-pulse' : 'bg-grad-brand ring-4 ring-brand-400/30 hover:brightness-110'
+          )}
+        >
+          <IconMic className="w-7 h-7" />
+        </button>
+        <button onClick={acceptCannedAnswer} className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] backdrop-blur text-white/80 text-xs font-semibold px-4 py-2.5 border border-white/10">
+          <IconBolt className="w-3.5 h-3.5" /> Answer (demo)
+        </button>
+      </footer>
+
+      {/* Phase + provider badge — small, bottom-left */}
+      <div className="absolute bottom-6 left-6 z-10 text-[10px] uppercase tracking-widest text-white/40 font-bold">
+        {phase.replace('-', ' · ')} · {ai?.provider.name ?? 'AI'}
+      </div>
+    </div>
+  )
+}
+
+// ─── Result screen (same data shape, lifted into its own component) ─────
+
+function ResultScreen({ scoring, transcript }: { scoring: { overall: number; fluency: number; lexical: number; grammar: number; pronunciation: number }; transcript: Turn[] }): JSX.Element {
+  const navigate = useNavigate()
+  return (
+    <div className="h-full w-full overflow-y-auto bg-slate-950">
+      <div className="max-w-3xl mx-auto px-6 py-10 flex flex-col gap-6">
+        <div className="rounded-card border border-emerald-400/30 bg-gradient-to-br from-emerald-500/15 to-brand-500/15 p-8 text-center">
+          <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold">Mock complete</p>
+          <p className="text-6xl font-black text-white mt-2">Band {scoring.overall.toFixed(1)}</p>
+          <p className="text-sm text-slate-300 mt-1">Estimated overall band score</p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'Fluency & coherence', v: scoring.fluency },
+            { label: 'Lexical resource', v: scoring.lexical },
+            { label: 'Grammar', v: scoring.grammar },
+            { label: 'Pronunciation', v: scoring.pronunciation }
+          ].map((c) => (
+            <div key={c.label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center">
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{c.label}</p>
+              <p className="text-2xl font-black text-brand-200 mt-1">{c.v.toFixed(1)}</p>
             </div>
+          ))}
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+          <SectionHeading title="Examiner feedback" subtitle="From your responses" />
+          <ul className="text-sm text-slate-200 flex flex-col gap-2">
+            <li className="flex items-start gap-2"><span className="text-emerald-300">✓</span> Strong topic development on the Samarkand trip — you used personal detail well.</li>
+            <li className="flex items-start gap-2"><span className="text-amber-300">!</span> Watch for over-using "very" — substitute "extremely / particularly" for higher lexical band.</li>
+            <li className="flex items-start gap-2"><span className="text-amber-300">!</span> A few articles missing in Part 3 — "in social media" → "on social media".</li>
+            <li className="flex items-start gap-2"><span className="text-emerald-300">✓</span> Clear, confident delivery · /θ/ and /ð/ recognisably distinct.</li>
+          </ul>
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+          <SectionHeading title="Full transcript" subtitle={`${transcript.length} turns`} />
+          <div className="flex flex-col gap-2 max-h-72 overflow-y-auto">
+            {transcript.map((t, i) => (
+              <div key={i} className="text-sm">
+                <span className={cn('text-[10px] uppercase tracking-widest font-bold mr-1.5', t.who === 'examiner' ? 'text-brand-300' : 'text-emerald-300')}>
+                  {t.who === 'examiner' ? 'Examiner' : 'You'}:
+                </span>
+                <span className="text-slate-200">{t.text}</span>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate('/exams/ielts')} className="btn-ghost text-sm px-4 py-2">Back to exams</button>
+          <button onClick={() => window.location.reload()} className="btn-primary flex-1 text-sm py-2 inline-flex items-center justify-center gap-1.5">
+            <IconStar className="w-4 h-4" /> Try another card
+          </button>
+        </div>
       </div>
     </div>
   )
