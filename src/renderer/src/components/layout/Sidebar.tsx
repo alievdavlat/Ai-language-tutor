@@ -3,7 +3,6 @@ import type { UserProfile } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import AvatarCircle from '../ui/AvatarCircle'
-import LanguageSwitcher from './LanguageSwitcher'
 import {
   IconBook,
   IconBookmark,
@@ -191,13 +190,6 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
           </div>
         )}
       </div>
-
-      {/* Language picker */}
-      {!collapsed && (
-        <div className="px-3 pb-3">
-          <LanguageSwitcher />
-        </div>
-      )}
 
       {/* Primary navigation */}
       <nav className={cn('flex-1 py-1 overflow-y-auto', collapsed ? 'px-1' : 'px-3')}>

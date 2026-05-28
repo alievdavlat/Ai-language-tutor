@@ -11,10 +11,12 @@ import VoiceSection from './sections/VoiceSection'
 import MicProcessingSection from './sections/MicProcessingSection'
 import STTEngineSection from './sections/STTEngineSection'
 import DangerZoneSection from './sections/DangerZoneSection'
+import LanguageSection from './sections/LanguageSection'
 
-type SettingsTab = 'companion' | 'conversation' | 'microphone'
+type SettingsTab = 'language' | 'companion' | 'conversation' | 'microphone'
 
 const TABS: readonly TabItem<SettingsTab>[] = [
+  { id: 'language', label: 'Language' },
   { id: 'companion', label: 'Companion' },
   { id: 'conversation', label: 'Conversation' },
   { id: 'microphone', label: 'Microphone' }
@@ -22,7 +24,7 @@ const TABS: readonly TabItem<SettingsTab>[] = [
 
 export default function SettingsPage(): JSX.Element {
   const { profile, saving, patch, patchProfile } = useSettingsPatch()
-  const [tab, setTab] = useState<SettingsTab>('companion')
+  const [tab, setTab] = useState<SettingsTab>('language')
 
   if (!profile) {
     return (
@@ -55,6 +57,16 @@ export default function SettingsPage(): JSX.Element {
         <div className="mb-6">
           <Tabs items={TABS} active={tab} onChange={setTab} />
         </div>
+
+        {/* ── Language ──────────────────────────────────────────────────── */}
+        {tab === 'language' && (
+          <div className="grid grid-cols-1 gap-4">
+            <LanguageSection
+              current={profile.targetLanguage}
+              onChange={(targetLanguage) => void patchProfile({ targetLanguage })}
+            />
+          </div>
+        )}
 
         {/* ── Companion ─────────────────────────────────────────────────── */}
         {tab === 'companion' && (
