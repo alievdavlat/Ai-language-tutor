@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../lib/classnames'
-import { ProgressRing, StatCard } from '../../components/ui'
+import { ProgressRing, SectionHeading, StatCard } from '../../components/ui'
 import { IconMic, IconRefresh, IconVolume } from '../../components/icons'
 
 // Hardcoded preview data — wired to wav2vec2 phoneme scoring in Phase 29.
@@ -153,6 +153,66 @@ export default function PronunciationPage(): JSX.Element {
             <IconMic className="w-8 h-8" />
           </button>
           <p className="text-xs text-slate-400">Tap to record · then get your score</p>
+        </div>
+
+        {/* Phoneme drills */}
+        <div>
+          <SectionHeading title="Phoneme drills" subtitle="Train the sounds Uzbek speakers often mix up" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {([
+              { ipa: '/θ/', word: 'think', against: '/s/ sink', strength: 32 },
+              { ipa: '/ð/', word: 'this', against: '/z/ ziss', strength: 41 },
+              { ipa: '/w/', word: 'wood', against: '/v/ vood', strength: 78 },
+              { ipa: '/æ/', word: 'cat', against: '/e/ ket', strength: 64 },
+              { ipa: '/ɪ/', word: 'ship', against: '/iː/ sheep', strength: 55 },
+              { ipa: '/ʌ/', word: 'cup', against: '/ɑː/ cop', strength: 49 }
+            ] as const).map((p) => {
+              const TONE = p.strength >= 75
+                ? { text: 'text-emerald-300', bar: 'bg-emerald-400' }
+                : p.strength >= 50
+                  ? { text: 'text-amber-300', bar: 'bg-amber-400' }
+                  : { text: 'text-rose-300', bar: 'bg-rose-400' }
+              return (
+                <button
+                  key={p.ipa}
+                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.05] transition"
+                >
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl font-black text-white">{p.ipa}</span>
+                    <span className={cn('text-[11px] font-bold uppercase tracking-wider', TONE.text)}>{p.strength}%</span>
+                  </div>
+                  <p className="text-sm text-slate-200 mt-2">
+                    <b className="text-white">{p.word}</b> vs <span className="text-slate-400">{p.against}</span>
+                  </p>
+                  <div className="mt-2 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                    <div className={cn('h-full rounded-full', TONE.bar)} style={{ width: `${p.strength}%` }} />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-2">Tap to drill 5 minimal pairs</p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Minimal pairs picker (drill detail) */}
+        <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
+          <SectionHeading title="Today's drill: /θ/ vs /s/" subtitle="Tap the word you hear" />
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            {[
+              ['think', 'sink'],
+              ['thin', 'sin'],
+              ['thank', 'sank'],
+              ['mouth', 'mouse']
+            ].map(([a, b]) => (
+              <div key={a} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 flex items-center justify-between gap-2">
+                <button className="flex-1 rounded-xl bg-white/[0.05] hover:bg-emerald-500/20 py-3 text-sm font-bold text-white transition">{a}</button>
+                <button className="flex-1 rounded-xl bg-white/[0.05] hover:bg-emerald-500/20 py-3 text-sm font-bold text-white transition">{b}</button>
+                <button title="Play audio" className="w-9 h-9 rounded-full bg-brand-500/15 hover:bg-brand-500/30 text-brand-200 flex items-center justify-center shrink-0">
+                  <IconVolume className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

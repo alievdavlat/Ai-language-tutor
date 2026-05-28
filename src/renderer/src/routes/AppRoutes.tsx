@@ -44,6 +44,7 @@ import ShadowingPage from '../features/shadowing/ShadowingPage'
 import WatchPage from '../features/watch/WatchPage'
 import FeedbackExchangePage from '../features/feedback/FeedbackExchangePage'
 import FlashcardsPage from '../features/flashcards/FlashcardsPage'
+import SignInPage from '../features/auth/SignInPage'
 import RoleSelectPage from '../features/auth/RoleSelectPage'
 import LeaderboardPage from '../features/gamification/LeaderboardPage'
 import QuestsPage from '../features/gamification/QuestsPage'
@@ -200,6 +201,8 @@ export default function AppRoutes(): JSX.Element {
         }
       />
       <Route path="/role" element={<RoleSelectPage />} />
+      <Route path="/signin" element={<SignInPage mode="signin" />} />
+      <Route path="/signup" element={<SignInPage mode="signup" />} />
       <Route path="/ai-tutor" element={<AITutorPage />} />
       <Route path="/quiz/live" element={<LiveQuizPage />} />
       <Route
