@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { Course } from '@shared/types'
 import { cn } from '../../lib/classnames'
+import { useAppStore } from '../../store/useAppStore'
+import { backend } from '../../services/backend/useBackend'
 import { Tabs, type TabItem } from '../../components/ui'
 import {
   IconBook,
@@ -33,12 +36,56 @@ interface DraftUnit {
 
 export default function CourseAuthoringPage(): JSX.Element {
   const navigate = useNavigate()
+  const profile = useAppStore((s) => s.profile)
   const [step, setStep] = useState<Step>('basics')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
   const [level, setLevel] = useState('B1')
   const [pricingMode, setPricingMode] = useState<'free' | 'one-off' | 'subscription'>('one-off')
+  const [price, setPrice] = useState('29')
   const [units, setUnits] = useState<DraftUnit[]>([
     { title: 'Unit 1 — Foundations', lessons: [{ title: '', link: '', dripDays: 0 }] }
   ])
+  const [savedCourseId, setSavedCourseId] = useState<string | null>(null)
+  const [busy, setBusy] = useState<'idle' | 'saving' | 'publishing'>('idle')
+
+  const buildCourse = (publish: boolean): Course => {
+    const me = backend.currentUserId() ?? 'u_anon'
+    const id = savedCourseId ?? `c_${Math.random().toString(36).slice(2, 10)}`
+    const pricing: Course['pricing'] =
+      pricingMode === 'free' ? { kind: 'free' }
+        : pricingMode === 'one-off' ? { kind: 'one-off', usd: Number(price) || 0 }
+        : { kind: 'sub', usdPerMo: Number(price) || 0 }
+    return {
+      id,
+      teacherId: me,
+      title: title || 'Untitled course',
+      description: description || 'Course description coming soon.',
+      level,
+      targetLanguage: profile?.targetLanguage ?? 'en',
+      cover: 'from-violet-500 to-purple-700',
+      pricing,
+      rating: 0,
+      reviewCount: 0,
+      enrollmentCount: 0,
+      hours: Math.max(1, units.reduce((acc, u) => acc + u.lessons.length, 0)),
+      publishedAt: publish ? new Date().toISOString() : undefined
+    }
+  }
+
+  const saveDraft = async (): Promise<void> => {
+    setBusy('saving')
+    const course = await backend.upsertCourse(buildCourse(false))
+    setSavedCourseId(course.id)
+    setBusy('idle')
+  }
+  const publish = async (): Promise<void> => {
+    setBusy('publishing')
+    const course = await backend.upsertCourse(buildCourse(true))
+    setSavedCourseId(course.id)
+    setBusy('idle')
+    navigate('/teacher')
+  }
 
   const addUnit = (): void => setUnits((u) => [...u, { title: `Unit ${u.length + 1}`, lessons: [{ title: '', link: '', dripDays: 0 }] }])
   const addLesson = (ui: number): void => setUnits((u) => u.map((x, i) => i === ui ? { ...x, lessons: [...x.lessons, { title: '', link: '', dripDays: x.lessons.length * 3 }] } : x))
@@ -76,7 +123,7 @@ export default function CourseAuthoringPage(): JSX.Element {
           <div className="rounded-card border border-white/10 bg-white/[0.03] p-5 flex flex-col gap-4">
             <div>
               <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Title</label>
-              <input placeholder="e.g. Everyday Conversation" className="input mt-1.5" />
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Everyday Conversation" className="input mt-1.5" />
             </div>
             <div>
               <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Level</label>
@@ -88,7 +135,7 @@ export default function CourseAuthoringPage(): JSX.Element {
             </div>
             <div>
               <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Short description</label>
-              <textarea placeholder="What will students learn?" className="input mt-1.5 min-h-[80px] resize-none" />
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What will students learn?" className="input mt-1.5 min-h-[80px] resize-none" />
             </div>
             <div>
               <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Cover image</label>
@@ -163,7 +210,7 @@ export default function CourseAuthoringPage(): JSX.Element {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Price</label>
-                  <input type="number" placeholder="29" className="input mt-1.5" />
+                  <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="29" className="input mt-1.5" />
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Currency</label>
@@ -196,9 +243,13 @@ export default function CourseAuthoringPage(): JSX.Element {
               <li className="text-amber-300">⚠ Add a cover image for better discovery</li>
             </ul>
             <div className="flex items-center gap-3 pt-2">
-              <button className="btn-ghost px-5 py-2.5">Save draft</button>
-              <button className="btn-ghost px-5 py-2.5">Preview</button>
-              <button onClick={() => navigate('/teacher')} className="btn-primary flex-1 py-2.5">Publish course</button>
+              <button onClick={() => void saveDraft()} disabled={busy !== 'idle'} className="btn-ghost px-5 py-2.5 disabled:opacity-50">
+                {busy === 'saving' ? 'Saving…' : savedCourseId ? 'Update draft' : 'Save draft'}
+              </button>
+              <button disabled={busy !== 'idle'} className="btn-ghost px-5 py-2.5 disabled:opacity-50">Preview</button>
+              <button onClick={() => void publish()} disabled={busy !== 'idle' || !title.trim()} className="btn-primary flex-1 py-2.5 disabled:opacity-50">
+                {busy === 'publishing' ? 'Publishing…' : 'Publish course'}
+              </button>
             </div>
           </div>
         )}

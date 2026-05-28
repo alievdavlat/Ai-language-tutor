@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { PlatformUser, Post } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
 import {
@@ -12,31 +13,14 @@ import {
   IconVolume,
   IconYouTube
 } from '../../components/icons'
+import { useAppStore } from '../../store/useAppStore'
+import { backend, useBackendQuery } from '../../services/backend/useBackend'
 
 type Filter = 'recent' | 'popular' | 'following'
 const FILTERS: TabItem<Filter>[] = [
   { id: 'recent', label: 'Recent' },
   { id: 'popular', label: 'Popular' },
   { id: 'following', label: 'Following' }
-]
-
-type Attach = { type: 'video'; title: string; mins: string } | { type: 'book'; title: string } | { type: 'podcast'; title: string; mins: string } | null
-
-interface Post {
-  author: string
-  role: 'teacher' | 'student'
-  time: string
-  text: string
-  attach: Attach
-  likes: number
-  comments: number
-}
-
-const POSTS: Post[] = [
-  { author: 'Emma Carter', role: 'teacher', time: '2h', text: 'New video! 5 mistakes that make you sound less fluent — and how to fix them 👇', attach: { type: 'video', title: 'Fix these 5 mistakes', mins: '8:12' }, likes: 214, comments: 31 },
-  { author: 'Bekzod', role: 'student', time: '4h', text: 'Found this graded reader super helpful for B1 — sharing the PDF!', attach: { type: 'book', title: 'The Lazy Tourist (A2–B1)' }, likes: 56, comments: 8 },
-  { author: 'Dilnoza', role: 'student', time: '6h', text: 'My favourite podcast for shadowing practice. The slow pace is perfect.', attach: { type: 'podcast', title: 'News in Slow English', mins: '12:30' }, likes: 89, comments: 12 },
-  { author: 'James Lee', role: 'teacher', time: '1d', text: 'Quick tip: record yourself once a week and compare. Progress you can hear 🎧', attach: null, likes: 320, comments: 44 }
 ]
 
 const CHALLENGES = [
@@ -49,75 +33,132 @@ const GROUPS = [
   { title: 'Grammar Nerds', people: '1.8k' }
 ]
 
-function Attachment({ a }: { a: NonNullable<Attach> }): JSX.Element {
-  if (a.type === 'video') {
+// Relative-time helper. Returns "5m" / "2h" / "3d" — good enough for a feed.
+function relTime(iso: string): string {
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime())
+  const m = Math.floor(diff / 60_000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h`
+  return `${Math.floor(h / 24)}d`
+}
+
+function Attachment({ resource }: { resource: NonNullable<Post['resource']> }): JSX.Element {
+  if (resource.kind === 'youtube') {
     return (
       <div className="relative rounded-2xl bg-gradient-to-br from-sky-600 to-blue-800 h-40 flex items-center justify-center ring-1 ring-white/10 mt-3">
         <span className="w-12 h-12 rounded-full bg-white/25 backdrop-blur flex items-center justify-center"><IconPlay className="w-5 h-5 text-white ml-0.5" /></span>
         <span className="absolute top-2 left-2"><IconYouTube className="w-5 h-5 text-red-500" /></span>
-        <span className="absolute bottom-2 left-3 text-sm font-semibold text-white">{a.title}</span>
-        <span className="absolute bottom-2 right-2 text-[10px] font-semibold bg-black/60 text-white rounded px-1.5 py-0.5">{a.mins}</span>
+        <span className="absolute bottom-2 left-3 text-sm font-semibold text-white">{resource.title ?? 'Video'}</span>
       </div>
     )
   }
-  const isBook = a.type === 'book'
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 mt-3">
-      <span className={cn('w-11 h-11 rounded-xl flex items-center justify-center shrink-0', isBook ? 'bg-rose-500/15 text-rose-300' : 'bg-brand-500/15 text-brand-300')}>
-        {isBook ? <IconBook className="w-5 h-5" /> : <IconVolume className="w-5 h-5" />}
-      </span>
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-white truncate">{a.title}</p>
-        <p className="text-xs text-slate-400">{isBook ? 'PDF · free download' : `Audio · ${(a as { mins: string }).mins}`}</p>
-      </div>
-    </div>
-  )
-}
-
-function PostCard({ p }: { p: Post }): JSX.Element {
-  const navigate = useNavigate()
-  const [liked, setLiked] = useState(false)
-  return (
-    <div className="rounded-card border border-white/[0.07] bg-white/[0.03] p-4">
-      <div className="flex items-center gap-2.5">
-        <button onClick={() => p.role === 'teacher' && navigate('/channel')}>
-          <AvatarCircle name={p.author} size="sm" />
-        </button>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-white">{p.author}</span>
-            <span className={cn('text-[9px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5', p.role === 'teacher' ? 'bg-brand-500/20 text-brand-300' : 'bg-white/10 text-slate-400')}>
-              {p.role}
-            </span>
-          </div>
-          <span className="text-xs text-slate-500">{p.time} ago</span>
+  if (resource.kind === 'pdf') {
+    return (
+      <div className="mt-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 flex items-center gap-3">
+        <span className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-300 flex items-center justify-center"><IconBook className="w-5 h-5" /></span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-white truncate">{resource.title ?? 'PDF'}</p>
+          <p className="text-[11px] text-slate-400">PDF · tap to read</p>
         </div>
       </div>
-
-      <p className="text-sm text-slate-200 mt-3 leading-relaxed">{p.text}</p>
-      {p.attach && <Attachment a={p.attach} />}
-
-      <div className="flex items-center gap-5 mt-3 text-slate-400">
-        <button onClick={() => setLiked((v) => !v)} className={cn('inline-flex items-center gap-1.5 text-sm transition', liked ? 'text-rose-300' : 'hover:text-white')}>
-          <IconHeart className="w-4 h-4" /> {p.likes + (liked ? 1 : 0)}
-        </button>
-        <button className="inline-flex items-center gap-1.5 text-sm hover:text-white">
-          <IconChat className="w-4 h-4" /> {p.comments}
-        </button>
-        <button className="inline-flex items-center gap-1.5 text-sm hover:text-white ml-auto">
-          <IconBookmark className="w-4 h-4" /> Save
-        </button>
+    )
+  }
+  return (
+    <div className="mt-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 flex items-center gap-3">
+      <span className="w-10 h-10 rounded-xl bg-brand-500/15 text-brand-300 flex items-center justify-center"><IconVolume className="w-5 h-5" /></span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-white truncate">{resource.title ?? 'Audio'}</p>
+        <p className="text-[11px] text-slate-400">Audio · tap to play</p>
       </div>
     </div>
   )
 }
 
-function Composer(): JSX.Element {
+function PostCard({ post, author, onAfterChange }: { post: Post; author: PlatformUser | null; onAfterChange: () => void }): JSX.Element {
+  const navigate = useNavigate()
+  const me = backend.currentUserId()
+  const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(post.likeCount)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (!me) return
+    void backend.isLiked(me, post.id).then(setLiked)
+    void backend.isSaved(me, { kind: 'post', id: post.id }).then(setSaved)
+  }, [me, post.id])
+
+  const toggleLike = async (): Promise<void> => {
+    if (!me) return
+    const res = await backend.like(me, post.id)
+    setLiked(res.liked)
+    setLikeCount(res.likeCount)
+    onAfterChange()
+  }
+  const toggleSave = async (): Promise<void> => {
+    if (!me) return
+    const res = await backend.save(me, { kind: 'post', id: post.id })
+    setSaved(res.saved)
+  }
+
   return (
     <div className="rounded-card border border-white/[0.07] bg-white/[0.03] p-4">
       <div className="flex items-center gap-3">
-        <AvatarCircle name="Aziz" size="sm" />
+        <button onClick={() => navigate('/channel')}><AvatarCircle name={author?.name ?? '?'} size="sm" /></button>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-white">{author?.name ?? 'Unknown'}</span>
+            <span className={cn('text-[9px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5',
+              author?.role === 'teacher' ? 'bg-brand-500/20 text-brand-300' : 'bg-white/10 text-slate-400')}>
+              {author?.role ?? 'user'}
+            </span>
+          </div>
+          <span className="text-xs text-slate-500">{relTime(post.createdAt)} ago</span>
+        </div>
+      </div>
+
+      <p className="text-sm text-slate-200 mt-3 leading-relaxed whitespace-pre-wrap">{post.text}</p>
+      {post.resource && <Attachment resource={post.resource} />}
+
+      <div className="flex items-center gap-5 mt-3 text-slate-400">
+        <button onClick={() => void toggleLike()} className={cn('inline-flex items-center gap-1.5 text-sm transition', liked ? 'text-rose-300' : 'hover:text-white')}>
+          <IconHeart className="w-4 h-4" /> {likeCount}
+        </button>
+        <button className="inline-flex items-center gap-1.5 text-sm hover:text-white">
+          <IconChat className="w-4 h-4" /> {post.commentCount}
+        </button>
+        <button onClick={() => void toggleSave()} className={cn('inline-flex items-center gap-1.5 text-sm transition ml-auto', saved ? 'text-amber-300' : 'hover:text-white')}>
+          <IconBookmark className="w-4 h-4" /> {saved ? 'Saved' : 'Save'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
+  const profile = useAppStore((s) => s.profile)
+  const [text, setText] = useState('')
+  const [posting, setPosting] = useState(false)
+
+  const submit = async (): Promise<void> => {
+    const me = backend.currentUserId()
+    if (!me || !text.trim()) return
+    setPosting(true)
+    await backend.createPost({ authorId: me, text: text.trim() })
+    setText('')
+    setPosting(false)
+    onPosted()
+  }
+
+  return (
+    <div className="rounded-card border border-white/[0.07] bg-white/[0.03] p-4">
+      <div className="flex items-center gap-3">
+        <AvatarCircle name={profile?.name?.trim() || 'You'} size="sm" />
         <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void submit() } }}
           placeholder="Share a resource or tip with the community…"
           className="flex-1 rounded-pill bg-white/[0.05] border border-white/10 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:outline-none"
         />
@@ -131,7 +172,13 @@ function Composer(): JSX.Element {
             </button>
           )
         })}
-        <button className="btn-primary text-xs px-4 py-1.5 ml-auto">Post</button>
+        <button
+          onClick={() => void submit()}
+          disabled={posting || !text.trim()}
+          className="btn-primary text-xs px-4 py-1.5 ml-auto disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {posting ? 'Posting…' : 'Post'}
+        </button>
       </div>
     </div>
   )
@@ -139,6 +186,20 @@ function Composer(): JSX.Element {
 
 export default function CommunityPage(): JSX.Element {
   const [filter, setFilter] = useState<Filter>('recent')
+  const feed = useBackendQuery(() => backend.listFeed(), [], [])
+  // Co-load all authors in one pass so each PostCard doesn't async-fetch.
+  const authors = useBackendQuery(async () => {
+    const ids = Array.from(new Set(feed.data.map((p) => p.authorId)))
+    const users = await Promise.all(ids.map((id) => backend.getUser(id)))
+    const map: Record<string, PlatformUser> = {}
+    for (const u of users) if (u) map[u.id] = u
+    return map
+  }, [feed.data], {} as Record<string, PlatformUser>)
+
+  const sorted = (() => {
+    if (filter === 'popular') return [...feed.data].sort((a, b) => b.likeCount - a.likeCount)
+    return feed.data
+  })()
 
   return (
     <div className="h-full overflow-y-auto">
@@ -151,9 +212,21 @@ export default function CommunityPage(): JSX.Element {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6">
           {/* Feed */}
           <div className="flex flex-col gap-4">
-            <Composer />
+            <Composer onPosted={feed.refresh} />
             <Tabs items={FILTERS} active={filter} onChange={setFilter} className="self-start" />
-            {POSTS.map((p, i) => <PostCard key={i} p={p} />)}
+            {sorted.length === 0 && !feed.loading && (
+              <div className="rounded-card border border-white/10 bg-white/[0.025] p-6 text-center text-sm text-slate-400">
+                No posts yet — be the first.
+              </div>
+            )}
+            {sorted.map((p) => (
+              <PostCard
+                key={p.id}
+                post={p}
+                author={authors.data[p.authorId] ?? null}
+                onAfterChange={feed.refresh}
+              />
+            ))}
           </div>
 
           {/* Right rail */}

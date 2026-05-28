@@ -5,6 +5,7 @@ import type {
   OllamaStatus,
   UserProfile
 } from '@shared/types'
+import { backend } from '../services/backend'
 
 export type AutoSetupPhase = null | 'starting' | 'pulling' | 'ready' | 'failed'
 
@@ -220,6 +221,22 @@ export const useAppStore = create<AppState>((set, get) => ({
       onboardingComplete: hasCompleteProfile ? true : state.onboardingComplete,
       roleSelected: hasCompleteProfile ? true : state.roleSelected
     })
+
+    // Make sure the local backend has a current user so pages can read/write
+    // likes, saves, enrollments, follows etc. without showing "sign in first".
+    // If we already have a Supabase-style session we'd use that; for the mock
+    // backend we sign in the canonical student account (or create it).
+    if (hasCompleteProfile && !backend.currentUserId()) {
+      const email = `${(migrated?.name ?? 'aziz').toLowerCase().replace(/\s+/g, '.')}@speakai.app`
+      const existing = await backend.signIn(email).catch(() => null)
+      if (!existing) {
+        await backend.signUp({
+          name: migrated?.name ?? 'You',
+          email,
+          role: get().role
+        }).catch(() => null)
+      }
+    }
 
     // Auto-setup runs in the background after the UI is painted.
     void runAutoSetup(rec, ollama, set)

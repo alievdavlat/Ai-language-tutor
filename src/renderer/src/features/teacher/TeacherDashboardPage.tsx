@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
+import { useAppStore } from '../../store/useAppStore'
 import { AvatarCircle, StatCard } from '../../components/ui'
+import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import {
   IconArrowRight,
   IconBolt,
@@ -49,15 +51,33 @@ const ACTIVITY = [
 
 export default function TeacherDashboardPage(): JSX.Element {
   const navigate = useNavigate()
+  const profile = useAppStore((s) => s.profile)
+  const me = backend.currentUserId()
+  const myName = profile?.name?.trim() || 'Teacher'
+  // Real course list for the signed-in teacher. The dashboard cards still keep
+  // their gradient covers because the underlying Course has a `cover` field.
+  const myCourses = useBackendQuery(
+    () => me ? backend.myCourses(me) : Promise.resolve([]),
+    [me],
+    []
+  )
+  const students = useBackendQuery(
+    () => me ? backend.studentsOf(me) : Promise.resolve([]),
+    [me],
+    []
+  )
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-5xl mx-auto w-full flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <AvatarCircle name="Emma Carter" size="md" />
+          <AvatarCircle name={myName} size="md" />
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight">Welcome back, Emma</h1>
-            <p className="text-sm text-slate-400">Here's how your channel is doing today.</p>
+            <h1 className="text-2xl font-bold tracking-tight">Welcome back, {myName.split(' ')[0]}</h1>
+            <p className="text-sm text-slate-400">
+              {myCourses.data.length} course{myCourses.data.length === 1 ? '' : 's'} · {students.data.length} student{students.data.length === 1 ? '' : 's'} enrolled
+            </p>
           </div>
           <button onClick={() => navigate('/channel')} className="btn-ghost px-4 py-2 text-sm shrink-0">View channel</button>
         </div>
@@ -99,21 +119,29 @@ export default function TeacherDashboardPage(): JSX.Element {
                 <IconPlus className="w-3.5 h-3.5" /> New
               </button>
             </div>
-            <div className="flex flex-col gap-2">
-              {COURSES.map((c) => (
-                <div key={c.title} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-3">
-                  <div className={cn('w-14 h-10 rounded-lg bg-gradient-to-br shrink-0', c.cover)} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{c.title}</p>
-                    <p className="text-xs text-slate-500 inline-flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1"><IconUsers className="w-3 h-3" /> {c.students}</span>
-                      <span className="inline-flex items-center gap-1 text-amber-300"><IconStar className="w-3 h-3" /> {c.rating}</span>
-                    </p>
+            {myCourses.data.length === 0 && !myCourses.loading ? (
+              <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-6 text-center">
+                <p className="text-sm text-slate-300">No courses yet.</p>
+                <button onClick={() => navigate('/teacher/new')} className="btn-primary text-xs px-4 py-2 mt-3">Create your first course</button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {myCourses.data.map((c) => (
+                  <div key={c.id} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-3">
+                    <div className={cn('w-14 h-10 rounded-lg bg-gradient-to-br shrink-0', c.cover)} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{c.title}</p>
+                      <p className="text-xs text-slate-500 inline-flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1"><IconUsers className="w-3 h-3" /> {c.enrollmentCount.toLocaleString()}</span>
+                        <span className="inline-flex items-center gap-1 text-amber-300"><IconStar className="w-3 h-3" /> {c.rating.toFixed(1)}</span>
+                        {!c.publishedAt && <span className="text-amber-300/80">· Draft</span>}
+                      </p>
+                    </div>
+                    <button onClick={() => navigate('/course')} className="text-xs font-semibold text-brand-300 shrink-0">Manage →</button>
                   </div>
-                  <button onClick={() => navigate('/course')} className="text-xs font-semibold text-brand-300 shrink-0">Manage →</button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Activity */}

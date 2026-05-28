@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, ListRow, Tabs, type TabItem } from '../../components/ui'
 import { IconBook, IconDownload, IconPlay, IconStar, IconVolume, IconYouTube } from '../../components/icons'
+import { backend, useBackendQuery } from '../../services/backend/useBackend'
 
 type Tab = 'courses' | 'videos' | 'books' | 'podcasts' | 'about'
 
@@ -44,6 +45,25 @@ export default function TeacherChannelPage(): JSX.Element {
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('courses')
   const [following, setFollowing] = useState(false)
+  // Hardcoded channel page belongs to Emma (u_emma) until we wire a real route param.
+  const channelOwnerId = 'u_emma'
+  const me = backend.currentUserId()
+  const followerCount = useBackendQuery(
+    () => backend.followCounts(channelOwnerId).then((c) => c.followers),
+    [],
+    0
+  )
+  useEffect(() => {
+    if (!me) return
+    void backend.isFollowing(me, channelOwnerId).then(setFollowing)
+  }, [me])
+
+  const toggleFollow = async (): Promise<void> => {
+    if (!me) return
+    const res = await backend.follow(me, channelOwnerId)
+    setFollowing(res.following)
+    followerCount.refresh()
+  }
 
   return (
     <div className="h-full overflow-y-auto">
@@ -61,17 +81,17 @@ export default function TeacherChannelPage(): JSX.Element {
           <div className="flex-1 min-w-0 pb-1">
             <h1 className="text-2xl font-bold tracking-tight">{TEACHER.name}</h1>
             <p className="text-sm text-slate-400">
-              {TEACHER.handle} · {TEACHER.followers} followers · {TEACHER.courses} courses · {TEACHER.videos} videos
+              {TEACHER.handle} · {followerCount.data.toLocaleString()} followers · {TEACHER.courses} courses · {TEACHER.videos} videos
             </p>
           </div>
           <button
-            onClick={() => setFollowing((f) => !f)}
+            onClick={() => void toggleFollow()}
             className={cn(
               'rounded-full px-6 py-2.5 text-sm font-semibold transition shrink-0',
               following ? 'bg-white/[0.08] text-slate-200 border border-white/15' : 'bg-grad-brand text-white shadow-glow-sm'
             )}
           >
-            {following ? 'Following' : 'Follow'}
+            {following ? 'Following ✓' : 'Follow'}
           </button>
         </div>
 

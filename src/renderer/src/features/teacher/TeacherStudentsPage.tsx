@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, PageHeader, ProgressBar, Tabs, type TabItem } from '../../components/ui'
 import { IconChat, IconSearch, IconStar } from '../../components/icons'
+import { backend, useBackendQuery } from '../../services/backend/useBackend'
 
 type Tab = 'all' | 'active' | 'lagging' | 'finished'
 const TABS: TabItem<Tab>[] = [
@@ -37,9 +38,41 @@ const STATE_CHIP: Record<Student['state'], { label: string; tint: string }> = {
   finished: { label: 'Finished', tint: 'bg-violet-500/15 text-violet-300' }
 }
 
+function progressState(p: number, lastActiveAt: string): Student['state'] {
+  if (p >= 100) return 'finished'
+  const daysSince = (Date.now() - new Date(lastActiveAt).getTime()) / 86_400_000
+  if (daysSince > 7) return 'lagging'
+  return 'active'
+}
+
+function relDays(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
+  if (days < 1) return 'Today'
+  if (days === 1) return 'Yesterday'
+  return `${days}d ago`
+}
+
 export default function TeacherStudentsPage(): JSX.Element {
   const [tab, setTab] = useState<Tab>('all')
-  const list = tab === 'all' ? STUDENTS : STUDENTS.filter((s) => s.state === (tab === 'lagging' ? 'lagging' : tab === 'finished' ? 'finished' : 'active'))
+  const me = backend.currentUserId()
+  const rows = useBackendQuery(
+    () => me ? backend.studentsOf(me) : Promise.resolve([]),
+    [me],
+    []
+  )
+  const seeded = rows.data.length > 0
+  const liveStudents: Student[] = seeded
+    ? rows.data.map((r) => ({
+        name: r.user.name,
+        course: r.course.title,
+        progress: r.enrollment.progress,
+        lastActive: relDays(r.enrollment.lastActiveAt),
+        state: progressState(r.enrollment.progress, r.enrollment.lastActiveAt)
+      }))
+    : STUDENTS
+  const list = tab === 'all'
+    ? liveStudents
+    : liveStudents.filter((s) => s.state === (tab === 'lagging' ? 'lagging' : tab === 'finished' ? 'finished' : 'active'))
 
   return (
     <div className="h-full overflow-y-auto">

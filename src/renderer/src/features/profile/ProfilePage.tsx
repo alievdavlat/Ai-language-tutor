@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { useTargetLanguage } from '../../lib/language'
+import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { AvatarCircle, PageHeader, ProgressBar, SectionHeading, StatCard, Tabs, type TabItem } from '../../components/ui'
 import {
   IconBolt,
@@ -133,6 +134,17 @@ export default function ProfilePage(): JSX.Element {
   const [tab, setTab] = useState<Tab>('overview')
   const displayName = profile?.name?.trim() || 'You'
   const level = profile?.level ?? 'B1'
+  const me = backend.currentUserId()
+  const counts = useBackendQuery(
+    () => me ? backend.followCounts(me) : Promise.resolve({ followers: 0, following: 0 }),
+    [me],
+    { followers: 0, following: 0 }
+  )
+  const enrollments = useBackendQuery(
+    () => me ? backend.myEnrollments(me) : Promise.resolve([]),
+    [me],
+    []
+  )
 
   return (
     <div className="h-full overflow-y-auto">
@@ -159,9 +171,9 @@ export default function ProfilePage(): JSX.Element {
               Software dev practicing daily — aiming for IELTS 7.0 this year.
             </p>
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3 text-xs text-slate-400">
-              <span><b className="text-white">12</b> following</span>
-              <span><b className="text-white">3</b> followers</span>
-              <span><b className="text-white">14</b> courses enrolled</span>
+              <span><b className="text-white">{counts.data.following}</b> following</span>
+              <span><b className="text-white">{counts.data.followers}</b> followers</span>
+              <span><b className="text-white">{enrollments.data.length}</b> courses enrolled</span>
             </div>
           </div>
           <div className="flex sm:flex-col gap-2">

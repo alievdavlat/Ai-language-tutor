@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '../../../lib/classnames'
 import { AvatarCircle, ProgressBar, Rail } from '../../../components/ui'
 import { IconPlay, IconStar, IconVolume, IconYouTube } from '../../../components/icons'
+import { backend, useBackendQuery } from '../../../services/backend/useBackend'
+import { useTargetLanguageCode } from '../../../lib/language'
 
 function SeeAll({ onClick }: { onClick: () => void }): JSX.Element {
   return (
@@ -18,12 +20,9 @@ const CONTINUE = [
   { title: 'Murphy · Unit 3', course: 'English Grammar in Use', progress: 18, cover: 'from-blue-600 to-blue-800' }
 ]
 
-const POPULAR = [
-  { title: 'IELTS Speaking Bootcamp', teacher: 'James Lee', rating: '4.9', cover: 'from-rose-500 to-pink-700' },
-  { title: 'Everyday Conversation', teacher: 'Emma Carter', rating: '4.8', cover: 'from-sky-500 to-blue-700' },
-  { title: 'Business English Pro', teacher: 'Sara Kim', rating: '4.7', cover: 'from-violet-500 to-purple-700' },
-  { title: 'Grammar Foundations', teacher: 'Tom Reed', rating: '4.9', cover: 'from-amber-500 to-orange-700' }
-]
+// Popular courses now load from the local backend, filtered to the user's
+// learning language. The data still has the same `{title, teacher, rating, cover}`
+// shape used by CourseCard so the rendering didn't change.
 
 function CourseCard({ c, progress, to = '/course' }: { c: { title: string; cover: string; teacher?: string; course?: string; rating?: string }; progress?: number; to?: string }): JSX.Element {
   const navigate = useNavigate()
@@ -90,15 +89,9 @@ function PodcastCard({ p }: { p: (typeof PODCASTS)[number] }): JSX.Element {
   )
 }
 
-// ── Featured teachers ────────────────────────────────────────────────────────
-const TEACHERS = [
-  { name: 'Emma Carter', followers: '12.4k' },
-  { name: 'James Lee', followers: '9.1k' },
-  { name: 'Sara Kim', followers: '7.8k' },
-  { name: 'Tom Reed', followers: '5.2k' }
-]
+interface TeacherCardData { id: string; name: string; followers: number; isFollowing: boolean }
 
-function TeacherCard({ t }: { t: (typeof TEACHERS)[number] }): JSX.Element {
+function TeacherCard({ t, onToggleFollow }: { t: TeacherCardData; onToggleFollow: () => void }): JSX.Element {
   const navigate = useNavigate()
   return (
     <div className="shrink-0 w-40 snap-start rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 flex flex-col items-center text-center gap-2">
@@ -106,11 +99,19 @@ function TeacherCard({ t }: { t: (typeof TEACHERS)[number] }): JSX.Element {
         <AvatarCircle name={t.name} size="lg" />
         <div>
           <p className="text-sm font-semibold text-white leading-tight">{t.name}</p>
-          <p className="text-xs text-slate-500">{t.followers} followers</p>
+          <p className="text-xs text-slate-500">{t.followers.toLocaleString()} followers</p>
         </div>
       </button>
-      <button className="text-xs font-semibold text-brand-300 hover:text-white rounded-full border border-brand-400/30 bg-brand-500/10 px-4 py-1.5 w-full">
-        Follow
+      <button
+        onClick={onToggleFollow}
+        className={cn(
+          'text-xs font-semibold rounded-full px-4 py-1.5 w-full transition',
+          t.isFollowing
+            ? 'text-slate-300 bg-white/[0.06] border border-white/10 hover:bg-white/[0.1]'
+            : 'text-brand-300 hover:text-white border border-brand-400/30 bg-brand-500/10 hover:bg-brand-500/30'
+        )}
+      >
+        {t.isFollowing ? 'Following ✓' : 'Follow'}
       </button>
     </div>
   )
@@ -139,13 +140,54 @@ function BookCard({ b }: { b: (typeof BOOKS)[number] }): JSX.Element {
 
 export default function FeedRails(): JSX.Element {
   const navigate = useNavigate()
+  const lang = useTargetLanguageCode()
+
+  // Popular courses — backend-driven, filtered to current language.
+  const courses = useBackendQuery(
+    () => backend.listCourses({ language: lang }),
+    [lang],
+    []
+  )
+
+  // Featured teachers + follow state.
+  const teachers = useBackendQuery(async () => {
+    const allUsers = await Promise.all(
+      ['u_emma', 'u_james', 'u_marco'].map((id) => backend.getUser(id))
+    )
+    const me = backend.currentUserId()
+    const rows: TeacherCardData[] = []
+    for (const u of allUsers) {
+      if (!u) continue
+      const counts = await backend.followCounts(u.id)
+      const isFollowing = me ? await backend.isFollowing(me, u.id) : false
+      rows.push({ id: u.id, name: u.name, followers: counts.followers, isFollowing })
+    }
+    return rows
+  }, [], [])
+
+  const toggleFollow = async (teacherId: string): Promise<void> => {
+    const me = backend.currentUserId()
+    if (!me) return
+    await backend.follow(me, teacherId)
+    teachers.refresh()
+  }
+
   return (
     <div className="flex flex-col gap-7">
       <Rail title="Continue learning">
         {CONTINUE.map((c) => <CourseCard key={c.title} c={c} progress={c.progress} to="/learn/lesson" />)}
       </Rail>
       <Rail title="Popular courses" action={<SeeAll onClick={() => navigate('/courses')} />}>
-        {POPULAR.map((c) => <CourseCard key={c.title} c={c} />)}
+        {courses.data.length === 0 && !courses.loading ? (
+          <p className="text-xs text-slate-500 px-4">No courses yet for this language.</p>
+        ) : (
+          courses.data.slice(0, 8).map((c) => (
+            <CourseCard
+              key={c.id}
+              c={{ title: c.title, cover: c.cover, teacher: c.description, rating: c.rating.toFixed(1) }}
+            />
+          ))
+        )}
       </Rail>
       <Rail title="Trending videos" action={<SeeAll onClick={() => navigate('/library')} />}>
         {VIDEOS.map((v) => <VideoCard key={v.title} v={v} />)}
@@ -154,7 +196,7 @@ export default function FeedRails(): JSX.Element {
         {PODCASTS.map((p) => <PodcastCard key={p.title} p={p} />)}
       </Rail>
       <Rail title="Featured teachers">
-        {TEACHERS.map((t) => <TeacherCard key={t.name} t={t} />)}
+        {teachers.data.map((t) => <TeacherCard key={t.id} t={t} onToggleFollow={() => void toggleFollow(t.id)} />)}
       </Rail>
       <Rail title="New books" action={<SeeAll onClick={() => navigate('/library')} />}>
         {BOOKS.map((b) => <BookCard key={b.title} b={b} />)}

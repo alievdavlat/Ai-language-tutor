@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, PageHeader, Tabs, type TabItem } from '../../components/ui'
+import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import {
   IconBolt,
   IconChat,
@@ -51,8 +52,32 @@ const NOTIFS: Notif[] = [
 export default function NotificationsPage(): JSX.Element {
   const [filter, setFilter] = useState<Filter>('all')
   const navigate = useNavigate()
-  const list = filter === 'all' ? NOTIFS : NOTIFS.filter((n) => n.type === filter)
-  const unread = NOTIFS.filter((n) => n.unread).length
+  const me = backend.currentUserId()
+  // Pull from the backend; fall back to the seed list (NOTIFS) for offline /
+  // pre-bootstrap states. The seed shape ↔ backend shape have matching fields
+  // so we don't need an adapter beyond mapping unread→!read.
+  const live = useBackendQuery(() => me ? backend.listNotifs(me) : Promise.resolve([]), [me], [])
+  const source = live.data.length > 0
+    ? live.data.map((n) => ({
+        id: n.id,
+        type: n.type,
+        Icon: NOTIFS[0].Icon,
+        tint: NOTIFS[0].tint,
+        title: n.title,
+        body: n.body,
+        when: n.createdAt,
+        unread: !n.read,
+        to: n.link
+      }))
+    : NOTIFS
+  const list = filter === 'all' ? source : source.filter((n) => n.type === filter)
+  const unread = source.filter((n) => n.unread).length
+
+  const markAllRead = async (): Promise<void> => {
+    if (!me) return
+    await backend.markAllRead(me)
+    live.refresh()
+  }
 
   return (
     <div className="h-full overflow-y-auto">
@@ -63,7 +88,7 @@ export default function NotificationsPage(): JSX.Element {
           back="/home"
           crumbs={[{ label: 'Home', to: '/home' }, { label: 'Notifications' }]}
           action={
-            <button className="text-xs font-semibold text-brand-300 hover:text-brand-200">Mark all read</button>
+            <button onClick={() => void markAllRead()} className="text-xs font-semibold text-brand-300 hover:text-brand-200">Mark all read</button>
           }
         />
 
@@ -80,7 +105,7 @@ export default function NotificationsPage(): JSX.Element {
               )}
             >
               {n.unread && <span className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-brand-400" />}
-              {n.who ? (
+              {'who' in n && n.who ? (
                 <AvatarCircle name={n.who} size="sm" />
               ) : (
                 <span className={cn('w-9 h-9 rounded-full flex items-center justify-center shrink-0', n.tint)}>
