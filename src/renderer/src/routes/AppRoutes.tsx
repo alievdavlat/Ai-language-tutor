@@ -45,6 +45,7 @@ import WatchPage from '../features/watch/WatchPage'
 import FeedbackExchangePage from '../features/feedback/FeedbackExchangePage'
 import FlashcardsPage from '../features/flashcards/FlashcardsPage'
 import SignInPage from '../features/auth/SignInPage'
+import GrammarPage from '../features/grammar/GrammarPage'
 import RoleSelectPage from '../features/auth/RoleSelectPage'
 import LeaderboardPage from '../features/gamification/LeaderboardPage'
 import QuestsPage from '../features/gamification/QuestsPage'
@@ -314,6 +315,14 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <VocabularyPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/grammar"
+        element={
+          <AppShell>
+            <GrammarPage />
           </AppShell>
         }
       />
