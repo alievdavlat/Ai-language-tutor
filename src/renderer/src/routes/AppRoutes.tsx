@@ -39,6 +39,9 @@ import AITutorPage from '../features/aitutor/AITutorPage'
 import TutorsPage from '../features/tutors/TutorsPage'
 import PathsPage from '../features/paths/PathsPage'
 import LiveQuizPage from '../features/quizlive/LiveQuizPage'
+import StoriesPage from '../features/stories/StoriesPage'
+import ShadowingPage from '../features/shadowing/ShadowingPage'
+import WatchPage from '../features/watch/WatchPage'
 import RoleSelectPage from '../features/auth/RoleSelectPage'
 import LeaderboardPage from '../features/gamification/LeaderboardPage'
 import QuestsPage from '../features/gamification/QuestsPage'
@@ -202,6 +205,30 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <PathsPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/stories"
+        element={
+          <AppShell>
+            <StoriesPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/shadowing"
+        element={
+          <AppShell>
+            <ShadowingPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/watch"
+        element={
+          <AppShell>
+            <WatchPage />
           </AppShell>
         }
       />
