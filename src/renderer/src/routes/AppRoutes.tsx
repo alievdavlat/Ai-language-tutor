@@ -35,6 +35,7 @@ import RoleSelectPage from '../features/auth/RoleSelectPage'
 import LeaderboardPage from '../features/gamification/LeaderboardPage'
 import QuestsPage from '../features/gamification/QuestsPage'
 import AchievementsPage from '../features/gamification/AchievementsPage'
+import ProfilePage from '../features/profile/ProfilePage'
 
 /**
  * After bootstrap completes, send the user from the Boot splash into the app.
@@ -213,6 +214,14 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <ProgressPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <AppShell>
+            <ProfilePage />
           </AppShell>
         }
       />
