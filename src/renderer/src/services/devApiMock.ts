@@ -51,7 +51,7 @@ function buildMockProfile(): UserProfile {
     updatedAt: now,
     name: 'Aziz',
     nativeLanguage: 'uz',
-    targetLanguage: 'english',
+    targetLanguage: 'en',
     goals: ['work', 'ielts'],
     interests: ['tech', 'travel', 'movies'],
     level: 'B1',

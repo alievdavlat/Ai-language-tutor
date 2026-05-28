@@ -7,6 +7,7 @@ import type {
   PlacementAnswer,
   PlacementQuestion,
   PlacementResult,
+  TargetLanguage,
   UserProfile
 } from '@shared/types'
 import { useAppStore } from '../../store/useAppStore'
@@ -14,6 +15,7 @@ import { Card, ProgressBar } from '../../components/ui'
 import { useOnboardingFlow } from './hooks/useOnboardingFlow'
 import { buildEmptyProfile } from './constants/defaultProfile'
 import WelcomeStep from './sections/WelcomeStep'
+import LanguageStep from './sections/LanguageStep'
 import ModelCheckStep from './sections/ModelCheckStep'
 import GoalsStep from './sections/GoalsStep'
 import InterestsStep from './sections/InterestsStep'
@@ -33,6 +35,7 @@ export default function OnboardingPage(): JSX.Element {
   const flow = useOnboardingFlow('welcome')
 
   const [name, setName] = useState('')
+  const [targetLanguage, setTargetLanguage] = useState<TargetLanguage>('en')
   const [goals, setGoals] = useState<LearningGoal[]>([])
   const [interests, setInterests] = useState<Interest[]>([])
   const [placementQuestions, setPlacementQuestions] = useState<PlacementQuestion[] | null>(null)
@@ -67,6 +70,7 @@ export default function OnboardingPage(): JSX.Element {
     const profile: UserProfile = {
       ...base,
       name: name.trim() || undefined,
+      targetLanguage,
       goals,
       interests,
       level: finalLevel,
@@ -91,6 +95,14 @@ export default function OnboardingPage(): JSX.Element {
 
         {flow.step === 'welcome' && (
           <WelcomeStep name={name} onNameChange={setName} onNext={flow.next} />
+        )}
+        {flow.step === 'language' && (
+          <LanguageStep
+            value={targetLanguage}
+            onChange={setTargetLanguage}
+            onNext={flow.next}
+            onBack={flow.back}
+          />
         )}
         {flow.step === 'modelCheck' && (
           <ModelCheckStep

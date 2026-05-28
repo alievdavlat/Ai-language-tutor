@@ -6,7 +6,7 @@ export function createDefaultProfile(): UserProfile {
     createdAt: now,
     updatedAt: now,
     nativeLanguage: 'uz',
-    targetLanguage: 'english',
+    targetLanguage: 'en',
     goals: [],
     interests: [],
     level: 'A2',

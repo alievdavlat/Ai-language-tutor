@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { ProgressRing, SectionHeading, StatCard } from '../../components/ui'
+import { useTargetLanguage } from '../../lib/language'
+import { getTrendingDecksForLanguage } from '../../lib/contentByLanguage'
 import {
   IconBolt,
   IconBookmark,
@@ -35,12 +37,7 @@ const CATEGORIES: { name: string; emoji: string; tint: string; Icon: (p: IconPro
   { name: 'Tech', emoji: '💻', tint: 'bg-sky-500/15 text-sky-300', Icon: IconBolt }
 ]
 
-const TRENDING: DeckTile[] = [
-  { title: 'Restaurant essentials', count: 24, emoji: '🍝', cover: 'from-rose-500 to-orange-500', difficulty: 'EASY' },
-  { title: 'Job interviews', count: 38, emoji: '💼', cover: 'from-violet-500 to-purple-700', difficulty: 'MEDIUM' },
-  { title: 'Phrasal verbs', count: 62, emoji: '🔤', cover: 'from-amber-500 to-rose-500', difficulty: 'HARD' },
-  { title: 'Daily small talk', count: 28, emoji: '☕', cover: 'from-emerald-500 to-teal-700', difficulty: 'EASY' }
-]
+// TRENDING is now driven by useTargetLanguage() — see component body
 
 const PROFESSIONAL: DeckTile[] = [
   { title: 'Business emails', count: 32, emoji: '📧', cover: 'from-sky-500 to-blue-700', difficulty: 'MEDIUM' },
@@ -80,12 +77,15 @@ function DeckCard({ d, onClick }: { d: DeckTile; onClick?: () => void }): JSX.El
 
 export default function VocabularyPage(): JSX.Element {
   const navigate = useNavigate()
+  const lang = useTargetLanguage()
+  const TRENDING = getTrendingDecksForLanguage(lang.code)
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-6xl mx-auto w-full flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Vocabulary</h1>
+            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{lang.flag} {lang.name} vocabulary</p>
+            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Vocabulary</h1>
             <p className="text-sm text-slate-400 mt-1">Discover, save, and review words with spaced repetition.</p>
           </div>
           <button onClick={() => navigate('/flashcards')} className="btn-primary text-xs px-4 py-2">Start flashcards</button>

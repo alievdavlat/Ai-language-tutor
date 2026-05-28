@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { SectionHeading } from '../../components/ui'
+import { useTargetLanguage } from '../../lib/language'
+import { getExamsForLanguage } from '../../lib/contentByLanguage'
 import {
   IconArrowRight,
   IconBook,
@@ -136,21 +138,52 @@ function ExamCard({ exam }: { exam: ExamDef }): JSX.Element {
 
 export default function ExamsHubPage(): JSX.Element {
   const navigate = useNavigate()
+  const lang = useTargetLanguage()
+  const langExams = getExamsForLanguage(lang.code)
+  // Map our shared exam cards through the rich ExamDef shape — only show full
+  // mocks for the ones we have real shells for (currently IELTS/TOEFL).
+  const exams = EXAMS.filter((e) => langExams.some((x) => x.id === e.id))
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-7">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Exams &amp; tests</h1>
+          <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{lang.flag} Learning {lang.name}</p>
+          <h1 className="text-2xl font-bold tracking-tight mt-0.5">Exams &amp; tests</h1>
           <p className="text-sm text-slate-400 mt-1">
-            Full-length mock exams with an AI examiner and band-score feedback.
+            Full-length mock exams with an AI examiner and band-score feedback — filtered to {lang.name}.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {EXAMS.map((e) => (
-            <ExamCard key={e.id} exam={e} />
-          ))}
+        {/* Language-specific exam shortcuts */}
+        <div>
+          <SectionHeading title={`Official ${lang.name} certifications`} subtitle={`${langExams.length} exam types for ${lang.name}`} />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {langExams.map((e) => (
+              <button
+                key={e.id}
+                onClick={() => {
+                  if (e.id === 'cefr') navigate('/exams/cefr')
+                  else if (e.id === 'ielts' || e.id === 'toefl') navigate(`/exams/${e.id}`)
+                }}
+                className={cn('rounded-2xl p-1 ring-1 ring-white/10 hover:ring-white/25 transition text-left bg-gradient-to-br', e.tint)}
+              >
+                <div className="rounded-xl bg-black/20 px-3 py-3 h-full">
+                  <span className="text-xl">{e.flag}</span>
+                  <p className="text-sm font-bold text-white mt-1">{e.name}</p>
+                  <p className="text-[10px] text-white/80 mt-0.5">{e.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
+
+        {exams.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {exams.map((e) => (
+              <ExamCard key={e.id} exam={e} />
+            ))}
+          </div>
+        )}
 
         {/* CEFR hub */}
         <button
