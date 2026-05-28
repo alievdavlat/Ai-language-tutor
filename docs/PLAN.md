@@ -381,6 +381,64 @@ bank already covers Hometown / Work / Free time / Technology — matches
 the style. No structural changes needed; the difference is purely the
 shell (orb-centric vs chat-bubble), which we've now fixed.
 
+### Fling AI / SeaArt observations (2026-05-28, from user screenshots)
+
+User shared 4 screenshots of `web.flingapp.ai` and asked us to model the
+character-creator UX off it (and `seaart.ai`'s character library).
+
+**Patterns we adopt (good UX, fits our brand):**
+- Big character-card grid (photo + name + age + 1-line bio + tags +
+  chat-count) — bigger commitment than our current avatar row.
+- Discover / Roleplay / Games / Group-chat / Live show / Media-creator
+  sidebar grouping — "AI studio" navigation density.
+- Per-character config workshop: avatar, name, age, personality tags
+  (Submissive / Romantic / Explorer / Seducer / Mystic / Ingenue /
+  Intellectual). We map these to LEARNING styles: Patient / Strict / Fun /
+  Academic / Casual / Slang-heavy / Native-young / Native-elder.
+- Pre-built scenarios (Trapped in Elevator → reframed as Job Interview;
+  Strict Coworker → Boss meeting; Therapist → Doctor visit; Shy Gamer
+  Girl → Study buddy; Lost Party Girl → Lost-in-city travel scene).
+  These are conversational system-prompt presets.
+- "Influencer Studio" pattern — teachers can publish their own characters.
+
+**Patterns we REJECT (ethical hard line):**
+- Sexualized character names like "Cum slut, 18", "Whore, 25", "Daddy's
+  nasty little slut" + matching imagery. Even when nominally "18+",
+  these sit one degree away from CSAM-adjacent territory and are
+  prohibited by Anthropic content policy + Stripe/PayPal restricted
+  businesses list + App Store + Google Play education-category rules.
+- 18+ companion / NSFW content in any form. Our app is a
+  **language-learning platform** with under-13 students using it (CEFR
+  A1 children study English in school). Adult companion features:
+  1. Violate App Store and Google Play "education" category rules.
+  2. Trigger payment-processor termination (Stripe specifically prohibits
+     adult chat under section 4 of Restricted Businesses).
+  3. Destroy the IELTS / Cambridge brand association — teachers and
+     parents would not enrol students.
+- Strip Dice, Truth-or-Dare (adult), Seven-Minutes-in-Heaven games. We
+  DO ship games but they are vocabulary / pronunciation / quiz games.
+
+**What we build instead** (combines Fling's good UX with our brand):
+
+1. **20-character conversation-partner gallery** — diverse ages 18-65,
+   ethnicities, accents (US/UK/AU/IN/PH/IT/JP/FR/ES/DE/RU). Each is a
+   conversation partner for English (or the user's target language).
+   Tags describe teaching style. Task #53.
+2. **Per-character workshop** with the same depth as Fling's — for the
+   language-learning context: backstory, accent, personality sliders,
+   speaking style, interests, custom system-prompt extras. Task #56.
+3. **3D avatar studio** (Three.js, Ready-Player-Me-style) for the user's
+   OWN avatar AND for editing the visual of saved characters. Hair /
+   face / outfit / accessories picker. Viseme lip-sync ready. Task #54.
+4. **Pre-built scenarios** library — we already have RoleplayMode in
+   Speaking. Expanding to 30+ scenes across travel/work/school/social.
+5. **Age verification with proper thresholds** (COPPA-compliant): <13 =
+   parental email required, content-filter strict, no Live partner, no
+   tutor marketplace, no community DMs. 13–17 = teen mode — locked out
+   of Live 1:1, tutor marketplace, DMs to non-followed users. 18+ =
+   full platform. Re-prompt DOB if profile is repeatedly changed
+   (anti-bypass). Task #55.
+
 ---
 
 ## 4 · Update protocol
