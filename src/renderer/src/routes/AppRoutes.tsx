@@ -32,6 +32,9 @@ import AccountPage from '../features/account/AccountPage'
 import TeacherDashboardPage from '../features/teacher/TeacherDashboardPage'
 import CourseAuthoringPage from '../features/teacher/CourseAuthoringPage'
 import RoleSelectPage from '../features/auth/RoleSelectPage'
+import LeaderboardPage from '../features/gamification/LeaderboardPage'
+import QuestsPage from '../features/gamification/QuestsPage'
+import AchievementsPage from '../features/gamification/AchievementsPage'
 
 /**
  * After bootstrap completes, send the user from the Boot splash into the app.
@@ -210,6 +213,30 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <ProgressPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/leaderboard"
+        element={
+          <AppShell>
+            <LeaderboardPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/quests"
+        element={
+          <AppShell>
+            <QuestsPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/achievements"
+        element={
+          <AppShell>
+            <AchievementsPage />
           </AppShell>
         }
       />
