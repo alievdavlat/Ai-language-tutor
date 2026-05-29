@@ -83,6 +83,7 @@ export default function SettingsPage(): JSX.Element {
             onPick={(characterId, accent) => void patch({ characterId, accent })}
             onCustomsChange={(customCharacters) => void patchProfile({ customCharacters })}
             onFavoritesChange={(favoriteCharacterIds) => void patchProfile({ favoriteCharacterIds })}
+            onMemoryChange={(companionMemory) => void patchProfile({ companionMemory })}
             onPatch={(p) => void patch(p)}
           />
         )}

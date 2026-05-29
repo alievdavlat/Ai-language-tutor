@@ -14,6 +14,7 @@ export function buildEmptyProfile(): UserProfile {
     customCharacters: [],
     favoriteCharacterIds: [],
     relationships: {},
+    companionMemory: {},
     settings: {
       accent: 'us',
       correctionStyle: 'gentle',

@@ -3,6 +3,7 @@ import type { Accent, UserProfile } from '@shared/types'
 import {
   ACCENT_LABELS,
   companionCategory,
+  dailyMood,
   listAllCharacters,
   resolveCharacter
 } from '@shared/constants'
@@ -74,7 +75,10 @@ export default function CompanionSwitcher({ profile, onSwitch }: CompanionSwitch
         <span>
           <span className="block text-lg font-bold tracking-tight leading-none">{label}</span>
           <span className="block text-[11px] text-slate-400 mt-0.5">
-            {active ? ACCENT_LABELS[active.accent] : 'Tap to choose'} ▾
+            {active
+              ? `${ACCENT_LABELS[active.accent]} · ${dailyMood(active.id).emoji} ${dailyMood(active.id).label}`
+              : 'Tap to choose'}{' '}
+            ▾
           </span>
         </span>
       </button>

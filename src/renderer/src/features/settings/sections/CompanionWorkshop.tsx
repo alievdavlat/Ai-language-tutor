@@ -1,21 +1,23 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Accent, CharacterInfo, PersonalityTraits, UserProfile } from '@shared/types'
+import type { Accent, CharacterInfo, MemoryNote, PersonalityTraits, UserProfile } from '@shared/types'
 import { SPEAKING_STYLES, DEFAULT_PERSONALITY } from '@shared/types'
-import { resolveCharacter, relationshipScore, relationshipTier } from '@shared/constants'
+import { resolveCharacter, relationshipScore, relationshipTier, dailyMood } from '@shared/constants'
 import { Card, Tabs, type TabItem } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 import CharacterSection from './CharacterSection'
+import CompanionMemory from './CompanionMemory'
 import VoiceSection from './VoiceSection'
 import SpeakingRateSection from './SpeakingRateSection'
 import AccentSection from './AccentSection'
 import CompanionPreviewChat from './CompanionPreviewChat'
 
-type WorkshopTab = 'browse' | 'persona' | 'voice' | 'preview'
+type WorkshopTab = 'browse' | 'persona' | 'memory' | 'voice' | 'preview'
 
 const TABS: readonly TabItem<WorkshopTab>[] = [
   { id: 'browse', label: 'Browse' },
   { id: 'persona', label: 'Persona' },
+  { id: 'memory', label: 'Memory' },
   { id: 'voice', label: 'Voice' },
   { id: 'preview', label: 'Preview chat' }
 ] as const
@@ -25,6 +27,7 @@ interface CompanionWorkshopProps {
   onPick: (characterId: string, accent: Accent) => void
   onCustomsChange: (next: CharacterInfo[]) => void
   onFavoritesChange: (next: string[]) => void
+  onMemoryChange: (next: Record<string, MemoryNote[]>) => void
   onPatch: (patch: Partial<UserProfile['settings']>) => void
 }
 
@@ -48,6 +51,7 @@ function PersonaSummary({
   const style = SPEAKING_STYLES.find((s) => s.id === (character.speakingStyle ?? 'neutral'))
   const relScore = relationshipScore(profile.relationships, character.id)
   const rel = relationshipTier(relScore)
+  const mood = dailyMood(character.id)
   const examples = character.exampleDialogue ?? []
   return (
     <Card>
@@ -57,7 +61,15 @@ function PersonaSummary({
           {character.isCustom ? 'Custom — edit on the Browse tab (✏️)' : 'Preset — duplicate on Browse to edit (⧉)'}
         </span>
       </div>
-      <p className="text-xs text-slate-400 mb-4">{character.headline || 'No headline yet.'}</p>
+      <div className="flex items-center gap-2 mb-4">
+        <p className="text-xs text-slate-400">{character.headline || 'No headline yet.'}</p>
+        <span
+          title="Mood varies a little day to day"
+          className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-white/[0.06] text-slate-300 border border-white/10"
+        >
+          {mood.emoji} feeling {mood.label} today
+        </span>
+      </div>
 
       <div className="flex flex-col gap-3">
         {TRAIT_LABELS.map(({ key, low, high, label }) => {
@@ -137,6 +149,7 @@ export default function CompanionWorkshop({
   onPick,
   onCustomsChange,
   onFavoritesChange,
+  onMemoryChange,
   onPatch
 }: CompanionWorkshopProps): JSX.Element {
   const navigate = useNavigate()
@@ -168,6 +181,10 @@ export default function CompanionWorkshop({
       )}
 
       {tab === 'persona' && <PersonaSummary character={active} profile={profile} />}
+
+      {tab === 'memory' && (
+        <CompanionMemory profile={profile} character={active} onChange={onMemoryChange} />
+      )}
 
       {tab === 'voice' && (
         <div className="grid grid-cols-1 gap-4">

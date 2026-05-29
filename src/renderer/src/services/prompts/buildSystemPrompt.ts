@@ -4,7 +4,7 @@ import type {
   SpeakingStyle,
   UserProfile
 } from '@shared/types'
-import { resolveCharacter, relationshipScore, relationshipTier } from '@shared/constants'
+import { resolveCharacter, relationshipScore, relationshipTier, dailyMood } from '@shared/constants'
 import { ACCENT_PERSONA, CORRECTION_RULE, LEVEL_GUIDE } from './constants'
 
 interface BuildOptions {
@@ -68,6 +68,23 @@ function describeExampleDialogue(character: CharacterInfo | null): string | null
   return `Match this voice — ${sample}`
 }
 
+/**
+ * Phase 10 — surface what the companion remembers about the learner. Pinned
+ * notes first, then most-recent; capped so small LLMs stay fast.
+ */
+function describeMemory(profile: UserProfile, characterId: string | undefined): string | null {
+  if (!characterId) return null
+  const notes = profile.companionMemory?.[characterId]
+  if (!notes || notes.length === 0) return null
+  const ordered = [...notes].sort((a, b) => {
+    if (!!b.pinned !== !!a.pinned) return b.pinned ? 1 : -1
+    return b.createdAt.localeCompare(a.createdAt)
+  })
+  const picked = ordered.slice(0, 6).map((n) => n.text.trim()).filter(Boolean)
+  if (picked.length === 0) return null
+  return `You remember about them: ${picked.join('; ')}.`
+}
+
 function personaLine(profile: UserProfile, character: CharacterInfo | null): string {
   if (!character) return ACCENT_PERSONA[profile.settings.accent]
   return `You are ${character.name}, a ${character.age}-year-old from ${character.origin}. ${character.personaHint}`
@@ -105,10 +122,16 @@ export function buildSystemPrompt(profile: UserProfile, opts: BuildOptions = {})
     ? relationshipTier(relationshipScore(profile.relationships, character.id)).prompt
     : null
 
+  // Phase 10 — a deterministic daily mood + persistent per-character memory.
+  const moodLine = character ? dailyMood(character.id).prompt : null
+  const memoryLine = describeMemory(profile, character?.id)
+
   const lines: string[] = [
     personaLine(profile, character),
     extras || null,
     relationshipLine,
+    moodLine,
+    memoryLine,
     describeExampleDialogue(character),
     'You are chatting like a warm friend on a voice call — not a formal tutor.',
     `Learner CEFR level: ${profile.level}. ${LEVEL_GUIDE[profile.level]}`,

@@ -47,6 +47,12 @@ export interface UserProfile {
    */
   favoriteCharacterIds?: string[]
   /**
+   * Phase 10 (feature 2.10) — per-character memory. Short notes the companion
+   * "remembers" about the learner, injected into the system prompt so context
+   * persists across sessions. Keyed by character id.
+   */
+  companionMemory?: Record<string, MemoryNote[]>
+  /**
    * Phase 8 (feature 2.11) — per-character closeness score (0–100). Grows a
    * little with each exchange; mapped to a relationship tier that nudges the
    * AI's warmth in `buildSystemPrompt`. Keyed by character id.
@@ -65,6 +71,17 @@ export interface UserProfile {
 }
 
 export type AgeBand = 'under13' | 'teen' | 'adult'
+
+/**
+ * Phase 10 — a single thing a companion remembers about the learner.
+ * Pinned notes always make it into the prompt; the rest are most-recent-first.
+ */
+export interface MemoryNote {
+  id: string
+  text: string
+  createdAt: string
+  pinned?: boolean
+}
 
 export type HairStyle = 'short' | 'bald' | 'bun' | 'long'
 
