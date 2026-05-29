@@ -20,21 +20,6 @@ interface CharacterSectionProps {
   onFavoritesChange: (next: string[]) => void
 }
 
-function duplicatePresetAsDraft(preset: CharacterInfo, takenIds: ReadonlyArray<string>): CharacterInfo {
-  // Find a fresh id like `emma-copy`, `emma-copy-2`, …
-  let candidate = `${preset.id}-copy`
-  let i = 2
-  while (takenIds.includes(candidate)) {
-    candidate = `${preset.id}-copy-${i++}`
-  }
-  return {
-    ...preset,
-    id: candidate,
-    name: `${preset.name} (copy)`,
-    isCustom: true
-  }
-}
-
 export default function CharacterSection({
   profile,
   onPick,
@@ -70,13 +55,9 @@ export default function CharacterSection({
     setEditing({ draft: null, existingId: null })
   }
 
-  const startDuplicate = (preset: CharacterInfo): void => {
-    setEditing({
-      draft: duplicatePresetAsDraft(preset, takenIds),
-      existingId: null
-    })
-  }
-
+  // Edit works for presets too: saving stores an override in customCharacters
+  // under the SAME id (resolveCharacter prefers custom by id), so the avatar /
+  // identity isn't duplicated — the original is shadowed in place.
   const startEdit = (character: CharacterInfo): void => {
     setEditing({ draft: character, existingId: character.id })
   }
@@ -94,9 +75,13 @@ export default function CharacterSection({
 
   const handleDelete = (): void => {
     if (!editing?.existingId) return
-    onCustomsChange(customs.filter((c) => c.id !== editing.existingId))
-    // If the deleted character was the active one, fall back to Emma.
-    if (currentId === editing.existingId) {
+    const deletedId = editing.existingId
+    onCustomsChange(customs.filter((c) => c.id !== deletedId))
+    // Deleting an override of a preset just reverts to the original (still
+    // exists under the same id), so keep the selection. Only fall back to Emma
+    // when a genuine custom-only character that was active is removed.
+    const stillExists = !!CHARACTERS[deletedId]
+    if (currentId === deletedId && !stillExists) {
       onPick('emma', CHARACTERS.emma.accent)
     }
     setEditing(null)
@@ -244,13 +229,12 @@ export default function CharacterSection({
                   {isFav ? '★' : '☆'}
                 </button>
 
-                {/* Per-card secondary action: Edit (custom) or Duplicate (preset). */}
+                {/* Per-card action: edit any companion (presets save an override). */}
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (isCustom) startEdit(c)
-                    else startDuplicate(c)
+                    startEdit(c)
                   }}
                   className={cn(
                     'absolute bottom-2 right-2 text-[10px] font-semibold rounded-pill px-2 py-1 transition',
@@ -259,7 +243,7 @@ export default function CharacterSection({
                       : 'bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 border border-white/10'
                   )}
                 >
-                  {isCustom ? '✏️ Edit' : '⧉ Duplicate'}
+                  ✏️ Edit
                 </button>
               </div>
             )
