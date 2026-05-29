@@ -49,6 +49,36 @@ export interface UserProfile {
   dateOfBirth?: string
   /** Convenience cache so we don't recompute on every render. */
   ageBand?: AgeBand
+  /** Phase 12 / #54 — the user's customised 3D avatar (Memoji-style). */
+  avatar3d?: Avatar3DConfig
 }
 
 export type AgeBand = 'under13' | 'teen' | 'adult'
+
+export type HairStyle = 'short' | 'bald' | 'bun' | 'long'
+
+/**
+ * Knobs for the procedural three.js avatar in the Avatar Studio (#54). All
+ * colours are hex strings (with leading #). Kept deliberately small so the
+ * whole config round-trips through `profile.save` with no extra IPC.
+ */
+export interface Avatar3DConfig {
+  skinTone: string
+  hairColor: string
+  hairStyle: HairStyle
+  eyeColor: string
+  outfitColor: string
+  background: string
+  /** Vertical head stretch, 1.0 (round) – 1.3 (long). */
+  headRoundness: number
+}
+
+export const DEFAULT_AVATAR_3D: Avatar3DConfig = {
+  skinTone: '#ffd9b8',
+  hairColor: '#3a281c',
+  hairStyle: 'short',
+  eyeColor: '#1a2b4a',
+  outfitColor: '#3b4a66',
+  background: '#0b1020',
+  headRoundness: 1.15
+}

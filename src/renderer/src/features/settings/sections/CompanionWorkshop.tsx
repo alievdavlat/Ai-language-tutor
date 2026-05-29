@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { Accent, CharacterInfo, PersonalityTraits, UserProfile } from '@shared/types'
 import { SPEAKING_STYLES, DEFAULT_PERSONALITY } from '@shared/types'
 import { resolveCharacter } from '@shared/constants'
@@ -99,14 +100,23 @@ export default function CompanionWorkshop({
   onCustomsChange,
   onPatch
 }: CompanionWorkshopProps): JSX.Element {
+  const navigate = useNavigate()
   const [tab, setTab] = useState<WorkshopTab>('browse')
   const s = profile.settings
   const active = resolveCharacter(profile, s.characterId)
 
   return (
     <div className="flex flex-col gap-4">
-      <div className={cn('rounded-card border border-white/10 bg-white/[0.02] p-1.5 self-start')}>
-        <Tabs items={TABS} active={tab} onChange={setTab} />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className={cn('rounded-card border border-white/10 bg-white/[0.02] p-1.5')}>
+          <Tabs items={TABS} active={tab} onChange={setTab} />
+        </div>
+        <button
+          onClick={() => navigate('/avatar-studio')}
+          className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/10 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/[0.1] transition"
+        >
+          🎨 3D Avatar Studio →
+        </button>
       </div>
 
       {tab === 'browse' && (
