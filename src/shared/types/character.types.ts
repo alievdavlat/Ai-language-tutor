@@ -83,6 +83,15 @@ export interface CharacterInfo {
   /** Phase 9 — companion role (friend / teacher / coach / examiner / storyteller). */
   category?: CompanionCategory
   /**
+   * Phase 14 — how this companion is rendered in Speaking:
+   *   '2d'  → flat DiceBear portrait (default)
+   *   '3d'  → stylized procedural three.js avatar
+   *   'vrm' → realistic/anime VRM model (uses `vrmUrl`)
+   * Set in the Avatar Studio builder. Picking the companion switches the
+   * Speaking avatar to match — no separate 2D/3D toggle.
+   */
+  avatarKind?: '2d' | '3d' | 'vrm'
+  /**
    * Phase 12 — per-companion VRM 3D model URL/path. When set, the 3D avatar
    * renders this model (with lip-sync); otherwise it uses the procedural one
    * or the global `settings.vrmModelUrl`.

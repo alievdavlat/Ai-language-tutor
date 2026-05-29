@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { Accent, CharacterInfo, UserProfile } from '@shared/types'
 import {
   ACCENT_LABELS,
-  CHARACTERS,
   listAllCharacters,
   relationshipScore,
   relationshipTier
@@ -10,7 +10,6 @@ import {
 import { characterAvatarUrl } from '@shared/utils/avatar'
 import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
-import CharacterEditor from './CharacterEditor'
 
 interface CharacterSectionProps {
   profile: UserProfile
@@ -23,9 +22,9 @@ interface CharacterSectionProps {
 export default function CharacterSection({
   profile,
   onPick,
-  onCustomsChange,
   onFavoritesChange
 }: CharacterSectionProps): JSX.Element {
+  const navigate = useNavigate()
   const favorites = useMemo(() => profile.favoriteCharacterIds ?? [], [profile.favoriteCharacterIds])
   const characters = useMemo(() => {
     const all = listAllCharacters(profile)
@@ -34,58 +33,20 @@ export default function CharacterSection({
       (a, b) => (favorites.includes(b.id) ? 1 : 0) - (favorites.includes(a.id) ? 1 : 0)
     )
   }, [profile, favorites])
-  const customs = profile.customCharacters ?? []
 
   const toggleFavorite = (id: string): void => {
     onFavoritesChange(
       favorites.includes(id) ? favorites.filter((f) => f !== id) : [...favorites, id]
     )
   }
-  const takenIds = useMemo(
-    () => [...Object.keys(CHARACTERS), ...customs.map((c) => c.id)],
-    [customs]
-  )
-
-  const [editing, setEditing] = useState<{ draft: CharacterInfo | null; existingId: string | null } | null>(null)
 
   const currentId = profile.settings.characterId
   const currentAccent = profile.settings.accent
 
-  const startNew = (): void => {
-    setEditing({ draft: null, existingId: null })
-  }
-
-  // Edit works for presets too: saving stores an override in customCharacters
-  // under the SAME id (resolveCharacter prefers custom by id), so the avatar /
-  // identity isn't duplicated — the original is shadowed in place.
-  const startEdit = (character: CharacterInfo): void => {
-    setEditing({ draft: character, existingId: character.id })
-  }
-
-  const handleSave = (next: CharacterInfo): void => {
-    const without = customs.filter((c) => c.id !== (editing?.existingId ?? next.id))
-    onCustomsChange([...without, next])
-    // If the user was editing the currently-selected character, keep them on it
-    // (ids are preserved when editing). If they just created a new one, select it.
-    if (!editing?.existingId) {
-      onPick(next.id, next.accent)
-    }
-    setEditing(null)
-  }
-
-  const handleDelete = (): void => {
-    if (!editing?.existingId) return
-    const deletedId = editing.existingId
-    onCustomsChange(customs.filter((c) => c.id !== deletedId))
-    // Deleting an override of a preset just reverts to the original (still
-    // exists under the same id), so keep the selection. Only fall back to Emma
-    // when a genuine custom-only character that was active is removed.
-    const stillExists = !!CHARACTERS[deletedId]
-    if (currentId === deletedId && !stillExists) {
-      onPick('emma', CHARACTERS.emma.accent)
-    }
-    setEditing(null)
-  }
+  // Create + edit both happen in the Avatar Studio builder now (type picker,
+  // file/link upload, full parameters) — no inline modal.
+  const startEdit = (character: CharacterInfo): void => navigate(`/avatar-studio?id=${encodeURIComponent(character.id)}`)
+  const startNew = (): void => navigate('/avatar-studio')
 
   return (
     <>
@@ -94,8 +55,8 @@ export default function CharacterSection({
           <div>
             <h2 className="font-semibold text-base">Your companion</h2>
             <p className="text-xs text-slate-500">
-              Picking a character also sets the default accent and speaking style.
-              Tap ✏️ Edit on any companion to customise it, or “+ New” to start fresh.
+              Picking a character also sets the accent and avatar. Tap ✏️ Edit to open the
+              Avatar Studio, or “Create companion” to build a new one.
             </p>
           </div>
         </div>
@@ -249,31 +210,20 @@ export default function CharacterSection({
             )
           })}
 
-          {/* "+ New" card */}
+          {/* Create — opens the Avatar Studio builder */}
           <button
             type="button"
             onClick={startNew}
             className="flex flex-col items-center justify-center text-center rounded-card p-4 min-h-[180px] bg-white/[0.02] border border-dashed border-white/15 hover:bg-white/[0.06] hover:border-brand-400/50 text-slate-400 hover:text-slate-200 transition"
           >
             <div className="text-4xl mb-2">➕</div>
-            <div className="font-semibold text-sm">Create new character</div>
+            <div className="font-semibold text-sm">Create companion</div>
             <div className="text-[11px] text-slate-500 mt-1 px-2">
-              Name, personality sliders, interests, speaking style.
+              Avatar Studio — pick 2D / 3D / VRM, upload a model, set the personality.
             </div>
           </button>
         </div>
       </Card>
-
-      {editing && (
-        <CharacterEditor
-          draft={editing.draft}
-          takenIds={takenIds}
-          editingCustomId={editing.existingId}
-          onSave={handleSave}
-          onDelete={editing.existingId ? handleDelete : undefined}
-          onCancel={() => setEditing(null)}
-        />
-      )}
     </>
   )
 }

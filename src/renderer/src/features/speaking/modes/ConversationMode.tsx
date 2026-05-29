@@ -79,8 +79,10 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
 
   const accent = profile.settings.accent
   const micMode: MicMode = profile.settings.micMode
-  // Avatar mode is chosen in Settings → Companion now (not the chat header).
-  const avatarMode: AvatarMode = profile.settings.avatarMode === '3d' ? '3d' : '2d'
+  const activeCharacter = resolveCharacter(profile, profile.settings.characterId)
+  // The avatar follows the selected companion's own type (set in Avatar Studio).
+  const avatarKind = activeCharacter?.avatarKind ?? (profile.settings.avatarMode === '3d' ? '3d' : '2d')
+  const avatarMode: AvatarMode = avatarKind === '2d' ? '2d' : '3d'
 
   const { speaking, currentVisemeWeight, speak, cancel } = useTTS({
     accent,
@@ -89,8 +91,6 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
   })
 
   const { streaming, error: chatError, send, abort: abortChat } = useChatStream('')
-
-  const activeCharacter = resolveCharacter(profile, profile.settings.characterId)
 
   // Phase 8 — grow the bond a little after each completed exchange, persisting
   // to the profile (reads latest store state so repeated turns don't stale-out).
@@ -208,7 +208,7 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
           onTopicChange={onTopicChange}
           statusLabel={statusLabel(speaking, streaming, stt.state.listening)}
           listening={stt.state.listening}
-          vrmUrl={activeCharacter?.vrmUrl || profile.settings.vrmModelUrl || undefined}
+          vrmUrl={avatarKind === 'vrm' ? activeCharacter?.vrmUrl || profile.settings.vrmModelUrl || undefined : undefined}
           appearance={avatarAppearance}
           portraitUrl={avatarPortrait}
         />
