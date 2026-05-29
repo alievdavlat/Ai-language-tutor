@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { useTargetLanguage } from '../../lib/language'
+import { bandFromDob, BAND_LABEL } from '../../lib/age'
 import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
 import {
   IconBook,
@@ -57,6 +58,58 @@ function MediaTile({ item }: { item: { kind: string; title: string; sub: string;
   )
 }
 
+function AgeBandCard(): JSX.Element {
+  const profile = useAppStore((s) => s.profile)
+  const setProfile = useAppStore((s) => s.setProfile)
+  const band = bandFromDob(profile?.dateOfBirth)
+  const [editing, setEditing] = useState(false)
+  const [dob, setDob] = useState(profile?.dateOfBirth ?? '')
+  const [saving, setSaving] = useState(false)
+
+  const save = async (): Promise<void> => {
+    if (!profile || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) return
+    setSaving(true)
+    const next = { ...profile, dateOfBirth: dob, updatedAt: new Date().toISOString() }
+    await window.api.profile.save(next)
+    setProfile(next)
+    setSaving(false)
+    setEditing(false)
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3.5 flex items-center gap-3">
+      <span className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-lg shrink-0">🛡️</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-white">Age band</p>
+        {!editing ? (
+          <p className="text-xs text-slate-400">
+            {band ? BAND_LABEL[band] : 'Not set — some features (companions, AI tutor) are locked until confirmed.'}
+          </p>
+        ) : (
+          <div className="flex items-center gap-2 mt-1.5">
+            <input
+              type="date"
+              value={dob}
+              onChange={(e) => setDob(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+              min="1900-01-01"
+              className="input !py-1.5 text-sm"
+            />
+            <button onClick={() => void save()} disabled={saving || !dob} className="btn-primary text-xs px-3 py-1.5">
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        )}
+      </div>
+      {!editing && (
+        <button onClick={() => setEditing(true)} className="btn-ghost px-3 py-1.5 text-xs shrink-0">
+          {band ? 'Change' : 'Set date of birth'}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function AccountPage(): JSX.Element {
   const navigate = useNavigate()
   const profile = useAppStore((s) => s.profile)
@@ -83,6 +136,8 @@ export default function AccountPage(): JSX.Element {
           </div>
           <button onClick={() => navigate('/settings')} className="btn-ghost px-4 py-2 text-sm shrink-0">Edit profile</button>
         </div>
+
+        <AgeBandCard />
 
         <Tabs items={TABS} active={tab} onChange={setTab} className="self-start" />
 

@@ -6,6 +6,7 @@ import { useAppStore } from '../../store/useAppStore'
 import { cn } from '../../lib/classnames'
 import PageHeader from '../../components/layout/PageHeader'
 import BackButton from '../../components/layout/BackButton'
+import { AgeGate } from '../../components/ui'
 
 type Filter = 'all' | 'english' | 'spanish' | 'french' | 'german' | 'italian' | 'portuguese' | 'asian' | 'arabic'
 
@@ -74,6 +75,7 @@ export default function CompanionGalleryPage(): JSX.Element {
   }
 
   return (
+    <AgeGate featureName="Companions" required="teen">
     <div className="h-full overflow-y-auto bg-slate-950">
       <PageHeader
         left={<BackButton to="/speaking" />}
@@ -190,5 +192,6 @@ export default function CompanionGalleryPage(): JSX.Element {
         </p>
       </div>
     </div>
+    </AgeGate>
   )
 }
