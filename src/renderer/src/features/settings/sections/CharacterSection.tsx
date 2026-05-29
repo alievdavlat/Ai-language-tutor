@@ -41,7 +41,6 @@ export default function CharacterSection({
   }
 
   const currentId = profile.settings.characterId
-  const currentAccent = profile.settings.accent
 
   // Create + edit both happen in the Avatar Studio builder now (type picker,
   // file/link upload, full parameters) — no inline modal.
@@ -64,7 +63,6 @@ export default function CharacterSection({
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {characters.map((c) => {
             const active = currentId === c.id
-            const accentMatches = currentAccent === c.accent
             const isCustom = !!c.isCustom
             const isFav = favorites.includes(c.id)
             const relScore = relationshipScore(profile.relationships, c.id)
@@ -73,103 +71,88 @@ export default function CharacterSection({
               <div
                 key={c.id}
                 className={cn(
-                  'group relative rounded-card p-4 transition overflow-hidden',
-                  active
-                    ? 'bg-grad-brand ring-2 ring-brand-300/60 shadow-glow text-white'
-                    : 'bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-slate-200'
+                  'group relative rounded-card overflow-hidden transition flex flex-col',
+                  active ? 'ring-2 ring-brand-300/60 shadow-glow' : 'border border-white/10 hover:border-white/25'
                 )}
               >
-                <button
-                  onClick={() => onPick(c.id, c.accent)}
-                  className="w-full text-left"
-                >
-                  {active && (
-                    <span className="absolute top-2 right-2 text-[10px] font-bold uppercase tracking-wider bg-white/30 rounded-pill px-2 py-0.5">
-                      Active
-                    </span>
-                  )}
-                  <div className="mb-2">
+                <button onClick={() => onPick(c.id, c.accent)} className="block text-left">
+                  {/* Full portrait */}
+                  <div
+                    className="relative w-full aspect-square"
+                    style={{
+                      background: c.cardTint
+                        ? `radial-gradient(circle at 50% 38%, #${c.cardTint} 0%, rgba(15,23,42,0.7) 92%)`
+                        : 'rgba(255,255,255,0.05)'
+                    }}
+                  >
                     {c.avatarSeed ? (
-                      <div
-                        className="w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-white/20"
-                        style={{ background: c.cardTint ? `#${c.cardTint}` : 'rgba(255,255,255,0.06)' }}
-                      >
-                        <img
-                          src={characterAvatarUrl(c, 96)}
-                          alt={c.name}
-                          className="w-full h-full"
-                          loading="lazy"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
+                      <img
+                        src={characterAvatarUrl(c, 320)}
+                        alt={c.name}
+                        className="w-full h-full object-contain p-3"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
                     ) : (
-                      <div className="text-4xl">{c.emoji}</div>
+                      <div className="absolute inset-0 flex items-center justify-center text-7xl">{c.emoji}</div>
                     )}
-                  </div>
-                  <div className="font-bold text-base truncate flex items-center gap-1.5">
-                    {c.name}
-                    {isCustom && (
-                      <span
-                        title="Custom character"
-                        className={cn(
-                          'text-[9px] font-semibold uppercase tracking-wider rounded-full px-1.5 py-0.5',
-                          active ? 'bg-white/25 text-white' : 'bg-emerald-500/20 text-emerald-200'
-                        )}
-                      >
-                        custom
+                    {active && (
+                      <span className="absolute top-2 right-2 text-[10px] font-bold uppercase tracking-wider bg-brand-500 text-white rounded-pill px-2 py-0.5">
+                        Active
                       </span>
                     )}
                   </div>
-                  <div
-                    className={cn(
-                      'text-xs mb-2 flex items-center gap-1.5 flex-wrap',
-                      active ? 'text-white/80' : 'text-slate-400'
-                    )}
-                  >
-                    <span>{ACCENT_LABELS[c.accent]} · {c.age}</span>
-                    {rel && (
-                      <span
-                        title={`Relationship: ${rel.label} (${relScore}/100)`}
-                        className={cn(
-                          'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold',
-                          active ? 'bg-white/20 text-white' : 'bg-brand-500/15 text-brand-100 border border-brand-400/20'
-                        )}
-                      >
-                        {rel.emoji} {rel.label}
-                      </span>
-                    )}
+
+                  {/* Info */}
+                  <div className={cn('p-3', active ? 'bg-grad-brand text-white' : 'bg-white/[0.03] text-slate-200')}>
+                    <div className="font-bold text-base truncate flex items-center gap-1.5">
+                      {c.name}
+                      {isCustom && (
+                        <span
+                          title="Custom character"
+                          className={cn(
+                            'text-[9px] font-semibold uppercase tracking-wider rounded-full px-1.5 py-0.5',
+                            active ? 'bg-white/25 text-white' : 'bg-emerald-500/20 text-emerald-200'
+                          )}
+                        >
+                          custom
+                        </span>
+                      )}
+                    </div>
+                    <div className={cn('text-xs mt-0.5 flex items-center gap-1.5 flex-wrap', active ? 'text-white/80' : 'text-slate-400')}>
+                      <span>{ACCENT_LABELS[c.accent]} · {c.age}</span>
+                      {rel && (
+                        <span
+                          title={`Relationship: ${rel.label} (${relScore}/100)`}
+                          className={cn(
+                            'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold',
+                            active ? 'bg-white/20 text-white' : 'bg-brand-500/15 text-brand-100 border border-brand-400/20'
+                          )}
+                        >
+                          {rel.emoji} {rel.label}
+                        </span>
+                      )}
+                    </div>
+                    <div className={cn('text-[11px] leading-snug mt-1.5 line-clamp-2', active ? 'text-white/90' : 'text-slate-400')}>
+                      {c.headline || <span className="italic text-slate-500">No headline yet.</span>}
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {(c.traits ?? []).map((t) => (
+                        <span
+                          key={t}
+                          className={cn(
+                            'text-[9px] font-semibold uppercase tracking-wider rounded-full px-1.5 py-0.5',
+                            active ? 'bg-white/20 text-white' : 'bg-white/[0.06] text-slate-400 border border-white/10'
+                          )}
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  <div
-                    className={cn(
-                      'text-[11px] leading-snug mb-2 line-clamp-2',
-                      active ? 'text-white/90' : 'text-slate-400'
-                    )}
-                  >
-                    {c.headline || <span className="italic text-slate-500">No headline yet.</span>}
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {(c.traits ?? []).map((t) => (
-                      <span
-                        key={t}
-                        className={cn(
-                          'text-[9px] font-semibold uppercase tracking-wider rounded-full px-1.5 py-0.5',
-                          active
-                            ? 'bg-white/20 text-white'
-                            : 'bg-white/[0.06] text-slate-400 border border-white/10'
-                        )}
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                  {active && !accentMatches && (
-                    <p className="text-[10px] mt-2 text-white/70">
-                      (Accent currently overridden — change in Accent section)
-                    </p>
-                  )}
                 </button>
 
-                {/* Favorite star (2.15). Sits above the card button via z + stopPropagation. */}
+                {/* Favorite star (2.15) */}
                 <button
                   type="button"
                   aria-pressed={isFav}
@@ -179,30 +162,21 @@ export default function CharacterSection({
                     toggleFavorite(c.id)
                   }}
                   className={cn(
-                    'absolute top-2 left-2 z-10 w-7 h-7 rounded-full flex items-center justify-center text-sm transition',
-                    isFav
-                      ? 'bg-amber-400/90 text-amber-950 shadow'
-                      : active
-                        ? 'bg-white/20 hover:bg-white/30 text-white'
-                        : 'bg-white/[0.06] hover:bg-white/[0.14] text-slate-300 border border-white/10'
+                    'absolute top-2 left-2 z-10 w-8 h-8 rounded-full flex items-center justify-center text-base transition',
+                    isFav ? 'bg-amber-400/90 text-amber-950 shadow' : 'bg-black/40 backdrop-blur text-white/80 hover:bg-black/60'
                   )}
                 >
                   {isFav ? '★' : '☆'}
                 </button>
 
-                {/* Per-card action: edit any companion (presets save an override). */}
+                {/* Edit → Avatar Studio */}
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
                     startEdit(c)
                   }}
-                  className={cn(
-                    'absolute bottom-2 right-2 text-[10px] font-semibold rounded-pill px-2 py-1 transition',
-                    active
-                      ? 'bg-white/20 hover:bg-white/30 text-white'
-                      : 'bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 border border-white/10'
-                  )}
+                  className="absolute bottom-2 right-2 z-10 text-[10px] font-semibold rounded-pill px-2 py-1 bg-black/40 backdrop-blur text-white/90 hover:bg-black/60 transition"
                 >
                   ✏️ Edit
                 </button>
