@@ -35,6 +35,11 @@ export interface UserSettings {
   llmModel: string
   /** SpeechSynthesisVoice.voiceURI the user picked. Empty = auto-pick by accent. */
   voiceURI: string
+  /**
+   * Phase 12 — default VRM model URL used for the 3D avatar when the active
+   * companion has none of its own. Empty = use the procedural avatar.
+   */
+  vrmModelUrl?: string
   /** Browser-level noise suppression on the mic stream (Chromium/WebRTC). */
   noiseSuppression: boolean
   /** Browser-level acoustic echo cancellation — stops speaker feedback into the mic. */

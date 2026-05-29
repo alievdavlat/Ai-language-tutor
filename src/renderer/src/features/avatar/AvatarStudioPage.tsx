@@ -53,6 +53,7 @@ export default function AvatarStudioPage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
   const setProfile = useAppStore((s) => s.setProfile)
   const [cfg, setCfg] = useState<Avatar3DConfig>(profile?.avatar3d ?? DEFAULT_AVATAR_3D)
+  const [vrmUrl, setVrmUrl] = useState<string>(profile?.settings.vrmModelUrl ?? '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -64,7 +65,12 @@ export default function AvatarStudioPage(): JSX.Element {
   const save = async (): Promise<void> => {
     if (!profile) return
     setSaving(true)
-    const next = { ...profile, avatar3d: cfg, updatedAt: new Date().toISOString() }
+    const next = {
+      ...profile,
+      avatar3d: cfg,
+      settings: { ...profile.settings, vrmModelUrl: vrmUrl.trim() || undefined },
+      updatedAt: new Date().toISOString()
+    }
     await window.api.profile.save(next)
     setProfile(next)
     setSaving(false)
@@ -152,11 +158,29 @@ export default function AvatarStudioPage(): JSX.Element {
           >
             Reset to default
           </button>
+
+          <div className="pt-4 border-t border-white/10">
+            <Field label="Realistic 3D model (VRM)">
+              <input
+                value={vrmUrl}
+                onChange={(e) => { setVrmUrl(e.target.value); setSaved(false) }}
+                placeholder="https://…/model.vrm  or  /vendor/avatars/me.vrm"
+                className="input w-full"
+              />
+              <p className="text-[10px] text-slate-500 leading-relaxed">
+                Paste a free <code>.vrm</code> model link (e.g. from{' '}
+                <span className="text-slate-300">VRoid Hub</span>) to use a full anime-style 3D
+                avatar with lip-sync in Speaking → 3D mode. A companion's own VRM (set in the
+                character editor) overrides this. Leave empty to keep the procedural avatar above.
+              </p>
+            </Field>
+          </div>
         </div>
       </div>
 
       <p className="text-[10px] text-slate-600 text-center pb-6">
-        Procedural three.js avatar — fully offline, no external assets.
+        Procedural three.js avatar is fully offline. VRM models load with lip-sync and fall back
+        to the procedural avatar if a model can't be loaded.
       </p>
     </div>
   )

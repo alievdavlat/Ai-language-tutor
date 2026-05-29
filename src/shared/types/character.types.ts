@@ -70,6 +70,12 @@ export interface CharacterInfo {
   /** Phase 9 — companion role (friend / teacher / coach / examiner / storyteller). */
   category?: CompanionCategory
   /**
+   * Phase 12 — per-companion VRM 3D model URL/path. When set, the 3D avatar
+   * renders this model (with lip-sync); otherwise it uses the procedural one
+   * or the global `settings.vrmModelUrl`.
+   */
+  vrmUrl?: string
+  /**
    * Phase 8 — the opening line the character says when a fresh conversation
    * starts. Shown (and optionally spoken) as the first assistant turn.
    */

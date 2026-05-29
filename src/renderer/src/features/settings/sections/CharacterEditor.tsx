@@ -381,6 +381,18 @@ export default function CharacterEditor({
                 This text is appended verbatim to the AI's instructions. Power users only.
               </p>
             </div>
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">3D avatar model (VRM URL)</label>
+              <Input
+                value={form.vrmUrl ?? ''}
+                onChange={(e) => update('vrmUrl', e.target.value)}
+                placeholder="https://…/model.vrm  or  /vendor/avatars/emma.vrm"
+              />
+              <p className="text-[10px] text-slate-500 mt-1">
+                Optional. A <code>.vrm</code> model (free from VRoid Hub) shown in 3D mode with lip-sync.
+                Leave empty to use the built-in procedural avatar.
+              </p>
+            </div>
           </section>
 
           {/* Greeting & sample dialogue */}

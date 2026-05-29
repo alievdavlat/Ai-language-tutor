@@ -11,6 +11,8 @@ interface AvatarPanelProps {
   onTopicChange: (topic: string) => void
   statusLabel: string
   listening?: boolean
+  /** Phase 12 — per-companion VRM model (3D mode only). */
+  vrmUrl?: string
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -28,7 +30,8 @@ export default function AvatarPanel({
   topic,
   onTopicChange,
   statusLabel,
-  listening = false
+  listening = false,
+  vrmUrl
 }: AvatarPanelProps): JSX.Element {
   const dotClass = STATUS_COLORS[statusLabel] ?? 'bg-slate-500'
   const isActive = statusLabel !== 'Ready'
@@ -50,7 +53,7 @@ export default function AvatarPanel({
 
       {/* Avatar area */}
       <div className="relative flex-1 flex items-center justify-center py-6 px-4 animate-fade-in min-h-[260px]">
-        <Avatar mode={mode} mouthOpen={mouthOpen} emotion={emotion} name={name} />
+        <Avatar mode={mode} mouthOpen={mouthOpen} emotion={emotion} name={name} vrmUrl={vrmUrl} />
       </div>
 
       {/* Bottom panel */}

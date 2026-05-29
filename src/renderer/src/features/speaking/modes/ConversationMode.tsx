@@ -195,6 +195,7 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
           onTopicChange={onTopicChange}
           statusLabel={statusLabel(speaking, streaming, stt.state.listening)}
           listening={stt.state.listening}
+          vrmUrl={activeCharacter?.vrmUrl || profile.settings.vrmModelUrl || undefined}
         />
         <ChatPanel
           turns={turns}
