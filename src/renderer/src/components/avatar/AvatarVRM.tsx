@@ -33,7 +33,7 @@ const EMOTION_EXPRESSION: Record<AvatarEmotion, string | null> = {
  * when WebGL is unavailable or the model fails to load, so the app never
  * shows a blank avatar.
  */
-export default function AvatarVRM({ mouthOpen, emotion = 'neutral', name, modelUrl }: VRMAvatarProps): JSX.Element {
+export default function AvatarVRM({ mouthOpen, emotion = 'neutral', name, appearance, modelUrl }: VRMAvatarProps): JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const rafRef = useRef<number>(0)
   const stateRef = useRef({ mouthOpen, emotion })
@@ -200,7 +200,7 @@ export default function AvatarVRM({ mouthOpen, emotion = 'neutral', name, modelU
 
   // Fall back to the procedural avatar on any failure.
   if (failed) {
-    return <Avatar3D mouthOpen={mouthOpen} emotion={emotion} name={name} />
+    return <Avatar3D mouthOpen={mouthOpen} emotion={emotion} name={name} appearance={appearance} />
   }
 
   return (

@@ -5,6 +5,7 @@ import {
   ACCENT_TO_LANG,
   ACCENT_TO_PERSONA_NAME,
   bumpRelationshipScore,
+  characterAppearance,
   relationshipScore,
   resolveCharacter
 } from '@shared/constants'
@@ -147,7 +148,11 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
   // Cloud AI (Gemini/Claude/etc) overrides the local Ollama gate.
   const aiReady = !!activeAI || localReady
   const disabled = !aiReady || streaming
-  const avatarName = useMemo(() => ACCENT_TO_PERSONA_NAME[accent], [accent])
+  const avatarName = useMemo(
+    () => activeCharacter?.name ?? ACCENT_TO_PERSONA_NAME[accent],
+    [activeCharacter, accent]
+  )
+  const avatarAppearance = useMemo(() => characterAppearance(activeCharacter), [activeCharacter])
 
   useEffect(() => {
     return () => {
@@ -196,6 +201,7 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
           statusLabel={statusLabel(speaking, streaming, stt.state.listening)}
           listening={stt.state.listening}
           vrmUrl={activeCharacter?.vrmUrl || profile.settings.vrmModelUrl || undefined}
+          appearance={avatarAppearance}
         />
         <ChatPanel
           turns={turns}

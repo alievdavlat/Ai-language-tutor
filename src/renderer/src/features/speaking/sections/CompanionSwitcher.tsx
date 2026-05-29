@@ -84,7 +84,7 @@ export default function CompanionSwitcher({ profile, onSwitch }: CompanionSwitch
       </button>
 
       {open && (
-        <div className="absolute z-30 mt-2 w-72 max-h-[60vh] overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/98 backdrop-blur-xl shadow-2xl p-2 animate-fade-in">
+        <div className="absolute z-50 mt-2 w-72 max-h-[420px] overflow-y-auto rounded-2xl border border-white/15 bg-slate-900 shadow-2xl shadow-black/60 p-2 animate-fade-in">
           {list.map((c) => {
             const isActive = c.id === active?.id
             const isFav = favorites.includes(c.id)

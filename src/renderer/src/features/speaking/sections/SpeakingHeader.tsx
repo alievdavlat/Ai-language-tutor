@@ -28,7 +28,7 @@ export default function SpeakingHeader({
   const navigate = useNavigate()
 
   return (
-    <header className="px-6 py-3 border-b border-canvas-line flex items-center justify-between backdrop-blur-xl bg-canvas-soft/40">
+    <header className="relative z-40 px-6 py-3 border-b border-canvas-line flex items-center justify-between backdrop-blur-xl bg-canvas-soft/40">
       <div className="flex items-center gap-3">
         <CompanionSwitcher profile={profile} onSwitch={onSwitch} />
         <p className="text-xs text-slate-400 hidden sm:flex items-center gap-2">

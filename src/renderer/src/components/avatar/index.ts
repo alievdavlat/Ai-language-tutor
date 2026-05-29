@@ -5,6 +5,7 @@ export { default as AvatarVRM } from './AvatarVRM'
 export type {
   AvatarMode,
   AvatarEmotion,
+  AvatarAppearance,
   AvatarProps,
   AvatarDispatcherProps,
   AvatarDispatcherExtras

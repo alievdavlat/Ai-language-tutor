@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
-import type { AvatarEmotion, AvatarProps } from './types'
+import type { AvatarAppearance, AvatarEmotion, AvatarProps } from './types'
 
 interface AvatarRefs {
   mouth: THREE.Mesh
@@ -9,6 +9,31 @@ interface AvatarRefs {
   leftEye: THREE.Mesh
   rightEye: THREE.Mesh
   body: THREE.Group
+  hair: THREE.Mesh
+  skinMat: THREE.MeshStandardMaterial
+  hairMat: THREE.MeshStandardMaterial
+  pupilMat: THREE.MeshStandardMaterial
+  outfitMat: THREE.MeshStandardMaterial
+}
+
+const DEFAULTS = {
+  skinTone: '#ffd9b8',
+  hairColor: '#3a281c',
+  eyeColor: '#1a2b4a',
+  outfitColor: '#3b4a66'
+}
+
+function applyAppearance(refs: AvatarRefs, a: AvatarAppearance | undefined): void {
+  refs.skinMat.color.set(a?.skinTone || DEFAULTS.skinTone)
+  refs.hairMat.color.set(a?.hairColor || DEFAULTS.hairColor)
+  refs.pupilMat.color.set(a?.eyeColor || DEFAULTS.eyeColor)
+  refs.outfitMat.color.set(a?.outfitColor || DEFAULTS.outfitColor)
+  // Hair style: bald hides hair; long/bun stretch it a touch so silhouettes differ.
+  const style = a?.hairStyle ?? 'short'
+  refs.hair.visible = style !== 'bald'
+  if (style === 'long') refs.hair.scale.set(1.08, 1.25, 1.12)
+  else if (style === 'bun') refs.hair.scale.set(1.12, 1.18, 1.12)
+  else refs.hair.scale.set(1.02, 1.1, 1.02)
 }
 
 interface SceneState {
@@ -44,26 +69,24 @@ function buildScene(host: HTMLDivElement): SceneState {
   const body = new THREE.Group()
   scene.add(body)
 
-  const torso = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.35, 0.45, 0.9, 24),
-    new THREE.MeshStandardMaterial({ color: 0x3b4a66, roughness: 0.7 })
-  )
+  const skinMat = new THREE.MeshStandardMaterial({ color: DEFAULTS.skinTone, roughness: 0.55 })
+  const hairMat = new THREE.MeshStandardMaterial({ color: DEFAULTS.hairColor, roughness: 0.9 })
+  const outfitMat = new THREE.MeshStandardMaterial({ color: DEFAULTS.outfitColor, roughness: 0.7 })
+  const pupilMat = new THREE.MeshStandardMaterial({ color: DEFAULTS.eyeColor, roughness: 0.3 })
+
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.9, 24), outfitMat)
   torso.position.y = 0.6
 
-  const neck = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.11, 0.12, 0.14, 16),
-    new THREE.MeshStandardMaterial({ color: 0xe0a478, roughness: 0.6 })
-  )
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.14, 16), skinMat)
   neck.position.y = 1.15
 
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffd9b8, roughness: 0.55 })
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 32, 32), skinMat)
   head.position.y = 1.5
   head.scale.set(1, 1.15, 1)
 
   const hair = new THREE.Mesh(
     new THREE.SphereGeometry(0.29, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: 0x3a281c, roughness: 0.9 })
+    hairMat
   )
   hair.position.y = 1.56
   hair.scale.set(1.02, 1.1, 1.02)
@@ -74,7 +97,6 @@ function buildScene(host: HTMLDivElement): SceneState {
   const rightEye = leftEye.clone()
   rightEye.position.x = 0.085
 
-  const pupilMat = new THREE.MeshStandardMaterial({ color: 0x1a2b4a, roughness: 0.3 })
   const leftPupil = new THREE.Mesh(new THREE.SphereGeometry(0.017, 12, 12), pupilMat)
   leftPupil.position.set(-0.085, 1.55, 0.27)
   const rightPupil = leftPupil.clone()
@@ -105,7 +127,7 @@ function buildScene(host: HTMLDivElement): SceneState {
     scene,
     camera,
     renderer,
-    refs: { mouth, leftBrow, rightBrow, leftEye, rightEye, body }
+    refs: { mouth, leftBrow, rightBrow, leftEye, rightEye, body, hair, skinMat, hairMat, pupilMat, outfitMat }
   }
 }
 
@@ -135,15 +157,16 @@ function disposeScene(state: SceneState, host: HTMLDivElement): void {
   })
 }
 
-export default function Avatar3D({ mouthOpen, emotion = 'neutral', name }: AvatarProps): JSX.Element {
+export default function Avatar3D({ mouthOpen, emotion = 'neutral', name, appearance }: AvatarProps): JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const rafRef = useRef<number>(0)
-  const stateRef = useRef({ mouthOpen, emotion })
+  const stateRef = useRef({ mouthOpen, emotion, appearance })
 
   useEffect(() => {
     stateRef.current.mouthOpen = mouthOpen
     stateRef.current.emotion = emotion
-  }, [mouthOpen, emotion])
+    stateRef.current.appearance = appearance
+  }, [mouthOpen, emotion, appearance])
 
   useEffect(() => {
     const host = hostRef.current
@@ -169,6 +192,7 @@ export default function Avatar3D({ mouthOpen, emotion = 'neutral', name }: Avata
 
       applyMouthOpen(scene.refs.mouth, stateRef.current.mouthOpen)
       applyEmotion(scene.refs, stateRef.current.emotion)
+      applyAppearance(scene.refs, stateRef.current.appearance)
 
       scene.renderer.render(scene.scene, scene.camera)
     }

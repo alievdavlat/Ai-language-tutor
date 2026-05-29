@@ -1,5 +1,5 @@
 import { cn } from '../../../lib/classnames'
-import { Avatar, type AvatarEmotion, type AvatarMode } from '../../../components/avatar'
+import { Avatar, type AvatarAppearance, type AvatarEmotion, type AvatarMode } from '../../../components/avatar'
 import { Input } from '../../../components/ui'
 
 interface AvatarPanelProps {
@@ -13,6 +13,8 @@ interface AvatarPanelProps {
   listening?: boolean
   /** Phase 12 — per-companion VRM model (3D mode only). */
   vrmUrl?: string
+  /** Phase 12 — procedural-avatar look (used in 3D mode when no VRM). */
+  appearance?: AvatarAppearance
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -31,7 +33,8 @@ export default function AvatarPanel({
   onTopicChange,
   statusLabel,
   listening = false,
-  vrmUrl
+  vrmUrl,
+  appearance
 }: AvatarPanelProps): JSX.Element {
   const dotClass = STATUS_COLORS[statusLabel] ?? 'bg-slate-500'
   const isActive = statusLabel !== 'Ready'
@@ -53,7 +56,7 @@ export default function AvatarPanel({
 
       {/* Avatar area */}
       <div className="relative flex-1 flex items-center justify-center py-6 px-4 animate-fade-in min-h-[260px]">
-        <Avatar mode={mode} mouthOpen={mouthOpen} emotion={emotion} name={name} vrmUrl={vrmUrl} />
+        <Avatar mode={mode} mouthOpen={mouthOpen} emotion={emotion} name={name} vrmUrl={vrmUrl} appearance={appearance} />
       </div>
 
       {/* Bottom panel */}

@@ -1,4 +1,9 @@
-import type { CharacterInfo, CompanionCategory, ExampleExchange } from '../types/character.types'
+import type {
+  CharacterAppearance,
+  CharacterInfo,
+  CompanionCategory,
+  ExampleExchange
+} from '../types/character.types'
 
 export type { CharacterInfo } from '../types/character.types'
 
@@ -533,11 +538,73 @@ const PRESET_CATEGORIES: Record<string, CompanionCategory> = {
   nia: 'friend'
 }
 
+/**
+ * Phase 12 fix — how each preset reads on the procedural 3D avatar so a
+ * selected companion actually looks like themselves (Emma auburn/fair, etc.),
+ * not a generic head. Characters without an entry get a deterministic look
+ * from `characterAppearance()`.
+ */
+const PRESET_APPEARANCE: Record<string, CharacterAppearance> = {
+  emma: { skinTone: '#ffe0c4', hairColor: '#b3402f', hairStyle: 'long', eyeColor: '#3b6b3b', outfitColor: '#7a3b5d' },
+  james: { skinTone: '#f1c5a0', hairColor: '#3a281c', hairStyle: 'short', eyeColor: '#1a2b4a', outfitColor: '#26303f' },
+  liam: { skinTone: '#f1c5a0', hairColor: '#a8702d', hairStyle: 'short', eyeColor: '#5a7fa8', outfitColor: '#2f5d50' },
+  priya: { skinTone: '#d9a877', hairColor: '#1c1410', hairStyle: 'long', eyeColor: '#2f2f2f', outfitColor: '#b3402f' },
+  marco: { skinTone: '#f1c5a0', hairColor: '#6b4423', hairStyle: 'short', eyeColor: '#3b6b3b', outfitColor: '#26303f' },
+  yui: { skinTone: '#ffe0c4', hairColor: '#1c1410', hairStyle: 'bun', eyeColor: '#6b4423', outfitColor: '#5a4a8a' },
+  sofia: { skinTone: '#d9a877', hairColor: '#1c1410', hairStyle: 'long', eyeColor: '#3a2a1a', outfitColor: '#b3402f' },
+  diego: { skinTone: '#d9a877', hairColor: '#3a281c', hairStyle: 'short', eyeColor: '#3a2a1a', outfitColor: '#26303f' },
+  amelie: { skinTone: '#ffe0c4', hairColor: '#6b4423', hairStyle: 'long', eyeColor: '#3b6b3b', outfitColor: '#5a4a8a' },
+  pierre: { skinTone: '#f1c5a0', hairColor: '#9b9b9b', hairStyle: 'short', eyeColor: '#1a2b4a', outfitColor: '#26303f' },
+  hans: { skinTone: '#ffe0c4', hairColor: '#d9b06a', hairStyle: 'short', eyeColor: '#5a7fa8', outfitColor: '#3b4a66' },
+  giulia: { skinTone: '#f1c5a0', hairColor: '#3a281c', hairStyle: 'long', eyeColor: '#6b4423', outfitColor: '#b3402f' },
+  beatriz: { skinTone: '#b07d56', hairColor: '#1c1410', hairStyle: 'long', eyeColor: '#2f2f2f', outfitColor: '#7a3b5d' },
+  natalia: { skinTone: '#ffe0c4', hairColor: '#d9b06a', hairStyle: 'bun', eyeColor: '#5a7fa8', outfitColor: '#26303f' },
+  min: { skinTone: '#ffe0c4', hairColor: '#1c1410', hairStyle: 'long', eyeColor: '#2f2f2f', outfitColor: '#5a4a8a' },
+  wei: { skinTone: '#f1c5a0', hairColor: '#1c1410', hairStyle: 'short', eyeColor: '#2f2f2f', outfitColor: '#26303f' },
+  layla: { skinTone: '#d9a877', hairColor: '#1c1410', hairStyle: 'long', eyeColor: '#3a2a1a', outfitColor: '#2f5d50' },
+  aisha: { skinTone: '#8d5a3c', hairColor: '#1c1410', hairStyle: 'bun', eyeColor: '#2f2f2f', outfitColor: '#5a4a8a' },
+  noah: { skinTone: '#f1c5a0', hairColor: '#6b4423', hairStyle: 'short', eyeColor: '#3b6b3b', outfitColor: '#2f5d50' },
+  zara: { skinTone: '#d9a877', hairColor: '#3a281c', hairStyle: 'long', eyeColor: '#3a2a1a', outfitColor: '#26303f' },
+  oscar: { skinTone: '#ffe0c4', hairColor: '#e8e8e8', hairStyle: 'short', eyeColor: '#5a7fa8', outfitColor: '#3b4a66' },
+  nia: { skinTone: '#5c3a26', hairColor: '#1c1410', hairStyle: 'short', eyeColor: '#2f2f2f', outfitColor: '#b3402f' }
+}
+
 for (const [id, greeting] of Object.entries(PRESET_GREETINGS)) {
   if (CHARACTERS[id]) CHARACTERS[id].greeting = greeting
 }
 for (const [id, category] of Object.entries(PRESET_CATEGORIES)) {
   if (CHARACTERS[id]) CHARACTERS[id].category = category
+}
+for (const [id, appearance] of Object.entries(PRESET_APPEARANCE)) {
+  if (CHARACTERS[id]) CHARACTERS[id].appearance = appearance
+}
+
+const SKIN_PALETTE = ['#ffe0c4', '#ffd9b8', '#f1c5a0', '#d9a877', '#b07d56', '#8d5a3c']
+const HAIR_PALETTE = ['#1c1410', '#3a281c', '#6b4423', '#a8702d', '#b3402f', '#d9b06a']
+const HAIR_SHAPES = ['short', 'long', 'bun'] as const
+
+function hashStr(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0
+  return Math.abs(h)
+}
+
+/**
+ * The procedural-avatar look for a character: its explicit `appearance` when
+ * set, otherwise a stable look derived from its seed so every companion still
+ * looks different from the others.
+ */
+export function characterAppearance(c: CharacterInfo | null | undefined): CharacterAppearance | undefined {
+  if (!c) return undefined
+  if (c.appearance) return c.appearance
+  const seed = c.avatarSeed || c.id
+  return {
+    skinTone: SKIN_PALETTE[hashStr(`${seed}-skin`) % SKIN_PALETTE.length],
+    hairColor: HAIR_PALETTE[hashStr(`${seed}-hair`) % HAIR_PALETTE.length],
+    hairStyle: HAIR_SHAPES[hashStr(`${seed}-style`) % HAIR_SHAPES.length],
+    eyeColor: '#3a2a1a',
+    outfitColor: '#3b4a66'
+  }
 }
 for (const [id, examples] of Object.entries(PRESET_EXAMPLES)) {
   if (CHARACTERS[id]) CHARACTERS[id].exampleDialogue = examples

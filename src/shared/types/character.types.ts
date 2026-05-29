@@ -46,6 +46,19 @@ export interface ExampleExchange {
   character: string
 }
 
+/**
+ * Phase 12 fix — drives the procedural 3D avatar so each companion looks
+ * distinct (Emma reads auburn/fair, James darker hair, etc.) when no VRM model
+ * is set. Colours are hex strings (with leading #).
+ */
+export interface CharacterAppearance {
+  skinTone?: string
+  hairColor?: string
+  hairStyle?: 'short' | 'long' | 'bun' | 'bald'
+  eyeColor?: string
+  outfitColor?: string
+}
+
 export interface CharacterInfo {
   id: string
   name: string
@@ -75,6 +88,8 @@ export interface CharacterInfo {
    * or the global `settings.vrmModelUrl`.
    */
   vrmUrl?: string
+  /** Phase 12 fix — look of the procedural 3D avatar (skin/hair/eye/outfit). */
+  appearance?: CharacterAppearance
   /**
    * Phase 8 — the opening line the character says when a fresh conversation
    * starts. Shown (and optionally spoken) as the first assistant turn.
