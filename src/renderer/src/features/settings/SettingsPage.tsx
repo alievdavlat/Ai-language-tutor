@@ -5,9 +5,7 @@ import { useSettingsPatch } from './hooks/useSettingsPatch'
 import AccentSection from './sections/AccentSection'
 import MicModeSection from './sections/MicModeSection'
 import CorrectionSection from './sections/CorrectionSection'
-import SpeakingRateSection from './sections/SpeakingRateSection'
-import CharacterSection from './sections/CharacterSection'
-import VoiceSection from './sections/VoiceSection'
+import CompanionWorkshop from './sections/CompanionWorkshop'
 import MicProcessingSection from './sections/MicProcessingSection'
 import STTEngineSection from './sections/STTEngineSection'
 import DangerZoneSection from './sections/DangerZoneSection'
@@ -80,22 +78,12 @@ export default function SettingsPage(): JSX.Element {
 
         {/* ── Companion ─────────────────────────────────────────────────── */}
         {tab === 'companion' && (
-          <div className="grid grid-cols-1 gap-4">
-            <CharacterSection
-              profile={profile}
-              onPick={(characterId, accent) => void patch({ characterId, accent })}
-              onCustomsChange={(customCharacters) => void patchProfile({ customCharacters })}
-            />
-            <VoiceSection
-              accent={s.accent}
-              currentVoiceURI={s.voiceURI}
-              onPick={(voiceURI) => void patch({ voiceURI })}
-            />
-            <SpeakingRateSection
-              current={s.ttsSpeed}
-              onChange={(ttsSpeed) => void patch({ ttsSpeed })}
-            />
-          </div>
+          <CompanionWorkshop
+            profile={profile}
+            onPick={(characterId, accent) => void patch({ characterId, accent })}
+            onCustomsChange={(customCharacters) => void patchProfile({ customCharacters })}
+            onPatch={(p) => void patch(p)}
+          />
         )}
 
         {/* ── Conversation ──────────────────────────────────────────────── */}
