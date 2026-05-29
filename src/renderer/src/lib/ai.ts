@@ -16,7 +16,7 @@ export function useActiveAI(): ActiveAI | null {
   if (!provider) return null
   const token = ai.tokens?.[provider.id]
   if (!token) return null
-  const modelId = ai.models?.[provider.id] || provider.models[0]?.id || ''
+  const modelId = ai.models?.[provider.id] || provider.defaultModelId || provider.models[0]?.id || ''
   return { provider, modelId, token }
 }
 

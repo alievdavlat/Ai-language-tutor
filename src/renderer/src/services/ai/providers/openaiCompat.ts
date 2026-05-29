@@ -6,12 +6,15 @@
 import type { ChatMessage } from '@shared/types'
 import type { AIProviderAdapter, ChatStreamOptions } from '../types'
 import { iterateSSE } from '../sse'
+import { humanizeAIError } from '../errors'
 
 export interface OpenAICompatConfig {
   /** Full base URL up to /v1 (or wherever the endpoint root sits). */
   baseUrl: string
   /** Optional extra headers (OpenRouter wants HTTP-Referer + X-Title). */
   extraHeaders?: Record<string, string>
+  /** Human label for error messages (e.g. "OpenAI", "Groq"). */
+  label?: string
 }
 
 export function createOpenAICompatAdapter(cfg: OpenAICompatConfig): AIProviderAdapter {
@@ -37,7 +40,7 @@ export function createOpenAICompatAdapter(cfg: OpenAICompatConfig): AIProviderAd
       })
       if (!res.ok) {
         const text = await res.text().catch(() => '')
-        throw new Error(`AI provider responded ${res.status}: ${text.slice(0, 240)}`)
+        throw new Error(humanizeAIError(cfg.label ?? 'AI provider', res.status, text))
       }
       for await (const raw of iterateSSE(res, opts.signal)) {
         // Each event is a JSON chunk in OpenAI choices[0].delta.content shape.

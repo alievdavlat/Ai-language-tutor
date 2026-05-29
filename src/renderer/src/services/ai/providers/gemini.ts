@@ -5,6 +5,7 @@
 import type { ChatMessage } from '@shared/types'
 import type { AIProviderAdapter, ChatStreamOptions } from '../types'
 import { iterateSSE } from '../sse'
+import { humanizeAIError } from '../errors'
 
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
 
@@ -44,7 +45,7 @@ export const geminiAdapter: AIProviderAdapter = {
     })
     if (!res.ok) {
       const text = await res.text().catch(() => '')
-      throw new Error(`Gemini responded ${res.status}: ${text.slice(0, 240)}`)
+      throw new Error(humanizeAIError('Gemini', res.status, text))
     }
 
     for await (const raw of iterateSSE(res, opts.signal)) {

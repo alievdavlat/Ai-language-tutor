@@ -8,6 +8,7 @@
 import type { ChatMessage } from '@shared/types'
 import type { AIProviderAdapter, ChatStreamOptions } from '../types'
 import { iterateSSE } from '../sse'
+import { humanizeAIError } from '../errors'
 
 const API = 'https://api.anthropic.com/v1/messages'
 const VERSION = '2023-06-01'
@@ -42,7 +43,7 @@ export const anthropicAdapter: AIProviderAdapter = {
     })
     if (!res.ok) {
       const text = await res.text().catch(() => '')
-      throw new Error(`Anthropic responded ${res.status}: ${text.slice(0, 240)}`)
+      throw new Error(humanizeAIError('Claude', res.status, text))
     }
 
     for await (const raw of iterateSSE(res, opts.signal)) {

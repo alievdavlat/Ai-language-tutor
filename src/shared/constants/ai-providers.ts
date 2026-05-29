@@ -41,6 +41,13 @@ export interface AIProvider {
   /** Brand accent gradient for cards. */
   cover: string
   models: AIModel[]
+  /**
+   * Model selected by default until the user picks one. Deliberately the
+   * cheapest / free-tier-friendly model — NOT the flagship — so a fresh free
+   * API key doesn't 429 on the first request (flagship/pro models usually have
+   * little or no free quota). Must be one of `models[].id`.
+   */
+  defaultModelId: string
   /** Has a free tier the app can use? Drives the "Free" filter. */
   hasFreeTier: boolean
   /** Short copy describing the free tier. */
@@ -72,6 +79,7 @@ export const AI_PROVIDERS: AIProvider[] = [
     cover: 'from-sky-500 to-blue-700',
     hasFreeTier: true,
     freeTier: 'Free 15 RPM / 1500/day · Gemini 2.5 Flash · no card needed',
+    defaultModelId: 'gemini-2.5-flash',
     models: [
       { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', inputUsdPerM: 1.25, outputUsdPerM: 10.0, contextK: 1000, tier: 'flagship' },
       { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', inputUsdPerM: 0.30, outputUsdPerM: 2.50, contextK: 1000, tier: 'fast' },
@@ -104,6 +112,7 @@ export const AI_PROVIDERS: AIProvider[] = [
     cover: 'from-amber-500 to-orange-700',
     hasFreeTier: false,
     freeTier: '$5 starter credit on signup (expires 14 days)',
+    defaultModelId: 'claude-haiku-4-5',
     models: [
       { id: 'claude-opus-4-7', label: 'Claude Opus 4.7', inputUsdPerM: 15.0, outputUsdPerM: 75.0, contextK: 1000, tier: 'flagship' },
       { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', inputUsdPerM: 3.0, outputUsdPerM: 15.0, contextK: 200, tier: 'reasoning' },
@@ -137,6 +146,7 @@ export const AI_PROVIDERS: AIProvider[] = [
     cover: 'from-emerald-500 to-teal-700',
     hasFreeTier: false,
     freeTier: '$5 credit if signed up before pricing change (varies)',
+    defaultModelId: 'gpt-4o-mini',
     models: [
       { id: 'gpt-4o', label: 'GPT-4o', inputUsdPerM: 2.50, outputUsdPerM: 10.00, contextK: 128, tier: 'flagship' },
       { id: 'gpt-4o-mini', label: 'GPT-4o Mini', inputUsdPerM: 0.15, outputUsdPerM: 0.60, contextK: 128, tier: 'fast' },
@@ -170,6 +180,7 @@ export const AI_PROVIDERS: AIProvider[] = [
     cover: 'from-violet-500 to-purple-700',
     hasFreeTier: false,
     freeTier: '$5 trial credit on signup',
+    defaultModelId: 'deepseek-chat',
     models: [
       { id: 'deepseek-chat', label: 'DeepSeek-V3.1 Chat', inputUsdPerM: 0.27, outputUsdPerM: 1.10, contextK: 128, tier: 'flagship' },
       { id: 'deepseek-reasoner', label: 'DeepSeek-R1', inputUsdPerM: 0.55, outputUsdPerM: 2.19, contextK: 64, tier: 'reasoning' }
@@ -201,6 +212,7 @@ export const AI_PROVIDERS: AIProvider[] = [
     cover: 'from-slate-500 to-slate-800',
     hasFreeTier: false,
     freeTier: '$25 free credit/mo if you opt-in to data sharing',
+    defaultModelId: 'grok-4-fast',
     models: [
       { id: 'grok-4', label: 'Grok 4', inputUsdPerM: 3.0, outputUsdPerM: 15.0, contextK: 256, tier: 'flagship' },
       { id: 'grok-4-fast', label: 'Grok 4 Fast', inputUsdPerM: 0.20, outputUsdPerM: 0.50, contextK: 256, tier: 'fast' }
@@ -232,6 +244,7 @@ export const AI_PROVIDERS: AIProvider[] = [
     cover: 'from-orange-500 to-rose-700',
     hasFreeTier: true,
     freeTier: 'Free experimental tier · ~1 req/sec on small models',
+    defaultModelId: 'mistral-small',
     models: [
       { id: 'mistral-large', label: 'Mistral Large 2', inputUsdPerM: 2.0, outputUsdPerM: 6.0, contextK: 128, tier: 'flagship' },
       { id: 'mistral-small', label: 'Mistral Small 3', inputUsdPerM: 0.20, outputUsdPerM: 0.60, contextK: 32, tier: 'fast' },
@@ -265,6 +278,7 @@ export const AI_PROVIDERS: AIProvider[] = [
     cover: 'from-fuchsia-500 to-pink-700',
     hasFreeTier: true,
     freeTier: 'Free tier · 30 req/min · Llama 3.3 70B + Qwen-32B + others',
+    defaultModelId: 'llama-3.3-70b-versatile',
     models: [
       { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B', inputUsdPerM: 0.59, outputUsdPerM: 0.79, contextK: 128, tier: 'flagship' },
       { id: 'qwen-2.5-32b', label: 'Qwen 2.5 32B', inputUsdPerM: 0.79, outputUsdPerM: 0.79, contextK: 128, tier: 'fast' },
@@ -298,6 +312,7 @@ export const AI_PROVIDERS: AIProvider[] = [
     cover: 'from-indigo-500 to-violet-700',
     hasFreeTier: true,
     freeTier: 'Free models (Llama 3.3, DeepSeek-R1) · ~20 req/min',
+    defaultModelId: 'meta-llama/llama-3.3-70b:free',
     models: [
       { id: 'meta-llama/llama-3.3-70b:free', label: 'Llama 3.3 70B (Free)', inputUsdPerM: 0, outputUsdPerM: 0, contextK: 128, tier: 'free' },
       { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek-R1 (Free)', inputUsdPerM: 0, outputUsdPerM: 0, contextK: 128, tier: 'free' },

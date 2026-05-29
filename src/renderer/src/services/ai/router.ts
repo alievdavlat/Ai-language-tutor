@@ -13,13 +13,14 @@ import { geminiAdapter } from './providers/gemini'
 import { anthropicAdapter } from './providers/anthropic'
 import { createOpenAICompatAdapter } from './providers/openaiCompat'
 
-const openAI = createOpenAICompatAdapter({ baseUrl: 'https://api.openai.com/v1' })
-const deepseek = createOpenAICompatAdapter({ baseUrl: 'https://api.deepseek.com/v1' })
-const grok = createOpenAICompatAdapter({ baseUrl: 'https://api.x.ai/v1' })
-const groq = createOpenAICompatAdapter({ baseUrl: 'https://api.groq.com/openai/v1' })
-const mistral = createOpenAICompatAdapter({ baseUrl: 'https://api.mistral.ai/v1' })
+const openAI = createOpenAICompatAdapter({ baseUrl: 'https://api.openai.com/v1', label: 'OpenAI' })
+const deepseek = createOpenAICompatAdapter({ baseUrl: 'https://api.deepseek.com/v1', label: 'DeepSeek' })
+const grok = createOpenAICompatAdapter({ baseUrl: 'https://api.x.ai/v1', label: 'Grok' })
+const groq = createOpenAICompatAdapter({ baseUrl: 'https://api.groq.com/openai/v1', label: 'Groq' })
+const mistral = createOpenAICompatAdapter({ baseUrl: 'https://api.mistral.ai/v1', label: 'Mistral' })
 const openRouter = createOpenAICompatAdapter({
   baseUrl: 'https://openrouter.ai/api/v1',
+  label: 'OpenRouter',
   extraHeaders: {
     // OpenRouter uses these for analytics + safe-listing.
     'HTTP-Referer': 'https://speakai.app',

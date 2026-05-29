@@ -37,7 +37,7 @@ interface CardProps {
 function ProviderCard({ p, ai, open, onToggleOpen, onChange }: CardProps): JSX.Element {
   const isActive = ai.activeProviderId === p.id
   const token = ai.tokens?.[p.id] ?? ''
-  const modelId = ai.models?.[p.id] ?? p.models[0].id
+  const modelId = ai.models?.[p.id] ?? p.defaultModelId ?? p.models[0].id
   const hasToken = token.trim().length > 0
   const [testing, setTesting] = useState(false)
   const [result, setResult] = useState<TestResult | null>(null)
@@ -251,7 +251,7 @@ export default function AISection({ ai, onChange }: AISectionProps): JSX.Element
               <p className="text-sm font-bold text-white">AI features unlocked</p>
               <p className="text-xs text-slate-400 mt-0.5">
                 Active provider: <b className="text-white">{AI_PROVIDERS.find((p) => p.id === cfg.activeProviderId)?.name}</b>
-                {' · '}Model: <span className="font-mono text-slate-300">{cfg.models?.[cfg.activeProviderId!] ?? AI_PROVIDERS.find((p) => p.id === cfg.activeProviderId)?.models[0].id}</span>
+                {' · '}Model: <span className="font-mono text-slate-300">{cfg.models?.[cfg.activeProviderId!] ?? AI_PROVIDERS.find((p) => p.id === cfg.activeProviderId)?.defaultModelId}</span>
               </p>
             </div>
           </div>
