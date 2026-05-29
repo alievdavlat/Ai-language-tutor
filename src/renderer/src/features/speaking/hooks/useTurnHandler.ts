@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatMessage, CorrectionStyle, GrammarMatch, UserProfile } from '@shared/types'
 import { buildCorrectionFeedback, buildSystemPrompt } from '../../../services/prompts'
 import { createId } from '../../../lib/ids'
@@ -16,6 +16,16 @@ interface UseTurnHandlerOptions {
   ) => Promise<string>
   speak: (text: string) => Promise<void>
   cancelSpeak: () => void
+  /**
+   * Phase 8 — the character's opening line. Seeded once as the first assistant
+   * turn when the conversation is empty (displayed, not auto-spoken).
+   */
+  greeting?: string
+  /**
+   * Phase 8 — fired after each completed user↔assistant exchange so the caller
+   * can grow the relationship score and persist it.
+   */
+  onExchangeComplete?: () => void
 }
 
 interface TurnHandler {
@@ -64,6 +74,16 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
   const pushTurn = useCallback((turn: ChatTurn) => {
     setTurns((prev) => [...prev, turn])
   }, [])
+
+  // Phase 8 — seed the character's greeting as the first assistant turn, once.
+  const greetingSeeded = useRef(false)
+  useEffect(() => {
+    const greeting = opts.greeting?.trim()
+    if (greetingSeeded.current || !greeting) return
+    greetingSeeded.current = true
+    pushTurn({ id: createId('assistant'), role: 'assistant', text: greeting, pending: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opts.greeting])
 
   const updateTurn = useCallback((id: string, patch: Partial<ChatTurn>) => {
     setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
@@ -119,6 +139,9 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
         { role: 'assistant', content: fullReply }
       ]
       historyRef.current = newHistory.slice(-HISTORY_WINDOW)
+
+      // Phase 8 — a real exchange happened; let the caller grow the bond.
+      optsRef.current.onExchangeComplete?.()
 
       // Wait for the streamed main reply to finish speaking before the
       // correction follow-up.

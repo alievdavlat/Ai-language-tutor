@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Accent, CharacterInfo, PersonalityTraits, UserProfile } from '@shared/types'
 import { SPEAKING_STYLES, DEFAULT_PERSONALITY } from '@shared/types'
-import { resolveCharacter } from '@shared/constants'
+import { resolveCharacter, relationshipScore, relationshipTier } from '@shared/constants'
 import { Card, Tabs, type TabItem } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 import CharacterSection from './CharacterSection'
@@ -24,6 +24,7 @@ interface CompanionWorkshopProps {
   profile: UserProfile
   onPick: (characterId: string, accent: Accent) => void
   onCustomsChange: (next: CharacterInfo[]) => void
+  onFavoritesChange: (next: string[]) => void
   onPatch: (patch: Partial<UserProfile['settings']>) => void
 }
 
@@ -33,12 +34,21 @@ const TRAIT_LABELS: { key: keyof PersonalityTraits; low: string; high: string; l
   { key: 'energy', low: 'Calm', high: 'High-energy', label: 'Energy' }
 ]
 
-function PersonaSummary({ character }: { character: CharacterInfo | null }): JSX.Element {
+function PersonaSummary({
+  character,
+  profile
+}: {
+  character: CharacterInfo | null
+  profile: UserProfile
+}): JSX.Element {
   if (!character) {
     return <Card><p className="text-sm text-slate-400">No companion selected.</p></Card>
   }
   const p = character.personality ?? DEFAULT_PERSONALITY
   const style = SPEAKING_STYLES.find((s) => s.id === (character.speakingStyle ?? 'neutral'))
+  const relScore = relationshipScore(profile.relationships, character.id)
+  const rel = relationshipTier(relScore)
+  const examples = character.exampleDialogue ?? []
   return (
     <Card>
       <div className="flex items-baseline justify-between mb-1">
@@ -85,6 +95,34 @@ function PersonaSummary({ character }: { character: CharacterInfo | null }): JSX
           </div>
         </div>
       </div>
+
+      {/* Phase 8 — relationship progress (grows as you talk) */}
+      <div className="mt-4">
+        <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+          <span className="font-semibold text-slate-300">Relationship</span>
+          <span>{rel.emoji} {rel.label} · {relScore}/100</span>
+        </div>
+        <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
+          <div className="h-full bg-grad-brand rounded-full" style={{ width: `${relScore}%` }} />
+        </div>
+        <p className="text-[10px] text-slate-500 mt-1">Grows a little each time you chat with {character.name}.</p>
+      </div>
+
+      {/* Phase 8 — greeting + example dialogue preview */}
+      {(character.greeting || examples.length > 0) && (
+        <div className="mt-4 rounded-xl bg-white/[0.04] border border-white/10 p-3 space-y-2">
+          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Sample dialogue</p>
+          {character.greeting && (
+            <p className="text-xs text-slate-200 italic">“{character.greeting}”</p>
+          )}
+          {examples.slice(0, 2).map((e, i) => (
+            <div key={i} className="text-[11px] leading-snug">
+              <p className="text-slate-400">You: {e.user}</p>
+              <p className="text-brand-100">{character.name}: {e.character}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   )
 }
@@ -98,6 +136,7 @@ export default function CompanionWorkshop({
   profile,
   onPick,
   onCustomsChange,
+  onFavoritesChange,
   onPatch
 }: CompanionWorkshopProps): JSX.Element {
   const navigate = useNavigate()
@@ -120,10 +159,15 @@ export default function CompanionWorkshop({
       </div>
 
       {tab === 'browse' && (
-        <CharacterSection profile={profile} onPick={onPick} onCustomsChange={onCustomsChange} />
+        <CharacterSection
+          profile={profile}
+          onPick={onPick}
+          onCustomsChange={onCustomsChange}
+          onFavoritesChange={onFavoritesChange}
+        />
       )}
 
-      {tab === 'persona' && <PersonaSummary character={active} />}
+      {tab === 'persona' && <PersonaSummary character={active} profile={profile} />}
 
       {tab === 'voice' && (
         <div className="grid grid-cols-1 gap-4">

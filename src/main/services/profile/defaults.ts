@@ -12,6 +12,8 @@ export function createDefaultProfile(): UserProfile {
     level: 'A2',
     weakAreas: [],
     customCharacters: [],
+    favoriteCharacterIds: [],
+    relationships: {},
     settings: {
       accent: 'us',
       correctionStyle: 'gentle',

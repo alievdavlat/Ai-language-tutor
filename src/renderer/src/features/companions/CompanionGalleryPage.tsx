@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CHARACTERS, ACCENT_LABELS, type CharacterInfo } from '@shared/constants'
+import {
+  CHARACTERS,
+  ACCENT_LABELS,
+  relationshipScore,
+  relationshipTier,
+  type CharacterInfo
+} from '@shared/constants'
 import { characterAvatarUrl } from '@shared/utils/avatar'
 import { useAppStore } from '../../store/useAppStore'
 import { cn } from '../../lib/classnames'
@@ -8,10 +14,12 @@ import PageHeader from '../../components/layout/PageHeader'
 import BackButton from '../../components/layout/BackButton'
 import { AgeGate } from '../../components/ui'
 
-type Filter = 'all' | 'english' | 'spanish' | 'french' | 'german' | 'italian' | 'portuguese' | 'asian' | 'arabic'
+type Filter = 'all' | 'favorites' | 'english' | 'spanish' | 'french' | 'german' | 'italian' | 'portuguese' | 'asian' | 'arabic'
 
 const LANGUAGE_GROUPS: Record<Filter, (c: CharacterInfo) => boolean> = {
   all: () => true,
+  // Favorites are filtered against the profile in `filtered`, not the character.
+  favorites: () => true,
   english: (c) => c.language?.startsWith('en') ?? false,
   spanish: (c) => c.language?.startsWith('es') ?? false,
   french: (c) => c.language?.startsWith('fr') ?? false,
@@ -24,6 +32,7 @@ const LANGUAGE_GROUPS: Record<Filter, (c: CharacterInfo) => boolean> = {
 
 const FILTER_LABELS: Record<Filter, string> = {
   all: 'All',
+  favorites: '★ Favorites',
   english: 'English',
   spanish: 'Español',
   french: 'Français',
@@ -47,10 +56,16 @@ export default function CompanionGalleryPage(): JSX.Element {
     return [...presets, ...customs]
   }, [profile])
 
+  const favorites = profile?.favoriteCharacterIds ?? []
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return characters.filter((c) => {
-      if (!LANGUAGE_GROUPS[filter](c)) return false
+    const matched = characters.filter((c) => {
+      if (filter === 'favorites') {
+        if (!favorites.includes(c.id)) return false
+      } else if (!LANGUAGE_GROUPS[filter](c)) {
+        return false
+      }
       if (!q) return true
       return (
         c.name.toLowerCase().includes(q) ||
@@ -59,9 +74,23 @@ export default function CompanionGalleryPage(): JSX.Element {
         (c.interests ?? []).some((t) => t.toLowerCase().includes(q))
       )
     })
-  }, [characters, filter, query])
+    // Favorites float to the front.
+    return matched.sort(
+      (a, b) => (favorites.includes(b.id) ? 1 : 0) - (favorites.includes(a.id) ? 1 : 0)
+    )
+  }, [characters, filter, query, favorites])
 
   const activeId = profile?.settings.characterId
+
+  const toggleFavorite = async (id: string): Promise<void> => {
+    if (!profile) return
+    const nextFavs = favorites.includes(id)
+      ? favorites.filter((f) => f !== id)
+      : [...favorites, id]
+    const next = { ...profile, favoriteCharacterIds: nextFavs }
+    await window.api.profile.save(next)
+    setProfile(next)
+  }
 
   const pickCompanion = async (c: CharacterInfo): Promise<void> => {
     if (!profile) return
@@ -116,6 +145,9 @@ export default function CompanionGalleryPage(): JSX.Element {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((c) => {
             const active = activeId === c.id
+            const isFav = favorites.includes(c.id)
+            const relScore = relationshipScore(profile?.relationships, c.id)
+            const rel = relScore > 0 ? relationshipTier(relScore) : null
             return (
               <article
                 key={c.id}
@@ -150,6 +182,31 @@ export default function CompanionGalleryPage(): JSX.Element {
                   {active && (
                     <span className="absolute top-2 right-2 text-[10px] font-bold uppercase tracking-widest bg-brand-500 text-white rounded-full px-2 py-0.5">
                       Active
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    aria-pressed={isFav}
+                    title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void toggleFavorite(c.id)
+                    }}
+                    className={cn(
+                      'absolute top-2 left-2 z-10 w-8 h-8 rounded-full flex items-center justify-center text-base transition',
+                      isFav
+                        ? 'bg-amber-400/90 text-amber-950 shadow'
+                        : 'bg-black/40 backdrop-blur text-white/80 hover:bg-black/60'
+                    )}
+                  >
+                    {isFav ? '★' : '☆'}
+                  </button>
+                  {rel && (
+                    <span
+                      title={`Relationship: ${rel.label} (${relScore}/100)`}
+                      className="absolute bottom-2 right-2 text-[10px] font-bold bg-black/40 backdrop-blur rounded-full px-2 py-0.5 text-white/90"
+                    >
+                      {rel.emoji} {rel.label}
                     </span>
                   )}
                   {c.language && (

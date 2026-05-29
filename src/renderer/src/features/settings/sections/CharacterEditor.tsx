@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Accent, CharacterInfo, SpeakingStyle } from '@shared/types'
+import type { Accent, CharacterInfo, ExampleExchange, SpeakingStyle } from '@shared/types'
 import { DEFAULT_PERSONALITY, SPEAKING_STYLES } from '@shared/types'
 import { ACCENTS, ACCENT_LABELS } from '@shared/constants'
 import { Button, Chip, Input, TextArea } from '../../../components/ui'
@@ -41,6 +41,8 @@ function freshDraft(): CharacterInfo {
     personality: { ...DEFAULT_PERSONALITY },
     interests: [],
     speakingStyle: 'neutral',
+    greeting: '',
+    exampleDialogue: [],
     isCustom: true
   }
 }
@@ -135,6 +137,64 @@ function ChipInput({
   )
 }
 
+function ExampleDialogueEditor({
+  value,
+  onChange
+}: {
+  value: readonly ExampleExchange[]
+  onChange: (next: ExampleExchange[]) => void
+}): JSX.Element {
+  const rows = value ?? []
+  const setRow = (i: number, patch: Partial<ExampleExchange>): void => {
+    onChange(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)))
+  }
+  const removeRow = (i: number): void => onChange(rows.filter((_, idx) => idx !== i))
+  const addRow = (): void => {
+    if (rows.length >= 3) return
+    onChange([...rows, { user: '', character: '' }])
+  }
+  return (
+    <div className="space-y-3">
+      {rows.map((r, i) => (
+        <div key={i} className="rounded-lg border border-white/10 bg-white/[0.03] p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+              Example {i + 1}
+            </span>
+            <button
+              type="button"
+              onClick={() => removeRow(i)}
+              className="text-[11px] text-red-300 hover:text-red-200"
+            >
+              Remove
+            </button>
+          </div>
+          <Input
+            value={r.user}
+            placeholder="Learner says…  e.g. “I had a long day.”"
+            onChange={(e) => setRow(i, { user: e.target.value })}
+          />
+          <Input
+            value={r.character}
+            placeholder="…and you reply  e.g. “Aw, rough one? Tell me about it.”"
+            onChange={(e) => setRow(i, { character: e.target.value })}
+          />
+        </div>
+      ))}
+      {rows.length < 3 && (
+        <Button variant="ghost" type="button" onClick={addRow}>
+          + Add example exchange
+        </Button>
+      )}
+      {rows.length === 0 && (
+        <p className="text-[11px] text-slate-500 italic">
+          Optional — 1–2 examples teach the AI this character's voice.
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function CharacterEditor({
   draft,
   takenIds,
@@ -177,7 +237,12 @@ export default function CharacterEditor({
       traits: form.traits ?? [],
       interests: form.interests ?? [],
       personality: form.personality ?? { ...DEFAULT_PERSONALITY },
-      speakingStyle: form.speakingStyle ?? 'neutral'
+      speakingStyle: form.speakingStyle ?? 'neutral',
+      greeting: form.greeting?.trim() || undefined,
+      // Drop half-empty example rows so they don't pollute the prompt.
+      exampleDialogue: (form.exampleDialogue ?? []).filter(
+        (e) => e.user.trim() && e.character.trim()
+      )
     })
   }
 
@@ -315,6 +380,30 @@ export default function CharacterEditor({
               <p className="text-[10px] text-slate-500 mt-1">
                 This text is appended verbatim to the AI's instructions. Power users only.
               </p>
+            </div>
+          </section>
+
+          {/* Greeting & sample dialogue */}
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-slate-300">Greeting &amp; sample dialogue</h3>
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">Opening greeting</label>
+              <TextArea
+                rows={2}
+                value={form.greeting ?? ''}
+                onChange={(e) => update('greeting', e.target.value)}
+                placeholder="Hey! Good to see you again — how's your day going?"
+              />
+              <p className="text-[10px] text-slate-500 mt-1">
+                Shown as the first message when a new chat opens.
+              </p>
+            </div>
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">Example exchanges</label>
+              <ExampleDialogueEditor
+                value={form.exampleDialogue ?? []}
+                onChange={(next) => update('exampleDialogue', next)}
+              />
             </div>
           </section>
 

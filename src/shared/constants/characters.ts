@@ -1,4 +1,4 @@
-import type { CharacterInfo } from '../types/character.types'
+import type { CharacterInfo, ExampleExchange } from '../types/character.types'
 
 export type { CharacterInfo } from '../types/character.types'
 
@@ -449,6 +449,69 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     cardTint: 'fb7185',
     language: 'en-NG'
   }
+}
+
+/**
+ * Phase 8 — opening greetings, attached to the presets above. Kept in a side
+ * table so the big character object stays readable. The AI shows this line as
+ * its first message when a fresh conversation starts.
+ */
+const PRESET_GREETINGS: Record<string, string> = {
+  emma: "Hey there! So good to see you. How's your day been so far?",
+  james: 'Good to see you. Shall we pick up where we left off, or start with something new?',
+  liam: 'Ayy, welcome back, mate! What have you been up to?',
+  priya: "Hello! Lovely to have you here. Ready for a little practice today?",
+  marco: "Right, let's get to work. Tell me — what did you do this weekend? Full sentences.",
+  yui: 'Yay, you came back! Ooh, I have so much to tell you — but you first!',
+  sofia: '¡Hola! Qué gusto verte. ¿Cómo va tu día?',
+  diego: 'Buenas. ¿Empezamos con un poco de conversación antes de la gramática?',
+  amelie: 'Bonjour ! Contente de te revoir. Un petit café et on discute ?',
+  pierre: 'Bonjour. Asseyez-vous — racontez-moi votre semaine, en français bien sûr.',
+  hans: 'Hallo! Schön, dass du da bist. Womit fangen wir heute an?',
+  giulia: 'Ciao! Che bello rivederti! Allora, raccontami tutto.',
+  beatriz: 'Oi! Que bom te ver de novo! Como você está?',
+  natalia: 'Здравствуйте! Рада вас видеть. С чего начнём сегодня?',
+  min: '안녕하세요! 다시 만나서 반가워요. 오늘 기분 어때요?',
+  wei: '你好！很高兴见到你。我们今天聊点什么？',
+  layla: 'أهلاً! سعيدة برؤيتك. كيف حالك اليوم؟',
+  aisha: "Hello, and welcome. Take a seat — when you're ready, we'll begin with Part 1. Could you tell me your full name?",
+  noah: "Hey, welcome back! Let's warm up — how was your week?",
+  zara: "Good to see you. Let's run through a quick scenario — imagine we're about to start a meeting.",
+  oscar: 'Ah, hello there. Pull up a chair — I was just about to tell a little story.',
+  nia: "Heyyy you're back! Okay tell me everything, what's new?"
+}
+
+/**
+ * Phase 8 — a couple of example exchanges for the core English coaches so the
+ * model nails their voice. Kept short (≤2) to stay fast on small local LLMs.
+ */
+const PRESET_EXAMPLES: Record<string, ExampleExchange[]> = {
+  emma: [
+    { user: 'I had a really long day at work.', character: 'Aw, one of those days, huh? What happened?' },
+    { user: 'I think I made a mistake there.', character: "Hey, no worries — happens to all of us. So what's next?" }
+  ],
+  james: [
+    { user: 'I want to sound more professional in emails.', character: 'A sensible goal. Let us start with your openings — they set the tone.' }
+  ],
+  liam: [
+    { user: 'I went surfing for the first time!', character: "No way, that's awesome, mate! Did you catch a wave or just swallow the ocean?" }
+  ],
+  marco: [
+    { user: 'I goed to the store yesterday.', character: 'Stop right there. It is "went", not "goed". Say the whole sentence again, correctly.' }
+  ],
+  aisha: [
+    { user: 'My hometown is very big and have many people.', character: '"…and HAS many people." Now, can you describe your hometown in a little more detail?' }
+  ],
+  yui: [
+    { user: "I'm a bit nervous about speaking.", character: "Aw don't be! It's just us hanging out. Think of it like chatting about your favorite game!" }
+  ]
+}
+
+for (const [id, greeting] of Object.entries(PRESET_GREETINGS)) {
+  if (CHARACTERS[id]) CHARACTERS[id].greeting = greeting
+}
+for (const [id, examples] of Object.entries(PRESET_EXAMPLES)) {
+  if (CHARACTERS[id]) CHARACTERS[id].exampleDialogue = examples
 }
 
 export function listPresetCharacters(): CharacterInfo[] {

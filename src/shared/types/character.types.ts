@@ -23,6 +23,18 @@ export type SpeakingStyle =
   | 'academic'
   | 'childish'
 
+/**
+ * Phase 8 — a single sample exchange that shows *how* the character talks.
+ * Injected into the system prompt as a tiny few-shot block and shown on the
+ * character's profile so the learner can preview the voice before picking.
+ */
+export interface ExampleExchange {
+  /** What the learner might say. */
+  user: string
+  /** How this character would reply. */
+  character: string
+}
+
 export interface CharacterInfo {
   id: string
   name: string
@@ -44,6 +56,16 @@ export interface CharacterInfo {
   speakingStyle?: SpeakingStyle
   /** `true` when the character was authored by the user (vs shipped preset). */
   isCustom?: boolean
+  /**
+   * Phase 8 — the opening line the character says when a fresh conversation
+   * starts. Shown (and optionally spoken) as the first assistant turn.
+   */
+  greeting?: string
+  /**
+   * Phase 8 — 1–3 sample exchanges. Seeded into the system prompt as few-shot
+   * guidance (kept short for small local LLMs) and previewable on the profile.
+   */
+  exampleDialogue?: readonly ExampleExchange[]
   /**
    * DiceBear seed for the generated portrait. When set, UIs render the SVG
    * portrait instead of the emoji. Open licence — DiceBear is MIT and the

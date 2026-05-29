@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react'
 import type { Accent, CharacterInfo, UserProfile } from '@shared/types'
-import { ACCENT_LABELS, CHARACTERS, listAllCharacters } from '@shared/constants'
+import {
+  ACCENT_LABELS,
+  CHARACTERS,
+  listAllCharacters,
+  relationshipScore,
+  relationshipTier
+} from '@shared/constants'
 import { characterAvatarUrl } from '@shared/utils/avatar'
 import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
@@ -10,6 +16,8 @@ interface CharacterSectionProps {
   profile: UserProfile
   onPick: (characterId: string, accent: Accent) => void
   onCustomsChange: (next: CharacterInfo[]) => void
+  /** Phase 8 (2.15) — persist the starred-character list. */
+  onFavoritesChange: (next: string[]) => void
 }
 
 function duplicatePresetAsDraft(preset: CharacterInfo, takenIds: ReadonlyArray<string>): CharacterInfo {
@@ -30,10 +38,24 @@ function duplicatePresetAsDraft(preset: CharacterInfo, takenIds: ReadonlyArray<s
 export default function CharacterSection({
   profile,
   onPick,
-  onCustomsChange
+  onCustomsChange,
+  onFavoritesChange
 }: CharacterSectionProps): JSX.Element {
-  const characters = useMemo(() => listAllCharacters(profile), [profile])
+  const favorites = useMemo(() => profile.favoriteCharacterIds ?? [], [profile.favoriteCharacterIds])
+  const characters = useMemo(() => {
+    const all = listAllCharacters(profile)
+    // Favorites float to the front; everything else keeps its natural order.
+    return [...all].sort(
+      (a, b) => (favorites.includes(b.id) ? 1 : 0) - (favorites.includes(a.id) ? 1 : 0)
+    )
+  }, [profile, favorites])
   const customs = profile.customCharacters ?? []
+
+  const toggleFavorite = (id: string): void => {
+    onFavoritesChange(
+      favorites.includes(id) ? favorites.filter((f) => f !== id) : [...favorites, id]
+    )
+  }
   const takenIds = useMemo(
     () => [...Object.keys(CHARACTERS), ...customs.map((c) => c.id)],
     [customs]
@@ -98,6 +120,9 @@ export default function CharacterSection({
             const active = currentId === c.id
             const accentMatches = currentAccent === c.accent
             const isCustom = !!c.isCustom
+            const isFav = favorites.includes(c.id)
+            const relScore = relationshipScore(profile.relationships, c.id)
+            const rel = relScore > 0 ? relationshipTier(relScore) : null
             return (
               <div
                 key={c.id}
@@ -151,11 +176,22 @@ export default function CharacterSection({
                   </div>
                   <div
                     className={cn(
-                      'text-xs mb-2',
+                      'text-xs mb-2 flex items-center gap-1.5 flex-wrap',
                       active ? 'text-white/80' : 'text-slate-400'
                     )}
                   >
-                    {ACCENT_LABELS[c.accent]} · {c.age}
+                    <span>{ACCENT_LABELS[c.accent]} · {c.age}</span>
+                    {rel && (
+                      <span
+                        title={`Relationship: ${rel.label} (${relScore}/100)`}
+                        className={cn(
+                          'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold',
+                          active ? 'bg-white/20 text-white' : 'bg-brand-500/15 text-brand-100 border border-brand-400/20'
+                        )}
+                      >
+                        {rel.emoji} {rel.label}
+                      </span>
+                    )}
                   </div>
                   <div
                     className={cn(
@@ -185,6 +221,27 @@ export default function CharacterSection({
                       (Accent currently overridden — change in Accent section)
                     </p>
                   )}
+                </button>
+
+                {/* Favorite star (2.15). Sits above the card button via z + stopPropagation. */}
+                <button
+                  type="button"
+                  aria-pressed={isFav}
+                  title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleFavorite(c.id)
+                  }}
+                  className={cn(
+                    'absolute top-2 left-2 z-10 w-7 h-7 rounded-full flex items-center justify-center text-sm transition',
+                    isFav
+                      ? 'bg-amber-400/90 text-amber-950 shadow'
+                      : active
+                        ? 'bg-white/20 hover:bg-white/30 text-white'
+                        : 'bg-white/[0.06] hover:bg-white/[0.14] text-slate-300 border border-white/10'
+                  )}
+                >
+                  {isFav ? '★' : '☆'}
                 </button>
 
                 {/* Per-card secondary action: Edit (custom) or Duplicate (preset). */}

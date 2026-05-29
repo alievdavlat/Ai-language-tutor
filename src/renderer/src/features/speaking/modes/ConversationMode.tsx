@@ -1,7 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { MicMode, UserProfile } from '@shared/types'
-import { ACCENT_TO_LANG, ACCENT_TO_PERSONA_NAME } from '@shared/constants'
+import {
+  ACCENT_TO_LANG,
+  ACCENT_TO_PERSONA_NAME,
+  bumpRelationshipScore,
+  relationshipScore,
+  resolveCharacter
+} from '@shared/constants'
 import { useAppStore } from '../../../store/useAppStore'
 import { useSTT } from '../../../hooks/stt'
 import { useTTS } from '../../../hooks/tts'
@@ -60,12 +66,34 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
 
   const { streaming, error: chatError, send, abort: abortChat } = useChatStream(model)
 
+  const activeCharacter = resolveCharacter(profile, profile.settings.characterId)
+
+  // Phase 8 — grow the bond a little after each completed exchange, persisting
+  // to the profile (reads latest store state so repeated turns don't stale-out).
+  const bumpRelationship = useCallback(() => {
+    const current = useAppStore.getState().profile
+    if (!current) return
+    const id = current.settings.characterId
+    if (!id || !resolveCharacter(current, id)) return
+    const next: UserProfile = {
+      ...current,
+      relationships: {
+        ...(current.relationships ?? {}),
+        [id]: bumpRelationshipScore(relationshipScore(current.relationships, id))
+      }
+    }
+    setProfile(next)
+    void window.api.profile.save(next)
+  }, [setProfile])
+
   const { turns, handleUserTurn, cancelCurrent } = useTurnHandler({
     profile,
     topic,
     sendChat: send,
     speak,
-    cancelSpeak: cancel
+    cancelSpeak: cancel,
+    greeting: activeCharacter?.greeting,
+    onExchangeComplete: bumpRelationship
   })
 
   const stt = useSTT({

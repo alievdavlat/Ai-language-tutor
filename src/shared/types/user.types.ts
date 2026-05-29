@@ -42,6 +42,17 @@ export interface UserProfile {
    */
   customCharacters?: CharacterInfo[]
   /**
+   * Phase 8 (feature 2.15) — character ids the user starred. Favorites sort
+   * to the front of the picker / gallery. Missing = none.
+   */
+  favoriteCharacterIds?: string[]
+  /**
+   * Phase 8 (feature 2.11) — per-character closeness score (0–100). Grows a
+   * little with each exchange; mapped to a relationship tier that nudges the
+   * AI's warmth in `buildSystemPrompt`. Keyed by character id.
+   */
+  relationships?: Record<string, number>
+  /**
    * COPPA-style age verification. Stored as an ISO date (yyyy-mm-dd) and
    * derived into `AgeBand` by `lib/age.ts`. Missing = unconfirmed; the gate
    * UI asks the user before they can browse companions.

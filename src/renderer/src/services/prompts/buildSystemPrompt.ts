@@ -4,7 +4,7 @@ import type {
   SpeakingStyle,
   UserProfile
 } from '@shared/types'
-import { resolveCharacter } from '@shared/constants'
+import { resolveCharacter, relationshipScore, relationshipTier } from '@shared/constants'
 import { ACCENT_PERSONA, CORRECTION_RULE, LEVEL_GUIDE } from './constants'
 
 interface BuildOptions {
@@ -54,6 +54,20 @@ function describeInterests(interests?: readonly string[]): string | null {
   return `Loves: ${interests.slice(0, 4).join(', ')}.`
 }
 
+/**
+ * Phase 8 — turn 1–2 example exchanges into a tiny few-shot block so the model
+ * mimics the character's voice. Capped at 2 to keep small CPU models fast.
+ */
+function describeExampleDialogue(character: CharacterInfo | null): string | null {
+  const ex = character?.exampleDialogue
+  if (!ex || ex.length === 0) return null
+  const sample = ex
+    .slice(0, 2)
+    .map((e) => `Them: "${e.user}" → You: "${e.character}"`)
+    .join(' ')
+  return `Match this voice — ${sample}`
+}
+
 function personaLine(profile: UserProfile, character: CharacterInfo | null): string {
   if (!character) return ACCENT_PERSONA[profile.settings.accent]
   return `You are ${character.name}, a ${character.age}-year-old from ${character.origin}. ${character.personaHint}`
@@ -86,9 +100,16 @@ export function buildSystemPrompt(profile: UserProfile, opts: BuildOptions = {})
     .filter((x): x is string => !!x)
     .join(' ')
 
+  // Phase 8 — relationship closeness nudges warmth/familiarity over time.
+  const relationshipLine = character
+    ? relationshipTier(relationshipScore(profile.relationships, character.id)).prompt
+    : null
+
   const lines: string[] = [
     personaLine(profile, character),
     extras || null,
+    relationshipLine,
+    describeExampleDialogue(character),
     'You are chatting like a warm friend on a voice call — not a formal tutor.',
     `Learner CEFR level: ${profile.level}. ${LEVEL_GUIDE[profile.level]}`,
     `Topics they like: ${interests}.${topic}${name}`,
