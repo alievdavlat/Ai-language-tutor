@@ -40,6 +40,11 @@ export interface UserSettings {
    * companion has none of its own. Empty = use the procedural avatar.
    */
   vrmModelUrl?: string
+  /**
+   * Avatar render mode for Speaking. Chosen in Settings → Companion (not from
+   * the chat header anymore). Defaults to 2D.
+   */
+  avatarMode?: '2d' | '3d'
   /** Browser-level noise suppression on the mic stream (Chromium/WebRTC). */
   noiseSuppression: boolean
   /** Browser-level acoustic echo cancellation — stops speaker feedback into the mic. */

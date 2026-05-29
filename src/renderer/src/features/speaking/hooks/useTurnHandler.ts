@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatMessage, CorrectionStyle, GrammarMatch, UserProfile } from '@shared/types'
-import { buildCorrectionFeedback, buildSystemPrompt } from '../../../services/prompts'
+import { buildCorrectionFeedback, buildSystemPrompt, naturalGrammarMatches } from '../../../services/prompts'
 import { createId } from '../../../lib/ids'
 import { useStreamingSpeaker } from '../../../hooks/useStreamingSpeaker'
 import type { ChatTurn } from '../types'
@@ -150,7 +150,10 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
       await streamer.flushAndWait()
 
       const grammar = await grammarPromise
-      const match = firstMatch(grammar?.matches)
+      // Drop pedantic rules (capitalization at start, trailing period, etc.) so
+      // casual chat like "hi emma" isn't "corrected".
+      const matches = naturalGrammarMatches(grammar?.matches ?? [])
+      const match = firstMatch(matches)
 
       if (grammar?.ok && match) {
         const mistake = userText.slice(match.offset, match.offset + match.length)
@@ -163,7 +166,7 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
           }
         })
 
-        const feedback = buildCorrectionFeedback(userText, grammar.matches)
+        const feedback = buildCorrectionFeedback(userText, matches)
         await appendCorrectionSpeech(
           profile.settings.correctionStyle,
           feedback,

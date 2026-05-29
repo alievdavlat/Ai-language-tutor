@@ -163,12 +163,29 @@ export default function CompanionWorkshop({
         <div className={cn('rounded-card border border-white/10 bg-white/[0.02] p-1.5')}>
           <Tabs items={TABS} active={tab} onChange={setTab} />
         </div>
-        <button
-          onClick={() => navigate('/avatar-studio')}
-          className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/10 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/[0.1] transition"
-        >
-          🎨 3D Avatar Studio →
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Avatar mode is chosen here now (removed from the chat header). */}
+          <div className="inline-flex items-center gap-1 p-1 rounded-pill bg-white/[0.04] border border-white/10">
+            {(['2d', '3d'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => onPatch({ avatarMode: m })}
+                className={cn(
+                  'rounded-pill px-3 py-1 text-xs font-bold transition',
+                  (s.avatarMode ?? '2d') === m ? 'bg-brand-500/30 text-white' : 'text-slate-400 hover:text-slate-200'
+                )}
+              >
+                {m.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => navigate('/avatar-studio')}
+            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/10 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/[0.1] transition"
+          >
+            🎨 3D Avatar Studio →
+          </button>
+        </div>
       </div>
 
       {tab === 'browse' && (

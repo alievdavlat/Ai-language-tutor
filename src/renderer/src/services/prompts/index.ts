@@ -1,2 +1,2 @@
 export { buildSystemPrompt } from './buildSystemPrompt'
-export { buildCorrectionFeedback } from './buildCorrectionFeedback'
+export { buildCorrectionFeedback, naturalGrammarMatches } from './buildCorrectionFeedback'

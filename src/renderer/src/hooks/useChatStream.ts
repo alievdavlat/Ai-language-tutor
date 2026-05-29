@@ -112,15 +112,11 @@ export function useChatStream(model: string): ChatStreamController {
           return
         }
 
-        // Local Ollama path — unchanged.
-        pendingRef.current.set(id, { full: '', resolve, onDelta })
-        window.api.ollama.chatStream({ id, model, messages }).catch((err: unknown) => {
-          const message = err instanceof Error ? err.message : String(err)
-          setError(message)
-          pendingRef.current.delete(id)
-          if (pendingRef.current.size === 0) setStreaming(false)
-          resolve('')
-        })
+        // Cloud-only: no provider configured → surface a clear message instead
+        // of silently failing on a (now removed) local model.
+        setError('No AI provider configured. Add one in Settings → AI.')
+        setStreaming(false)
+        resolve('')
       })
     },
     [model, aiConfig]

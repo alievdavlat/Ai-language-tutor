@@ -31,6 +31,7 @@ export function createDefaultProfile(): UserProfile {
       noiseSuppression: true,
       echoCancellation: true,
       autoGainControl: true,
+      avatarMode: '2d',
       ai: { activeProviderId: null, tokens: {}, models: {} }
     }
   }

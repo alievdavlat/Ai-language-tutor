@@ -242,8 +242,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     }
 
-    // Auto-setup runs in the background after the UI is painted.
-    void runAutoSetup(rec, ollama, set)
+    // Ollama auto-setup is disabled — the app is cloud-first (Settings → AI).
+    // No local model start/pull, so the Home "AI could not start" banner never
+    // fires. `runAutoSetup` is kept for a possible future local-mode toggle.
+    void runAutoSetup
   },
 
   refreshOllama: async () => {

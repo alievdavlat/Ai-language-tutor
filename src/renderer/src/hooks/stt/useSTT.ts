@@ -1,5 +1,4 @@
 import { useWebSpeechSTT } from './useWebSpeechSTT'
-import { useWhisperSTT } from './useWhisperSTT'
 import type { STTController, UseSTTOptions } from './types'
 import type { WhisperModelTag } from '@shared/types'
 
@@ -12,28 +11,21 @@ interface UseSTTConfig extends UseSTTOptions {
  * The two branches have identical shapes so the caller never cares which is active.
  */
 export function useSTT(config: UseSTTConfig): STTController {
+  // Local Whisper STT is deferred (transformers.js English-only models error on
+  // a `language` param, and the app is cloud-first now) — always use the
+  // browser's Web Speech engine. Keeps the dispatcher shape identical.
+  const engine: 'web-speech' = 'web-speech'
+
   const webSpeech = useWebSpeechSTT({
     mode: config.mode,
     lang: config.lang,
-    enabled: config.engine === 'web-speech' && config.enabled !== false,
+    enabled: engine === 'web-speech' && config.enabled !== false,
     onFinal: config.onFinal,
     onInterim: config.onInterim,
     onSpeechStart: config.onSpeechStart
   })
 
-  const whisper = useWhisperSTT({
-    mode: config.mode,
-    modelTag: config.whisperModel ?? 'base.en',
-    language: 'en',
-    enabled: config.engine === 'whisper-local' && config.enabled !== false,
-    onFinal: config.onFinal,
-    onInterim: config.onInterim,
-    onSpeechStart: config.onSpeechStart,
-    onEngineFallback: config.onEngineFallback,
-    micPrefs: config.micPrefs
-  })
-
-  return config.engine === 'whisper-local' ? whisper : webSpeech
+  return webSpeech
 }
 
 export type { STTController, STTState, UseSTTOptions } from './types'

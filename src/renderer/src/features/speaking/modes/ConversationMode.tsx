@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { MicMode, UserProfile } from '@shared/types'
 import {
@@ -14,11 +14,9 @@ import { useAppStore } from '../../../store/useAppStore'
 import { useSTT } from '../../../hooks/stt'
 import { useTTS } from '../../../hooks/tts'
 import { useChatStream } from '../../../hooks/useChatStream'
-import { useWhisperModelLoader } from '../../../hooks/useWhisperModelLoader'
 import { micPrefsFromSettings } from '../../../lib/audio'
 import type { AvatarEmotion, AvatarMode } from '../../../components/avatar'
 import AINotReadyBanner from '../../../components/speaking/AINotReadyBanner'
-import WhisperLoadingBanner from '../../../components/speaking/WhisperLoadingBanner'
 import SpeakingHeader from '../sections/SpeakingHeader'
 import AvatarPanel from '../sections/AvatarPanel'
 import ChatPanel from '../sections/ChatPanel'
@@ -72,19 +70,17 @@ interface ConversationModeProps {
 export default function ConversationMode({ topic, onTopicChange }: ConversationModeProps): JSX.Element {
   const navigate = useNavigate()
   const profile = useAppStore((s) => s.profile)
-  const rec = useAppStore((s) => s.rec)
-  const ollama = useAppStore((s) => s.ollama)
   const setProfile = useAppStore((s) => s.setProfile)
-  const [avatarMode, setAvatarMode] = useState<AvatarMode>('2d')
 
   // profile is guaranteed by the hub guard, but keep TS happy.
   if (!profile) {
     return <div className="h-full flex items-center justify-center text-slate-400">Loading…</div>
   }
 
-  const model = profile.settings.llmModel || rec?.llm.tag || ''
   const accent = profile.settings.accent
   const micMode: MicMode = profile.settings.micMode
+  // Avatar mode is chosen in Settings → Companion now (not the chat header).
+  const avatarMode: AvatarMode = profile.settings.avatarMode === '3d' ? '3d' : '2d'
 
   const { speaking, currentVisemeWeight, speak, cancel } = useTTS({
     accent,
@@ -92,7 +88,7 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
     voiceURI: profile.settings.voiceURI
   })
 
-  const { streaming, error: chatError, send, abort: abortChat } = useChatStream(model)
+  const { streaming, error: chatError, send, abort: abortChat } = useChatStream('')
 
   const activeCharacter = resolveCharacter(profile, profile.settings.characterId)
 
@@ -114,7 +110,7 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
     void window.api.profile.save(next)
   }, [setProfile])
 
-  const { turns, handleUserTurn, cancelCurrent, announceSwitch } = useTurnHandler({
+  const { turns, handleUserTurn, cancelCurrent } = useTurnHandler({
     profile,
     topic,
     sendChat: send,
@@ -123,26 +119,6 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
     greeting: activeCharacter?.greeting,
     onExchangeComplete: bumpRelationship
   })
-
-  // Phase 9 (2.14) — swap the active companion mid-conversation. Persists, then
-  // lets the new companion greet so the change is visible.
-  const switchCompanion = useCallback(
-    (characterId: string, nextAccent: typeof accent) => {
-      const current = useAppStore.getState().profile
-      if (!current || current.settings.characterId === characterId) return
-      if (speaking) cancel()
-      abortChat()
-      const next: UserProfile = {
-        ...current,
-        settings: { ...current.settings, characterId, accent: nextAccent }
-      }
-      setProfile(next)
-      void window.api.profile.save(next)
-      const ch = resolveCharacter(next, characterId)
-      if (ch?.greeting) announceSwitch(ch.greeting)
-    },
-    [announceSwitch, abortChat, cancel, speaking, setProfile]
-  )
 
   const stt = useSTT({
     engine: profile.settings.sttEngine,
@@ -167,13 +143,8 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
     void stt.stop()
   }
 
-  const whisperLoader = useWhisperModelLoader(profile.settings.whisperModel)
-  const whisperWarming = profile.settings.sttEngine === 'whisper-local' && !whisperLoader.loaded
-
   const activeAI = useActiveAI()
-  const localReady = !!ollama?.running && ollama.models.length > 0
-  // Cloud AI (Gemini/Claude/etc) overrides the local Ollama gate.
-  const aiReady = !!activeAI || localReady
+  const aiReady = !!activeAI
   const disabled = !aiReady || streaming
   const avatarName = useMemo(
     () => activeCharacter?.name ?? ACCENT_TO_PERSONA_NAME[accent],
@@ -207,17 +178,10 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
         profile={profile}
         level={profile.level}
         correctionStyle={profile.settings.correctionStyle}
-        avatarMode={avatarMode}
-        onAvatarModeChange={setAvatarMode}
         callEnabled={aiReady}
-        onSwitch={switchCompanion}
       />
 
       {!aiReady && <AINotReadyBanner />}
-
-      {whisperWarming && (
-        <WhisperLoadingBanner progress={Math.round(whisperLoader.progress * 100)} error={whisperLoader.error} />
-      )}
 
       {chatError && (
         <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-2.5 text-xs text-red-200 flex items-center justify-between gap-3">
