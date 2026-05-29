@@ -31,7 +31,7 @@ export async function testProvider(opts: {
         { role: 'system', content: 'You are a connectivity test. Reply with exactly: "ok".' },
         { role: 'user', content: 'ping' }
       ],
-      { ...opts, signal: ac.signal, maxTokens: 8, temperature: 0 }
+      { ...opts, signal: ac.signal, maxTokens: 32, temperature: 0 }
     )) {
       preview += delta
       if (preview.length >= 8) break

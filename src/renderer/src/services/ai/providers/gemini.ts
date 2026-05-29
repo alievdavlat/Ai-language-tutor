@@ -31,7 +31,12 @@ export const geminiAdapter: AIProviderAdapter = {
       contents,
       generationConfig: {
         temperature: opts.temperature ?? 0.7,
-        maxOutputTokens: opts.maxTokens ?? 800
+        maxOutputTokens: opts.maxTokens ?? 800,
+        // Gemini 2.5 models think by default and would spend a small
+        // maxOutputTokens budget entirely on hidden reasoning — returning an
+        // empty text response. Disabling thinking (budget 0) makes them reply
+        // directly, which is also lower-latency for a voice companion.
+        thinkingConfig: { thinkingBudget: 0 }
       }
     }
     if (system) body.systemInstruction = { parts: [{ text: system }] }
