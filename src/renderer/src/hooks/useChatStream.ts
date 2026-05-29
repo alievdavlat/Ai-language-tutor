@@ -70,7 +70,13 @@ export function useChatStream(model: string): ChatStreamController {
       const activeProviderId = aiConfig?.activeProviderId as AIProviderId | undefined
       const token = activeProviderId ? aiConfig?.tokens?.[activeProviderId] : undefined
       const provider = activeProviderId ? getProvider(activeProviderId) : undefined
-      const cloudModel = activeProviderId ? aiConfig?.models?.[activeProviderId] : undefined
+      // The user may have activated a provider without explicitly choosing a
+      // model — fall back to the provider's default (same as useActiveAI), so
+      // chat actually routes to the cloud instead of silently dropping to the
+      // local Ollama path ("No response from the local model").
+      const cloudModel = provider
+        ? aiConfig?.models?.[provider.id] || provider.defaultModelId || provider.models[0]?.id
+        : undefined
       const useCloud = !!(provider && token && cloudModel)
 
       return new Promise<string>((resolve) => {

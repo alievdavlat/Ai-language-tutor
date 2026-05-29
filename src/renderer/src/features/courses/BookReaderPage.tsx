@@ -99,7 +99,7 @@ export default function BookReaderPage(): JSX.Element {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="px-6 py-6 max-w-3xl mx-auto flex flex-col gap-5">
+        <div className="px-6 py-6 w-full flex flex-col gap-5">
           {/* Video strip */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 flex items-center gap-3">
             <div className="relative w-32 h-20 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center shrink-0">

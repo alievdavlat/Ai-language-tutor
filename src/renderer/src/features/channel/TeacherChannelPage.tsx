@@ -72,7 +72,7 @@ export default function TeacherChannelPage(): JSX.Element {
         <div aria-hidden className="absolute -top-10 right-10 w-60 h-60 rounded-full bg-white/10 blur-3xl" />
       </div>
 
-      <div className="px-6 max-w-5xl mx-auto">
+      <div className="px-6 w-full">
         {/* Header */}
         <div className="flex items-end gap-4 -mt-10">
           <div className="ring-4 ring-canvas rounded-full">

@@ -420,7 +420,7 @@ function ResultScreen({ scoring, transcript }: { scoring: IeltsScoreResult; tran
   const navigate = useNavigate()
   return (
     <div className="h-full w-full overflow-y-auto bg-slate-950">
-      <div className="max-w-3xl mx-auto px-6 py-10 flex flex-col gap-6">
+      <div className="w-full px-6 py-10 flex flex-col gap-6">
         <div className="rounded-card border border-emerald-400/30 bg-gradient-to-br from-emerald-500/15 to-brand-500/15 p-8 text-center">
           <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold">Mock complete</p>
           <p className="text-6xl font-black text-white mt-2">Band {scoring.overall.toFixed(1)}</p>

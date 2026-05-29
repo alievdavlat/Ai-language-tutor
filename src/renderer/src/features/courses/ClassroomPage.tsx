@@ -94,7 +94,7 @@ export default function ClassroomPage(): JSX.Element {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 max-w-6xl mx-auto">
+        <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 w-full">
           {/* Main */}
           <div className="flex flex-col gap-5">
             {/* Video */}

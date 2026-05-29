@@ -95,7 +95,7 @@ export default function LivePage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-6xl mx-auto w-full flex flex-col gap-6">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-6">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Live</h1>

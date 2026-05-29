@@ -120,7 +120,7 @@ export default function AccountPage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-6">
         {/* Profile header */}
         <div className="flex items-center gap-4">
           <AvatarCircle name={displayName} size="lg" className="!w-20 !h-20 !text-2xl" />

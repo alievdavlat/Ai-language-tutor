@@ -81,7 +81,7 @@ export default function VocabularyPage(): JSX.Element {
   const TRENDING = getTrendingDecksForLanguage(lang.code)
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-6xl mx-auto w-full flex flex-col gap-6">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{lang.flag} {lang.name} vocabulary</p>

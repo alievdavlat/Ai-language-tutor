@@ -69,7 +69,7 @@ export default function TeacherDashboardPage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-5xl mx-auto w-full flex flex-col gap-6">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-center gap-3">
           <AvatarCircle name={myName} size="md" />

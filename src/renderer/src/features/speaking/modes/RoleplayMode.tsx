@@ -60,7 +60,7 @@ export default function RoleplayMode({ onPick }: RoleplayModeProps): JSX.Element
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-5xl mx-auto w-full flex flex-col gap-6">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-6">
         <p className="text-sm text-slate-400">
           Pick a situation — the AI plays the other person and you complete the goals.
         </p>

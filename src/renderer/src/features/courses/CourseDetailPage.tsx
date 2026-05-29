@@ -87,7 +87,7 @@ export default function CourseDetailPage(): JSX.Element {
         <button onClick={() => navigate(-1)} className="text-white/80 hover:text-white transition mb-4">
           <IconChevronLeft className="w-5 h-5" />
         </button>
-        <div className="max-w-5xl mx-auto">
+        <div className="w-full">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] font-bold uppercase tracking-wider bg-black/30 text-white rounded-full px-2 py-1">{COURSE.level}</span>
             <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-400/90 text-black rounded-full px-2 py-1">
@@ -107,7 +107,7 @@ export default function CourseDetailPage(): JSX.Element {
         </div>
       </div>
 
-      <div className="px-6 py-6 max-w-5xl mx-auto">
+      <div className="px-6 py-6 w-full">
         {/* Action row */}
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => navigate('/learn/lesson')} className="btn-primary px-8 py-3">

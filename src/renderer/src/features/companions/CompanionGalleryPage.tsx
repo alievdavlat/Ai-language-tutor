@@ -117,7 +117,7 @@ export default function CompanionGalleryPage(): JSX.Element {
         subtitle="Pick a partner for your next conversation. Diverse voices, accents, registers."
       />
 
-      <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col gap-6">
+      <div className="w-full px-6 py-6 flex flex-col gap-6">
         {/* Search + filters */}
         <div className="flex flex-col sm:flex-row gap-3">
           <input

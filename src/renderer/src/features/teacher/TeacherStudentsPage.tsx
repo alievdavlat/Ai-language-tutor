@@ -76,7 +76,7 @@ export default function TeacherStudentsPage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-5xl mx-auto w-full flex flex-col gap-5">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-5">
         <PageHeader
           eyebrow="Teacher · Students"
           title="Your students"

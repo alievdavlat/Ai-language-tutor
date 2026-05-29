@@ -156,7 +156,7 @@ export default function ExplorePage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-6xl mx-auto w-full flex flex-col gap-5">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-5">
         {/* Hero */}
         <div className="rounded-card bg-gradient-to-br from-brand-500/20 via-violet-500/15 to-pink-500/15 border border-white/10 p-6">
           <p className="text-[11px] uppercase tracking-widest text-brand-200 font-bold">Discover · {lang.flag} {lang.name}</p>

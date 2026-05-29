@@ -90,7 +90,7 @@ export default function AvatarStudioPage(): JSX.Element {
         }
       />
 
-      <div className="max-w-5xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+      <div className="w-full px-6 py-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
         {/* Live preview */}
         <div className="rounded-3xl border border-white/10 overflow-hidden bg-black/30 min-h-[420px]">
           <AvatarStudioCanvas config={cfg} />

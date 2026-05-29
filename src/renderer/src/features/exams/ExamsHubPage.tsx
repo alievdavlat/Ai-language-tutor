@@ -145,7 +145,7 @@ export default function ExamsHubPage(): JSX.Element {
   const exams = EXAMS.filter((e) => langExams.some((x) => x.id === e.id))
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-7">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-7">
         <div>
           <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{lang.flag} Learning {lang.name}</p>
           <h1 className="text-2xl font-bold tracking-tight mt-0.5">Exams &amp; tests</h1>

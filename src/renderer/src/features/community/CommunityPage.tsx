@@ -451,7 +451,7 @@ export default function CommunityPage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-5xl mx-auto w-full">
+      <div className="px-6 py-6 w-full w-full">
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Community</h1>

@@ -81,7 +81,7 @@ export default function GrammarPage(): JSX.Element {
   const navigate = useNavigate()
   return (
     <div className="h-full overflow-y-auto pb-24">
-      <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-6">
         <PageHeader
           eyebrow="Skill tree"
           title="Grammar"

@@ -118,7 +118,7 @@ export default function AdminPage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-6xl mx-auto w-full flex flex-col gap-6">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-6">
         <PageHeader
           eyebrow="Administration"
           title="Admin panel"

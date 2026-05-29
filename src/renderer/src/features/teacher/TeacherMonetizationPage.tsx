@@ -25,7 +25,7 @@ const PRODUCTS = [
 export default function TeacherMonetizationPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-5xl mx-auto w-full flex flex-col gap-6">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-6">
         <PageHeader
           eyebrow="Teacher · Monetization"
           title="Earnings"

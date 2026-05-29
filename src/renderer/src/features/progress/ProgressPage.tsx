@@ -72,7 +72,7 @@ export default function ProgressPage(): JSX.Element {
   const navigate = useNavigate()
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
+      <div className="px-6 py-6 w-full w-full flex flex-col gap-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Your progress</h1>
           <p className="text-sm text-slate-400 mt-1">
