@@ -33,6 +33,25 @@ function statusLabel(speaking: boolean, streaming: boolean, listening: boolean):
   return 'Ready'
 }
 
+/** Friendly hint for common Web Speech / mic errors so a silent failure is visible. */
+function sttErrorHint(err: string): string {
+  switch (err) {
+    case 'not-allowed':
+    case 'service-not-allowed':
+      return 'Microphone is blocked. Allow mic access for the app, then tap the mic again.'
+    case 'audio-capture':
+      return 'No microphone found. Plug one in or check your input device.'
+    case 'no-speech':
+      return "Didn't catch anything — tap the mic and speak a little louder."
+    case 'network':
+      return 'Speech recognition needs internet (Web Speech). Check your connection, or you can still type.'
+    case 'aborted':
+      return 'Mic stopped. Tap to start again.'
+    default:
+      return `Microphone error: ${err}. You can type instead while we sort it out.`
+  }
+}
+
 /**
  * Phase 13 — the avatar's face follows the conversation: thinking while the
  * model generates, then the emotion inferred from what it actually said
@@ -202,10 +221,16 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
 
       {chatError && (
         <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-2.5 text-xs text-red-200 flex items-center justify-between gap-3">
-          <span>Something went wrong with the AI response.</span>
+          <span className="min-w-0">{chatError}</span>
           <button onClick={() => navigate('/settings')} className="text-xs underline hover:text-white shrink-0">
             Settings →
           </button>
+        </div>
+      )}
+
+      {stt.state.error && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 text-xs text-amber-200">
+          🎙 {sttErrorHint(stt.state.error)}
         </div>
       )}
 
