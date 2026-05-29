@@ -1,37 +1,37 @@
 import { useNavigate } from 'react-router-dom'
-import type { Accent, CorrectionStyle } from '@shared/types'
-import { ACCENT_LABELS, ACCENT_TO_PERSONA_NAME } from '@shared/constants'
+import type { Accent, CorrectionStyle, UserProfile } from '@shared/types'
 import { Button, Chip } from '../../../components/ui'
 import { IconPhone } from '../../../components/icons'
 import type { AvatarMode } from '../../../components/avatar'
+import CompanionSwitcher from './CompanionSwitcher'
 
 interface SpeakingHeaderProps {
-  accent: Accent
+  profile: UserProfile
   level: string
   correctionStyle: CorrectionStyle
   avatarMode: AvatarMode
   onAvatarModeChange: (mode: AvatarMode) => void
   callEnabled: boolean
+  /** Mid-chat companion switch (feature 2.14). */
+  onSwitch: (characterId: string, accent: Accent) => void
 }
 
 export default function SpeakingHeader({
-  accent,
+  profile,
   level,
   correctionStyle,
   avatarMode,
   onAvatarModeChange,
-  callEnabled
+  callEnabled,
+  onSwitch
 }: SpeakingHeaderProps): JSX.Element {
   const navigate = useNavigate()
-  const name = ACCENT_TO_PERSONA_NAME[accent]
 
   return (
-    <header className="px-6 py-4 border-b border-canvas-line flex items-center justify-between backdrop-blur-xl bg-canvas-soft/40">
-      <div>
-        <h1 className="text-lg font-bold tracking-tight">{name}</h1>
-        <p className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
-          <span>{ACCENT_LABELS[accent]}</span>
-          <span className="text-slate-600">·</span>
+    <header className="px-6 py-3 border-b border-canvas-line flex items-center justify-between backdrop-blur-xl bg-canvas-soft/40">
+      <div className="flex items-center gap-3">
+        <CompanionSwitcher profile={profile} onSwitch={onSwitch} />
+        <p className="text-xs text-slate-400 hidden sm:flex items-center gap-2">
           <span>Level {level}</span>
           <span className="text-slate-600">·</span>
           <span className="capitalize">{correctionStyle} corrections</span>

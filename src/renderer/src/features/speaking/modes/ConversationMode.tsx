@@ -86,7 +86,7 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
     void window.api.profile.save(next)
   }, [setProfile])
 
-  const { turns, handleUserTurn, cancelCurrent } = useTurnHandler({
+  const { turns, handleUserTurn, cancelCurrent, announceSwitch } = useTurnHandler({
     profile,
     topic,
     sendChat: send,
@@ -95,6 +95,26 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
     greeting: activeCharacter?.greeting,
     onExchangeComplete: bumpRelationship
   })
+
+  // Phase 9 (2.14) — swap the active companion mid-conversation. Persists, then
+  // lets the new companion greet so the change is visible.
+  const switchCompanion = useCallback(
+    (characterId: string, nextAccent: typeof accent) => {
+      const current = useAppStore.getState().profile
+      if (!current || current.settings.characterId === characterId) return
+      if (speaking) cancel()
+      abortChat()
+      const next: UserProfile = {
+        ...current,
+        settings: { ...current.settings, characterId, accent: nextAccent }
+      }
+      setProfile(next)
+      void window.api.profile.save(next)
+      const ch = resolveCharacter(next, characterId)
+      if (ch?.greeting) announceSwitch(ch.greeting)
+    },
+    [announceSwitch, abortChat, cancel, speaking, setProfile]
+  )
 
   const stt = useSTT({
     engine: profile.settings.sttEngine,
@@ -141,12 +161,13 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
   return (
     <div className="h-full flex flex-col">
       <SpeakingHeader
-        accent={accent}
+        profile={profile}
         level={profile.level}
         correctionStyle={profile.settings.correctionStyle}
         avatarMode={avatarMode}
         onAvatarModeChange={setAvatarMode}
         callEnabled={aiReady}
+        onSwitch={switchCompanion}
       />
 
       {!aiReady && <AINotReadyBanner />}

@@ -24,6 +24,17 @@ export type SpeakingStyle =
   | 'childish'
 
 /**
+ * Phase 9 — what role this companion plays. Drives the category filter in the
+ * gallery and a small badge on cards. See `COMPANION_CATEGORIES`.
+ */
+export type CompanionCategory =
+  | 'friend'
+  | 'teacher'
+  | 'coach'
+  | 'examiner'
+  | 'storyteller'
+
+/**
  * Phase 8 — a single sample exchange that shows *how* the character talks.
  * Injected into the system prompt as a tiny few-shot block and shown on the
  * character's profile so the learner can preview the voice before picking.
@@ -56,6 +67,8 @@ export interface CharacterInfo {
   speakingStyle?: SpeakingStyle
   /** `true` when the character was authored by the user (vs shipped preset). */
   isCustom?: boolean
+  /** Phase 9 — companion role (friend / teacher / coach / examiner / storyteller). */
+  category?: CompanionCategory
   /**
    * Phase 8 — the opening line the character says when a fresh conversation
    * starts. Shown (and optionally spoken) as the first assistant turn.

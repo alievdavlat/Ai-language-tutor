@@ -33,6 +33,8 @@ interface TurnHandler {
   handleUserTurn: (text: string) => Promise<void>
   /** Cancels any in-flight streaming speech — use for barge-in / route leave. */
   cancelCurrent: () => void
+  /** Phase 9 — push a one-off assistant line (e.g. new companion's greeting on switch). */
+  announceSwitch: (text: string) => void
 }
 
 function firstMatch(matches: GrammarMatch[] | undefined): GrammarMatch | null {
@@ -174,5 +176,14 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
     [pushTurn, updateTurn, streamer]
   )
 
-  return { turns, handleUserTurn, cancelCurrent: streamer.cancel }
+  const announceSwitch = useCallback(
+    (text: string) => {
+      const t = text?.trim()
+      if (!t) return
+      pushTurn({ id: createId('assistant'), role: 'assistant', text: t, pending: false })
+    },
+    [pushTurn]
+  )
+
+  return { turns, handleUserTurn, cancelCurrent: streamer.cancel, announceSwitch }
 }

@@ -1,4 +1,4 @@
-import type { CharacterInfo, ExampleExchange } from '../types/character.types'
+import type { CharacterInfo, CompanionCategory, ExampleExchange } from '../types/character.types'
 
 export type { CharacterInfo } from '../types/character.types'
 
@@ -507,8 +507,37 @@ const PRESET_EXAMPLES: Record<string, ExampleExchange[]> = {
   ]
 }
 
+/** Phase 9 — companion role per preset (feature 2.2). */
+const PRESET_CATEGORIES: Record<string, CompanionCategory> = {
+  emma: 'friend',
+  james: 'coach',
+  liam: 'friend',
+  priya: 'coach',
+  marco: 'teacher',
+  yui: 'friend',
+  sofia: 'teacher',
+  diego: 'teacher',
+  amelie: 'friend',
+  pierre: 'examiner',
+  hans: 'teacher',
+  giulia: 'friend',
+  beatriz: 'friend',
+  natalia: 'teacher',
+  min: 'friend',
+  wei: 'teacher',
+  layla: 'teacher',
+  aisha: 'examiner',
+  noah: 'coach',
+  zara: 'coach',
+  oscar: 'storyteller',
+  nia: 'friend'
+}
+
 for (const [id, greeting] of Object.entries(PRESET_GREETINGS)) {
   if (CHARACTERS[id]) CHARACTERS[id].greeting = greeting
+}
+for (const [id, category] of Object.entries(PRESET_CATEGORIES)) {
+  if (CHARACTERS[id]) CHARACTERS[id].category = category
 }
 for (const [id, examples] of Object.entries(PRESET_EXAMPLES)) {
   if (CHARACTERS[id]) CHARACTERS[id].exampleDialogue = examples

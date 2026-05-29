@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import {
   CHARACTERS,
   ACCENT_LABELS,
+  COMPANION_CATEGORIES,
+  companionCategory,
   relationshipScore,
   relationshipTier,
   type CharacterInfo
 } from '@shared/constants'
+import type { CompanionCategory } from '@shared/types'
 import { characterAvatarUrl } from '@shared/utils/avatar'
 import { useAppStore } from '../../store/useAppStore'
 import { cn } from '../../lib/classnames'
@@ -48,6 +51,7 @@ export default function CompanionGalleryPage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
   const setProfile = useAppStore((s) => s.setProfile)
   const [filter, setFilter] = useState<Filter>('all')
+  const [category, setCategory] = useState<'all' | CompanionCategory>('all')
   const [query, setQuery] = useState('')
 
   const characters = useMemo(() => {
@@ -66,6 +70,7 @@ export default function CompanionGalleryPage(): JSX.Element {
       } else if (!LANGUAGE_GROUPS[filter](c)) {
         return false
       }
+      if (category !== 'all' && c.category !== category) return false
       if (!q) return true
       return (
         c.name.toLowerCase().includes(q) ||
@@ -78,7 +83,7 @@ export default function CompanionGalleryPage(): JSX.Element {
     return matched.sort(
       (a, b) => (favorites.includes(b.id) ? 1 : 0) - (favorites.includes(a.id) ? 1 : 0)
     )
-  }, [characters, filter, query, favorites])
+  }, [characters, filter, category, query, favorites])
 
   const activeId = profile?.settings.characterId
 
@@ -141,6 +146,36 @@ export default function CompanionGalleryPage(): JSX.Element {
           <span className="ml-auto text-[11px] text-slate-500 shrink-0">{filtered.length} companions</span>
         </div>
 
+        {/* Category (role) filter */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          <button
+            onClick={() => setCategory('all')}
+            className={cn(
+              'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition border',
+              category === 'all'
+                ? 'bg-white/[0.12] border-white/20 text-white'
+                : 'bg-white/[0.03] border-white/10 text-slate-400 hover:bg-white/[0.07]'
+            )}
+          >
+            All roles
+          </button>
+          {COMPANION_CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setCategory(cat.id)}
+              title={cat.description}
+              className={cn(
+                'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition border',
+                category === cat.id
+                  ? 'bg-brand-500/20 border-brand-400/40 text-brand-100'
+                  : 'bg-white/[0.03] border-white/10 text-slate-400 hover:bg-white/[0.07]'
+              )}
+            >
+              {cat.emoji} {cat.label}
+            </button>
+          ))}
+        </div>
+
         {/* Card grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((c) => {
@@ -148,6 +183,7 @@ export default function CompanionGalleryPage(): JSX.Element {
             const isFav = favorites.includes(c.id)
             const relScore = relationshipScore(profile?.relationships, c.id)
             const rel = relScore > 0 ? relationshipTier(relScore) : null
+            const cat = companionCategory(c.category)
             return (
               <article
                 key={c.id}
@@ -223,6 +259,11 @@ export default function CompanionGalleryPage(): JSX.Element {
                     <span className="text-[10px] text-slate-400 font-mono">{c.age}</span>
                   </div>
                   <p className="text-[11px] text-slate-400 truncate">{c.origin}</p>
+                  {cat && (
+                    <span className="inline-flex w-fit items-center gap-1 mt-1 text-[10px] font-semibold rounded-full px-2 py-0.5 bg-brand-500/10 text-brand-100 border border-brand-400/20">
+                      {cat.emoji} {cat.label}
+                    </span>
+                  )}
                   <p className="text-xs text-slate-300 mt-2 line-clamp-2">{c.headline}</p>
                   <div className="flex flex-wrap gap-1 mt-auto pt-2">
                     {(c.traits ?? []).slice(0, 3).map((t) => (
