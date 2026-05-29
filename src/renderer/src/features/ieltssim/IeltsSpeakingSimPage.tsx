@@ -14,9 +14,16 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ACCENT_TO_LANG } from '@shared/constants'
 import { AIGate, ParticleOrb, SectionHeading, type OrbState } from '../../components/ui'
 import { cn } from '../../lib/classnames'
 import { useActiveAI } from '../../lib/ai'
+import { useAppStore } from '../../store/useAppStore'
+import { useTTS } from '../../hooks/tts'
+import { useSTT } from '../../hooks/stt'
+import { useChatStream } from '../../hooks/useChatStream'
+import { micPrefsFromSettings } from '../../lib/audio'
+import { scoreIeltsSpeaking, type IeltsScoreResult } from './scoring'
 import { IconBolt, IconChat, IconMic, IconStar, IconX } from '../../components/icons'
 
 type Phase = 'intro' | 'part1' | 'part2-prep' | 'part2-talk' | 'part2-followup' | 'part3' | 'done'
@@ -122,6 +129,17 @@ function CountdownTimer({ seconds, onElapsed, color = 'amber' }: { seconds: numb
 function InnerSim(): JSX.Element {
   const navigate = useNavigate()
   const ai = useActiveAI()
+  const profile = useAppStore((s) => s.profile)
+  const settings = profile?.settings
+  const accent = settings?.accent ?? 'uk'
+
+  const { speak, cancel: cancelTTS, speaking } = useTTS({
+    accent,
+    rate: settings?.ttsSpeed,
+    voiceURI: settings?.voiceURI
+  })
+  const { send } = useChatStream(settings?.llmModel ?? '')
+
   const [phase, setPhase] = useState<Phase>('intro')
   const [transcript, setTranscript] = useState<Turn[]>([])
   const [showTranscript, setShowTranscript] = useState(false)
@@ -132,6 +150,19 @@ function InnerSim(): JSX.Element {
   const part3 = useMemo(() => PART3[Math.floor(Math.random() * PART3.length)], [])
   const [card] = useState(() => PART2_CARDS[Math.floor(Math.random() * PART2_CARDS.length)])
   const [recording, setRecording] = useState(false)
+  const [scoring, setScoring] = useState<IeltsScoreResult | null>(null)
+  const [scoringState, setScoringState] = useState<'idle' | 'loading' | 'done'>('idle')
+
+  const submitRef = useRef<(t: string) => void>(() => {})
+  const stt = useSTT({
+    engine: settings?.sttEngine ?? 'web-speech',
+    mode: settings?.micMode ?? 'push-to-talk',
+    lang: ACCENT_TO_LANG[accent],
+    whisperModel: settings?.whisperModel,
+    micPrefs: settings ? micPrefsFromSettings(settings) : undefined,
+    onSpeechStart: () => { if (speaking) cancelTTS() },
+    onFinal: (t) => submitRef.current(t)
+  })
 
   // Total exam elapsed timer — same pattern as ielts.gg's "02:19 / 10:00".
   const TOTAL_BUDGET_SEC = 11 * 60 // 11 min budget per IELTS Speaking
@@ -147,7 +178,7 @@ function InnerSim(): JSX.Element {
   const pushExaminer = (text: string): void => {
     setTranscript((t) => [...t, { who: 'examiner', text }])
     setOrb('speaking')
-    setTimeout(() => setOrb('listening'), 1800)
+    void speak(text).then(() => setOrb('listening'))
   }
   const pushMe = (text: string): void => {
     setTranscript((t) => [...t, { who: 'me', text }])
@@ -165,10 +196,16 @@ function InnerSim(): JSX.Element {
   }, [])
 
   // ── Phase transitions ────────────────────────────────────────────────────
-  const acceptCannedAnswer = (): void => {
+  // Advances the structured IELTS flow using the candidate's *actual* answer.
+  // The examiner questions stay scripted (standard IELTS), the answers are real.
+  const submitAnswer = (text: string): void => {
+    const answer = text.trim()
+    if (!answer) return
+    if (recording) setRecording(false)
+    void stt.stop()
+
     if (phase === 'intro') {
-      const ans = ['My name is Aziz Karimov.', "You can call me Aziz.", 'Here you are.'][introIdx - 1] ?? 'Thanks.'
-      pushMe(ans)
+      pushMe(answer)
       if (introIdx < INTRO.length) {
         setTimeout(() => pushExaminer(INTRO[introIdx]), 900)
         setIntroIdx((i) => i + 1)
@@ -177,7 +214,7 @@ function InnerSim(): JSX.Element {
         setTimeout(() => pushExaminer(PART1[0].q), 900)
       }
     } else if (phase === 'part1') {
-      pushMe("I'm from Tashkent. It's the capital of Uzbekistan — quite green for a Central Asian city, with very hot summers.")
+      pushMe(answer)
       const next = part1Idx + 1
       if (next < PART1.length) {
         setTimeout(() => { pushExaminer(PART1[next].q); setPart1Idx(next) }, 900)
@@ -186,14 +223,14 @@ function InnerSim(): JSX.Element {
         setTimeout(() => pushExaminer("Now I'm going to give you a topic. You have one minute to prepare. You can make notes if you wish. Here's your topic:"), 600)
       }
     } else if (phase === 'part2-talk') {
-      pushMe('I would like to talk about a trip I took to Samarkand last summer. I went with two of my closest friends from university...')
-      setTimeout(() => { pushExaminer('Thank you. Did you enjoy the trip?'); setPhase('part2-followup') }, 1000)
+      pushMe(answer)
+      setTimeout(() => { pushExaminer('Thank you. Did you find that easy to talk about?'); setPhase('part2-followup') }, 1000)
     } else if (phase === 'part2-followup') {
-      pushMe('Yes, very much — it gave me a real appreciation for the Silk-Road history.')
+      pushMe(answer)
       setPhase('part3')
       setTimeout(() => pushExaminer(part3.qs[0]), 900)
     } else if (phase === 'part3') {
-      pushMe('I think travel has become popular partly because flights are cheaper and partly because social media inspires people to see new places.')
+      pushMe(answer)
       const next = part3Idx + 1
       if (next < part3.qs.length) {
         setTimeout(() => { pushExaminer(part3.qs[next]); setPart3Idx(next) }, 900)
@@ -203,21 +240,64 @@ function InnerSim(): JSX.Element {
     }
   }
 
+  // Demo shortcut — feeds a representative canned answer for the current phase.
+  const acceptCannedAnswer = (): void => {
+    const canned: Record<Phase, string> = {
+      intro: ['My name is Aziz Karimov.', 'You can call me Aziz.', 'Here you are.'][introIdx - 1] ?? 'Thanks.',
+      part1: "I'm from Tashkent. It's the capital of Uzbekistan — quite green for a Central Asian city, with very hot summers.",
+      'part2-prep': '',
+      'part2-talk': 'I would like to talk about a trip I took to Samarkand last summer. I went with two of my closest friends from university and we explored the old Silk-Road monuments together.',
+      'part2-followup': 'Yes, very much — it gave me a real appreciation for the Silk-Road history.',
+      part3: 'I think travel has become popular partly because flights are cheaper and partly because social media inspires people to see new places.',
+      done: ''
+    }
+    submitAnswer(canned[phase])
+  }
+
   const endPart2Prep = (): void => {
     setPhase('part2-talk')
     pushExaminer("Time's up. Please start speaking. You have up to two minutes.")
   }
   const endPart2Talk = (): void => { if (phase === 'part2-talk') acceptCannedAnswer() }
 
-  // Mock scoring at the end
-  const scoring = { overall: 7.0, fluency: 7.5, lexical: 6.5, grammar: 7.0, pronunciation: 7.0 }
+  submitRef.current = submitAnswer
+
+  // Real band scoring — when the interview ends, send the transcript to the LLM.
+  useEffect(() => {
+    if (phase !== 'done' || scoringState !== 'idle') return
+    setScoringState('loading')
+    void scoreIeltsSpeaking(transcript, (messages) => send(messages))
+      .then((result) => {
+        setScoring(result)
+        setScoringState('done')
+      })
+      .catch(() => setScoringState('done'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
+
+  // Teardown — stop the mic + any speech when leaving.
+  useEffect(() => {
+    return () => { void stt.stop(); cancelTTS() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Current examiner caption — bottom-right of the orb screen
   const currentExaminerText = [...transcript].reverse().find((t) => t.who === 'examiner')?.text
 
   // ── Render ───────────────────────────────────────────────────────────────
 
-  if (phase === 'done') return <ResultScreen scoring={scoring} transcript={transcript} />
+  if (phase === 'done') {
+    if (!scoring || scoringState === 'loading') {
+      return (
+        <div className="h-full w-full flex flex-col items-center justify-center gap-5 bg-slate-950">
+          <ParticleOrb state="thinking" size={220} audioLevel={0.5} />
+          <p className="text-sm font-bold text-slate-200 uppercase tracking-widest">Grading your interview…</p>
+          <p className="text-xs text-slate-500">The examiner is scoring your four IELTS criteria.</p>
+        </div>
+      )
+    }
+    return <ResultScreen scoring={scoring} transcript={transcript} />
+  }
 
   return (
     <div className="h-full w-full relative overflow-hidden bg-[radial-gradient(900px_700px_at_50%_30%,rgba(40,55,120,0.35),transparent_60%),radial-gradient(900px_700px_at_50%_120%,rgba(244,114,182,0.18),transparent_60%),#0a0e1f]">
@@ -309,7 +389,10 @@ function InnerSim(): JSX.Element {
       {/* Footer mic + Answer (voice-first; Answer is a dev-only canned-response shortcut) */}
       <footer className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
         <button
-          onClick={() => setRecording((v) => !v)}
+          onClick={() => {
+            if (recording) { setRecording(false); void stt.stop() }
+            else { if (speaking) cancelTTS(); setRecording(true); void stt.start() }
+          }}
           title={recording ? 'Stop' : 'Talk'}
           className={cn(
             'w-16 h-16 rounded-full flex items-center justify-center text-white shadow-2xl transition',
@@ -333,7 +416,7 @@ function InnerSim(): JSX.Element {
 
 // ─── Result screen (same data shape, lifted into its own component) ─────
 
-function ResultScreen({ scoring, transcript }: { scoring: { overall: number; fluency: number; lexical: number; grammar: number; pronunciation: number }; transcript: Turn[] }): JSX.Element {
+function ResultScreen({ scoring, transcript }: { scoring: IeltsScoreResult; transcript: Turn[] }): JSX.Element {
   const navigate = useNavigate()
   return (
     <div className="h-full w-full overflow-y-auto bg-slate-950">
@@ -361,10 +444,16 @@ function ResultScreen({ scoring, transcript }: { scoring: { overall: number; flu
         <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
           <SectionHeading title="Examiner feedback" subtitle="From your responses" />
           <ul className="text-sm text-slate-200 flex flex-col gap-2">
-            <li className="flex items-start gap-2"><span className="text-emerald-300">✓</span> Strong topic development on the Samarkand trip — you used personal detail well.</li>
-            <li className="flex items-start gap-2"><span className="text-amber-300">!</span> Watch for over-using "very" — substitute "extremely / particularly" for higher lexical band.</li>
-            <li className="flex items-start gap-2"><span className="text-amber-300">!</span> A few articles missing in Part 3 — "in social media" → "on social media".</li>
-            <li className="flex items-start gap-2"><span className="text-emerald-300">✓</span> Clear, confident delivery · /θ/ and /ð/ recognisably distinct.</li>
+            {scoring.feedback.map((f, i) => {
+              const positive = f.trimStart().startsWith('✓')
+              const body = f.replace(/^[✓!]\s*/, '')
+              return (
+                <li key={i} className="flex items-start gap-2">
+                  <span className={positive ? 'text-emerald-300' : 'text-amber-300'}>{positive ? '✓' : '!'}</span>
+                  {body}
+                </li>
+              )
+            })}
           </ul>
         </div>
 

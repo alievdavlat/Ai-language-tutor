@@ -2,50 +2,63 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { AIGate, AgeGate } from '../../components/ui'
+import { useVoiceConversation, type VoicePhase } from '../../hooks/useVoiceConversation'
+import { useAppStore } from '../../store/useAppStore'
 import { IconChat, IconMic, IconUsers, IconVolume, IconX } from '../../components/icons'
 
-type Phase = 'idle' | 'listening' | 'thinking' | 'speaking'
-
-const PHASE_LABEL: Record<Phase, string> = {
+const PHASE_LABEL: Record<VoicePhase, string> = {
   idle: 'Tap mic to speak',
-  listening: 'Listening...',
-  thinking: 'Thinking...',
+  listening: 'Listening…',
+  thinking: 'Thinking…',
   speaking: 'Speaking'
 }
 
-const SCRIPT: { from: 'me' | 'tutor'; text: string }[] = [
-  { from: 'tutor', text: "Hey Aziz! I'm Lily. What would you like to talk about today?" },
-  { from: 'me', text: "I want to practice ordering food at a restaurant." },
-  { from: 'tutor', text: "Great choice! Imagine I'm the waiter. Welcome to Bistro Lily, what can I get you?" }
+const SCENARIOS = [
+  { id: 'restaurant', label: 'Restaurant roleplay', brief: "You're the waiter at Bistro Lily and the learner is your customer." },
+  { id: 'free', label: 'Free conversation', brief: 'Chat freely about the learner\'s day, interests, and plans.' },
+  { id: 'interview', label: 'Job interview', brief: "You're a friendly hiring manager interviewing the learner." },
+  { id: 'travel', label: 'At the airport', brief: "You're airport staff helping the learner check in and find their gate." }
 ]
 
-export default function AITutorPage(): JSX.Element {
-  const [phase, setPhase] = useState<Phase>('speaking')
-  const [callSeconds, setCallSeconds] = useState(0)
+function buildLilyPrompt(level: string, scenarioBrief: string): string {
+  return [
+    'You are Lily, a warm, encouraging English conversation tutor on a live voice call.',
+    `The learner's level is roughly ${level}. Keep your language at or just slightly above that level.`,
+    'Speak naturally and concisely — 1 to 3 short sentences per turn, the way a real person talks on a call.',
+    'Never use markdown, bullet points, emoji, or stage directions. Output only spoken words.',
+    'Gently correct only serious mistakes, in passing, then keep the conversation flowing. Ask a follow-up question most turns.',
+    `Current activity: ${scenarioBrief}`
+  ].join(' ')
+}
+
+function InnerTutor(): JSX.Element {
   const navigate = useNavigate()
+  const profile = useAppStore((s) => s.profile)
+  const level = profile?.level ?? 'B1'
+  const [scenario, setScenario] = useState(SCENARIOS[0])
+  const [callSeconds, setCallSeconds] = useState(0)
+
+  const convo = useVoiceConversation({
+    systemPrompt: buildLilyPrompt(level, scenario.brief),
+    greeting: "Hi! I'm Lily. What would you like to talk about today?"
+  })
+
+  useEffect(() => {
+    convo.begin()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     const t = setInterval(() => setCallSeconds((s) => s + 1), 1000)
     return () => clearInterval(t)
   }, [])
 
-  // Demo: cycle phases every 4s so the UI feels alive
-  useEffect(() => {
-    const phases: Phase[] = ['speaking', 'idle', 'listening', 'thinking', 'speaking']
-    let i = 0
-    const t = setInterval(() => {
-      i = (i + 1) % phases.length
-      setPhase(phases[i])
-    }, 3500)
-    return () => clearInterval(t)
-  }, [])
-
   const mm = String(Math.floor(callSeconds / 60)).padStart(2, '0')
   const ss = String(callSeconds % 60).padStart(2, '0')
+  const phase = convo.phase
+  const lastTwo = convo.turns.slice(-2)
 
   return (
-    <AIGate featureName="AI tutor video call" description="The AI tutor needs a cloud model to listen, think, and reply in real time." fullscreen>
-    <AgeGate featureName="The AI tutor" required="teen">
     <div className="h-full w-full relative overflow-hidden bg-slate-950">
       {/* Emotion gradient backdrop */}
       <div
@@ -67,10 +80,14 @@ export default function AITutorPage(): JSX.Element {
             </div>
             <div>
               <p className="text-sm font-bold text-white">Lily · AI tutor</p>
-              <p className="text-[11px] text-slate-400">{mm}:{ss} · Restaurant roleplay</p>
+              <p className="text-[11px] text-slate-400">{mm}:{ss} · {scenario.label}</p>
             </div>
           </div>
-          <button onClick={() => navigate('/speaking')} className="rounded-full w-9 h-9 bg-white/10 hover:bg-white/15 text-white flex items-center justify-center" title="End">
+          <button
+            onClick={() => { convo.teardown(); navigate('/speaking') }}
+            className="rounded-full w-9 h-9 bg-white/10 hover:bg-white/15 text-white flex items-center justify-center"
+            title="End"
+          >
             <IconX className="w-4 h-4" />
           </button>
         </header>
@@ -78,14 +95,12 @@ export default function AITutorPage(): JSX.Element {
         {/* Avatar / orb */}
         <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
           <div className="relative">
-            {/* Rings */}
             {(phase === 'listening' || phase === 'speaking') && (
               <>
                 <span className={cn('absolute inset-0 m-auto w-56 h-56 rounded-full animate-ping opacity-30', phase === 'speaking' ? 'bg-brand-400' : 'bg-violet-400')} />
                 <span className={cn('absolute inset-0 m-auto w-48 h-48 rounded-full animate-ping opacity-40', phase === 'speaking' ? 'bg-brand-300' : 'bg-violet-300')} style={{ animationDelay: '0.3s' }} />
               </>
             )}
-            {/* Core */}
             <div className={cn(
               'relative w-44 h-44 rounded-full flex items-center justify-center text-6xl shadow-2xl ring-4 transition-all',
               phase === 'speaking' && 'ring-brand-400/40 bg-gradient-to-br from-brand-400 to-violet-500',
@@ -101,12 +116,21 @@ export default function AITutorPage(): JSX.Element {
 
           {/* Live transcript */}
           <div className="w-full max-w-md flex flex-col gap-2">
-            {SCRIPT.slice(-2).map((m, i) => (
-              <div key={i} className={cn('rounded-2xl px-4 py-2.5 text-sm', m.from === 'me' ? 'bg-white/[0.08] text-slate-200 self-end' : 'bg-brand-500/15 text-brand-100 self-start ring-1 ring-brand-400/20')}>
+            {lastTwo.map((m, i) => (
+              <div key={i} className={cn('rounded-2xl px-4 py-2.5 text-sm', m.role === 'user' ? 'bg-white/[0.08] text-slate-200 self-end' : 'bg-brand-500/15 text-brand-100 self-start ring-1 ring-brand-400/20')}>
                 {m.text}
               </div>
             ))}
+            {convo.interim && (
+              <div className="rounded-2xl px-4 py-2.5 text-sm bg-white/[0.05] text-slate-400 self-end italic">{convo.interim}</div>
+            )}
           </div>
+
+          {convo.error && (
+            <button onClick={() => navigate('/settings')} className="text-xs text-rose-300 underline">
+              AI error — check Settings → AI
+            </button>
+          )}
         </div>
 
         {/* Controls */}
@@ -115,11 +139,11 @@ export default function AITutorPage(): JSX.Element {
             <IconVolume className="w-5 h-5" />
           </button>
           <button
-            onClick={() => setPhase((p) => p === 'listening' ? 'thinking' : 'listening')}
+            onClick={() => convo.toggleMic()}
             title="Talk"
             className={cn(
               'w-20 h-20 rounded-full flex items-center justify-center text-white shadow-2xl transition',
-              phase === 'listening' ? 'bg-rose-500 ring-4 ring-rose-400/40' : 'bg-grad-brand ring-4 ring-brand-400/30 hover:brightness-110'
+              convo.listening ? 'bg-rose-500 ring-4 ring-rose-400/40' : 'bg-grad-brand ring-4 ring-brand-400/30 hover:brightness-110'
             )}
           >
             <IconMic className="w-7 h-7" />
@@ -129,20 +153,35 @@ export default function AITutorPage(): JSX.Element {
           </button>
         </footer>
 
-        {/* Side controls */}
+        {/* Scenario switcher */}
         <div className="absolute top-1/2 right-6 -translate-y-1/2 flex flex-col gap-2">
-          {[
-            { label: 'Switch scenario', Icon: IconUsers },
-            { label: 'Send a hint', Icon: IconChat }
-          ].map((c) => (
-            <button key={c.label} title={c.label} className="w-10 h-10 rounded-full bg-white/[0.06] hover:bg-white/[0.10] backdrop-blur text-slate-200 flex items-center justify-center border border-white/10">
-              <c.Icon className="w-4 h-4" />
+          {SCENARIOS.map((s) => (
+            <button
+              key={s.id}
+              title={s.label}
+              onClick={() => setScenario(s)}
+              className={cn(
+                'w-10 h-10 rounded-full backdrop-blur flex items-center justify-center border transition',
+                scenario.id === s.id
+                  ? 'bg-brand-500/30 border-brand-400/50 text-white'
+                  : 'bg-white/[0.06] hover:bg-white/[0.10] border-white/10 text-slate-200'
+              )}
+            >
+              <IconUsers className="w-4 h-4" />
             </button>
           ))}
         </div>
       </div>
     </div>
-    </AgeGate>
+  )
+}
+
+export default function AITutorPage(): JSX.Element {
+  return (
+    <AIGate featureName="AI tutor video call" description="The AI tutor needs a cloud model to listen, think, and reply in real time." fullscreen>
+      <AgeGate featureName="The AI tutor" required="teen">
+        <InnerTutor />
+      </AgeGate>
     </AIGate>
   )
 }
