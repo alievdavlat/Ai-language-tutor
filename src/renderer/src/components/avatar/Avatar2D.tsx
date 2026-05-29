@@ -4,8 +4,40 @@ function clamp(value: number, min = 0, max = 1): number {
   return Math.max(min, Math.min(max, value))
 }
 
-export default function Avatar2D({ mouthOpen, emotion = 'neutral', name }: AvatarProps): JSX.Element {
+export default function Avatar2D({ mouthOpen, emotion = 'neutral', name, portraitUrl }: AvatarProps): JSX.Element {
   const normalizedOpen = clamp(mouthOpen)
+
+  // Preferred path — show the actual selected companion's portrait so the
+  // on-screen face matches the pick, with a subtle "speaking" animation.
+  if (portraitUrl) {
+    const speaking = normalizedOpen > 0.04
+    const ringColor =
+      emotion === 'concerned' ? 'rgba(251,113,133,0.55)' : emotion === 'surprised' ? 'rgba(250,204,21,0.6)' : 'rgba(96,165,250,0.55)'
+    return (
+      <div className="relative flex flex-col items-center">
+        <div className="relative w-full max-w-[300px] aspect-square">
+          <div
+            aria-hidden
+            className="absolute inset-3 rounded-[2.5rem] blur-2xl transition-opacity duration-300"
+            style={{ background: ringColor, opacity: speaking ? 0.9 : 0.4 }}
+          />
+          <img
+            src={portraitUrl}
+            alt={name ?? 'Companion'}
+            referrerPolicy="no-referrer"
+            className="relative w-full h-full object-contain rounded-[2rem] drop-shadow-2xl"
+            style={{
+              transform: `scale(${1 + normalizedOpen * 0.05}) translateY(${-normalizedOpen * 4}px)`,
+              transition: 'transform 90ms linear'
+            }}
+          />
+        </div>
+        {name && <p className="text-sm text-slate-400 mt-2">{name}</p>}
+        <style>{`@keyframes a2dbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}`}</style>
+      </div>
+    )
+  }
+
   const surprised = emotion === 'surprised'
   const mouthHeight = (surprised ? 14 : 4) + normalizedOpen * 22
   const mouthWidth = emotion === 'happy' ? 58 : surprised ? 40 : emotion === 'concerned' ? 42 : 48

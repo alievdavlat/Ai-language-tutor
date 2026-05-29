@@ -95,7 +95,7 @@ export default function CharacterSection({
             <h2 className="font-semibold text-base">Your companion</h2>
             <p className="text-xs text-slate-500">
               Picking a character also sets the default accent and speaking style.
-              Create your own by duplicating a preset or starting fresh.
+              Tap ✏️ Edit on any companion to customise it, or “+ New” to start fresh.
             </p>
           </div>
         </div>

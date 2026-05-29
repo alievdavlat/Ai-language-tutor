@@ -15,6 +15,8 @@ interface AvatarPanelProps {
   vrmUrl?: string
   /** Phase 12 — procedural-avatar look (used in 3D mode when no VRM). */
   appearance?: AvatarAppearance
+  /** Companion portrait URL — shown as the 2D avatar. */
+  portraitUrl?: string
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -34,7 +36,8 @@ export default function AvatarPanel({
   statusLabel,
   listening = false,
   vrmUrl,
-  appearance
+  appearance,
+  portraitUrl
 }: AvatarPanelProps): JSX.Element {
   const dotClass = STATUS_COLORS[statusLabel] ?? 'bg-slate-500'
   const isActive = statusLabel !== 'Ready'
@@ -56,7 +59,7 @@ export default function AvatarPanel({
 
       {/* Avatar area */}
       <div className="relative flex-1 flex items-center justify-center py-6 px-4 animate-fade-in min-h-[260px]">
-        <Avatar mode={mode} mouthOpen={mouthOpen} emotion={emotion} name={name} vrmUrl={vrmUrl} appearance={appearance} />
+        <Avatar mode={mode} mouthOpen={mouthOpen} emotion={emotion} name={name} vrmUrl={vrmUrl} appearance={appearance} portraitUrl={portraitUrl} />
       </div>
 
       {/* Bottom panel */}

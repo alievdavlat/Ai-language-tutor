@@ -108,7 +108,28 @@ export function installDevApiMock(): void {
   if (window.api) return
 
   const chatListeners = new Set<(c: ChatStreamChunk) => void>()
-  let storedProfile = buildMockProfile()
+
+  // Persist the mock profile to localStorage so a full page refresh in the
+  // standalone preview keeps the user's edits (API key, companion, etc.) —
+  // matching how the real Electron app persists to disk.
+  const LS_PROFILE = 'speakai.devProfile'
+  const loadStored = (): UserProfile => {
+    try {
+      const raw = localStorage.getItem(LS_PROFILE)
+      if (raw) return JSON.parse(raw) as UserProfile
+    } catch {
+      /* ignore corrupt cache */
+    }
+    return buildMockProfile()
+  }
+  let storedProfile = loadStored()
+  const persist = (p: UserProfile): void => {
+    try {
+      localStorage.setItem(LS_PROFILE, JSON.stringify(p))
+    } catch {
+      /* quota / disabled — preview only, non-fatal */
+    }
+  }
 
   const mock: AppApi = {
     hardware: {
@@ -136,10 +157,16 @@ export function installDevApiMock(): void {
       load: async () => storedProfile,
       save: async (profile) => {
         storedProfile = profile
+        persist(profile)
         return { ok: true }
       },
       reset: async () => {
         storedProfile = buildMockProfile()
+        try {
+          localStorage.removeItem(LS_PROFILE)
+        } catch {
+          /* non-fatal */
+        }
         return storedProfile
       }
     },

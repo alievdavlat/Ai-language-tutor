@@ -9,6 +9,7 @@ import {
   relationshipScore,
   resolveCharacter
 } from '@shared/constants'
+import { characterAvatarUrl } from '@shared/utils/avatar'
 import { useAppStore } from '../../../store/useAppStore'
 import { useSTT } from '../../../hooks/stt'
 import { useTTS } from '../../../hooks/tts'
@@ -160,6 +161,10 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
     [activeCharacter, accent]
   )
   const avatarAppearance = useMemo(() => characterAppearance(activeCharacter), [activeCharacter])
+  const avatarPortrait = useMemo(
+    () => (activeCharacter?.avatarSeed ? characterAvatarUrl(activeCharacter, 320) : undefined),
+    [activeCharacter]
+  )
   // Phase 13 — latest assistant line drives the avatar's expression.
   const lastReply = useMemo(() => {
     for (let i = turns.length - 1; i >= 0; i--) {
@@ -216,6 +221,7 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
           listening={stt.state.listening}
           vrmUrl={activeCharacter?.vrmUrl || profile.settings.vrmModelUrl || undefined}
           appearance={avatarAppearance}
+          portraitUrl={avatarPortrait}
         />
         <ChatPanel
           turns={turns}

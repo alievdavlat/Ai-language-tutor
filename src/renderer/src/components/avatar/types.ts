@@ -15,6 +15,12 @@ export interface AvatarProps {
   name?: string
   /** Phase 12 fix — drives the procedural 3D avatar so each companion looks distinct. */
   appearance?: AvatarAppearance
+  /**
+   * The selected companion's portrait (DiceBear) URL. In 2D mode this is shown
+   * as the avatar so the on-screen face matches the picked companion, with a
+   * subtle speaking animation. Falls back to the procedural SVG when absent.
+   */
+  portraitUrl?: string
 }
 
 export interface AvatarDispatcherExtras {
