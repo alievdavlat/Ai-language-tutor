@@ -33,8 +33,32 @@ if (!url || !key) {
   console.warn('[supabase] missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY')
 }
 
-const sb: SupabaseClient = createClient(url ?? '', key ?? '', {
-  auth: { persistSession: true, autoRefreshToken: true }
+// Lazily constructed: createClient() throws on an empty url, which would crash
+// the whole module graph at import time (blanking the standalone browser preview,
+// where no Supabase env vars exist). The index.ts factory only selects
+// supabaseBackend when both vars are present, so the real client is created on
+// first use — never during preview. See services/backend/index.ts.
+let _client: SupabaseClient | null = null
+function getClient(): SupabaseClient {
+  if (!_client) {
+    if (!url || !key) {
+      throw new Error(
+        '[supabase] cannot create client: VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY missing'
+      )
+    }
+    _client = createClient(url, key, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    })
+  }
+  return _client
+}
+
+const sb = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const client = getClient() as unknown as Record<string | symbol, unknown>
+    const value = client[prop]
+    return typeof value === 'function' ? value.bind(client) : value
+  }
 })
 
 // ─── Row ↔ object mappers ──────────────────────────────────────────────────
