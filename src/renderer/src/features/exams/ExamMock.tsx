@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { ProgressBar } from '../../components/ui'
+import { useAppStore } from '../../store/useAppStore'
+import { useChatStream } from '../../hooks/useChatStream'
+import { scoreWriting, type WritingScore } from './writingScore'
 import {
   IconBook,
   IconHeadphones,
@@ -169,12 +172,26 @@ function Question({ prompt, options }: { prompt: string; options: string[] }): J
 export default function ExamMock({ kind }: { kind: 'ielts' | 'toefl' }): JSX.Element {
   const navigate = useNavigate()
   const sections = SECTIONS[kind]
+  const profile = useAppStore((s) => s.profile)
+  const { send } = useChatStream(profile?.settings.llmModel ?? '')
   const [idx, setIdx] = useState(0)
   const [phase, setPhase] = useState<'intro' | 'section' | 'result'>('intro')
   const [essay, setEssay] = useState('')
   const [secs, setSecs] = useState(0)
+  const [aiWriting, setAiWriting] = useState<WritingScore | null>(null)
+  const [grading, setGrading] = useState(false)
 
   const section = sections[idx]
+
+  // Real LLM grading of the writing response once the test ends.
+  useEffect(() => {
+    if (phase !== 'result' || aiWriting || grading || !essay.trim()) return
+    setGrading(true)
+    void scoreWriting(kind, essay, (messages) => send(messages))
+      .then((res) => { if (res) setAiWriting(res) })
+      .finally(() => setGrading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
 
   useEffect(() => {
     if (phase !== 'section') return
@@ -215,24 +232,46 @@ export default function ExamMock({ kind }: { kind: 'ielts' | 'toefl' }): JSX.Ele
           <p className="text-sm text-slate-400 mt-1">{title}</p>
 
           <div className="w-full mt-7 flex flex-col gap-3">
-            {r.bands.map((b) => (
-              <div key={b.label}>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="text-slate-200 font-medium">{b.label}</span>
-                  <span className="font-bold text-white">{b.score}</span>
+            {r.bands.map((b) => {
+              // Writing band is graded for real by the LLM when an essay exists.
+              const ai = b.label === 'Writing' ? aiWriting : null
+              const score = ai ? ai.score : b.score
+              const pct = ai ? ai.pct : b.pct
+              return (
+                <div key={b.label}>
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span className="text-slate-200 font-medium">
+                      {b.label}
+                      {b.label === 'Writing' && grading && <span className="text-[10px] text-brand-300 ml-2">grading…</span>}
+                      {ai && <span className="text-[10px] text-emerald-300 ml-2">AI-graded</span>}
+                    </span>
+                    <span className="font-bold text-white">{score}</span>
+                  </div>
+                  <ProgressBar value={pct} />
                 </div>
-                <ProgressBar value={b.pct} />
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <div className="w-full mt-7 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left">
             <p className="text-xs uppercase tracking-widest text-brand-300 font-semibold mb-2">AI examiner feedback</p>
             <ul className="flex flex-col gap-2">
-              {r.feedback.map((f, i) => (
-                <li key={i} className="text-sm text-slate-300 flex gap-2"><span className="text-brand-400">•</span> {f}</li>
-              ))}
+              {(aiWriting?.feedback ?? r.feedback).map((f, i) => {
+                const positive = f.trimStart().startsWith('✓')
+                const body = f.replace(/^[✓!]\s*/, '')
+                return (
+                  <li key={i} className="text-sm text-slate-300 flex gap-2">
+                    <span className={aiWriting ? (positive ? 'text-emerald-400' : 'text-amber-400') : 'text-brand-400'}>
+                      {aiWriting ? (positive ? '✓' : '!') : '•'}
+                    </span>
+                    {body}
+                  </li>
+                )
+              })}
             </ul>
+            {!aiWriting && !grading && essay.trim() === '' && (
+              <p className="text-[11px] text-slate-500 mt-2">Write an essay in the Writing section to get a real AI-graded band.</p>
+            )}
           </div>
 
           <button onClick={() => navigate('/exams')} className="btn-primary w-full py-3 mt-7">Back to exams</button>
