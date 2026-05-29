@@ -1,5 +1,5 @@
 export type AvatarMode = '2d' | '3d'
-export type AvatarEmotion = 'neutral' | 'happy' | 'thinking' | 'concerned'
+export type AvatarEmotion = 'neutral' | 'happy' | 'thinking' | 'concerned' | 'surprised'
 
 export interface AvatarAppearance {
   skinTone?: string

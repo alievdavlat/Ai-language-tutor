@@ -23,6 +23,7 @@ import AvatarPanel from '../sections/AvatarPanel'
 import ChatPanel from '../sections/ChatPanel'
 import { useTurnHandler } from '../hooks/useTurnHandler'
 import { useActiveAI } from '../../../lib/ai'
+import { emotionFromText } from '../../../lib/emotion'
 
 function statusLabel(speaking: boolean, streaming: boolean, listening: boolean): string {
   if (speaking) return 'Speaking…'
@@ -31,10 +32,16 @@ function statusLabel(speaking: boolean, streaming: boolean, listening: boolean):
   return 'Ready'
 }
 
-function emotionFor(speaking: boolean, streaming: boolean): AvatarEmotion {
-  if (speaking) return 'happy'
+/**
+ * Phase 13 — the avatar's face follows the conversation: thinking while the
+ * model generates, then the emotion inferred from what it actually said
+ * (smiling at good news, surprised at "wow!", etc.).
+ */
+function emotionFor(speaking: boolean, streaming: boolean, replyText: string): AvatarEmotion {
   if (streaming) return 'thinking'
-  return 'neutral'
+  const fromText = emotionFromText(replyText)
+  if (speaking && fromText === 'neutral') return 'happy'
+  return fromText
 }
 
 interface ConversationModeProps {
@@ -153,6 +160,13 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
     [activeCharacter, accent]
   )
   const avatarAppearance = useMemo(() => characterAppearance(activeCharacter), [activeCharacter])
+  // Phase 13 — latest assistant line drives the avatar's expression.
+  const lastReply = useMemo(() => {
+    for (let i = turns.length - 1; i >= 0; i--) {
+      if (turns[i].role === 'assistant' && turns[i].text) return turns[i].text
+    }
+    return ''
+  }, [turns])
 
   useEffect(() => {
     return () => {
@@ -194,7 +208,7 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
         <AvatarPanel
           mode={avatarMode}
           mouthOpen={speaking ? currentVisemeWeight : 0}
-          emotion={emotionFor(speaking, streaming)}
+          emotion={emotionFor(speaking, streaming, lastReply)}
           name={avatarName}
           topic={topic}
           onTopicChange={onTopicChange}

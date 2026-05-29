@@ -131,13 +131,28 @@ function buildScene(host: HTMLDivElement): SceneState {
   }
 }
 
-function applyEmotion(refs: AvatarRefs, emotion: AvatarEmotion): void {
-  const browY = emotion === 'concerned' ? 1.605 : emotion === 'happy' ? 1.622 : 1.615
-  const browTilt = emotion === 'concerned' ? 0.15 : emotion === 'thinking' ? 0.1 : 0
+/**
+ * Phase 13 — drive brows, mouth width and eye openness from the emotion, then
+ * fold in the current blink amount (1 = open, 0 = shut) so expressions and
+ * blinking coexist.
+ */
+function applyEmotion(refs: AvatarRefs, emotion: AvatarEmotion, blink: number): void {
+  const browY =
+    emotion === 'concerned' ? 1.6 : emotion === 'surprised' ? 1.64 : emotion === 'happy' ? 1.624 : 1.615
+  const browTilt = emotion === 'concerned' ? 0.18 : emotion === 'thinking' ? 0.12 : emotion === 'surprised' ? -0.06 : 0
   refs.leftBrow.position.y = browY
   refs.rightBrow.position.y = browY
   refs.leftBrow.rotation.z = browTilt
   refs.rightBrow.rotation.z = -browTilt
+
+  // Mouth width (the box can't curve, but width reads as smile/frown).
+  const mouthW = emotion === 'happy' ? 1.45 : emotion === 'surprised' ? 0.7 : emotion === 'concerned' ? 0.85 : 1
+  refs.mouth.scale.x = mouthW
+
+  // Eye openness baseline per emotion, multiplied by the blink factor.
+  const eyeBase = emotion === 'surprised' ? 1.4 : emotion === 'concerned' ? 0.85 : 1
+  refs.leftEye.scale.set(1, blink * eyeBase, 1)
+  refs.rightEye.scale.set(1, blink * eyeBase, 1)
 }
 
 function applyMouthOpen(mouth: THREE.Mesh, amount: number): void {
@@ -187,11 +202,9 @@ export default function Avatar3D({ mouthOpen, emotion = 'neutral', name, appeara
 
       if (blinkT > 5) blinkT = 0
       const blink = blinkT > 4.9 ? Math.max(0.05, 1 - (blinkT - 4.9) * 20) : 1
-      scene.refs.leftEye.scale.y = blink
-      scene.refs.rightEye.scale.y = blink
 
       applyMouthOpen(scene.refs.mouth, stateRef.current.mouthOpen)
-      applyEmotion(scene.refs, stateRef.current.emotion)
+      applyEmotion(scene.refs, stateRef.current.emotion, blink)
       applyAppearance(scene.refs, stateRef.current.appearance)
 
       scene.renderer.render(scene.scene, scene.camera)

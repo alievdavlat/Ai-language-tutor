@@ -6,10 +6,12 @@ function clamp(value: number, min = 0, max = 1): number {
 
 export default function Avatar2D({ mouthOpen, emotion = 'neutral', name }: AvatarProps): JSX.Element {
   const normalizedOpen = clamp(mouthOpen)
-  const mouthHeight = 4 + normalizedOpen * 22
-  const mouthWidth = emotion === 'happy' ? 58 : 48
+  const surprised = emotion === 'surprised'
+  const mouthHeight = (surprised ? 14 : 4) + normalizedOpen * 22
+  const mouthWidth = emotion === 'happy' ? 58 : surprised ? 40 : emotion === 'concerned' ? 42 : 48
   const eyeY = emotion === 'thinking' ? 108 : 110
-  const browLift = emotion === 'concerned' ? -4 : 0
+  const eyeRy = surprised ? 11 : 8
+  const browLift = emotion === 'concerned' ? -4 : surprised ? 6 : 0
 
   return (
     <div className="relative flex flex-col items-center">
@@ -44,8 +46,8 @@ export default function Avatar2D({ mouthOpen, emotion = 'neutral', name }: Avata
         </g>
 
         <g className="blink">
-          <ellipse cx="96" cy={eyeY} rx="10" ry="8" fill="white" />
-          <ellipse cx="144" cy={eyeY} rx="10" ry="8" fill="white" />
+          <ellipse cx="96" cy={eyeY} rx="10" ry={eyeRy} fill="white" />
+          <ellipse cx="144" cy={eyeY} rx="10" ry={eyeRy} fill="white" />
           <circle cx="96" cy={eyeY} r="5" fill="#1a2b4a" />
           <circle cx="144" cy={eyeY} r="5" fill="#1a2b4a" />
           <circle cx="97.5" cy={eyeY - 1.5} r="1.5" fill="white" />

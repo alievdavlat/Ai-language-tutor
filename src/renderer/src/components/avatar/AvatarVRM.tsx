@@ -24,7 +24,8 @@ const EMOTION_EXPRESSION: Record<AvatarEmotion, string | null> = {
   neutral: null,
   happy: 'happy',
   thinking: 'relaxed',
-  concerned: 'sad'
+  concerned: 'sad',
+  surprised: 'surprised'
 }
 
 /**
