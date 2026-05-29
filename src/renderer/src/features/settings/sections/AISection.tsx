@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AI_PROVIDERS, type AIProvider, type AIProviderId } from '@shared/constants'
 import type { AIConfig } from '@shared/types'
+import { useAppStore } from '../../../store/useAppStore'
 import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 import { IconArrowRight, IconCheck, IconLock } from '../../../components/icons'
@@ -31,13 +32,20 @@ interface CardProps {
   ai: AIConfig
   open: boolean
   onToggleOpen: () => void
-  onChange: (next: AIConfig) => void
+  /** Apply a change against the freshest AIConfig (avoids stale-prop clobbering). */
+  mutate: (fn: (cur: AIConfig) => AIConfig) => void
 }
 
-function ProviderCard({ p, ai, open, onToggleOpen, onChange }: CardProps): JSX.Element {
+function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Element {
   const isActive = ai.activeProviderId === p.id
-  const token = ai.tokens?.[p.id] ?? ''
+  const persistedToken = ai.tokens?.[p.id] ?? ''
   const modelId = ai.models?.[p.id] ?? p.defaultModelId ?? p.models[0].id
+  // Local mirror so the field never blanks during the async profile.save and
+  // the pasted value can't be lost to a controlled-input round-trip race.
+  const [token, setTokenLocal] = useState(persistedToken)
+  useEffect(() => {
+    setTokenLocal(persistedToken)
+  }, [persistedToken])
   const hasToken = token.trim().length > 0
   const [testing, setTesting] = useState(false)
   const [result, setResult] = useState<TestResult | null>(null)
@@ -50,17 +58,18 @@ function ProviderCard({ p, ai, open, onToggleOpen, onChange }: CardProps): JSX.E
     setResult(res)
     setTesting(false)
     // Auto-activate on a successful test if no provider is active yet.
-    if (res.ok && !ai.activeProviderId) onChange({ ...ai, activeProviderId: p.id })
+    if (res.ok) mutate((cur) => (cur.activeProviderId ? cur : { ...cur, activeProviderId: p.id }))
   }
 
   const setToken = (next: string): void => {
-    onChange({ ...ai, tokens: { ...(ai.tokens ?? {}), [p.id]: next } })
+    setTokenLocal(next)
+    mutate((cur) => ({ ...cur, tokens: { ...(cur.tokens ?? {}), [p.id]: next } }))
   }
   const setModel = (id: string): void => {
-    onChange({ ...ai, models: { ...(ai.models ?? {}), [p.id]: id } })
+    mutate((cur) => ({ ...cur, models: { ...(cur.models ?? {}), [p.id]: id } }))
   }
   const setActive = (): void => {
-    onChange({ ...ai, activeProviderId: p.id })
+    mutate((cur) => ({ ...cur, activeProviderId: p.id }))
   }
 
   return (
@@ -215,6 +224,13 @@ export default function AISection({ ai, onChange }: AISectionProps): JSX.Element
   const [tier, setTier] = useState<TierFilter>('all')
   const [openId, setOpenId] = useState<AIProviderId | null>(cfg.activeProviderId as AIProviderId | null)
 
+  // Apply every change against the freshest AIConfig in the store so a later
+  // edit (model pick, activate) can't overwrite an earlier one (the token).
+  const mutate = (fn: (cur: AIConfig) => AIConfig): void => {
+    const live = useAppStore.getState().profile?.settings.ai ?? { activeProviderId: null, tokens: {}, models: {} }
+    onChange(fn(live))
+  }
+
   const filtered = AI_PROVIDERS.filter((p) => {
     if (tier === 'free') return p.hasFreeTier
     if (tier === 'paid') return !p.hasFreeTier
@@ -284,7 +300,7 @@ export default function AISection({ ai, onChange }: AISectionProps): JSX.Element
             ai={cfg}
             open={openId === p.id}
             onToggleOpen={() => setOpenId((cur) => cur === p.id ? null : p.id)}
-            onChange={onChange}
+            mutate={mutate}
           />
         ))}
       </div>

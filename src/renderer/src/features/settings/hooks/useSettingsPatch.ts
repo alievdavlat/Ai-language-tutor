@@ -11,15 +11,20 @@ interface SettingsPatchHook {
 }
 
 export function useSettingsPatch(): SettingsPatchHook {
-  const { profile, setProfile } = useAppStore()
+  const profile = useAppStore((s) => s.profile)
+  const setProfile = useAppStore((s) => s.setProfile)
   const [saving, setSaving] = useState(false)
 
   const patch = async (update: Partial<UserSettings>): Promise<void> => {
-    if (!profile) return
+    // Read the freshest profile from the store (not a render-captured copy) so
+    // two rapid writers can't clobber each other's changes — e.g. saving an AI
+    // key and then a model pick must both stick.
+    const cur = useAppStore.getState().profile
+    if (!cur) return
     setSaving(true)
     const next: UserProfile = {
-      ...profile,
-      settings: { ...profile.settings, ...update }
+      ...cur,
+      settings: { ...cur.settings, ...update }
     }
     await window.api.profile.save(next)
     setProfile(next)
@@ -27,9 +32,10 @@ export function useSettingsPatch(): SettingsPatchHook {
   }
 
   const patchProfile = async (update: Partial<UserProfile>): Promise<void> => {
-    if (!profile) return
+    const cur = useAppStore.getState().profile
+    if (!cur) return
     setSaving(true)
-    const next: UserProfile = { ...profile, ...update }
+    const next: UserProfile = { ...cur, ...update }
     await window.api.profile.save(next)
     setProfile(next)
     setSaving(false)
