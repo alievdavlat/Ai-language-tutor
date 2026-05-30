@@ -9,7 +9,8 @@ import {
   useProgressStore
 } from '../../services/progress'
 
-export default function RetentionPage(): JSX.Element {
+/** The Goals & Streak body — reused as a tab inside the Progress page. */
+export function RetentionContent(): JSX.Element {
   const stats = useStats()
   const milestones = useMilestones()
 
@@ -31,15 +32,7 @@ export default function RetentionPage(): JSX.Element {
   const repairable = stats.streak === 0 && stats.longestStreak > 0 && !stats.activeToday
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 w-full flex flex-col gap-6">
-        <PageHeader
-          title="Goals & Streak"
-          subtitle="Set your pace, protect your streak, and choose how we keep you on track."
-          back="/progress"
-          crumbs={[{ label: 'Progress', to: '/progress' }, { label: 'Goals & Streak' }]}
-        />
-
+      <div className="w-full flex flex-col gap-6">
         {/* Today vs goal */}
         <div className="rounded-card border border-white/10 bg-white/[0.03] p-6 flex flex-col sm:flex-row items-center gap-6">
           <ProgressRing value={goalPct} size={132} stroke={11} tone="brand">
@@ -219,6 +212,21 @@ export default function RetentionPage(): JSX.Element {
           <ProgressBar value={Math.min(100, Math.round((stats.weekXp / (goal.xp * 7)) * 100))} color="brand" className="mt-3" />
           <p className="text-[11px] text-slate-500 mt-2">Weekly target: {(goal.xp * 7).toLocaleString()} XP</p>
         </div>
+      </div>
+  )
+}
+
+export default function RetentionPage(): JSX.Element {
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="px-6 py-6 w-full flex flex-col gap-6">
+        <PageHeader
+          title="Goals & Streak"
+          subtitle="Set your pace, protect your streak, and choose how we keep you on track."
+          back="/progress"
+          crumbs={[{ label: 'Progress', to: '/progress' }, { label: 'Goals & Streak' }]}
+        />
+        <RetentionContent />
       </div>
     </div>
   )

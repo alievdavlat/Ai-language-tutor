@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../../store/useAppStore'
 import {
@@ -5,9 +6,12 @@ import {
   ProgressRing,
   SectionHeading,
   StatCard,
+  Tabs,
+  type TabItem,
   WeekStudyTracker,
   type StudyDay
 } from '../../components/ui'
+import { RetentionContent } from '../retention/RetentionPage'
 import { cn } from '../../lib/classnames'
 import { iconByName } from '../../lib/iconByName'
 import {
@@ -49,8 +53,15 @@ function nextLevel(level: string): string {
   return order[i + 1]
 }
 
+type ProgressTab = 'overview' | 'goals'
+const PROGRESS_TABS: TabItem<ProgressTab>[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'goals', label: 'Goals & Streak' }
+]
+
 export default function ProgressPage(): JSX.Element {
   const navigate = useNavigate()
+  const [tab, setTab] = useState<ProgressTab>('overview')
   const profile = useAppStore((s) => s.profile)
   const stats = useStats()
   const achievements = useAchievements()
@@ -87,6 +98,11 @@ export default function ProgressPage(): JSX.Element {
           </p>
         </div>
 
+        <Tabs items={PROGRESS_TABS} active={tab} onChange={setTab} className="self-start" />
+
+        {tab === 'goals' && <RetentionContent />}
+
+        {tab === 'overview' && (<>
         {/* Hero — language knowledge ring */}
         <div className="rounded-card border border-white/10 bg-white/[0.03] p-6 flex flex-col sm:flex-row items-center gap-6">
           <ProgressRing value={knowledge} size={150} stroke={12} tone="brand">
@@ -204,6 +220,7 @@ export default function ProgressPage(): JSX.Element {
             })}
           </div>
         </div>
+        </>)}
       </div>
     </div>
   )

@@ -12,8 +12,6 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconClipboard,
-  IconDownload,
-  IconFlame,
   IconGear,
   IconHeadphones,
   IconHeart,
@@ -37,9 +35,7 @@ const LEARN_NAV = [
   { to: '/library', label: 'Library', Icon: IconLibrary },
   { to: '/vocabulary', label: 'Vocabulary', Icon: IconBookmark },
   { to: '/dictionary', label: 'Dictionary', Icon: IconSearch },
-  { to: '/progress', label: 'Progress', Icon: IconChart },
-  { to: '/retention', label: 'Goals & Streak', Icon: IconFlame },
-  { to: '/downloads', label: 'Downloads', Icon: IconDownload }
+  { to: '/progress', label: 'Progress', Icon: IconChart }
 ] as const
 
 const PRACTICE_NAV = [
