@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '../../lib/classnames'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AvatarCircle } from '../../components/ui'
 import { IconChevronLeft, IconSearch } from '../../components/icons'
 import { backend } from '../../services/backend/useBackend'
@@ -120,6 +120,28 @@ export default function InboxPage(): JSX.Element {
       alive = false
     }
   }, [composing, search, me])
+
+  // Deep link from "Message"/"Say hi" buttons: /inbox?user=<id>[&greet=1]
+  const [params] = useSearchParams()
+  const deepLinkedRef = useRef<string | null>(null)
+  useEffect(() => {
+    const uid = params.get('user')
+    if (!uid || loading || deepLinkedRef.current === uid) return
+    deepLinkedRef.current = uid
+    void (async () => {
+      const thread = await backend.getOrCreateThread(me, uid)
+      if (params.get('greet')) {
+        const existing = await backend.listMessages(thread.id)
+        if (existing.length === 0) {
+          const saved = await backend.sendMessage({ threadId: thread.id, senderId: me, text: 'Hi! 👋 Want to practice together?' })
+          emitLocalChange({ event: 'INSERT', table: 'messages', new: saved as unknown as Record<string, unknown>, old: null })
+        }
+      }
+      await refreshThreads()
+      setActiveId(thread.id)
+      await loadMessages(thread.id) // explicit — setActiveId may be a no-op if already active
+    })()
+  }, [params, loading, me, refreshThreads, loadMessages])
 
   const send = async (): Promise<void> => {
     const text = draft.trim()

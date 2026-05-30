@@ -16,6 +16,7 @@ import {
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { library } from '../../services/library/store'
 import { rankCourses, rankLibraryByRecency, rankByFollowers } from '../../services/ranking'
+import { isImageCover } from '../../lib/cover'
 import { useTargetLanguage } from '../../lib/language'
 
 type Tab = 'top' | 'videos' | 'people' | 'live' | 'buddies'
@@ -64,8 +65,10 @@ interface ExploreTile {
 
 function TopTileCard({ tile, shape }: { tile: ExploreTile; shape: string }): JSX.Element {
   const KIcon = tile.kind === 'voice' ? IconMic : tile.kind === 'course' ? IconBook : tile.kind === 'post' ? IconStar : IconYouTube
+  const img = isImageCover(tile.cover)
   return (
-    <button onClick={tile.go} className={cn('relative rounded-2xl overflow-hidden ring-1 ring-white/10 hover:ring-white/30 transition group bg-gradient-to-br text-left', tile.cover, shape)}>
+    <button onClick={tile.go} className={cn('relative rounded-2xl overflow-hidden ring-1 ring-white/10 hover:ring-white/30 transition group text-left', !img && `bg-gradient-to-br ${tile.cover}`, shape)}>
+      {img && <img src={tile.cover} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0 bg-black/15 group-hover:bg-black/30 transition" />
       <div className="absolute top-2 left-2 flex items-center gap-1.5">
         <span className="w-7 h-7 rounded-full bg-black/40 backdrop-blur text-white flex items-center justify-center">
@@ -99,8 +102,8 @@ function StudyBuddyCard({ u }: { u: PlatformUser }): JSX.Element {
         {u.bio && <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{u.bio}</p>}
       </div>
       <div className="flex items-center gap-2 mt-1">
-        <button onClick={() => navigate('/meet')} className="rounded-full bg-grad-brand text-white text-xs font-bold px-3 py-1.5">Say hi</button>
-        <button onClick={() => navigate('/inbox')} className="rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-slate-200 text-xs font-bold px-3 py-1.5">Message</button>
+        <button onClick={() => navigate(`/inbox?user=${u.id}&greet=1`)} className="rounded-full bg-grad-brand text-white text-xs font-bold px-3 py-1.5">Say hi</button>
+        <button onClick={() => navigate(`/inbox?user=${u.id}`)} className="rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-slate-200 text-xs font-bold px-3 py-1.5">Message</button>
       </div>
     </div>
   )
