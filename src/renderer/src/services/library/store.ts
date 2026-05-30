@@ -25,8 +25,8 @@ function seed(): LibraryItem[] {
   return [
     {
       id: 'lib_book_grammar', ownerId: 'u_emma', kind: 'book', title: 'English Grammar — Quick Reference',
-      author: 'SpeakAI', description: 'A short grammar reference you can read or listen to.', level: 'A2', language: 'en',
-      pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', pageCount: 1,
+      author: 'SpeakAI', description: 'A multi-page reference you can read page by page, with read-along audio.', level: 'A2', language: 'en',
+      pdfUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf', pageCount: 14,
       fullAudioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', createdAt: t
     },
     {

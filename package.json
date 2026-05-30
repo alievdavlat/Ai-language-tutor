@@ -36,6 +36,7 @@
     "lucide-react": "^1.17.0",
     "ollama": "^0.5.9",
     "onnxruntime-web": "^1.24.3",
+    "pdfjs-dist": "^4.7.76",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
