@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
+import { useAppStore } from '../../store/useAppStore'
 import { IconPlay, IconYouTube } from '../../components/icons'
 import {
   findClip,
@@ -10,8 +11,12 @@ import {
   type Difficulty,
   type LyricLine
 } from './data'
+import { fetchSyncedLyrics } from './lrclib'
+import { useYouTubePlayer } from './youtube'
+import { saveScore, getBestScore, type ClipScore } from './leaderboard'
 
 const norm = (w: string): string => w.toLowerCase().replace(/[^a-z']/g, '')
+const YT_ELEMENT_ID = 'clip-yt-player'
 
 interface BlankState {
   value: string
@@ -25,8 +30,38 @@ export default function ClipPlayPage(): JSX.Element {
   const mode = (params.get('mode') as GameMode) || 'choice'
   const difficulty = (params.get('difficulty') as Difficulty) || 'beginner'
   const fraction = DIFFICULTIES.find((d) => d.id === difficulty)?.fraction ?? 0.1
+  const userName = useAppStore((s) => s.profile?.name) || 'You'
 
-  const lines: LyricLine[] = clip.lines ?? []
+  // Real synced lyrics: LRCLIB first (accurate timestamps), then any bundled
+  // demo lines, while a "loading" state shows. Cancels on clip change/unmount.
+  const [lines, setLines] = useState<LyricLine[]>(clip.lines ?? [])
+  const [lyricsState, setLyricsState] = useState<'loading' | 'ready' | 'none'>(
+    clip.lines && clip.lines.length ? 'ready' : 'loading'
+  )
+  useEffect(() => {
+    const ac = new AbortController()
+    setLyricsState('loading')
+    void fetchSyncedLyrics(clip.title, clip.artist, ac.signal)
+      .then((fetched) => {
+        if (ac.signal.aborted) return
+        if (fetched && fetched.length) {
+          setLines(fetched)
+          setLyricsState('ready')
+        } else if (clip.lines && clip.lines.length) {
+          setLines(clip.lines)
+          setLyricsState('ready')
+        } else {
+          setLines([])
+          setLyricsState('none')
+        }
+      })
+      .catch(() => {
+        if (ac.signal.aborted) return
+        setLines(clip.lines ?? [])
+        setLyricsState(clip.lines && clip.lines.length ? 'ready' : 'none')
+      })
+    return () => ac.abort()
+  }, [clip.id, clip.title, clip.artist, clip.lines])
 
   // Per-line word arrays + blank index sets, computed once.
   const layout = useMemo(
@@ -58,8 +93,12 @@ export default function ClipPlayPage(): JSX.Element {
   const [active, setActive] = useState(0)
   const [paused, setPaused] = useState(false)
   const [shake, setShake] = useState<string | null>(null)
-  /** bumped on restart to remount the video iframe → replays from the start */
-  const [videoNonce, setVideoNonce] = useState(0)
+  /** The line index playback is currently held at, waiting for the user to
+   * fill its blanks (the real per-line "sync-pause"). null = playing through. */
+  const [holdLine, setHoldLine] = useState<number | null>(null)
+  const [finished, setFinished] = useState(false)
+  const [board, setBoard] = useState<ClipScore[]>([])
+  const savedRef = useRef(false)
 
   const key = (li: number, wi: number): string => `${li}-${wi}`
   const get = (li: number, wi: number): BlankState => blanks[key(li, wi)] ?? { value: '', status: 'idle' }
@@ -115,7 +154,108 @@ export default function ClipPlayPage(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order, mode])
 
+  // ── Sync-pause: drive the real YouTube player ───────────────────────────
+  // Refs hold the freshest state so the 250ms tick reads current values.
+  const blanksRef = useRef(blanks)
+  blanksRef.current = blanks
+  const layoutRef = useRef(layout)
+  layoutRef.current = layout
+  const linesRef = useRef(lines)
+  linesRef.current = lines
+  const holdRef = useRef<number | null>(null)
+  holdRef.current = holdLine
+  const pausedRef = useRef(paused)
+  pausedRef.current = paused
+  const finishedRef = useRef(finished)
+  finishedRef.current = finished
+
+  function lineSatisfied(li: number, b = blanksRef.current): boolean {
+    const l = layoutRef.current[li]
+    if (!l) return true
+    for (const wi of l.blanks) {
+      const st = b[key(li, wi)]?.status
+      if (st !== 'correct' && st !== 'revealed') return false
+    }
+    return true
+  }
+
+  function firstUnsatisfied(): number | null {
+    for (let i = 0; i < layoutRef.current.length; i++) {
+      if (layoutRef.current[i].blanks.size > 0 && !lineSatisfied(i)) return i
+    }
+    return null
+  }
+
+  function lineEnd(i: number): number {
+    const ls = linesRef.current
+    return ls[i + 1]?.t ?? (ls[i]?.t ?? 0) + 5
+  }
+
+  const handleTick = useCallback(
+    (time: number): void => {
+      if (pausedRef.current || finishedRef.current) return
+      const ls = linesRef.current
+      let ci = 0
+      for (let i = 0; i < ls.length; i++) if (ls[i].t <= time + 0.15) ci = i
+      if (holdRef.current === null) {
+        setActive(ci)
+        // Pause once the first unfilled line has just been sung.
+        const g = firstUnsatisfied()
+        if (g !== null && time >= lineEnd(g) - 0.1) {
+          setHoldLine(g)
+          setActive(g)
+          if (mode !== 'choice' && mode !== 'karaoke') {
+            const fk = order.find(
+              (k) =>
+                Number(k.split('-')[0]) === g &&
+                blanksRef.current[k]?.status !== 'correct' &&
+                blanksRef.current[k]?.status !== 'revealed'
+            )
+            window.setTimeout(() => focusKey(fk), 0)
+          }
+        }
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mode, order]
+  )
+
+  const player = useYouTubePlayer(YT_ELEMENT_ID, clip.youtubeId, handleTick)
+
+  // Release the hold the instant the held line's blanks are all filled.
+  useEffect(() => {
+    if (holdLine !== null && lineSatisfied(holdLine)) setHoldLine(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blanks, holdLine])
+
+  // Single source of truth for real play/pause: manual pause OR sync-hold OR done.
+  useEffect(() => {
+    if (!player.ready) return
+    if (paused || holdLine !== null || finished) player.pause()
+    else player.play()
+  }, [paused, holdLine, finished, player])
+
+  // Finished when every gap is resolved (correct or revealed).
+  useEffect(() => {
+    if (finished || totalGaps === 0) return
+    const resolved = Object.values(blanks).filter(
+      (s) => s.status === 'correct' || s.status === 'revealed'
+    ).length
+    if (resolved >= totalGaps) setFinished(true)
+  }, [blanks, totalGaps, finished])
+
+  // Persist the run to the per-clip leaderboard once.
+  useEffect(() => {
+    if (!finished || savedRef.current) return
+    savedRef.current = true
+    const accuracy = hits + fails > 0 ? Math.round((hits / (hits + fails)) * 100) : 100
+    setBoard(saveScore(clip.id, { name: userName, score, hits, fails, accuracy, mode, difficulty }))
+    setPaused(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finished])
+
   const remaining = totalGaps - hits - fails
+  const best = useMemo(() => getBestScore(clip.id), [clip.id, finished])
 
   function judge(li: number, wi: number, value: string): void {
     const answer = layout[li].words[wi]
@@ -158,7 +298,13 @@ export default function ClipPlayPage(): JSX.Element {
     setBonus(1)
     setActive(0)
     setPaused(false)
-    setVideoNonce((n) => n + 1)
+    setHoldLine(null)
+    setFinished(false)
+    savedRef.current = false
+    if (player.ready) {
+      player.seekTo(0)
+      player.play()
+    }
     if (mode !== 'choice' && mode !== 'karaoke') window.setTimeout(() => focusKey(order[0]), 60)
   }
 
@@ -187,8 +333,11 @@ export default function ClipPlayPage(): JSX.Element {
         >
           {paused ? <IconPlay className="w-4 h-4 ml-0.5" /> : <span className="text-sm font-bold">II</span>}
         </button>
-        <div className="font-mono text-2xl font-extrabold tabular-nums tracking-tight">
-          {String(score).padStart(5, '0')}
+        <div className="flex flex-col leading-none">
+          <div className="font-mono text-2xl font-extrabold tabular-nums tracking-tight">
+            {String(score).padStart(5, '0')}
+          </div>
+          {best > 0 && <span className="text-[10px] text-slate-500">best {String(best).padStart(5, '0')}</span>}
         </div>
         <div className="flex items-center gap-3 text-xs">
           <span className="text-slate-400">Gaps</span>
@@ -211,13 +360,7 @@ export default function ClipPlayPage(): JSX.Element {
       <div className="shrink-0 flex justify-center bg-black/40 py-3">
         <div className="relative w-full max-w-3xl aspect-video rounded-xl overflow-hidden ring-1 ring-white/10">
           {clip.youtubeId ? (
-            <iframe
-              key={videoNonce}
-              title={clip.title}
-              className="w-full h-full"
-              src={`https://www.youtube.com/embed/${clip.youtubeId}?autoplay=1`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            />
+            <div id={YT_ELEMENT_ID} className="w-full h-full" />
           ) : (
             <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center', clip.cover)}>
               <span className="w-16 h-16 rounded-full bg-white/20 ring-2 ring-white/40 flex items-center justify-center">
@@ -234,8 +377,18 @@ export default function ClipPlayPage(): JSX.Element {
       {/* Lyrics */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
         <div className="max-w-3xl mx-auto flex flex-col gap-3 text-center">
-          {lines.length === 0 && (
-            <p className="text-slate-400 text-sm">Synced lyrics for this clip aren’t loaded in the demo yet.</p>
+          {lyricsState === 'loading' && (
+            <p className="text-slate-400 text-sm animate-pulse">Loading synced lyrics from LRCLIB…</p>
+          )}
+          {lyricsState === 'none' && (
+            <p className="text-slate-400 text-sm">
+              No synced lyrics found for this clip. Songs work best; movies/talks need a transcript source.
+            </p>
+          )}
+          {holdLine !== null && clip.youtubeId && (
+            <p className="text-brand-200 text-xs font-semibold uppercase tracking-widest">
+              ⏸ Paused — fill the blank to continue
+            </p>
           )}
           {layout.map((l, li) => (
             <p
@@ -324,6 +477,44 @@ export default function ClipPlayPage(): JSX.Element {
             <button onClick={restart} className="rounded-xl bg-white/[0.06] hover:bg-white/[0.1] font-semibold py-3 transition">Restart</button>
             <button onClick={giveUp} className="rounded-xl bg-white/[0.06] hover:bg-white/[0.1] font-semibold py-3 transition">Give up (reveal answers)</button>
             <button onClick={() => navigate('/clips')} className="rounded-xl bg-white/[0.06] hover:bg-white/[0.1] font-semibold py-3 transition">Quit</button>
+          </div>
+        </div>
+      )}
+
+      {/* Completion + leaderboard */}
+      {finished && (
+        <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-canvas-soft p-6 flex flex-col gap-4">
+            <div className="text-center">
+              <p className="text-xs uppercase tracking-[0.25em] text-brand-300 font-bold">Clip complete</p>
+              <p className="font-mono text-5xl font-extrabold tabular-nums mt-2">{String(score).padStart(5, '0')}</p>
+              <p className="text-sm text-slate-400 mt-1">
+                {hits} correct · {fails} missed ·{' '}
+                {hits + fails > 0 ? Math.round((hits / (hits + fails)) * 100) : 100}% accuracy
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-2">Top scores · {clip.title}</p>
+              <ol className="flex flex-col gap-1">
+                {board.slice(0, 5).map((row, i) => (
+                  <li key={row.at} className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <span className="w-5 text-slate-500 tabular-nums">{i + 1}.</span>
+                      <span className={cn(row.score === score && row.at >= Date.now() - 5000 ? 'text-brand-200 font-bold' : 'text-slate-300')}>
+                        {row.name}
+                      </span>
+                    </span>
+                    <span className="font-mono tabular-nums text-slate-200">{String(row.score).padStart(5, '0')}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button onClick={restart} className="flex-1 rounded-xl bg-grad-brand font-bold py-3 shadow-glow hover:brightness-110 transition">Play again</button>
+              <button onClick={() => navigate('/clips')} className="rounded-xl bg-white/[0.06] hover:bg-white/[0.1] font-semibold py-3 px-5 transition">Done</button>
+            </div>
           </div>
         </div>
       )}
