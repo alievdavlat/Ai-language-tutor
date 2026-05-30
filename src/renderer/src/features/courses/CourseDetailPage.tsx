@@ -1,69 +1,29 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { AvatarCircle } from '../../components/ui'
+import { AvatarCircle, Spinner } from '../../components/ui'
 import {
   IconBookmark,
   IconCheck,
   IconChevronLeft,
+  IconDownload,
   IconHeart,
   IconLock,
   IconPlay,
   IconStar,
   IconTrophy
 } from '../../components/icons'
+import { backend, useBackendQuery } from '../../services/backend/useBackend'
+import { useAppStore } from '../../store/useAppStore'
+import { buildCourseView } from '../../services/content/courseModel'
+import { useContentState, recordFinalExam, issueCertificate, getCertificate } from '../../services/content/progress'
+import { getFinalExam } from '../../services/content/exams'
+import { downloadCertificate } from '../../lib/certificate'
+import type { Lesson } from '@shared/types'
+import ExamRunner from './ExamRunner'
 
-const COURSE = {
-  title: 'Everyday Conversation',
-  teacher: 'Emma Carter',
-  level: 'A2–B1',
-  rating: 4.8,
-  reviews: 312,
-  students: '4,120',
-  lessons: 24,
-  duration: '6h 30m',
-  cover: 'from-sky-500 via-blue-700 to-slate-950',
-  about:
-    'Build the confidence to handle real conversations — greetings, small talk, shopping, travel and more. Short video lessons, vocabulary, and lots of speaking practice with your AI partner.',
-  learn: [
-    'Hold everyday conversations with confidence',
-    'Use natural phrases native speakers actually say',
-    'Handle travel, shopping and dining situations',
-    'Improve pronunciation and fluency'
-  ]
-}
-
-interface CurLesson {
-  title: string
-  kind: 'video' | 'practice' | 'exam'
-  state: 'done' | 'current' | 'locked'
-}
-const CURRICULUM: { unit: string; lessons: CurLesson[] }[] = [
-  { unit: 'Unit 1 · Greetings & small talk', lessons: [
-    { title: 'Saying hello', kind: 'video', state: 'done' },
-    { title: 'Talking about yourself', kind: 'video', state: 'done' },
-    { title: 'Practice', kind: 'practice', state: 'done' }
-  ] },
-  { unit: 'Unit 2 · Out and about', lessons: [
-    { title: 'At a cafe', kind: 'video', state: 'current' },
-    { title: 'Shopping', kind: 'video', state: 'locked' },
-    { title: 'Unit test', kind: 'exam', state: 'locked' }
-  ] }
-]
-
-const REVIEWS = [
-  { name: 'Dilnoza', stars: 5, text: 'Emma explains everything so clearly. My speaking improved fast!' },
-  { name: 'Bekzod', stars: 5, text: 'The AI practice after each lesson is gold. Highly recommend.' },
-  { name: 'Madina', stars: 4, text: 'Great course, would love more advanced units.' }
-]
-
-const DIST = [
-  { s: 5, pct: 78 },
-  { s: 4, pct: 16 },
-  { s: 3, pct: 4 },
-  { s: 2, pct: 1 },
-  { s: 1, pct: 1 }
-]
+const FALLBACK_COURSE = 'c_everyday'
+const FINAL_PASS = 65
 
 function Stars({ n, className }: { n: number; className?: string }): JSX.Element {
   return (
@@ -77,63 +37,240 @@ function Stars({ n, className }: { n: number; className?: string }): JSX.Element
 
 export default function CourseDetailPage(): JSX.Element {
   const navigate = useNavigate()
+  const { courseId: param } = useParams()
+  const courseId = param ?? FALLBACK_COURSE
+  const userId = backend.currentUserId()
+  const profile = useAppStore((s) => s.profile)
+  const content = useContentState() // re-render when completion/cert changes
+
+  const { data: course, loading: courseLoading } = useBackendQuery(() => backend.getCourse(courseId), [courseId], null)
+  const { data: units } = useBackendQuery(() => backend.listUnits(courseId), [courseId], [])
+  const { data: lessonsByUnit } = useBackendQuery(
+    async () => {
+      const us = await backend.listUnits(courseId)
+      const lists = await Promise.all(us.map((u) => backend.listLessons(u.id)))
+      return lists.flat()
+    },
+    [courseId],
+    [] as Lesson[]
+  )
+  const { data: enrollments, refresh: refreshEnroll } = useBackendQuery(
+    () => (userId ? backend.myEnrollments(userId) : Promise.resolve([])),
+    [userId],
+    []
+  )
+  const { data: reviews, refresh: refreshReviews } = useBackendQuery(() => backend.listReviews(courseId), [courseId], [])
+  const { data: teacher } = useBackendQuery(
+    () => (course ? backend.getUser(course.teacherId) : Promise.resolve(null)),
+    [course?.teacherId],
+    null
+  )
+
+  const enrollment = enrollments.find((e) => e.courseId === courseId)
+  const enrolled = !!enrollment
+
+  const view = useMemo(
+    () => buildCourseView(courseId, units, lessonsByUnit),
+    // content is a dep so the view recomputes after a lesson/exam completes
+    [courseId, units, lessonsByUnit, content]
+  )
+
   const [liked, setLiked] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showFinal, setShowFinal] = useState(false)
+  const [reviewText, setReviewText] = useState('')
+  const [reviewStars, setReviewStars] = useState(5)
+
+  useEffect(() => {
+    if (!userId) return
+    backend.isLiked(userId, `course_${courseId}`).then(setLiked).catch(() => {})
+    backend.isSaved(userId, { kind: 'course', id: courseId }).then(setSaved).catch(() => {})
+  }, [userId, courseId])
+
+  // Keep the backend enrollment % in sync with computed lesson progress.
+  useEffect(() => {
+    if (userId && enrolled && enrollment && view.totalCount > 0 && enrollment.progress !== view.progress) {
+      backend.setEnrollmentProgress(userId, courseId, view.progress).then(() => refreshEnroll()).catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, enrolled, view.progress, courseId])
+
+  function openLesson(lesson: Lesson): void {
+    const base = lesson.kind === 'rule' ? `/learn/book/${courseId}` : `/learn/${courseId}`
+    navigate(`${base}/${lesson.id}`)
+  }
+
+  async function handleEnroll(): Promise<void> {
+    if (!userId) return
+    await backend.enroll(userId, courseId).catch(() => {})
+    await backend.recordActivity({ userId, kind: 'course_enroll', meta: { courseId } }).catch(() => {})
+    refreshEnroll()
+    if (view.next) openLesson(view.next)
+  }
+
+  function handleContinue(): void {
+    if (view.next) openLesson(view.next)
+    else if (view.finalUnlocked && view.hasFinal && !view.finalPassed) setShowFinal(true)
+  }
+
+  async function onFinalComplete(score: number, passed: boolean): Promise<void> {
+    recordFinalExam(courseId, score, FINAL_PASS)
+    if (userId) {
+      await backend.recordExamAttempt({
+        userId, kind: 'custom', language: (course?.targetLanguage ?? 'en'),
+        overall: score, sections: { final: score }, feedback: passed ? 'Course final exam passed.' : 'Course final exam — keep practising.'
+      }).catch(() => {})
+      await backend.recordActivity({ userId, kind: 'exam_attempt', xp: passed ? 100 : 20, meta: { courseId, score } }).catch(() => {})
+    }
+    if (passed) {
+      issueCertificate({ courseId, courseTitle: course?.title ?? 'Course', learnerName: profile?.name ?? 'Learner', score })
+      if (userId) backend.setEnrollmentProgress(userId, courseId, 100).then(() => refreshEnroll()).catch(() => {})
+    }
+  }
+
+  async function submitReview(): Promise<void> {
+    if (!userId || !reviewText.trim()) return
+    await backend.createReview({ courseId, userId, rating: reviewStars, text: reviewText.trim() }).catch(() => {})
+    setReviewText('')
+    refreshReviews()
+  }
+
+  if (courseLoading) {
+    return <div className="h-full flex items-center justify-center"><Spinner /></div>
+  }
+  if (!course) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-3">
+        <p className="text-slate-400">Course not found.</p>
+        <button onClick={() => navigate('/courses')} className="btn-primary px-5 py-2">Back to courses</button>
+      </div>
+    )
+  }
+
+  const cert = getCertificate(courseId)
+  const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : course.rating
+  const learnPoints = [
+    `Work through ${view.totalCount} lessons at ${course.level} level`,
+    'Practise with video, exercises and checkpoints',
+    course.capstone ? course.capstone : 'Build real, usable skills you can apply right away',
+    'Earn a certificate when you pass the final exam'
+  ]
 
   return (
     <div className="h-full overflow-y-auto">
       {/* Hero */}
-      <div className={cn('relative bg-gradient-to-br px-6 pt-4 pb-6', COURSE.cover)}>
-        <button onClick={() => navigate(-1)} className="text-white/80 hover:text-white transition mb-4">
+      <div className={cn('relative bg-gradient-to-br px-6 pt-4 pb-6', course.cover)}>
+        <button onClick={() => navigate('/courses')} className="text-white/80 hover:text-white transition mb-4">
           <IconChevronLeft className="w-5 h-5" />
         </button>
         <div className="w-full">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-black/30 text-white rounded-full px-2 py-1">{COURSE.level}</span>
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-400/90 text-black rounded-full px-2 py-1">
-              <IconTrophy className="w-3 h-3" /> Ends with exam
-            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-black/30 text-white rounded-full px-2 py-1">{course.level}</span>
+            {view.hasFinal && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-400/90 text-black rounded-full px-2 py-1">
+                <IconTrophy className="w-3 h-3" /> Ends with exam
+              </span>
+            )}
+            {view.completed && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-400/90 text-black rounded-full px-2 py-1">
+                <IconCheck className="w-3 h-3" /> Completed
+              </span>
+            )}
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">{COURSE.title}</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight">{course.title}</h1>
+          <p className="text-sm text-white/85 mt-1 max-w-2xl">{course.description}</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-white/85">
-            <span className="inline-flex items-center gap-1.5"><Stars n={5} /> {COURSE.rating} ({COURSE.reviews})</span>
-            <span>{COURSE.students} learners</span>
-            <span>{COURSE.lessons} lessons · {COURSE.duration}</span>
+            <span className="inline-flex items-center gap-1.5"><Stars n={Math.round(avgRating)} /> {avgRating.toFixed(1)} ({reviews.length || course.reviewCount})</span>
+            <span>{course.enrollmentCount.toLocaleString()} learners</span>
+            <span>{view.totalCount} lessons · {course.hours}h</span>
           </div>
-          <button onClick={() => navigate('/channel')} className="flex items-center gap-2 mt-3 hover:opacity-90">
-            <AvatarCircle name={COURSE.teacher} size="sm" />
-            <span className="text-sm text-white font-medium">{COURSE.teacher}</span>
-          </button>
+          {teacher && (
+            <button onClick={() => navigate('/channel')} className="flex items-center gap-2 mt-3 hover:opacity-90">
+              <AvatarCircle name={teacher.name} size="sm" />
+              <span className="text-sm text-white font-medium">{teacher.name}</span>
+            </button>
+          )}
         </div>
       </div>
 
       <div className="px-6 py-6 w-full">
         {/* Action row */}
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate('/learn/lesson')} className="btn-primary px-8 py-3">
-            Continue learning →
-          </button>
-          <button onClick={() => setLiked((v) => !v)} className={cn('w-11 h-11 rounded-full border flex items-center justify-center transition', liked ? 'bg-rose-500/15 border-rose-400/40 text-rose-300' : 'border-white/15 text-slate-300 hover:bg-white/5')} title="Like">
+        <div className="flex items-center gap-3 mb-3">
+          {!enrolled ? (
+            <button onClick={handleEnroll} className="btn-primary px-8 py-3">
+              {course.pricing.kind === 'free' ? 'Enroll free →' : 'Enroll →'}
+            </button>
+          ) : view.next ? (
+            <button onClick={handleContinue} className="btn-primary px-8 py-3">Continue learning →</button>
+          ) : view.hasFinal && !view.finalPassed ? (
+            <button onClick={() => setShowFinal(true)} className="btn-primary px-8 py-3 inline-flex items-center gap-2">
+              <IconTrophy className="w-4 h-4" /> Take final exam
+            </button>
+          ) : (
+            <button onClick={() => cert && downloadCertificate(cert)} className="btn-primary px-8 py-3 inline-flex items-center gap-2">
+              <IconDownload className="w-4 h-4" /> Download certificate
+            </button>
+          )}
+          <button onClick={async () => { if (userId) { const r = await backend.like(userId, `course_${courseId}`); setLiked(r.liked) } }} className={cn('w-11 h-11 rounded-full border flex items-center justify-center transition', liked ? 'bg-rose-500/15 border-rose-400/40 text-rose-300' : 'border-white/15 text-slate-300 hover:bg-white/5')} title="Like">
             <IconHeart className="w-5 h-5" />
           </button>
-          <button onClick={() => setSaved((v) => !v)} className={cn('w-11 h-11 rounded-full border flex items-center justify-center transition', saved ? 'bg-brand-500/15 border-brand-400/40 text-brand-300' : 'border-white/15 text-slate-300 hover:bg-white/5')} title="Save">
+          <button onClick={async () => { if (userId) { const r = await backend.save(userId, { kind: 'course', id: courseId }); setSaved(r.saved) } }} className={cn('w-11 h-11 rounded-full border flex items-center justify-center transition', saved ? 'bg-brand-500/15 border-brand-400/40 text-brand-300' : 'border-white/15 text-slate-300 hover:bg-white/5')} title="Save">
             <IconBookmark className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Progress bar (enrolled) */}
+        {enrolled && (
+          <div className="mb-6 max-w-md">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs text-slate-400">{view.completedCount}/{view.totalCount} lessons</span>
+              <span className="text-xs font-semibold text-brand-300">{view.progress}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
+              <div className="h-full bg-grad-brand rounded-full transition-all" style={{ width: `${view.progress}%` }} />
+            </div>
+          </div>
+        )}
+
+        {/* Final exam panel */}
+        {showFinal && (
+          <div className="mb-6 max-w-2xl">
+            <ExamRunner
+              title={`${course.title} · Final exam`}
+              subtitle={`Pass with ${FINAL_PASS}% to complete the course and earn your certificate.`}
+              questions={getFinalExam(courseId)}
+              passMark={FINAL_PASS}
+              onComplete={onFinalComplete}
+              onExit={() => setShowFinal(false)}
+            />
+          </div>
+        )}
+
+        {/* Certificate banner */}
+        {cert && (
+          <div className="mb-6 rounded-card border border-emerald-400/30 bg-emerald-500/10 p-4 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center"><IconTrophy className="w-6 h-6" /></div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white">Course complete — {cert.score}%</p>
+              <p className="text-xs text-slate-300">Certificate issued {new Date(cert.issuedAt).toLocaleDateString()}.</p>
+            </div>
+            <button onClick={() => downloadCertificate(cert)} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5">
+              <IconDownload className="w-4 h-4" /> Download
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
           <div className="flex flex-col gap-7">
-            {/* About */}
             <section>
               <h2 className="text-base font-bold mb-2">About this course</h2>
-              <p className="text-sm text-slate-300 leading-relaxed">{COURSE.about}</p>
+              <p className="text-sm text-slate-300 leading-relaxed">{course.description}</p>
             </section>
 
-            {/* What you'll learn */}
             <section>
               <h2 className="text-base font-bold mb-3">What you'll learn</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {COURSE.learn.map((l) => (
+                {learnPoints.map((l) => (
                   <div key={l} className="flex items-start gap-2 text-sm text-slate-300">
                     <IconCheck className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" /> {l}
                   </div>
@@ -145,16 +282,16 @@ export default function CourseDetailPage(): JSX.Element {
             <section>
               <h2 className="text-base font-bold mb-3">Curriculum</h2>
               <div className="flex flex-col gap-4">
-                {CURRICULUM.map((u) => (
-                  <div key={u.unit}>
-                    <p className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">{u.unit}</p>
+                {view.units.map(({ unit, lessons }) => (
+                  <div key={unit.id}>
+                    <p className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">{unit.title}</p>
                     <div className="flex flex-col gap-1.5">
-                      {u.lessons.map((l) => {
-                        const locked = l.state === 'locked'
+                      {lessons.map((l) => {
+                        const locked = l.state === 'locked' && !enrolled ? false : l.state === 'locked'
                         return (
                           <button
-                            key={l.title}
-                            onClick={() => !locked && navigate('/learn/lesson')}
+                            key={l.id}
+                            onClick={() => !locked && openLesson(l)}
                             disabled={locked}
                             className={cn('flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition', locked ? 'border-white/[0.05] bg-white/[0.015] opacity-60' : 'border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06]')}
                           >
@@ -162,49 +299,60 @@ export default function CourseDetailPage(): JSX.Element {
                               {l.state === 'done' ? <IconCheck className="w-4 h-4 text-emerald-300" /> : locked ? <IconLock className="w-3.5 h-3.5 text-slate-600" /> : l.kind === 'exam' ? <IconTrophy className="w-3.5 h-3.5 text-amber-300" /> : <IconPlay className="w-3.5 h-3.5 text-brand-300" />}
                             </span>
                             <span className="flex-1 text-sm text-slate-200">{l.title}</span>
-                            <span className="text-[10px] uppercase tracking-wider text-slate-500">{l.kind}</span>
+                            <span className="text-[10px] uppercase tracking-wider text-slate-500">{l.kind === 'rule' ? 'book' : l.kind}</span>
                           </button>
                         )
                       })}
                     </div>
                   </div>
                 ))}
+                {/* Final exam row */}
+                {view.hasFinal && (
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Final</p>
+                    <button
+                      onClick={() => view.finalUnlocked && setShowFinal(true)}
+                      disabled={!view.finalUnlocked}
+                      className={cn('w-full flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition', !view.finalUnlocked ? 'border-white/[0.05] bg-white/[0.015] opacity-60' : 'border-amber-400/30 bg-amber-500/10 hover:bg-amber-500/15')}
+                    >
+                      <span className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center shrink-0">
+                        {view.finalPassed ? <IconCheck className="w-4 h-4 text-emerald-300" /> : !view.finalUnlocked ? <IconLock className="w-3.5 h-3.5 text-slate-600" /> : <IconTrophy className="w-3.5 h-3.5 text-amber-300" />}
+                      </span>
+                      <span className="flex-1 text-sm text-slate-200">Final exam{view.finalPassed ? ' — passed' : ''}</span>
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500">exam</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </section>
 
             {/* Reviews */}
             <section>
               <h2 className="text-base font-bold mb-3">Reviews</h2>
-              <div className="flex flex-col sm:flex-row gap-6 mb-5">
-                <div className="text-center shrink-0">
-                  <p className="text-5xl font-bold text-white">{COURSE.rating}</p>
-                  <Stars n={5} className="mt-1" />
-                  <p className="text-xs text-slate-500 mt-1">{COURSE.reviews} reviews</p>
-                </div>
-                <div className="flex-1 flex flex-col gap-1.5 justify-center">
-                  {DIST.map((d) => (
-                    <div key={d.s} className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500 w-3">{d.s}</span>
-                      <IconStar className="w-3 h-3 text-amber-300" />
-                      <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                        <div className="h-full bg-amber-400 rounded-full" style={{ width: `${d.pct}%` }} />
-                      </div>
-                      <span className="text-xs text-slate-500 w-8 text-right">{d.pct}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <button className="btn-ghost px-4 py-2 text-sm mb-4">Write a review</button>
-              <div className="flex flex-col gap-3">
-                {REVIEWS.map((r) => (
-                  <div key={r.name} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <AvatarCircle name={r.name} size="sm" />
-                      <span className="text-sm font-semibold text-white">{r.name}</span>
-                      <Stars n={r.stars} className="ml-auto" />
-                    </div>
-                    <p className="text-sm text-slate-300">{r.text}</p>
+              {enrolled && (
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm text-slate-300">Your rating:</span>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <button key={i} onClick={() => setReviewStars(i + 1)} title={`${i + 1} stars`}>
+                        <IconStar className={cn('w-5 h-5', i < reviewStars ? 'text-amber-300' : 'text-white/15')} />
+                      </button>
+                    ))}
                   </div>
+                  <textarea
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    placeholder="Share what you thought of this course…"
+                    className="w-full rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-slate-500 resize-none"
+                    rows={2}
+                  />
+                  <button onClick={submitReview} disabled={!reviewText.trim()} className="btn-primary mt-2 px-4 py-2 text-sm disabled:opacity-40">Post review</button>
+                </div>
+              )}
+              <div className="flex flex-col gap-3">
+                {reviews.length === 0 && <p className="text-sm text-slate-500">No reviews yet — be the first.</p>}
+                {reviews.map((r) => (
+                  <ReviewRow key={r.id} userId={r.userId} stars={r.rating} text={r.text} />
                 ))}
               </div>
             </section>
@@ -214,11 +362,11 @@ export default function CourseDetailPage(): JSX.Element {
           <aside className="lg:border-l lg:border-white/10 lg:pl-6">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex flex-col gap-3 text-sm">
               {[
-                ['Level', COURSE.level],
-                ['Lessons', String(COURSE.lessons)],
-                ['Duration', COURSE.duration],
-                ['Language', 'English'],
-                ['Certificate', 'Yes, on completion']
+                ['Level', course.level],
+                ['Lessons', String(view.totalCount)],
+                ['Duration', `${course.hours}h`],
+                ['Price', course.pricing.kind === 'free' ? 'Free' : course.pricing.kind === 'one-off' ? `$${course.pricing.usd}` : `$${course.pricing.usdPerMo}/mo`],
+                ['Certificate', view.hasFinal ? 'On final-exam pass' : 'On completion']
               ].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between">
                   <span className="text-slate-400">{k}</span>
@@ -229,6 +377,21 @@ export default function CourseDetailPage(): JSX.Element {
           </aside>
         </div>
       </div>
+    </div>
+  )
+}
+
+function ReviewRow({ userId, stars, text }: { userId: string; stars: number; text: string }): JSX.Element {
+  const { data: user } = useBackendQuery(() => backend.getUser(userId), [userId], null)
+  const name = user?.name ?? 'Learner'
+  return (
+    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
+      <div className="flex items-center gap-2 mb-1.5">
+        <AvatarCircle name={name} size="sm" />
+        <span className="text-sm font-semibold text-white">{name}</span>
+        <Stars n={stars} className="ml-auto" />
+      </div>
+      <p className="text-sm text-slate-300">{text}</p>
     </div>
   )
 }
