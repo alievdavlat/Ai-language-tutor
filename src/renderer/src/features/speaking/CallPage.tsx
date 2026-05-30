@@ -113,6 +113,10 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
   const switchToWebSpeech = useCallback(
     async (reason: string): Promise<void> => {
       if (profile.settings.sttEngine === 'web-speech') return
+      // Web Speech only has a chance of working with connectivity — offline it
+      // would just trade Whisper's error for a `network` error, so we keep
+      // Whisper (with its error surfaced) and let the user retry / go type.
+      if (!navigator.onLine) return
       const next: UserProfile = {
         ...profile,
         settings: { ...profile.settings, sttEngine: 'web-speech' }

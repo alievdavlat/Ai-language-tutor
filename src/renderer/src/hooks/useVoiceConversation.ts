@@ -119,7 +119,7 @@ export function useVoiceConversation(opts: UseVoiceConversationOptions): VoiceCo
   )
 
   const stt = useSTT({
-    engine: settings?.sttEngine ?? 'web-speech',
+    engine: settings?.sttEngine ?? 'whisper-local',
     mode: settings?.micMode ?? 'push-to-talk',
     lang: ACCENT_TO_LANG[accent],
     whisperModel: settings?.whisperModel,

@@ -19,3 +19,7 @@ txt.txt
 
 # Local MCP config (may contain API keys) — keep out of git
 .mcp.json
+
+# scratch: STT validation
+test-stt/
+capture-speaking.mjs

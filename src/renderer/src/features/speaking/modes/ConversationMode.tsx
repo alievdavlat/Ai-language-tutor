@@ -14,9 +14,11 @@ import { useAppStore } from '../../../store/useAppStore'
 import { useSTT } from '../../../hooks/stt'
 import { useTTS } from '../../../hooks/tts'
 import { useChatStream } from '../../../hooks/useChatStream'
+import { useWhisperModelLoader } from '../../../hooks/useWhisperModelLoader'
 import { micPrefsFromSettings } from '../../../lib/audio'
 import type { AvatarEmotion, AvatarMode } from '../../../components/avatar'
 import AINotReadyBanner from '../../../components/speaking/AINotReadyBanner'
+import WhisperLoadingBanner from '../../../components/speaking/WhisperLoadingBanner'
 import SpeakingHeader from '../sections/SpeakingHeader'
 import AvatarPanel from '../sections/AvatarPanel'
 import ChatPanel from '../sections/ChatPanel'
@@ -120,6 +122,23 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
     onExchangeComplete: bumpRelationship
   })
 
+  // First-run model warm-up status, so the mic isn't a silent "Ready" while the
+  // bundled Whisper model is still compiling.
+  const whisperEngine = profile.settings.sttEngine === 'whisper-local'
+  const whisperLoader = useWhisperModelLoader(profile.settings.whisperModel)
+  const whisperWarming = whisperEngine && whisperLoader.loading && !whisperLoader.loaded
+
+  // Fallback chain: Whisper → Web Speech (only when online) → keep typing.
+  const switchToWebSpeech = useCallback(async (): Promise<void> => {
+    if (!navigator.onLine || profile.settings.sttEngine === 'web-speech') return
+    const next: UserProfile = {
+      ...profile,
+      settings: { ...profile.settings, sttEngine: 'web-speech' }
+    }
+    await window.api.profile.save(next)
+    setProfile(next)
+  }, [profile, setProfile])
+
   const stt = useSTT({
     engine: profile.settings.sttEngine,
     mode: micMode,
@@ -133,7 +152,8 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
     onFinal: (transcript) => {
       if (speaking) cancel()
       void handleUserTurn(transcript)
-    }
+    },
+    onEngineFallback: () => void switchToWebSpeech()
   })
 
   const setMicMode = async (m: MicMode): Promise<void> => {
@@ -182,6 +202,14 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
       />
 
       {!aiReady && <AINotReadyBanner />}
+
+      {whisperWarming && (
+        <WhisperLoadingBanner
+          progress={Math.round(whisperLoader.progress * 100)}
+          error={whisperLoader.error}
+          onFallback={() => void switchToWebSpeech()}
+        />
+      )}
 
       {chatError && (
         <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-2.5 text-xs text-red-200 flex items-center justify-between gap-3">
