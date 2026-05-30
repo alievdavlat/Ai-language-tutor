@@ -1,0 +1,61 @@
+# electron-builder packaging config (#43).
+# Produces a Windows NSIS one-click, per-user installer and emits the
+# latest.yml + .blockmap feed files electron-updater needs for silent
+# differential auto-updates from GitHub Releases.
+appId: app.speaking
+productName: SpeakAI
+
+directories:
+  # Keep installers out of electron-vite's `out/` (which holds the app bundle).
+  output: dist-installer
+  buildResources: build
+
+# electron-vite emits the compiled app into `out/`. Ship that + the manifest.
+files:
+  - out/**/*
+  - package.json
+
+# Native modules (better-sqlite3, onnxruntime-web binaries) can't live inside
+# the asar archive — they must be loadable as real files on disk.
+asarUnpack:
+  - '**/*.node'
+
+# ── Windows ───────────────────────────────────────────────────────────────
+# Unsigned for now: the installer runs fine, but Windows SmartScreen will warn
+# on first launch ("unknown publisher"). Add `win.certificateFile` +
+# `win.certificatePassword` (or an EV/Azure Trusted Signing cert) later to
+# remove the warning — no other code changes needed.
+win:
+  target:
+    - nsis
+  artifactName: SpeakAI-Setup-${version}.${ext}
+
+nsis:
+  oneClick: true # silent one-click install — no wizard
+  perMachine: false # per-user install (no admin/UAC prompt)
+  allowToChangeInstallationDirectory: false
+  deleteAppDataOnUninstall: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+# ── Linux (optional) ────────────────────────────────────────────────────────
+linux:
+  target:
+    - AppImage
+  category: Education
+  artifactName: SpeakAI-${version}.${ext}
+
+# ── macOS (future) ────────────────────────────────────────────────────────
+# A dmg/zip target is intentionally omitted: macOS auto-update REQUIRES the app
+# to be code-signed AND notarized by Apple (electron-updater refuses unsigned
+# updates on mac). Add a `mac` block + signing identity + notarization creds
+# when an Apple Developer account is available.
+
+# ── Update feed ─────────────────────────────────────────────────────────────
+# `--publish always` uploads SpeakAI-Setup-<version>.exe, latest.yml, and the
+# .blockmap to the matching GitHub Release. Installed clients read latest.yml
+# from here to discover + differentially download new versions.
+publish:
+  provider: github
+  owner: alievdavlat
+  repo: Ai-language-tutor

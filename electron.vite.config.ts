@@ -1,7 +1,12 @@
 import { resolve } from 'path'
+import { readFileSync } from 'fs'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
+
+// App version from package.json, injected into the renderer as __APP_VERSION__
+// (shown in the sidebar footer).
+const appVersion = JSON.parse(readFileSync(resolve('package.json'), 'utf-8')).version as string
 
 // fast-glob (used by vite-plugin-static-copy) only accepts POSIX paths. On
 // Windows `path.resolve` hands back `C:\Users\...\foo\*.wasm` — we normalize
@@ -38,6 +43,9 @@ export default defineConfig({
   },
   renderer: {
     root: 'src/renderer',
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion)
+    },
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src'),
