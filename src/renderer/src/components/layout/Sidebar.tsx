@@ -17,6 +17,7 @@ import {
   IconLibrary,
   IconLive,
   IconMic,
+  IconPencilEdit,
   IconSearch,
   IconUsers,
   type IconProps
@@ -37,6 +38,7 @@ const LEARN_NAV = [
 const PRACTICE_NAV = [
   { to: '/speaking', label: 'Speaking', Icon: IconMic },
   { to: '/clips', label: 'Clips', Icon: IconHeadphones },
+  { to: '/writing', label: 'Writing Coach', Icon: IconPencilEdit },
   { to: '/meet', label: 'Speaking partner', Icon: IconUsers },
   { to: '/exams', label: 'Exams', Icon: IconClipboard }
 ] as const
@@ -58,6 +60,7 @@ const TEACHER_LEARN = [
   { to: '/library', label: 'Library', Icon: IconLibrary },
   { to: '/speaking', label: 'Speaking', Icon: IconMic },
   { to: '/clips', label: 'Clips', Icon: IconHeadphones },
+  { to: '/writing', label: 'Writing Coach', Icon: IconPencilEdit },
   { to: '/exams', label: 'Exams', Icon: IconClipboard }
 ] as const
 
