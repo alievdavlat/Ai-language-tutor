@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { PlatformUser } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, SectionHeading, Tabs, type TabItem } from '../../components/ui'
@@ -107,8 +107,9 @@ function StudyBuddyCard({ u }: { u: PlatformUser }): JSX.Element {
 export default function ExplorePage(): JSX.Element {
   const navigate = useNavigate()
   const lang = useTargetLanguage()
+  const [params] = useSearchParams()
   const [tab, setTab] = useState<Tab>('top')
-  const [q, setQ] = useState('')
+  const [q, setQ] = useState(params.get('q') ?? '')
 
   // Featured creators — teachers in seed.
   const creators = useBackendQuery(async () => {
