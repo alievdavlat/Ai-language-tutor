@@ -200,7 +200,7 @@ export function IconChat({ className }: IconProps): JSX.Element {
 export function IconLibrary({ className }: IconProps): JSX.Element {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-      <path d="M3 3a1 1 0 011-1h2a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V3zM8 3a1 1 0 011-1h2a1 1 0 011 1v14a1 1 0 01-1 1H9a1 1 0 01-1-1V3zM13.83 4.4a1 1 0 011.27-.63l1.9.66a1 1 0 01.62 1.27l-3.6 10.38a1 1 0 01-1.27.62l-.74-.25 1.82-12.05.0z" />
+      <path d="M3 3a1 1 0 011-1h2a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V3zM8 3a1 1 0 011-1h2a1 1 0 011 1v14a1 1 0 01-1 1H9a1 1 0 01-1-1V3zM13.9 3.4l3 .8-3.2 12.1-3-.8z" />
     </svg>
   )
 }
