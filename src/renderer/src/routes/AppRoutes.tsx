@@ -70,6 +70,7 @@ import NotificationsPage from '../features/notifications/NotificationsPage'
 import InboxPage from '../features/inbox/InboxPage'
 import RetentionPage from '../features/retention/RetentionPage'
 import BuddyPage from '../features/buddy/BuddyPage'
+import CreatorStudioPage from '../features/creator/CreatorStudioPage'
 // [8/8] Teacher / monetization / admin / productivity slice
 import LessonBuilderPage from '../features/teacher/lesson/LessonBuilderPage'
 import LessonPlayerPage from '../features/teacher/lesson/LessonPlayerPage'
@@ -587,6 +588,14 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <BuddyPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/studio"
+        element={
+          <AppShell>
+            <CreatorStudioPage />
           </AppShell>
         }
       />

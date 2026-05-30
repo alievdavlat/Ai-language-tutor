@@ -61,6 +61,7 @@ const COMMUNITY_NAV = [
 // Teacher-mode navigation — teachers also learn, so they keep a Learn group.
 const TEACHER_MANAGE = [
   { to: '/teacher', label: 'Dashboard', Icon: IconHome },
+  { to: '/studio', label: 'Creator Studio', Icon: IconPencilEdit },
   { to: '/channel', label: 'My channel', Icon: IconUsers }
 ] as const
 
