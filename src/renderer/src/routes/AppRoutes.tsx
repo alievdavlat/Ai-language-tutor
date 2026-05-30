@@ -133,9 +133,12 @@ function usePostBootRedirect(): void {
 }
 
 export default function AppRoutes(): JSX.Element {
+  const navigate = useNavigate()
+  const setRole = useAppStore((s) => s.setRole)
   useBootstrap()
   usePostBootRedirect()
-  useAdminShortcut()
+  // Ctrl+Shift+A → elevate to Owner/Admin and open the admin panel.
+  useAdminShortcut(() => { setRole('admin'); navigate('/admin') })
 
   return (
     <>

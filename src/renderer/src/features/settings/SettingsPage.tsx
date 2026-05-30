@@ -9,14 +9,16 @@ import LanguageSection from './sections/LanguageSection'
 import AISection from './sections/AISection'
 import PrivacySection from './sections/PrivacySection'
 import AboutSection from './sections/AboutSection'
+import ProductivitySection from './sections/ProductivitySection'
 
-type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone' | 'privacy' | 'about'
+type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone' | 'productivity' | 'privacy' | 'about'
 
 const TABS: readonly TabItem<SettingsTab>[] = [
   { id: 'ai', label: 'AI' },
   { id: 'language', label: 'Language' },
   { id: 'companion', label: 'Companion' },
   { id: 'microphone', label: 'Microphone' },
+  { id: 'productivity', label: 'Productivity' },
   { id: 'privacy', label: 'Privacy' },
   { id: 'about', label: 'About' }
 ] as const
@@ -107,6 +109,8 @@ export default function SettingsPage(): JSX.Element {
         )}
 
         {/* ── Privacy ───────────────────────────────────────────────────── */}
+        {tab === 'productivity' && <ProductivitySection />}
+
         {tab === 'privacy' && (
           <PrivacySection
             contentSafety={s.contentSafety ?? true}

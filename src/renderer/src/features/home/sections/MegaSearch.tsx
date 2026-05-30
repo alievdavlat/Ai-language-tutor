@@ -67,25 +67,31 @@ export default function MegaSearch(): JSX.Element {
         className="w-full rounded-pill bg-white/[0.05] border border-white/10 pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:bg-white/[0.07] focus:outline-none transition"
       />
       {open && q.trim() && (
-        <div className="absolute z-30 mt-2 w-full rounded-2xl border border-white/10 bg-slate-900/98 backdrop-blur shadow-2xl overflow-hidden">
-          {hits.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-slate-400">No matches. Press Enter to search everything.</p>
-          ) : (
-            hits.map((h) => (
-              <button key={h.id} type="button" onMouseDown={() => { h.go(); setOpen(false) }} className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-white/[0.06] transition">
-                {h.kind === 'person'
-                  ? <AvatarCircle name={h.title} src={h.img} size="sm" />
-                  : h.img
-                    ? <img src={h.img} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
-                    : <span className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center shrink-0"><KindIcon k={h.kind} /></span>}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{h.title}</p>
-                  <p className="text-[11px] text-slate-400">{h.sub}</p>
-                </div>
-              </button>
-            ))
+        <div className="absolute z-40 mt-2 w-full rounded-2xl border border-white/12 bg-[#0d1120] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden ring-1 ring-black/40">
+          {hits.length > 0 && (
+            <p className="px-4 pt-3 pb-1.5 text-[10px] uppercase tracking-widest text-slate-500 font-bold">Results</p>
           )}
-          <button type="submit" className="w-full text-center px-4 py-2 text-xs font-semibold text-brand-300 hover:bg-white/[0.04] border-t border-white/[0.06]">
+          <div className="max-h-[22rem] overflow-y-auto">
+            {hits.length === 0 ? (
+              <p className="px-4 py-4 text-sm text-slate-400">No matches yet. Press Enter to search everything.</p>
+            ) : (
+              hits.map((h) => (
+                <button key={h.id} type="button" onMouseDown={() => { h.go(); setOpen(false) }} className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-brand-500/10 transition group">
+                  {h.kind === 'person'
+                    ? <AvatarCircle name={h.title} src={h.img} size="sm" />
+                    : h.img
+                      ? <img src={h.img} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 ring-1 ring-white/10" />
+                      : <span className="w-10 h-10 rounded-lg bg-white/[0.06] flex items-center justify-center shrink-0"><KindIcon k={h.kind} /></span>}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white truncate">{h.title}</p>
+                    <p className="text-[11px] text-slate-400 capitalize">{h.sub}</p>
+                  </div>
+                  <span className="text-slate-600 group-hover:text-brand-300 transition text-xs shrink-0">↵</span>
+                </button>
+              ))
+            )}
+          </div>
+          <button type="submit" className="w-full text-center px-4 py-2.5 text-xs font-semibold text-brand-300 hover:bg-brand-500/10 border-t border-white/[0.08] transition">
             See all results for “{q.trim()}” →
           </button>
         </div>

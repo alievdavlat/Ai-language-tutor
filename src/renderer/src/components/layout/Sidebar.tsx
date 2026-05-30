@@ -43,8 +43,7 @@ const PRACTICE_NAV = [
   { to: '/clips', label: 'Clips', Icon: IconHeadphones },
   { to: '/writing', label: 'Writing Coach', Icon: IconPencilEdit },
   { to: '/meet', label: 'Speaking partner', Icon: IconUsers },
-  { to: '/exams', label: 'Exams', Icon: IconClipboard },
-  { to: '/productivity', label: 'Productivity', Icon: IconBolt }
+  { to: '/exams', label: 'Exams', Icon: IconClipboard }
 ] as const
 
 const COMMUNITY_NAV = [

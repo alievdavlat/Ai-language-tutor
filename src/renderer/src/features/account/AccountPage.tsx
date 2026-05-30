@@ -310,6 +310,9 @@ export default function AccountPage(): JSX.Element {
           </div>
         )}
 
+        {/* Role switcher — test the Student / Teacher / Owner (admin) views. */}
+        <RoleSwitcher />
+
         {/* Data & reset (moved here from the old Conversation settings tab). */}
         <div className="mt-2">
           <DangerZoneSection />
@@ -317,6 +320,40 @@ export default function AccountPage(): JSX.Element {
       </div>
 
       {editing && profile && <ProfileEditModal profile={profile} onClose={() => setEditing(false)} />}
+    </div>
+  )
+}
+
+/** Dev/testing helper: switch between Student, Teacher and Owner (admin) views.
+ *  Role is the same flag used across the app; switching navigates to that
+ *  role's home so you can review each view. */
+function RoleSwitcher(): JSX.Element {
+  const navigate = useNavigate()
+  const role = useAppStore((s) => s.role)
+  const setRole = useAppStore((s) => s.setRole)
+
+  const ROLES: { id: 'student' | 'teacher' | 'admin'; label: string; to: string; desc: string }[] = [
+    { id: 'student', label: 'Student', to: '/home', desc: 'Learner home, courses, practice' },
+    { id: 'teacher', label: 'Teacher', to: '/teacher', desc: 'Dashboard, Creator Studio, channel' },
+    { id: 'admin', label: 'Owner (Admin)', to: '/admin', desc: 'Moderation, featured, users' }
+  ]
+
+  return (
+    <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
+      <h2 className="text-sm font-bold text-white">Switch role (testing)</h2>
+      <p className="text-xs text-slate-400 mt-0.5 mb-3">View the app as a Student, Teacher or Owner. You can also press <kbd className="font-mono text-[11px] bg-white/10 border border-white/15 rounded px-1 py-0.5">Ctrl+Shift+A</kbd> for admin.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {ROLES.map((r) => (
+          <button
+            key={r.id}
+            onClick={() => { setRole(r.id); navigate(r.to) }}
+            className={cn('rounded-2xl border p-4 text-left transition', role === r.id ? 'border-brand-400/50 bg-brand-500/10 ring-1 ring-brand-400/30' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]')}
+          >
+            <p className="text-sm font-bold text-white">{r.label}{role === r.id ? ' ✓' : ''}</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">{r.desc}</p>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
