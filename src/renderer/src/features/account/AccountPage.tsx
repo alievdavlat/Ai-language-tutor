@@ -1,19 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { CEFRLevel, TargetLanguage, UserProfile } from '@shared/types'
+import type { CEFRLevel, Course, MediaAsset, Post, TargetLanguage, UserProfile } from '@shared/types'
 import { SUPPORTED_LANGUAGES } from '@shared/constants'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { useTargetLanguage } from '../../lib/language'
 import { bandFromDob, BAND_LABEL } from '../../lib/age'
 import { AvatarCircle, Input, Tabs, type TabItem } from '../../components/ui'
+import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import DangerZoneSection from '../settings/sections/DangerZoneSection'
 
 const LEVELS: readonly CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 import {
   IconBook,
-  IconBookmark,
-  IconHeart,
   IconPlay,
   IconPlus,
   IconVolume,
@@ -28,19 +27,6 @@ const TABS: TabItem<Tab>[] = [
   { id: 'help', label: 'Help' }
 ]
 
-const SAVED = [
-  { kind: 'course', title: 'IELTS Speaking Bootcamp', sub: 'James Lee', cover: 'from-rose-500 to-pink-700' },
-  { kind: 'video', title: 'Fix these 5 mistakes', sub: 'Emma English · 8:12', cover: 'from-sky-500 to-blue-700' },
-  { kind: 'book', title: 'English Grammar in Use', sub: 'Murphy', cover: 'from-blue-600 to-blue-800' }
-]
-const LIKES = [
-  { kind: 'video', title: 'Past tenses in 10 min', sub: 'GrammarLab · 10:05', cover: 'from-violet-500 to-purple-700' },
-  { kind: 'podcast', title: 'News in Slow English', sub: '12:30', cover: 'from-emerald-500 to-teal-700' }
-]
-const UPLOADS = [
-  { kind: 'book', title: 'My A2 vocabulary notes.pdf', sub: 'PDF · 18 saves' },
-  { kind: 'podcast', title: 'My shadowing attempt #3.mp3', sub: 'Audio · 6 likes' }
-]
 const HELP = [
   'How do I download a book?',
   'How does the level test work?',
@@ -49,7 +35,12 @@ const HELP = [
   'Contact support'
 ]
 
-function MediaTile({ item }: { item: { kind: string; title: string; sub: string; cover: string } }): JSX.Element {
+const COVERS = ['from-rose-500 to-pink-700', 'from-sky-500 to-blue-700', 'from-violet-500 to-purple-700', 'from-emerald-500 to-teal-700', 'from-amber-500 to-orange-700']
+const coverFor = (seed: string): string => COVERS[Math.abs([...seed].reduce((a, c) => a + c.charCodeAt(0), 0)) % COVERS.length]
+
+interface Tile { kind: 'course' | 'video' | 'book' | 'podcast' | 'post'; title: string; sub: string; cover: string }
+
+function MediaTile({ item }: { item: Tile }): JSX.Element {
   const Icon = item.kind === 'book' ? IconBook : item.kind === 'podcast' ? IconVolume : IconPlay
   return (
     <div className="text-left">
@@ -61,6 +52,10 @@ function MediaTile({ item }: { item: { kind: string; title: string; sub: string;
       <p className="text-xs text-slate-400 truncate">{item.sub}</p>
     </div>
   )
+}
+
+function EmptyState({ text }: { text: string }): JSX.Element {
+  return <p className="col-span-full text-sm text-slate-400 text-center py-10">{text}</p>
 }
 
 function ProfileEditModal({ profile, onClose }: { profile: UserProfile; onClose: () => void }): JSX.Element {
@@ -166,6 +161,46 @@ export default function AccountPage(): JSX.Element {
   const displayName = profile?.name?.trim() || 'You'
   const level = profile?.level ?? 'B1'
   const band = bandFromDob(profile?.dateOfBirth)
+  const me = backend.currentUserId()
+
+  // ── Real account data ──────────────────────────────────────────────────
+  const stats = useBackendQuery(() => (me ? backend.getStats(me) : Promise.resolve(null)), [me], null)
+  const counts = useBackendQuery(() => (me ? backend.followCounts(me) : Promise.resolve({ followers: 0, following: 0 })), [me], { followers: 0, following: 0 })
+
+  // Saved courses + posts resolved to renderable tiles.
+  const saved = useBackendQuery(async (): Promise<Tile[]> => {
+    if (!me) return []
+    const rows = await backend.listSaved(me)
+    const out = await Promise.all(rows.map(async (s): Promise<Tile | null> => {
+      if (s.target.kind === 'course') {
+        const c = await backend.getCourse(s.target.id)
+        return c ? { kind: 'course', title: c.title, sub: `${c.level} · ★ ${c.rating}`, cover: c.cover || coverFor(c.title) } : null
+      }
+      return { kind: 'post', title: 'Saved community post', sub: 'Tap to open in Community', cover: coverFor(s.target.id) }
+    }))
+    return out.filter((x): x is Tile => x !== null)
+  }, [me], [])
+
+  // Likes resolved against the feed so we can show the actual post text.
+  const likes = useBackendQuery(async (): Promise<Tile[]> => {
+    if (!me) return []
+    const [likeRows, feed] = await Promise.all([backend.listLikes(me), backend.listFeed({ limit: 200 })])
+    const byId = new Map<string, Post>(feed.map((p) => [p.id, p]))
+    return likeRows.map((l): Tile => {
+      const p = byId.get(l.postId)
+      return {
+        kind: p?.resource?.kind === 'audio' ? 'podcast' : p?.resource?.kind === 'youtube' ? 'video' : 'post',
+        title: p ? (p.text.slice(0, 60) || 'Community post') : 'Liked post',
+        sub: p?.resource?.title || 'Community',
+        cover: coverFor(l.postId)
+      }
+    })
+  }, [me], [])
+
+  const uploads = useBackendQuery(() => (me ? backend.listMedia(me) : Promise.resolve([] as MediaAsset[])), [me], [] as MediaAsset[])
+
+  const xp = stats.data?.xp ?? 0
+  const streak = stats.data?.streak ?? 0
 
   return (
     <div className="h-full overflow-y-auto">
@@ -177,10 +212,10 @@ export default function AccountPage(): JSX.Element {
             <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
             <p className="text-sm text-slate-400">Level {level} · learning {lang.name} {lang.flag}</p>
             <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
-              <span><b className="text-white">12</b> following</span>
-              <span><b className="text-white">3</b> followers</span>
-              <span><b className="text-white">1,240</b> XP</span>
-              <span><b className="text-amber-300">🔥 7</b> day streak</span>
+              <span><b className="text-white">{counts.data.following}</b> following</span>
+              <span><b className="text-white">{counts.data.followers}</b> followers</span>
+              <span><b className="text-white">{xp.toLocaleString()}</b> XP</span>
+              <span><b className="text-amber-300">🔥 {streak}</b> day streak</span>
             </div>
           </div>
           <button onClick={() => setEditing(true)} className="btn-ghost px-4 py-2 text-sm shrink-0">Edit profile</button>
@@ -205,12 +240,20 @@ export default function AccountPage(): JSX.Element {
 
         {tab === 'saved' && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {SAVED.map((i) => <MediaTile key={i.title} item={i} />)}
+            {saved.data.length === 0
+              ? <EmptyState text="Nothing saved yet. Tap the bookmark on any course or post to keep it here." />
+              : saved.data.map((i, idx) => (
+                <button key={idx} onClick={() => navigate(i.kind === 'course' ? '/courses' : '/community')} className="text-left">
+                  <MediaTile item={i} />
+                </button>
+              ))}
           </div>
         )}
         {tab === 'likes' && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {LIKES.map((i) => <MediaTile key={i.title} item={i} />)}
+            {likes.data.length === 0
+              ? <EmptyState text="No likes yet. Like posts in the Community to find them later." />
+              : likes.data.map((i, idx) => <MediaTile key={idx} item={i} />)}
           </div>
         )}
         {tab === 'uploads' && (
@@ -218,25 +261,24 @@ export default function AccountPage(): JSX.Element {
             <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-5 flex flex-col items-center text-center gap-2">
               <span className="w-10 h-10 rounded-full bg-brand-500/15 text-brand-300 flex items-center justify-center"><IconPlus className="w-5 h-5" /></span>
               <p className="text-sm font-semibold text-white">Share a resource</p>
-              <p className="text-xs text-slate-400">Upload a PDF or audio, or paste a YouTube link.</p>
-              <div className="flex gap-2 mt-1">
-                {[['Link a video', IconYouTube], ['Upload PDF', IconBook], ['Upload audio', IconVolume]].map(([l, Ico]) => {
-                  const I = Ico as (p: { className?: string }) => JSX.Element
-                  return <button key={l as string} className="inline-flex items-center gap-1.5 text-xs font-medium rounded-full bg-white/[0.05] border border-white/10 px-3 py-1.5 text-slate-300 hover:bg-white/10"><I className="w-3.5 h-3.5" /> {l as string}</button>
-                })}
-              </div>
+              <p className="text-xs text-slate-400">Post a PDF, audio or a YouTube link to the Community.</p>
+              <button onClick={() => navigate('/community')} className="inline-flex items-center gap-1.5 text-xs font-medium rounded-full bg-white/[0.05] border border-white/10 px-3 py-1.5 text-slate-300 hover:bg-white/10 mt-1">
+                <IconPlus className="w-3.5 h-3.5" /> New post
+              </button>
             </div>
-            {UPLOADS.map((u) => (
-              <div key={u.title} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3">
-                <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center', u.kind === 'book' ? 'bg-rose-500/15 text-rose-300' : 'bg-brand-500/15 text-brand-300')}>
-                  {u.kind === 'book' ? <IconBook className="w-5 h-5" /> : <IconVolume className="w-5 h-5" />}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{u.title}</p>
-                  <p className="text-xs text-slate-400">{u.sub}</p>
+            {uploads.data.length === 0
+              ? <EmptyState text="No uploads yet." />
+              : uploads.data.map((u) => (
+                <div key={u.id} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3">
+                  <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center', u.kind === 'pdf' ? 'bg-rose-500/15 text-rose-300' : 'bg-brand-500/15 text-brand-300')}>
+                    {u.kind === 'pdf' ? <IconBook className="w-5 h-5" /> : u.kind === 'audio' ? <IconVolume className="w-5 h-5" /> : <IconPlay className="w-5 h-5" />}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white truncate">{u.name}</p>
+                    <p className="text-xs text-slate-400">{u.kind.toUpperCase()} · {(u.sizeBytes / 1024 / 1024).toFixed(1)} MB</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         )}
         {tab === 'help' && (
