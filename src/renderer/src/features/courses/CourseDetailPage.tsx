@@ -22,6 +22,7 @@ import { getFinalExam } from '../../services/content/exams'
 import { downloadCertificate } from '../../lib/certificate'
 import type { Lesson } from '@shared/types'
 import ExamRunner from './ExamRunner'
+import CommentsSection from '../../components/CommentsSection'
 
 const FALLBACK_COURSE = 'c_everyday'
 const FINAL_PASS = 65
@@ -365,6 +366,9 @@ export default function CourseDetailPage(): JSX.Element {
                 ))}
               </div>
             </section>
+
+            {/* Comments (YouTube/IG-style — anyone can post + reply, no enrollment needed) */}
+            <CommentsSection targetKind="course" targetId={courseId} />
           </div>
 
           {/* Meta rail */}

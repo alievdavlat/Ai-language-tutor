@@ -15,6 +15,7 @@ export * from './platform.types'
 export * from './platform-ext.types'
 export * from './social.types'
 export * from './library.types'
+export * from './comment.types'
 // NOTE: study.types.ts is consumed directly by the study subsystem (not via this
 // barrel) and re-declares ActivityEvent/ExamAttempt/ExamKind with study-specific
 // shapes. It is intentionally NOT re-exported here to avoid clashing with the
