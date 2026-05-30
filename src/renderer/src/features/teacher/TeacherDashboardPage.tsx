@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
+import { fileToDataUrl, isImageCover } from '../../lib/cover'
 import { useAppStore } from '../../store/useAppStore'
 import { AvatarCircle, StatCard } from '../../components/ui'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
@@ -208,7 +209,14 @@ function AnnouncementComposer({
   const [body, setBody] = useState('')
   const [whenISO, setWhenISO] = useState('')
   const [coverIdx, setCoverIdx] = useState(0)
+  const [image, setImage] = useState('')
+  const imgRef = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
+
+  const pickImage = async (file?: File): Promise<void> => {
+    if (!file || file.size > 4 * 1024 * 1024) return
+    setImage(await fileToDataUrl(file))
+  }
 
   const post = async (): Promise<void> => {
     if (title.trim().length < 3 || saving) return
@@ -219,11 +227,13 @@ function AnnouncementComposer({
         title: title.trim(),
         body: body.trim() || 'Join my next session!',
         whenISO: whenISO ? new Date(whenISO).toISOString() : new Date().toISOString(),
-        cover: HERO_COVERS[coverIdx]
+        cover: HERO_COVERS[coverIdx],
+        imageUrl: image || undefined
       })
       setTitle('')
       setBody('')
       setWhenISO('')
+      setImage('')
       setOpen(false)
       onPosted()
     } finally {
@@ -254,13 +264,26 @@ function AnnouncementComposer({
               <input type="datetime-local" value={whenISO} onChange={(e) => setWhenISO(e.target.value)} className="input text-sm mt-1" />
             </div>
             <div className="flex-1">
-              <label className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Cover</label>
+              <label className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Cover gradient (fallback)</label>
               <div className="flex gap-2 mt-1.5">
                 {HERO_COVERS.map((c, i) => (
                   <button key={c} onClick={() => setCoverIdx(i)} className={cn('h-9 flex-1 rounded-lg bg-gradient-to-br transition', c, coverIdx === i ? 'ring-2 ring-white' : 'opacity-70 hover:opacity-100')} />
                 ))}
               </div>
             </div>
+          </div>
+          {/* Banner image (shown on the Home hero instead of the gradient) */}
+          <div>
+            <label className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Banner image</label>
+            <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={(e) => void pickImage(e.target.files?.[0])} />
+            {isImageCover(image) ? (
+              <div className="relative mt-1.5 rounded-xl overflow-hidden aspect-[3/1] ring-1 ring-white/10">
+                <img src={image} alt="banner" className="w-full h-full object-cover" />
+                <button onClick={() => setImage('')} className="absolute top-2 right-2 text-[11px] font-semibold bg-black/60 text-white rounded-full px-2.5 py-1">Remove</button>
+              </div>
+            ) : (
+              <button onClick={() => imgRef.current?.click()} className="mt-1.5 w-full rounded-xl border border-dashed border-white/15 bg-white/[0.02] py-4 text-sm text-slate-400 hover:bg-white/[0.04]">🖼️ Upload a banner image (optional)</button>
+            )}
           </div>
           <button onClick={() => void post()} disabled={title.trim().length < 3 || saving} className="btn-primary text-sm px-5 py-2 self-end">
             {saving ? 'Posting…' : 'Post announcement'}

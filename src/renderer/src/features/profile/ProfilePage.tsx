@@ -177,7 +177,7 @@ export default function ProfilePage(): JSX.Element {
 
         {/* Header */}
         <div className="rounded-card border border-white/10 bg-white/[0.025] p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
-          <AvatarCircle name={displayName} size="lg" className="!w-24 !h-24 !text-3xl" />
+          <AvatarCircle name={displayName} src={profile?.avatarUrl} size="lg" className="!w-24 !h-24 !text-3xl" />
           <div className="flex-1 min-w-0 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2">
               <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>

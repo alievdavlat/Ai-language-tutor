@@ -15,6 +15,8 @@ interface Slide {
   meta: string
   cta: string
   cover: string
+  /** Background photo (data: or remote URL). Falls back to the `cover` gradient. */
+  image?: string
   to: string
 }
 
@@ -51,6 +53,7 @@ export default function HeroCarousel(): JSX.Element {
         meta: dateTime(a.whenISO),
         cta: 'View details',
         cover: `bg-gradient-to-br ${a.cover ?? 'from-rose-600 via-red-700 to-slate-950'}`,
+        image: a.imageUrl,
         to: '/community'
       })
     }
@@ -65,6 +68,7 @@ export default function HeroCarousel(): JSX.Element {
         meta: `${topCourse.level} · ${topCourse.hours}h · ${topCourse.enrollmentCount.toLocaleString()} learners`,
         cta: 'Explore course',
         cover: `bg-gradient-to-br ${topCourse.cover}`,
+        image: topCourse.thumbnailUrl,
         to: '/courses'
       })
     }
@@ -115,9 +119,11 @@ export default function HeroCarousel(): JSX.Element {
   return (
     <div className="relative">
       <div
-        className={cn('relative overflow-hidden rounded-card p-7 min-h-[200px] flex flex-col justify-end ring-1 ring-white/10 transition-all duration-500', s.cover)}
+        className={cn('relative overflow-hidden rounded-card p-7 min-h-[200px] flex flex-col justify-end ring-1 ring-white/10 transition-all duration-500', !s.image && s.cover)}
       >
-        <div aria-hidden className="pointer-events-none absolute -top-20 -right-10 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
+        {s.image
+          ? <><img src={s.image} alt="" className="absolute inset-0 w-full h-full object-cover" /><div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/30" /></>
+          : <div aria-hidden className="pointer-events-none absolute -top-20 -right-10 w-72 h-72 rounded-full bg-white/10 blur-3xl" />}
         <span className={cn('absolute top-5 left-7 text-[10px] font-bold uppercase tracking-widest rounded-full px-2.5 py-1', s.badgeTone)}>
           {s.badge}
         </span>

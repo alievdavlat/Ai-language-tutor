@@ -138,6 +138,14 @@ function hydrateContent(stored: Db): Db {
   if (missingCourses.length) next.courses = [...next.courses, ...missingCourses]
   if (!next.units || next.units.length === 0) next.units = [...SEED_UNITS]
   if (!next.lessons || next.lessons.length === 0) next.lessons = [...SEED_LESSONS]
+  // Refresh seed announcements (adds hero images to pre-existing stores).
+  const annById = new Map(SEED_ANNOUNCEMENTS.map((a) => [a.id, a]))
+  if (next.announcements?.length) {
+    next.announcements = next.announcements.map((a) => {
+      const s = annById.get(a.id)
+      return s ? { ...a, cover: s.cover, imageUrl: s.imageUrl } : a
+    })
+  }
   return next
 }
 

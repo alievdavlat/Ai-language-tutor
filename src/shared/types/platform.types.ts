@@ -181,6 +181,8 @@ export interface LiveAnnouncement {
   body: string
   whenISO: string
   cover: string
+  /** Optional hero banner image (data: or remote URL). Falls back to the gradient. */
+  imageUrl?: string
 }
 
 // ─── Notifications ─────────────────────────────────────────────────────────

@@ -206,8 +206,8 @@ export const SEED_LIVE: LiveStream[] = [
 ]
 
 export const SEED_ANNOUNCEMENTS: LiveAnnouncement[] = [
-  { id: 'a_1', teacherId: 'u_emma', title: 'Mastering Past Tenses', body: 'Open live lesson · free for everyone · 7 PM tonight', whenISO: t(-60 * 6), cover: 'from-rose-500 to-pink-700' },
-  { id: 'a_2', teacherId: 'u_james', title: 'IELTS Speaking Q&A', body: 'Bring your questions — band-by-band breakdown · Sat 14:00', whenISO: t(-60 * 24 * 3), cover: 'from-violet-500 to-purple-700' }
+  { id: 'a_1', teacherId: 'u_emma', title: 'Mastering Past Tenses', body: 'Open live lesson · free for everyone · 7 PM tonight', whenISO: t(-60 * 6), cover: 'from-rose-500 to-pink-700', imageUrl: 'https://picsum.photos/seed/past-tenses/1280/420' },
+  { id: 'a_2', teacherId: 'u_james', title: 'IELTS Speaking Q&A', body: 'Bring your questions — band-by-band breakdown · Sat 14:00', whenISO: t(-60 * 24 * 3), cover: 'from-violet-500 to-purple-700', imageUrl: 'https://picsum.photos/seed/ielts-qa/1280/420' }
 ]
 
 export const SEED_NOTIFS: Notif[] = [

@@ -45,7 +45,7 @@ export default function GreetingHeader({ profile }: GreetingHeaderProps): JSX.El
         className="pointer-events-none absolute -top-10 -left-10 w-48 h-48 rounded-full bg-brand-500/15 blur-3xl"
       />
 
-      <AvatarCircle name={name} size="lg" />
+      <AvatarCircle name={name} src={profile.avatarUrl} size="lg" />
 
       <div className="min-w-0 flex-1 relative">
         <p className="text-xs text-slate-400 mb-0.5">{timeGreeting()} 👋</p>
