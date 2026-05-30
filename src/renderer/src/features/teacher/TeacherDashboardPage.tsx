@@ -1,17 +1,21 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { AvatarCircle, StatCard } from '../../components/ui'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
+import { timeAgo } from '../../lib/time'
 import {
   IconArrowRight,
   IconBolt,
+  IconBook,
   IconChart,
   IconLive,
   IconPlus,
   IconStar,
   IconTrophy,
   IconUsers,
+  IconYouTube,
   type IconProps
 } from '../../components/icons'
 
@@ -23,17 +27,18 @@ const STATS = [
 ]
 
 const ACTIONS: { label: string; Icon: (p: IconProps) => JSX.Element; to: string; tone: string }[] = [
-  { label: 'New course', Icon: IconPlus, to: '/teacher/new', tone: 'bg-grad-brand text-white' },
+  { label: 'New lesson', Icon: IconPlus, to: '/teacher/new', tone: 'bg-grad-brand text-white' },
+  { label: 'New course', Icon: IconBook, to: '/teacher/course/new', tone: 'bg-white/[0.06] text-slate-200 border border-white/10' },
   { label: 'Go live', Icon: IconLive, to: '/teacher/live', tone: 'bg-rose-500/15 text-rose-300 border border-rose-400/30' },
-  { label: 'Analytics', Icon: IconChart, to: '/teacher/analytics', tone: 'bg-white/[0.06] text-slate-200 border border-white/10' },
-  { label: 'Earnings', Icon: IconTrophy, to: '/teacher/monetization', tone: 'bg-white/[0.06] text-slate-200 border border-white/10' }
+  { label: 'YouTube', Icon: IconYouTube, to: '/teacher/youtube', tone: 'bg-red-500/15 text-red-300 border border-red-400/30' }
 ]
 
 const SECONDARY_NAV: { label: string; to: string; Icon: (p: IconProps) => JSX.Element }[] = [
   { label: 'Students', to: '/teacher/students', Icon: IconUsers },
   { label: 'Analytics', to: '/teacher/analytics', Icon: IconChart },
   { label: 'Earnings', to: '/teacher/monetization', Icon: IconTrophy },
-  { label: 'Live & clips', to: '/teacher/live', Icon: IconLive }
+  { label: 'Live & clips', to: '/teacher/live', Icon: IconLive },
+  { label: 'Clips composer', to: '/teacher/clips', Icon: IconYouTube }
 ]
 
 const COURSES = [
@@ -63,6 +68,11 @@ export default function TeacherDashboardPage(): JSX.Element {
   )
   const students = useBackendQuery(
     () => me ? backend.studentsOf(me) : Promise.resolve([]),
+    [me],
+    []
+  )
+  const announcements = useBackendQuery(
+    async () => (me ? (await backend.listAnnouncements()).filter((a) => a.teacherId === me) : []),
     [me],
     []
   )
@@ -109,6 +119,15 @@ export default function TeacherDashboardPage(): JSX.Element {
             </button>
           ))}
         </div>
+
+        {/* Announcement composer → students see these in their Home hero (#28) */}
+        {me && (
+          <AnnouncementComposer
+            teacherId={me}
+            recent={announcements.data}
+            onPosted={announcements.refresh}
+          />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
           {/* Courses */}
@@ -164,6 +183,103 @@ export default function TeacherDashboardPage(): JSX.Element {
           </aside>
         </div>
       </div>
+    </div>
+  )
+}
+
+const HERO_COVERS = [
+  'from-rose-600 via-red-700 to-slate-950',
+  'from-blue-600 via-indigo-700 to-slate-950',
+  'from-violet-600 via-purple-700 to-slate-950',
+  'from-amber-500 via-orange-700 to-slate-950'
+]
+
+function AnnouncementComposer({
+  teacherId,
+  recent,
+  onPosted
+}: {
+  teacherId: string
+  recent: { id: string; title: string; body: string; whenISO: string }[]
+  onPosted: () => void
+}): JSX.Element {
+  const [open, setOpen] = useState(false)
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const [whenISO, setWhenISO] = useState('')
+  const [coverIdx, setCoverIdx] = useState(0)
+  const [saving, setSaving] = useState(false)
+
+  const post = async (): Promise<void> => {
+    if (title.trim().length < 3 || saving) return
+    setSaving(true)
+    try {
+      await backend.createAnnouncement({
+        teacherId,
+        title: title.trim(),
+        body: body.trim() || 'Join my next session!',
+        whenISO: whenISO ? new Date(whenISO).toISOString() : new Date().toISOString(),
+        cover: HERO_COVERS[coverIdx]
+      })
+      setTitle('')
+      setBody('')
+      setWhenISO('')
+      setOpen(false)
+      onPosted()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="rounded-card border border-white/10 bg-white/[0.025] p-4">
+      <div className="flex items-center gap-3">
+        <span className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-300 flex items-center justify-center">📣</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-white">Announce to your students</p>
+          <p className="text-xs text-slate-400">Posts appear in every learner's Home hero carousel.</p>
+        </div>
+        <button onClick={() => setOpen((v) => !v)} className="btn-primary text-xs px-4 py-2 shrink-0">
+          {open ? 'Close' : 'New announcement'}
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-4 flex flex-col gap-3">
+          <input value={title} onChange={(e) => setTitle(e.target.value)} className="input text-sm" placeholder="Title (e.g. Live IELTS Q&A tonight)" />
+          <textarea value={body} onChange={(e) => setBody(e.target.value)} className="input text-sm min-h-[70px] resize-none" placeholder="Details students will see…" />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <label className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">When</label>
+              <input type="datetime-local" value={whenISO} onChange={(e) => setWhenISO(e.target.value)} className="input text-sm mt-1" />
+            </div>
+            <div className="flex-1">
+              <label className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Cover</label>
+              <div className="flex gap-2 mt-1.5">
+                {HERO_COVERS.map((c, i) => (
+                  <button key={c} onClick={() => setCoverIdx(i)} className={cn('h-9 flex-1 rounded-lg bg-gradient-to-br transition', c, coverIdx === i ? 'ring-2 ring-white' : 'opacity-70 hover:opacity-100')} />
+                ))}
+              </div>
+            </div>
+          </div>
+          <button onClick={() => void post()} disabled={title.trim().length < 3 || saving} className="btn-primary text-sm px-5 py-2 self-end">
+            {saving ? 'Posting…' : 'Post announcement'}
+          </button>
+        </div>
+      )}
+
+      {recent.length > 0 && (
+        <div className="mt-4 border-t border-white/[0.06] pt-3 flex flex-col gap-2">
+          <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Your recent announcements</p>
+          {recent.slice(0, 3).map((a) => (
+            <div key={a.id} className="flex items-center gap-2 text-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+              <span className="text-slate-200 font-medium truncate flex-1">{a.title}</span>
+              <span className="text-slate-500 shrink-0">{timeAgo(a.whenISO)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,7 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { PageHeader, SectionHeading, StatCard, Tabs, type TabItem } from '../../components/ui'
-import { IconLive, IconStar, IconUsers, IconYouTube } from '../../components/icons'
+import { IconLive, IconPlus, IconStar, IconUsers, IconYouTube } from '../../components/icons'
+import { backend, useBackendQuery } from '../../services/backend/useBackend'
+import { studio } from '../../services/studio/store'
+import { thumbnailFor } from '../../services/studio/youtube'
 
 type Tab = 'schedule' | 'history' | 'clips'
 const TABS: TabItem<Tab>[] = [
@@ -22,27 +26,23 @@ const PAST = [
   { title: 'CEFR placement walkthrough', date: '2026-05-07', peak: 510, avg: 380, duration: '72m' }
 ]
 
-const CLIPS = [
-  { title: '5 IELTS speaking traps to avoid', views: '12K', secs: 58 },
-  { title: 'Most common pronunciation mistake', views: '8.4K', secs: 42 },
-  { title: 'Quick past simple vs past perfect', views: '5.2K', secs: 50 },
-  { title: 'How natives use "would"', views: '3.8K', secs: 38 }
-]
-
 export default function TeacherLiveHostPage(): JSX.Element {
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('schedule')
+  const me = backend.currentUserId()
+  const shorts = useBackendQuery(() => studio.listShorts(me ?? undefined), [me], [])
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 w-full w-full flex flex-col gap-5">
+      <div className="px-6 py-6 w-full flex flex-col gap-5">
         <PageHeader
           eyebrow="Teacher · Live"
           title="Host & broadcast"
-          subtitle="Go live, schedule, or post a short."
+          subtitle="Go live, schedule, or cut a short."
           back="/teacher"
           crumbs={[{ label: 'Teacher', to: '/teacher' }, { label: 'Live & clips' }]}
           action={
-            <button className="inline-flex items-center gap-2 rounded-xl bg-red-500 hover:bg-red-400 text-white text-sm font-bold px-4 py-2.5 shadow-lg shadow-red-500/30">
+            <button onClick={() => navigate('/live')} className="inline-flex items-center gap-2 rounded-xl bg-red-500 hover:bg-red-400 text-white text-sm font-bold px-4 py-2.5 shadow-lg shadow-red-500/30">
               <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Go live now
             </button>
           }
@@ -52,7 +52,7 @@ export default function TeacherLiveHostPage(): JSX.Element {
           <StatCard value="32" label="Streams hosted" tone="brand" icon={<IconLive />} />
           <StatCard value="14.2K" label="Total watch time (h)" tone="emerald" icon={<IconStar />} />
           <StatCard value="412" label="Peak viewers" tone="amber" icon={<IconUsers />} />
-          <StatCard value="4.7" label="Avg. rating" tone="violet" icon={<IconStar />} />
+          <StatCard value={shorts.data.length.toString()} label="Clips posted" tone="violet" icon={<IconYouTube />} />
         </div>
 
         <Tabs items={TABS} active={tab} onChange={setTab} className="self-start" />
@@ -103,21 +103,29 @@ export default function TeacherLiveHostPage(): JSX.Element {
 
         {tab === 'clips' && (
           <>
-            <SectionHeading title="Posted clips" subtitle="Short-form to attract followers" />
+            <div className="flex items-center justify-between">
+              <SectionHeading title="Posted clips" subtitle="Short-form to attract followers" />
+              <button onClick={() => navigate('/teacher/clips')} className="btn-primary text-xs px-4 py-2 inline-flex items-center gap-1.5"><IconPlus className="w-3.5 h-3.5" /> Compose a short</button>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {CLIPS.map((c) => (
-                <div key={c.title} className="text-left">
-                  <div className={cn('relative rounded-2xl h-32 ring-1 ring-white/10 flex items-center justify-center bg-gradient-to-br from-violet-500/30 to-rose-500/30')}>
-                    <span className="absolute inset-0 m-auto w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center"><IconYouTube className="w-4 h-4 text-white" /></span>
-                    <span className="absolute bottom-1.5 right-1.5 text-[10px] font-bold bg-black/60 text-white rounded px-1.5 py-0.5">{c.secs}s</span>
-                  </div>
-                  <p className="text-xs font-semibold text-white mt-2 line-clamp-2">{c.title}</p>
-                  <p className="text-[10px] text-slate-500">{c.views} views</p>
-                </div>
-              ))}
-              <button className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] h-32 flex flex-col items-center justify-center gap-1 hover:bg-white/[0.04]">
+              {shorts.data.map((c) => {
+                const ytId = c.source.source === 'youtube' ? c.source.youtubeId : null
+                return (
+                  <button key={c.id} onClick={() => navigate(`/teacher/clips?id=${c.id}`)} className="text-left group">
+                    <div className={cn('relative rounded-2xl h-32 ring-1 ring-white/10 flex items-center justify-center overflow-hidden bg-gradient-to-br from-violet-500/30 to-rose-500/30')}>
+                      {ytId && <img src={thumbnailFor(ytId)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition" />}
+                      <span className="absolute inset-0 m-auto w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center"><IconYouTube className="w-4 h-4 text-white" /></span>
+                      <span className="absolute bottom-1.5 right-1.5 text-[10px] font-bold bg-black/60 text-white rounded px-1.5 py-0.5">{Math.round(c.endSec - c.startSec)}s</span>
+                      {c.status === 'draft' && <span className="absolute top-1.5 left-1.5 text-[9px] font-bold bg-amber-500/80 text-black rounded px-1.5 py-0.5">DRAFT</span>}
+                    </div>
+                    <p className="text-xs font-semibold text-white mt-2 line-clamp-2">{c.title}</p>
+                    <p className="text-[10px] text-slate-500">{c.views.toLocaleString()} views</p>
+                  </button>
+                )
+              })}
+              <button onClick={() => navigate('/teacher/clips')} className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] h-32 flex flex-col items-center justify-center gap-1 hover:bg-white/[0.04]">
                 <span className="text-2xl text-slate-400">+</span>
-                <span className="text-[11px] text-slate-400">Add clip</span>
+                <span className="text-[11px] text-slate-400">New clip</span>
               </button>
             </div>
           </>
