@@ -9,7 +9,9 @@ import { useAppStore } from '../../store/useAppStore'
 
 function speak(word: string): void {
   try {
-    const u = new SpeechSynthesisUtterance(word)
+    // "Hello / Hi" must not be read as "Hello slash Hi" — speak natural variants.
+    const spoken = word.replace(/\s*\/\s*/g, ', ').replace(/[()[\]]/g, ' ').trim()
+    const u = new SpeechSynthesisUtterance(spoken)
     u.lang = 'en-US'
     window.speechSynthesis.cancel()
     window.speechSynthesis.speak(u)

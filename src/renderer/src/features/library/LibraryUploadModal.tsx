@@ -60,7 +60,7 @@ function DropZone({ label, filled, accept, onPick, icon }: { label: string; fill
   )
 }
 
-export default function LibraryUploadModal({ language, onClose, onSaved }: { language: TargetLanguage; onClose: () => void; onSaved: () => void }): JSX.Element {
+export default function LibraryUploadModal({ language, onClose, onSaved }: { language: TargetLanguage; onClose: () => void; onSaved: (item: import('@shared/types').LibraryItem) => void }): JSX.Element {
   const [kind, setKind] = useState<LibraryKind>('book')
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
@@ -88,7 +88,7 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
     if (!canSave) { setErr('Fill the title and attach the required file.'); return }
     setBusy(true)
     const ytId = kind === 'video' ? parseYouTubeId(videoLink) : null
-    await library.upsert({
+    const created = await library.upsert({
       kind, title: title.trim(), author: author.trim() || undefined, level, language,
       thumbnailUrl: thumb || (ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : undefined),
       pdfUrl: kind === 'book' ? pdf : undefined,
@@ -99,7 +99,7 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
       audioUrl: kind === 'audio' ? audio : undefined
     })
     setBusy(false)
-    onSaved()
+    onSaved(created)
     onClose()
   }
 

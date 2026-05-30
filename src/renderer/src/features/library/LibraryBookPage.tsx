@@ -48,6 +48,14 @@ export default function LibraryBookPage(): JSX.Element {
     refresh()
   }
 
+  const clearPageMedia = async (): Promise<void> => {
+    const list = (book.pageMedia ?? []).filter((p) => p.page !== page)
+    await library.upsert({ ...book, pageMedia: list })
+    refresh()
+  }
+
+  const pagesWithMedia = (book.pageMedia ?? []).map((p) => p.page).sort((a, b) => a - b)
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-5 w-full flex flex-col gap-4">
@@ -113,15 +121,21 @@ export default function LibraryBookPage(): JSX.Element {
 
             {/* Creator: attach media to THIS page */}
             {isOwner && (
-              <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.02] p-3">
-                <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-2">Attach to page {page}</p>
+              <div className="rounded-2xl border border-brand-400/25 bg-brand-500/[0.07] p-4">
+                <p className="text-xs font-bold text-brand-200 flex items-center gap-1.5"><IconPlus className="w-3.5 h-3.5" /> Page {page} media</p>
+                <p className="text-[11px] text-slate-400 mt-0.5 mb-3">Attach audio/video to <b>this exact page</b>. It overrides the whole-book media here.</p>
                 <input ref={audioRef} type="file" accept="audio/*" className="hidden" onChange={(e) => void attach('audio', e.target.files?.[0])} />
                 <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={(e) => void attach('video', e.target.files?.[0])} />
                 <div className="flex gap-2">
-                  <button onClick={() => audioRef.current?.click()} className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-slate-200 hover:bg-white/10"><IconPlus className="w-3.5 h-3.5" /> Audio</button>
-                  <button onClick={() => videoRef.current?.click()} className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-slate-200 hover:bg-white/10"><IconYouTube className="w-3.5 h-3.5" /> Video</button>
+                  <button onClick={() => audioRef.current?.click()} className={cn('flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg border px-3 py-2 transition', pm?.audioUrl ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/[0.05] text-slate-200 hover:bg-white/10')}><IconVolume className="w-3.5 h-3.5" /> {pm?.audioUrl ? 'Audio ✓' : 'Audio'}</button>
+                  <button onClick={() => videoRef.current?.click()} className={cn('flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg border px-3 py-2 transition', pm?.videoUrl ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/[0.05] text-slate-200 hover:bg-white/10')}><IconYouTube className="w-3.5 h-3.5" /> {pm?.videoUrl ? 'Video ✓' : 'Video'}</button>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-2">Per-page media plays only on this page. Whole-book media (set on upload) plays on every page without one.</p>
+                {pm && (pm.audioUrl || pm.videoUrl) && (
+                  <button onClick={() => void clearPageMedia()} className="text-[11px] text-rose-300 hover:text-rose-200 mt-2">Remove page {page} media</button>
+                )}
+                {pagesWithMedia.length > 0 && (
+                  <p className="text-[10px] text-slate-500 mt-3">Pages with their own media: {pagesWithMedia.join(', ')}</p>
+                )}
               </div>
             )}
           </aside>

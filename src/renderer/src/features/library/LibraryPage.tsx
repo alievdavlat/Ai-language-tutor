@@ -149,7 +149,7 @@ export default function LibraryPage(): JSX.Element {
       {/* Spotify-style bottom audio player */}
       {track && <AudioBar track={track} onClose={() => setTrack(null)} />}
 
-      {adding && <LibraryUploadModal language={lang.code} onClose={() => setAdding(false)} onSaved={() => items.refresh()} />}
+      {adding && <LibraryUploadModal language={lang.code} onClose={() => setAdding(false)} onSaved={(item) => { items.refresh(); if (item.kind === 'book') navigate(`/library/book/${item.id}`) }} />}
     </div>
   )
 }
