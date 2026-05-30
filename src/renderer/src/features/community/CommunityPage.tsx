@@ -267,7 +267,7 @@ function PostCard({ post, author, onAfterChange }: { post: Post; author: Platfor
   return (
     <div className="rounded-card border border-white/[0.07] bg-white/[0.03] p-4">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate('/channel')}><AvatarCircle name={author?.name ?? '?'} size="sm" /></button>
+        <button onClick={() => author && navigate(`/channel?id=${author.id}`)}><AvatarCircle name={author?.name ?? '?'} src={(author as { avatarUrl?: string } | null)?.avatarUrl} size="sm" /></button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-semibold text-white">{author?.name ?? 'Unknown'}</span>
