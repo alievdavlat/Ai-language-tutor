@@ -42,9 +42,14 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
         bUser = await backend.signUp({ name, email, role: 'student' }).catch(() => null)
       }
       setAuthenticated(true)
-      // Patch our app-level profile name from Clerk if missing
-      if (profile && !profile.name && bUser) {
-        setProfile({ ...profile, name: bUser.name, updatedAt: new Date().toISOString() })
+      // Patch our app-level profile name + photo from Clerk if missing.
+      if (profile && bUser && (!profile.name || (!profile.avatarUrl && clerk.user!.imageUrl))) {
+        setProfile({
+          ...profile,
+          name: profile.name || bUser.name,
+          avatarUrl: profile.avatarUrl || clerk.user!.imageUrl || undefined,
+          updatedAt: new Date().toISOString()
+        })
       }
       route()
     }
