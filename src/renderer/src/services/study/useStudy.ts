@@ -1,0 +1,186 @@
+/**
+ * React hooks that wire the Grammar / Vocabulary / Exams feature slice to the
+ * Foundation backend (`services/backend`) for persistence and the FSRS engine
+ * (`fsrs.ts`) for scheduling.
+ *
+ * Persistence goes through the single `backend` instance — local today,
+ * Supabase when `VITE_USE_SUPABASE=1` — exactly as the Foundation session
+ * intends. No page touches localStorage directly for these domains.
+ */
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { TargetLanguage, VocabItem } from '@shared/types'
+import type { ReviewGrade } from '@shared/types/study.types'
+import { backend } from '../backend'
+import { createId } from '../../lib/ids'
+import { newVocabItem, retrievability, schedule } from './fsrs'
+import { STARTER_VOCAB } from './seedVocab'
+
+const MS_PER_DAY = 86_400_000
+
+/** Stable id for the viewer, with a local fallback so study works pre-sign-in. */
+export function currentUserId(): string {
+  return backend.currentUserId() ?? 'u_local'
+}
+
+export interface VocabStats {
+  total: number
+  due: number
+  new: number
+  learning: number
+  mastered: number
+  /** Average predicted retention 0–100 across reviewed cards. */
+  retention: number
+}
+
+/** A card counts as "mastered" once it's in review with a long, stable interval. */
+function isMastered(c: VocabItem): boolean {
+  return c.state === 'review' && c.stability >= 21
+}
+
+export function computeStats(cards: VocabItem[], nowMs: number): VocabStats {
+  let due = 0
+  let learning = 0
+  let mastered = 0
+  let nu = 0
+  let retSum = 0
+  let retCount = 0
+  for (const c of cards) {
+    if (Date.parse(c.due) <= nowMs) due += 1
+    if (c.state === 'new') nu += 1
+    else if (c.state === 'learning' || c.state === 'relearning') learning += 1
+    if (isMastered(c)) mastered += 1
+    if (c.reps > 0 && c.lastReviewedAt) {
+      const elapsed = Math.max(0, (nowMs - Date.parse(c.lastReviewedAt)) / MS_PER_DAY)
+      retSum += retrievability(elapsed, c.stability)
+      retCount += 1
+    }
+  }
+  return {
+    total: cards.length,
+    due,
+    new: nu,
+    learning,
+    mastered,
+    retention: retCount ? Math.round((retSum / retCount) * 100) : 0
+  }
+}
+
+interface UseVocabResult {
+  cards: VocabItem[]
+  due: VocabItem[]
+  stats: VocabStats
+  loading: boolean
+  /** Add a custom word. Returns the created card. */
+  add: (input: { term: string; translation: string; example?: string; deck?: string }) => Promise<VocabItem>
+  /** Grade a card during review; reschedules via FSRS + logs activity. */
+  review: (card: VocabItem, grade: ReviewGrade) => Promise<VocabItem>
+  remove: (id: string) => Promise<void>
+  refresh: () => void
+}
+
+/**
+ * Loads the user's vocabulary for a language, seeding a starter deck on first
+ * run so the page is never empty. Exposes add / review / remove actions that
+ * persist through the backend and keep FSRS state correct.
+ */
+export function useVocab(language: TargetLanguage): UseVocabResult {
+  const userId = currentUserId()
+  const [cards, setCards] = useState<VocabItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [tick, setTick] = useState(0)
+  const refresh = useCallback(() => setTick((t) => t + 1), [])
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    ;(async () => {
+      let list = await backend.listVocab(userId, { language })
+      if (list.length === 0) {
+        // Seed a small starter deck once so stats/review aren't empty.
+        const now = Date.now()
+        const seeded = STARTER_VOCAB.map((s, i) =>
+          newVocabItem({
+            id: createId('vocab'),
+            userId,
+            language,
+            term: s.term,
+            translation: s.translation,
+            example: s.example,
+            deck: s.deck,
+            // Stagger due times slightly so the queue has a natural order.
+            nowMs: now - i
+          })
+        )
+        for (const item of seeded) await backend.upsertVocab(item)
+        list = seeded
+      }
+      if (!cancelled) {
+        setCards(list)
+        setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [userId, language, tick])
+
+  const add = useCallback<UseVocabResult['add']>(
+    async (input) => {
+      const item = newVocabItem({
+        id: createId('vocab'),
+        userId,
+        language,
+        term: input.term.trim(),
+        translation: input.translation.trim(),
+        example: input.example?.trim() || undefined,
+        deck: input.deck?.trim() || 'My words',
+        nowMs: Date.now()
+      })
+      const saved = await backend.upsertVocab(item)
+      await backend.recordActivity({
+        userId,
+        kind: 'word_learned',
+        language,
+        xp: 2,
+        meta: { word: saved.term, deck: saved.deck ?? '' }
+      })
+      setCards((prev) => [saved, ...prev])
+      return saved
+    },
+    [userId, language]
+  )
+
+  const review = useCallback<UseVocabResult['review']>(
+    async (card, grade) => {
+      const { card: updated } = schedule(card, grade, Date.now())
+      const saved = await backend.upsertVocab(updated)
+      await backend.recordActivity({
+        userId,
+        kind: 'practice_session',
+        language,
+        xp: grade >= 3 ? 3 : 1,
+        meta: { word: saved.term, grade }
+      })
+      setCards((prev) => prev.map((c) => (c.id === saved.id ? saved : c)))
+      return saved
+    },
+    [userId, language]
+  )
+
+  const remove = useCallback<UseVocabResult['remove']>(
+    async (id) => {
+      await backend.deleteVocab(id)
+      setCards((prev) => prev.filter((c) => c.id !== id))
+    },
+    []
+  )
+
+  const nowMs = Date.now()
+  const due = useMemo(
+    () => cards.filter((c) => Date.parse(c.due) <= nowMs).sort((a, b) => Date.parse(a.due) - Date.parse(b.due)),
+    [cards, nowMs]
+  )
+  const stats = useMemo(() => computeStats(cards, nowMs), [cards, nowMs])
+
+  return { cards, due, stats, loading, add, review, remove, refresh }
+}

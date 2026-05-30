@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { CEFRLevel, UserProfile } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
+import { recordActivity } from '../../services/progress'
 import { ProgressBar } from '../../components/ui'
 import { IconCheck, IconTarget, IconX } from '../../components/icons'
 import { CEFR_ORDER, QUESTIONS, scoreToResult, type LevelResult } from './questions'
@@ -30,6 +31,14 @@ export default function LevelTestPage(): JSX.Element {
     return c
   }, [answers])
   const result: LevelResult = useMemo(() => scoreToResult(correctCount, total), [correctCount, total])
+
+  // Gamification — finishing the test logs an activity (and a "certificate").
+  useEffect(() => {
+    if (phase === 'result') {
+      recordActivity('level_test', { xp: 20, meta: { level: result.level, score: correctCount } })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
 
   const choose = (optIdx: number): void => {
     setAnswers((prev) => {
@@ -185,6 +194,20 @@ export default function LevelTestPage(): JSX.Element {
             </button>
           ))}
         </div>
+
+        {/* "I don't know" — counts as incorrect but lets the learner move on
+            honestly instead of guessing, which keeps the level estimate accurate. */}
+        <button
+          onClick={() => choose(-1)}
+          className={cn(
+            'mt-3 w-full rounded-2xl border border-dashed px-4 py-3 text-sm font-semibold transition',
+            selected === -1
+              ? 'border-slate-400 bg-white/[0.08] text-slate-200'
+              : 'border-white/15 bg-transparent text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
+          )}
+        >
+          🤔 I don't know — skip this one
+        </button>
       </div>
 
       <div className="mt-6 flex items-center justify-between gap-3">

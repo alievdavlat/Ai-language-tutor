@@ -3,6 +3,8 @@ import { cn } from '../../lib/classnames'
 import { SectionHeading } from '../../components/ui'
 import { useTargetLanguage } from '../../lib/language'
 import { getExamsForLanguage } from '../../lib/contentByLanguage'
+import { backend } from '../../services/backend'
+import { useBackendQuery } from '../../services/backend/useBackend'
 import {
   IconArrowRight,
   IconBook,
@@ -63,25 +65,23 @@ const EXAMS: ExamDef[] = [
     meta: '2 sections · ~2h 14m',
     scale: 'Score 400–1600',
     cover: 'from-emerald-600 to-teal-800',
-    to: '/exams/ielts',
-    soon: true,
+    to: '/exams/sat/mock',
     sections: [
-      { label: 'Reading', Icon: IconBook },
-      { label: 'Writing', Icon: IconPencilEdit }
+      { label: 'Reading & Writing', Icon: IconBook },
+      { label: 'Math', Icon: IconPencilEdit }
     ]
   },
   {
     id: 'gmat',
     title: 'GMAT',
     subtitle: 'Verbal & quantitative',
-    meta: '4 sections · ~3h 7m',
+    meta: '2 sections · timed',
     scale: 'Score 200–800',
     cover: 'from-violet-600 to-purple-800',
-    to: '/exams/ielts',
-    soon: true,
+    to: '/exams/gmat/mock',
     sections: [
       { label: 'Verbal', Icon: IconBook },
-      { label: 'Writing', Icon: IconPencilEdit }
+      { label: 'Quant', Icon: IconPencilEdit }
     ]
   }
 ]
@@ -136,13 +136,27 @@ function ExamCard({ exam }: { exam: ExamDef }): JSX.Element {
   )
 }
 
+function fmtDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  } catch {
+    return iso.slice(0, 10)
+  }
+}
+
 export default function ExamsHubPage(): JSX.Element {
   const navigate = useNavigate()
   const lang = useTargetLanguage()
   const langExams = getExamsForLanguage(lang.code)
+  // Real recent attempts, persisted via the Foundation backend.
+  const { data: attempts } = useBackendQuery(
+    () => backend.listExamAttempts(backend.currentUserId() ?? 'u_local'),
+    [],
+    []
+  )
   // Map our shared exam cards through the rich ExamDef shape — only show full
   // mocks for the ones we have real shells for (currently IELTS/TOEFL).
-  const exams = EXAMS.filter((e) => langExams.some((x) => x.id === e.id))
+  const exams = EXAMS.filter((e) => e.id === 'sat' || e.id === 'gmat' || langExams.some((x) => x.id === e.id))
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full w-full flex flex-col gap-7">
@@ -251,19 +265,28 @@ export default function ExamsHubPage(): JSX.Element {
           </div>
         </div>
 
-        {/* Recent results */}
+        {/* Recent results — real persisted attempts */}
         <div>
-          <SectionHeading title="Recent results" />
+          <SectionHeading title="Recent results" subtitle={attempts.length ? `${attempts.length} attempt${attempts.length === 1 ? '' : 's'}` : undefined} />
           <div className="flex flex-col gap-2">
-            {RECENT.map((r, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white">{r.name}</p>
-                  <p className="text-xs text-slate-500">{r.date}</p>
-                </div>
-                <span className={cn('text-lg font-bold', r.tone)}>{r.score}</span>
+            {attempts.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-6 text-center text-sm text-slate-400">
+                No attempts yet. Take a mock test above and your score appears here.
               </div>
-            ))}
+            ) : (
+              [...attempts]
+                .sort((a, b) => b.takenAt.localeCompare(a.takenAt))
+                .slice(0, 6)
+                .map((r) => (
+                  <div key={r.id} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white uppercase">{r.kind}</p>
+                      <p className="text-xs text-slate-500">{fmtDate(r.takenAt)}{r.durationMin ? ` · ${r.durationMin} min` : ''}</p>
+                    </div>
+                    <span className="text-lg font-bold text-amber-300">{r.cefr ?? r.overall}</span>
+                  </div>
+                ))
+            )}
           </div>
         </div>
       </div>

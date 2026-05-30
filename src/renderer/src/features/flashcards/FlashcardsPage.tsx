@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
+import { recordActivity } from '../../services/progress'
 import { ProgressBar, SectionHeading } from '../../components/ui'
 import { IconBolt, IconBook, IconChevronLeft, IconStar, IconTarget } from '../../components/icons'
 
@@ -39,6 +40,13 @@ export default function FlashcardsPage(): JSX.Element {
   const matched = matchPicks.length
 
   const reset = (): void => { setIdx(0); setFlipped(false); setSelected(null); setMatchPicks([]) }
+
+  // Gamification — a finished round logs words learned + XP into the progress store.
+  useEffect(() => {
+    if (mode === 'done') {
+      recordActivity('flashcard_round', { skill: 'vocabulary', meta: { learned: DECK.length } })
+    }
+  }, [mode])
 
   return (
     <div className="h-full overflow-y-auto">
