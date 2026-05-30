@@ -20,6 +20,18 @@ export interface AIConfig {
   models: Record<string, string>
 }
 
+/**
+ * Text-to-speech (the companion's voice) provider selection — mirrors AIConfig
+ * but for voice. `activeProviderId` defaults to 'system' (built-in Web Speech /
+ * SAPI). Per-provider API key + chosen voice id stored locally.
+ */
+export interface TTSConfig {
+  activeProviderId: string
+  tokens: Record<string, string>
+  /** Chosen voice id per provider (e.g. an ElevenLabs voice). */
+  voices?: Record<string, string>
+}
+
 export interface UserSettings {
   accent: Accent
   correctionStyle: CorrectionStyle
@@ -54,4 +66,6 @@ export interface UserSettings {
   /** Cloud-AI provider configuration. Optional for backwards-compat — code
    *  treats `ai === undefined` as "no provider configured". */
   ai?: AIConfig
+  /** Voice (TTS) provider configuration. `undefined` = use the system voice. */
+  tts?: TTSConfig
 }

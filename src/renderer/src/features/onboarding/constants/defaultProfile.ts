@@ -32,7 +32,8 @@ export function buildEmptyProfile(): UserProfile {
       echoCancellation: true,
       autoGainControl: true,
       avatarMode: '2d',
-      ai: { activeProviderId: null, tokens: {}, models: {} }
+      ai: { activeProviderId: null, tokens: {}, models: {} },
+      tts: { activeProviderId: 'system', tokens: {}, voices: {} }
     }
   }
 }

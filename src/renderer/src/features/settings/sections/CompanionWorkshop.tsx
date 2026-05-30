@@ -7,6 +7,7 @@ import { Card, Tabs, type TabItem } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 import CharacterSection from './CharacterSection'
 import CompanionMemory from './CompanionMemory'
+import TTSProviderSection from './TTSProviderSection'
 import VoiceSection from './VoiceSection'
 import SpeakingRateSection from './SpeakingRateSection'
 import AccentSection from './AccentSection'
@@ -188,6 +189,7 @@ export default function CompanionWorkshop({
 
       {tab === 'voice' && (
         <div className="grid grid-cols-1 gap-4">
+          <TTSProviderSection tts={s.tts} onChange={(tts) => onPatch({ tts })} />
           <VoiceSection accent={s.accent} currentVoiceURI={s.voiceURI} onPick={(voiceURI) => onPatch({ voiceURI })} />
           <SpeakingRateSection current={s.ttsSpeed} onChange={(ttsSpeed) => onPatch({ ttsSpeed })} />
           <AccentSection current={s.accent} onChange={(accent) => onPatch({ accent })} />
