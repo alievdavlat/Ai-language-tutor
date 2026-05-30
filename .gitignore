@@ -16,3 +16,6 @@ txt.txt
 *.tsbuildinfo
 .tmp-audio/
 .tmp-frames/
+
+# Local MCP config (may contain API keys) — keep out of git
+.mcp.json
