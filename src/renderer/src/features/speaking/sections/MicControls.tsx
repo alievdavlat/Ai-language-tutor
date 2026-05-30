@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import type { MicMode } from '@shared/types'
-import { Chip, Input } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 
 interface MicControlsProps {
@@ -78,14 +78,25 @@ export default function MicControls({
 
   return (
     <div className="border-t border-white/[0.08] pt-4">
-      {/* Mode toggle + live indicator */}
-      <div className="flex items-center gap-2 mb-4">
-        <Chip selected={mode === 'push-to-talk'} onClick={() => onModeChange('push-to-talk')}>
-          👆 Tap-to-talk
-        </Chip>
-        <Chip selected={mode === 'always-on'} onClick={() => onModeChange('always-on')}>
-          🎙️ Always-on
-        </Chip>
+      {/* Mode segmented toggle + live indicator */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="inline-flex items-center gap-1 p-1 rounded-full bg-white/[0.04] border border-white/10">
+          {([
+            { m: 'push-to-talk' as MicMode, label: '👆 Tap-to-talk' },
+            { m: 'always-on' as MicMode, label: '🎙️ Always-on' }
+          ]).map(({ m, label }) => (
+            <button
+              key={m}
+              onClick={() => onModeChange(m)}
+              className={cn(
+                'rounded-full px-3 py-1 text-xs font-semibold transition',
+                mode === m ? 'bg-brand-500/30 text-white shadow-glow-sm' : 'text-slate-400 hover:text-slate-200'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         {listening && (
           <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-red-300 font-medium">
             <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse shadow-[0_0_8px_#f87171]" />
@@ -99,38 +110,41 @@ export default function MicControls({
         )}
       </div>
 
-      {/* Main controls row: big circular mic + text input + send */}
-      <div className="flex items-center gap-3">
+      {/* Composer pill: mic + input + send in one rounded bar */}
+      <div
+        className={cn(
+          'flex items-center gap-2 rounded-2xl border bg-white/[0.04] pl-2 pr-2 py-2 transition',
+          listening ? 'border-red-400/40 shadow-[0_0_20px_rgba(239,68,68,0.18)]' : 'border-white/10 focus-within:border-brand-400/50'
+        )}
+      >
         {/* Circular mic button */}
         <button
           type="button"
           onClick={handleMicClick}
           disabled={disabled && !listening}
-          title={
-            mode === 'push-to-talk'
-              ? 'Tap to speak (or hold Space)'
-              : 'Toggle always-on mic (Esc to stop)'
-          }
+          title={mode === 'push-to-talk' ? 'Tap to speak (or hold Space)' : 'Toggle always-on mic (Esc to stop)'}
           className={cn(
-            'relative shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-xl transition-all duration-200',
-            'ring-2 focus-visible:outline-none',
+            'relative shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-lg transition-all duration-200 focus-visible:outline-none',
             disabled && !listening
-              ? 'bg-white/[0.06] ring-white/10 text-slate-600 cursor-not-allowed opacity-50'
+              ? 'bg-white/[0.06] text-slate-600 cursor-not-allowed opacity-50'
               : listening
-                ? 'bg-red-500/90 ring-red-400/60 text-white shadow-[0_0_20px_rgba(239,68,68,0.5)] scale-110'
-                : 'bg-brand-600/80 ring-brand-400/50 text-white hover:bg-brand-500/90 hover:scale-105 shadow-[0_0_15px_rgba(59,130,246,0.35)]'
+                ? 'bg-red-500/90 text-white shadow-[0_0_18px_rgba(239,68,68,0.5)]'
+                : 'bg-brand-600/90 text-white hover:bg-brand-500 hover:scale-105 shadow-[0_0_14px_rgba(59,130,246,0.35)]'
           )}
         >
-          {/* Pulse ring when listening */}
           {listening && (
-            <span className="absolute inset-0 rounded-full bg-red-400/30 animate-ping" />
+            <motion.span
+              className="absolute inset-0 rounded-full bg-red-400/30"
+              animate={{ scale: [1, 1.6], opacity: [0.5, 0] }}
+              transition={{ duration: 1.1, repeat: Infinity, ease: 'easeOut' }}
+            />
           )}
           <span className="relative">{listening ? '⏹' : '🎤'}</span>
         </button>
 
-        {/* Text input */}
-        <Input
-          className="flex-1"
+        {/* Text input (bare, seamless inside the pill) */}
+        <input
+          className="flex-1 bg-transparent outline-none text-sm text-slate-100 placeholder:text-slate-500 px-1"
           placeholder="…or type to chat"
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -149,10 +163,10 @@ export default function MicControls({
           onClick={submitText}
           disabled={textDisabled || !text.trim()}
           className={cn(
-            'shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm transition-all duration-150',
+            'shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm transition-all duration-150',
             textDisabled || !text.trim()
               ? 'bg-white/[0.04] text-slate-600 cursor-not-allowed'
-              : 'bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white hover:scale-105'
+              : 'bg-brand-500/90 text-white hover:bg-brand-500 hover:scale-105'
           )}
           title="Send message"
         >

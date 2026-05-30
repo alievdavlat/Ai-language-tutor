@@ -15,6 +15,9 @@ interface ChatPanelProps {
   onStartMic: () => void
   onStopMic: () => void
   onTextSubmit: (text: string) => void
+  /** Companion identity for AI message bubbles. */
+  companionName?: string
+  companionAvatarUrl?: string
 }
 
 export default function ChatPanel({
@@ -26,7 +29,9 @@ export default function ChatPanel({
   onMicModeChange,
   onStartMic,
   onStopMic,
-  onTextSubmit
+  onTextSubmit,
+  companionName,
+  companionAvatarUrl
 }: ChatPanelProps): JSX.Element {
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
@@ -41,12 +46,28 @@ export default function ChatPanel({
     <Card className="flex flex-col overflow-hidden">
       <div ref={scrollerRef} className="flex-1 overflow-y-auto pr-2">
         {turns.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center text-slate-400">
-            <p className="text-sm mb-2">Say hello to start 👋</p>
-            <p className="text-xs">Hold Space or the Record button, or type a message.</p>
+          <div className="h-full flex flex-col items-center justify-center text-center px-6">
+            <div className="w-16 h-16 rounded-2xl overflow-hidden ring-1 ring-white/10 bg-white/[0.05] flex items-center justify-center mb-4">
+              {companionAvatarUrl ? (
+                <img src={companionAvatarUrl} alt={companionName ?? 'AI'} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                <span className="text-2xl">💬</span>
+              )}
+            </div>
+            <p className="text-sm font-semibold text-slate-200 mb-1">
+              Say hello to {companionName ?? 'your companion'} 👋
+            </p>
+            <p className="text-xs text-slate-500">Tap the mic, press Space, or type a message below.</p>
           </div>
         ) : (
-          turns.map((t) => <MessageBubble key={t.id} turn={t} />)
+          turns.map((t) => (
+            <MessageBubble
+              key={t.id}
+              turn={t}
+              companionName={companionName}
+              companionAvatarUrl={companionAvatarUrl}
+            />
+          ))
         )}
       </div>
 

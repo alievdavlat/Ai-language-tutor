@@ -225,6 +225,8 @@ export default function ConversationMode({ topic, onTopicChange }: ConversationM
           }}
           onStopMic={() => void stt.stop()}
           onTextSubmit={(t) => void handleUserTurn(t)}
+          companionName={avatarName}
+          companionAvatarUrl={avatarPortrait}
         />
       </div>
     </div>
