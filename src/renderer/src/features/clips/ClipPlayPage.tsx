@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { IconPlay, IconYouTube } from '../../components/icons'
@@ -62,6 +62,34 @@ export default function ClipPlayPage(): JSX.Element {
   const key = (li: number, wi: number): string => `${li}-${wi}`
   const get = (li: number, wi: number): BlankState => blanks[key(li, wi)] ?? { value: '', status: 'idle' }
 
+  // Ordered list of every blank key (line, then word order) + input refs, so a
+  // correct answer can auto-advance focus to the next unfilled blank.
+  const inputRefs = useRef<Map<string, HTMLInputElement | null>>(new Map())
+  const order = useMemo(() => {
+    const arr: string[] = []
+    layout.forEach((l, li) => {
+      ;[...l.blanks].sort((a, b) => a - b).forEach((wi) => arr.push(key(li, wi)))
+    })
+    return arr
+  }, [layout])
+
+  function focusKey(k: string | undefined): void {
+    if (k) inputRefs.current.get(k)?.focus()
+  }
+
+  function advanceFrom(k: string): void {
+    const idx = order.indexOf(k)
+    for (let j = idx + 1; j < order.length; j++) {
+      const nk = order[j]
+      const st = blanks[nk]?.status
+      if (st !== 'correct' && st !== 'revealed') {
+        setActive(Number(nk.split('-')[0]))
+        window.setTimeout(() => focusKey(nk), 0)
+        return
+      }
+    }
+  }
+
   // ⭐ Auto-pause when the window/tab loses focus (user-requested): a tab
   // switch fires visibilitychange (document.hidden), switching to another app
   // window fires blur. Either one pauses playback.
@@ -78,6 +106,13 @@ export default function ClipPlayPage(): JSX.Element {
     }
   }, [])
 
+  // Auto-focus the first blank on start (Type / Scribe modes).
+  useEffect(() => {
+    if (mode === 'choice' || mode === 'karaoke') return
+    window.setTimeout(() => focusKey(order[0]), 60)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order, mode])
+
   const remaining = totalGaps - hits - fails
 
   function judge(li: number, wi: number, value: string): void {
@@ -88,6 +123,7 @@ export default function ClipPlayPage(): JSX.Element {
       setHits((h) => h + 1)
       setScore((s) => s + 10 * bonus)
       setBonus((x) => Math.min(8, x + 1))
+      advanceFrom(key(li, wi))
     } else {
       setFails((f) => f + 1)
       setBonus(1)
@@ -120,6 +156,7 @@ export default function ClipPlayPage(): JSX.Element {
     setBonus(1)
     setActive(0)
     setPaused(false)
+    if (mode !== 'choice' && mode !== 'karaoke') window.setTimeout(() => focusKey(order[0]), 60)
   }
 
   // Options for the active line's first unfilled blank (Choice mode).
@@ -212,11 +249,19 @@ export default function ClipPlayPage(): JSX.Element {
                 return (
                   <span key={wi} className="inline-flex items-center">
                     <input
+                      ref={(el) => {
+                        inputRefs.current.set(key(li, wi), el)
+                      }}
                       value={st.value}
                       disabled={st.status === 'correct' || st.status === 'revealed'}
-                      onChange={(e) => setBlanks((b) => ({ ...b, [key(li, wi)]: { value: e.target.value, status: 'idle' } }))}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        // Auto-judge as soon as the word is correct → advance.
+                        if (norm(v) === norm(w)) judge(li, wi, v)
+                        else setBlanks((b) => ({ ...b, [key(li, wi)]: { value: v, status: 'idle' } }))
+                      }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') judge(li, wi, st.value)
+                        if (e.key === 'Enter') judge(li, wi, (e.target as HTMLInputElement).value)
                       }}
                       placeholder={'_'.repeat(Math.max(3, norm(w).length))}
                       readOnly={mode === 'choice'}
