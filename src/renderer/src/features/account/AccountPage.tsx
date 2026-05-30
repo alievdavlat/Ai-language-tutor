@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { CEFRLevel, TargetLanguage, UserProfile } from '@shared/types'
+import { SUPPORTED_LANGUAGES } from '@shared/constants'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { useTargetLanguage } from '../../lib/language'
 import { bandFromDob, BAND_LABEL } from '../../lib/age'
-import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
+import { AvatarCircle, Input, Tabs, type TabItem } from '../../components/ui'
 import DangerZoneSection from '../settings/sections/DangerZoneSection'
+
+const LEVELS: readonly CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 import {
   IconBook,
   IconBookmark,
@@ -59,54 +63,96 @@ function MediaTile({ item }: { item: { kind: string; title: string; sub: string;
   )
 }
 
-function AgeBandCard(): JSX.Element {
-  const profile = useAppStore((s) => s.profile)
+function ProfileEditModal({ profile, onClose }: { profile: UserProfile; onClose: () => void }): JSX.Element {
   const setProfile = useAppStore((s) => s.setProfile)
-  const band = bandFromDob(profile?.dateOfBirth)
-  const [editing, setEditing] = useState(false)
-  const [dob, setDob] = useState(profile?.dateOfBirth ?? '')
+  const [name, setName] = useState(profile.name ?? '')
+  const [dob, setDob] = useState(profile.dateOfBirth ?? '')
+  const [level, setLevel] = useState<CEFRLevel>(profile.level)
+  const [target, setTarget] = useState<TargetLanguage>(profile.targetLanguage)
+  const [nativeLang, setNativeLang] = useState(profile.nativeLanguage ?? '')
   const [saving, setSaving] = useState(false)
+  const band = bandFromDob(dob)
 
   const save = async (): Promise<void> => {
-    if (!profile || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) return
     setSaving(true)
-    const next = { ...profile, dateOfBirth: dob, updatedAt: new Date().toISOString() }
+    const next: UserProfile = {
+      ...profile,
+      name: name.trim() || undefined,
+      dateOfBirth: /^\d{4}-\d{2}-\d{2}$/.test(dob) ? dob : profile.dateOfBirth,
+      level,
+      targetLanguage: target,
+      nativeLanguage: nativeLang.trim() || profile.nativeLanguage,
+      updatedAt: new Date().toISOString()
+    }
     await window.api.profile.save(next)
     setProfile(next)
     setSaving(false)
-    setEditing(false)
+    onClose()
   }
 
   return (
-    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3.5 flex items-center gap-3">
-      <span className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-lg shrink-0">🛡️</span>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-white">Age band</p>
-        {!editing ? (
-          <p className="text-xs text-slate-400">
-            {band ? BAND_LABEL[band] : 'Not set — some features (companions, AI tutor) are locked until confirmed.'}
-          </p>
-        ) : (
-          <div className="flex items-center gap-2 mt-1.5">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in" onClick={onClose}>
+      <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <header className="sticky top-0 bg-slate-900/95 backdrop-blur px-6 py-4 border-b border-white/10 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Edit profile</h2>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="btn-ghost text-sm px-3 py-1.5">Cancel</button>
+            <button onClick={() => void save()} disabled={saving} className="btn-primary text-sm px-4 py-1.5 disabled:opacity-60">
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </header>
+        <div className="px-6 py-5 space-y-5">
+          <div>
+            <label className="block text-[11px] uppercase tracking-widest text-slate-400 font-bold mb-1.5">Name</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+          </div>
+
+          <div>
+            <label className="block text-[11px] uppercase tracking-widest text-slate-400 font-bold mb-1.5">Date of birth</label>
             <input
               type="date"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
               max={new Date().toISOString().slice(0, 10)}
               min="1900-01-01"
-              className="input !py-1.5 text-sm"
+              className="input"
             />
-            <button onClick={() => void save()} disabled={saving || !dob} className="btn-primary text-xs px-3 py-1.5">
-              {saving ? 'Saving…' : 'Save'}
-            </button>
+            <p className="text-[10px] text-slate-500 mt-1">
+              🛡️ {band ? BAND_LABEL[band] : 'Not set — companions & AI tutor stay locked until confirmed.'}
+            </p>
           </div>
-        )}
+
+          <div>
+            <label className="block text-[11px] uppercase tracking-widest text-slate-400 font-bold mb-1.5">English / target level</label>
+            <div className="flex flex-wrap gap-2">
+              {LEVELS.map((lv) => (
+                <button key={lv} onClick={() => setLevel(lv)}
+                  className={cn('rounded-full px-4 py-1.5 text-xs font-bold border transition', level === lv ? 'bg-brand-500/20 border-brand-400/40 text-brand-100' : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]')}>
+                  {lv}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] uppercase tracking-widest text-slate-400 font-bold mb-1.5">Learning language</label>
+            <div className="flex flex-wrap gap-2">
+              {SUPPORTED_LANGUAGES.map((l) => (
+                <button key={l.code} onClick={() => setTarget(l.code)}
+                  className={cn('rounded-full px-3 py-1.5 text-xs font-semibold border transition', target === l.code ? 'bg-brand-500/20 border-brand-400/40 text-brand-100' : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]')}>
+                  {l.flag} {l.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] uppercase tracking-widest text-slate-400 font-bold mb-1.5">Native language</label>
+            <Input value={nativeLang} onChange={(e) => setNativeLang(e.target.value)} placeholder="e.g. Uzbek" />
+          </div>
+        </div>
       </div>
-      {!editing && (
-        <button onClick={() => setEditing(true)} className="btn-ghost px-3 py-1.5 text-xs shrink-0">
-          {band ? 'Change' : 'Set date of birth'}
-        </button>
-      )}
     </div>
   )
 }
@@ -116,8 +162,10 @@ export default function AccountPage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
   const lang = useTargetLanguage()
   const [tab, setTab] = useState<Tab>('saved')
+  const [editing, setEditing] = useState(false)
   const displayName = profile?.name?.trim() || 'You'
   const level = profile?.level ?? 'B1'
+  const band = bandFromDob(profile?.dateOfBirth)
 
   return (
     <div className="h-full overflow-y-auto">
@@ -135,10 +183,23 @@ export default function AccountPage(): JSX.Element {
               <span><b className="text-amber-300">🔥 7</b> day streak</span>
             </div>
           </div>
-          <button onClick={() => navigate('/settings')} className="btn-ghost px-4 py-2 text-sm shrink-0">Edit profile</button>
+          <button onClick={() => setEditing(true)} className="btn-ghost px-4 py-2 text-sm shrink-0">Edit profile</button>
         </div>
 
-        <AgeBandCard />
+        {/* Age-band nudge (editing happens in Edit profile). */}
+        {!band && (
+          <button
+            onClick={() => setEditing(true)}
+            className="rounded-2xl border border-amber-400/20 bg-amber-500/[0.06] px-4 py-3 flex items-center gap-3 text-left hover:bg-amber-500/[0.1] transition"
+          >
+            <span className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center shrink-0">🛡️</span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold text-white">Confirm your age</span>
+              <span className="block text-xs text-slate-400">Companions & AI tutor stay locked until you add your date of birth.</span>
+            </span>
+            <span className="text-xs text-amber-300 font-semibold shrink-0">Set →</span>
+          </button>
+        )}
 
         <Tabs items={TABS} active={tab} onChange={setTab} className="self-start" />
 
@@ -193,6 +254,8 @@ export default function AccountPage(): JSX.Element {
           <DangerZoneSection />
         </div>
       </div>
+
+      {editing && profile && <ProfileEditModal profile={profile} onClose={() => setEditing(false)} />}
     </div>
   )
 }

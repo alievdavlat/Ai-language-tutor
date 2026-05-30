@@ -5,7 +5,6 @@ import { useSettingsPatch } from './hooks/useSettingsPatch'
 import MicModeSection from './sections/MicModeSection'
 import CompanionWorkshop from './sections/CompanionWorkshop'
 import MicProcessingSection from './sections/MicProcessingSection'
-import STTEngineSection from './sections/STTEngineSection'
 import LanguageSection from './sections/LanguageSection'
 import AISection from './sections/AISection'
 
@@ -97,12 +96,9 @@ export default function SettingsPage(): JSX.Element {
               autoGainControl={s.autoGainControl ?? true}
               onChange={(p) => void patch(p)}
             />
-            <STTEngineSection
-              engine={s.sttEngine}
-              currentModel={s.whisperModel}
-              onEngineChange={(sttEngine) => void patch({ sttEngine })}
-              onModelChange={(whisperModel) => void patch({ whisperModel })}
-            />
+            <p className="text-[11px] text-slate-500 px-1">
+              Speech recognition is automatic — it uses your system's built-in recognizer. No setup needed.
+            </p>
           </div>
         )}
       </div>
