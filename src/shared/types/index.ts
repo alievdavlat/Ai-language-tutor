@@ -11,3 +11,9 @@ export * from './placement.types'
 export * from './grammar.types'
 export * from './sidecar.types'
 export * from './platform.types'
+export * from './platform-ext.types'
+export * from './social.types'
+// NOTE: study.types.ts is consumed directly by the study subsystem (not via this
+// barrel) and re-declares ActivityEvent/ExamAttempt/ExamKind with study-specific
+// shapes. It is intentionally NOT re-exported here to avoid clashing with the
+// backend-contract versions in platform-ext.types. Import it by path if needed.
