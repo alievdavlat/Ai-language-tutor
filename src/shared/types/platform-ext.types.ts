@@ -140,6 +140,11 @@ export interface VocabItem {
   example?: string
   /** Optional deck/grouping label (e.g. "IELTS band 7", "Travel"). */
   deck?: string
+  /** How the word entered the user's vocabulary: manually created vs saved from
+   *  content (reading/dictionary). Drives the My words / Saved tabs. */
+  source?: 'created' | 'saved'
+  /** Optional synonyms / alternative phrasings shown when a card is opened. */
+  alternatives?: string[]
   /** ── FSRS scheduling fields (defaults are FSRS "new card") ── */
   due: string
   stability: number

@@ -50,7 +50,7 @@ export function saveVocab(input: SaveVocabInput): void {
   const userId = backend.currentUserId()
   if (!userId) return
   const lang = (input.lang as TargetLanguage) || 'en'
-  const item = newVocabItem(userId, lang, input.word, input.translation || input.meaning || '', input.example, input.deck ?? input.source)
+  const item = { ...newVocabItem(userId, lang, input.word, input.translation || input.meaning || '', input.example, input.deck ?? input.source), source: 'saved' as const }
   void backend.upsertVocab(item).catch(() => { /* offline / not signed in */ })
 }
 

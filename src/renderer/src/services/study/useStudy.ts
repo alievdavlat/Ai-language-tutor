@@ -126,16 +126,19 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
 
   const add = useCallback<UseVocabResult['add']>(
     async (input) => {
-      const item = newVocabItem({
-        id: createId('vocab'),
-        userId,
-        language,
-        term: input.term.trim(),
-        translation: input.translation.trim(),
-        example: input.example?.trim() || undefined,
-        deck: input.deck?.trim() || 'My words',
-        nowMs: Date.now()
-      })
+      const item = {
+        ...newVocabItem({
+          id: createId('vocab'),
+          userId,
+          language,
+          term: input.term.trim(),
+          translation: input.translation.trim(),
+          example: input.example?.trim() || undefined,
+          deck: input.deck?.trim() || 'My words',
+          nowMs: Date.now()
+        }),
+        source: 'created' as const
+      }
       const saved = await backend.upsertVocab(item)
       await backend.recordActivity({
         userId,
