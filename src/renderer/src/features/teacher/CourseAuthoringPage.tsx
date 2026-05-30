@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Course } from '@shared/types'
+import type { Course, Lesson, Unit } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { backend } from '../../services/backend/useBackend'
+import { fileToDataUrl, isImageCover } from '../../lib/cover'
 import { Tabs, type TabItem } from '../../components/ui'
 import {
   IconBook,
@@ -11,6 +12,7 @@ import {
   IconChevronRight,
   IconPlus,
   IconVolume,
+  IconX,
   IconYouTube
 } from '../../components/icons'
 
@@ -41,6 +43,11 @@ export default function CourseAuthoringPage(): JSX.Element {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [level, setLevel] = useState('B1')
+  const [thumbnailUrl, setThumbnailUrl] = useState('')
+  const [bannerUrl, setBannerUrl] = useState('')
+  const thumbInput = useRef<HTMLInputElement>(null)
+  const bannerInput = useRef<HTMLInputElement>(null)
+  const [imgError, setImgError] = useState<string | null>(null)
   const [pricingMode, setPricingMode] = useState<'free' | 'one-off' | 'subscription'>('one-off')
   const [price, setPrice] = useState('29')
   const [units, setUnits] = useState<DraftUnit[]>([
@@ -64,6 +71,8 @@ export default function CourseAuthoringPage(): JSX.Element {
       level,
       targetLanguage: profile?.targetLanguage ?? 'en',
       cover: 'from-violet-500 to-purple-700',
+      thumbnailUrl: thumbnailUrl || undefined,
+      bannerUrl: bannerUrl || undefined,
       pricing,
       rating: 0,
       reviewCount: 0,
@@ -73,18 +82,57 @@ export default function CourseAuthoringPage(): JSX.Element {
     }
   }
 
+  /** Persist the drafted units + lessons to the backend (so the course
+   *  actually has a curriculum — without this, courses show "0 lessons"). */
+  const persistCurriculum = async (courseId: string): Promise<void> => {
+    for (const [ui, u] of units.entries()) {
+      const unit: Unit = { id: `${courseId}_u${ui}`, courseId, index: ui, title: u.title || `Unit ${ui + 1}` }
+      await backend.upsertUnit(unit)
+      for (const [li, ls] of u.lessons.entries()) {
+        if (!ls.title.trim()) continue
+        const lesson: Lesson = {
+          id: `${unit.id}_l${li}`,
+          unitId: unit.id,
+          index: li,
+          title: ls.title.trim(),
+          kind: 'video',
+          videoUrl: ls.link || undefined,
+          dripDays: ls.dripDays || undefined
+        }
+        await backend.upsertLesson(lesson)
+      }
+    }
+  }
+
   const saveDraft = async (): Promise<void> => {
     setBusy('saving')
     const course = await backend.upsertCourse(buildCourse(false))
+    await persistCurriculum(course.id)
     setSavedCourseId(course.id)
     setBusy('idle')
   }
   const publish = async (): Promise<void> => {
+    if (!thumbnailUrl || !bannerUrl) {
+      setImgError('Add both a thumbnail and a banner before publishing.')
+      setStep('basics')
+      return
+    }
     setBusy('publishing')
     const course = await backend.upsertCourse(buildCourse(true))
+    await persistCurriculum(course.id)
     setSavedCourseId(course.id)
     setBusy('idle')
-    navigate('/teacher')
+    navigate(`/course/${course.id}`)
+  }
+
+  const pickImage = async (kind: 'thumb' | 'banner', file?: File): Promise<void> => {
+    setImgError(null)
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setImgError('Please choose an image file.'); return }
+    if (file.size > 4 * 1024 * 1024) { setImgError('Image must be under 4 MB.'); return }
+    const url = await fileToDataUrl(file)
+    if (kind === 'thumb') setThumbnailUrl(url)
+    else setBannerUrl(url)
   }
 
   const addUnit = (): void => setUnits((u) => [...u, { title: `Unit ${u.length + 1}`, lessons: [{ title: '', link: '', dripDays: 0 }] }])
@@ -137,12 +185,44 @@ export default function CourseAuthoringPage(): JSX.Element {
               <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Short description</label>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What will students learn?" className="input mt-1.5 min-h-[80px] resize-none" />
             </div>
-            <div>
-              <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Cover image</label>
-              <button className="mt-1.5 w-full rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-6 flex flex-col items-center gap-2 hover:bg-white/[0.04]">
-                <span className="text-2xl">📸</span>
-                <span className="text-xs text-slate-400">Upload or paste an image URL</span>
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Thumbnail (square card image) */}
+              <div>
+                <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Thumbnail <span className="text-rose-400">*</span></label>
+                <input ref={thumbInput} type="file" accept="image/*" className="hidden" onChange={(e) => void pickImage('thumb', e.target.files?.[0])} />
+                {isImageCover(thumbnailUrl) ? (
+                  <div className="mt-1.5 relative rounded-xl overflow-hidden aspect-video ring-1 ring-white/10">
+                    <img src={thumbnailUrl} alt="thumbnail" className="w-full h-full object-cover" />
+                    <button onClick={() => setThumbnailUrl('')} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80"><IconX className="w-4 h-4" /></button>
+                    <button onClick={() => thumbInput.current?.click()} className="absolute bottom-2 right-2 text-[11px] font-semibold bg-black/60 text-white rounded-full px-2.5 py-1 hover:bg-black/80">Replace</button>
+                  </div>
+                ) : (
+                  <button onClick={() => thumbInput.current?.click()} className="mt-1.5 w-full aspect-video rounded-xl border border-dashed border-white/15 bg-white/[0.02] flex flex-col items-center justify-center gap-1.5 hover:bg-white/[0.04]">
+                    <span className="text-2xl">🖼️</span>
+                    <span className="text-xs text-slate-400">Upload card thumbnail</span>
+                    <span className="text-[10px] text-slate-600">JPG/PNG · under 4 MB</span>
+                  </button>
+                )}
+              </div>
+              {/* Banner (wide hero image) */}
+              <div>
+                <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Banner <span className="text-rose-400">*</span></label>
+                <input ref={bannerInput} type="file" accept="image/*" className="hidden" onChange={(e) => void pickImage('banner', e.target.files?.[0])} />
+                {isImageCover(bannerUrl) ? (
+                  <div className="mt-1.5 relative rounded-xl overflow-hidden aspect-video ring-1 ring-white/10">
+                    <img src={bannerUrl} alt="banner" className="w-full h-full object-cover" />
+                    <button onClick={() => setBannerUrl('')} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80"><IconX className="w-4 h-4" /></button>
+                    <button onClick={() => bannerInput.current?.click()} className="absolute bottom-2 right-2 text-[11px] font-semibold bg-black/60 text-white rounded-full px-2.5 py-1 hover:bg-black/80">Replace</button>
+                  </div>
+                ) : (
+                  <button onClick={() => bannerInput.current?.click()} className="mt-1.5 w-full aspect-video rounded-xl border border-dashed border-white/15 bg-white/[0.02] flex flex-col items-center justify-center gap-1.5 hover:bg-white/[0.04]">
+                    <span className="text-2xl">🌄</span>
+                    <span className="text-xs text-slate-400">Upload wide banner</span>
+                    <span className="text-[10px] text-slate-600">Shown on the course page header</span>
+                  </button>
+                )}
+              </div>
+              {imgError && <p className="text-[12px] text-rose-400 sm:col-span-2">⚠ {imgError}</p>}
             </div>
           </div>
         )}
@@ -238,16 +318,18 @@ export default function CourseAuthoringPage(): JSX.Element {
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-6 flex flex-col gap-4">
             <p className="text-sm text-slate-300">Ready to publish? Your course will appear on your channel and in the catalog.</p>
             <ul className="text-sm text-slate-300 flex flex-col gap-1.5">
-              <li>✓ Basics complete</li>
-              <li>✓ {totalLessons} lessons across {units.length} unit{units.length === 1 ? '' : 's'}</li>
-              <li className="text-amber-300">⚠ Add a cover image for better discovery</li>
+              <li className={title.trim() ? '' : 'text-amber-300'}>{title.trim() ? '✓' : '⚠'} {title.trim() ? 'Title set' : 'Add a title (Basics)'}</li>
+              <li className={totalLessons > 0 ? '' : 'text-amber-300'}>{totalLessons > 0 ? '✓' : '⚠'} {totalLessons} lessons across {units.length} unit{units.length === 1 ? '' : 's'}</li>
+              <li className={thumbnailUrl ? '' : 'text-amber-300'}>{thumbnailUrl ? '✓' : '⚠'} Thumbnail {thumbnailUrl ? 'added' : 'required (Basics)'}</li>
+              <li className={bannerUrl ? '' : 'text-amber-300'}>{bannerUrl ? '✓' : '⚠'} Banner {bannerUrl ? 'added' : 'required (Basics)'}</li>
             </ul>
+            {imgError && <p className="text-[12px] text-rose-400">⚠ {imgError}</p>}
             <div className="flex items-center gap-3 pt-2">
               <button onClick={() => void saveDraft()} disabled={busy !== 'idle'} className="btn-ghost px-5 py-2.5 disabled:opacity-50">
                 {busy === 'saving' ? 'Saving…' : savedCourseId ? 'Update draft' : 'Save draft'}
               </button>
-              <button disabled={busy !== 'idle'} className="btn-ghost px-5 py-2.5 disabled:opacity-50">Preview</button>
-              <button onClick={() => void publish()} disabled={busy !== 'idle' || !title.trim()} className="btn-primary flex-1 py-2.5 disabled:opacity-50">
+              <button onClick={() => savedCourseId && navigate(`/course/${savedCourseId}`)} disabled={busy !== 'idle' || !savedCourseId} className="btn-ghost px-5 py-2.5 disabled:opacity-50">Preview</button>
+              <button onClick={() => void publish()} disabled={busy !== 'idle' || !title.trim() || !thumbnailUrl || !bannerUrl} className="btn-primary flex-1 py-2.5 disabled:opacity-50">
                 {busy === 'publishing' ? 'Publishing…' : 'Publish course'}
               </button>
             </div>

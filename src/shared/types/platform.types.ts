@@ -39,7 +39,12 @@ export interface Course {
   description: string
   level: string
   targetLanguage: TargetLanguage
+  /** Gradient class fallback (e.g. "from-sky-500 to-blue-700") used when no image is set. */
   cover: string
+  /** Square card image (data: URL or remote URL). Falls back to `cover` gradient. */
+  thumbnailUrl?: string
+  /** Wide hero/banner image for the course detail page. Falls back to `cover` gradient. */
+  bannerUrl?: string
   /** Pricing: { kind: 'free' } | { kind: 'one-off', usd: number } | { kind: 'sub', usdPerMo: number } */
   pricing: { kind: 'free' } | { kind: 'one-off'; usd: number } | { kind: 'sub'; usdPerMo: number }
   rating: number

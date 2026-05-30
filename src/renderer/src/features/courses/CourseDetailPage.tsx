@@ -15,6 +15,7 @@ import {
 } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { useAppStore } from '../../store/useAppStore'
+import { isImageCover } from '../../lib/cover'
 import { buildCourseView } from '../../services/content/courseModel'
 import { useContentState, recordFinalExam, issueCertificate, getCertificate } from '../../services/content/progress'
 import { getFinalExam } from '../../services/content/exams'
@@ -159,11 +160,17 @@ export default function CourseDetailPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       {/* Hero */}
-      <div className={cn('relative bg-gradient-to-br px-6 pt-4 pb-6', course.cover)}>
-        <button onClick={() => navigate('/courses')} className="text-white/80 hover:text-white transition mb-4">
+      <div className={cn('relative px-6 pt-4 pb-6 overflow-hidden', !isImageCover(course.bannerUrl) && `bg-gradient-to-br ${course.cover}`)}>
+        {isImageCover(course.bannerUrl) && (
+          <>
+            <img src={course.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/30" />
+          </>
+        )}
+        <button onClick={() => navigate('/courses')} className="relative z-10 text-white/80 hover:text-white transition mb-4">
           <IconChevronLeft className="w-5 h-5" />
         </button>
-        <div className="w-full">
+        <div className="relative z-10 w-full">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] font-bold uppercase tracking-wider bg-black/30 text-white rounded-full px-2 py-1">{course.level}</span>
             {view.hasFinal && (

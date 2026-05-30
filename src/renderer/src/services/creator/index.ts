@@ -58,6 +58,8 @@ interface ImportCourse {
   level?: string
   targetLanguage?: TargetLanguage
   cover?: string
+  thumbnailUrl?: string
+  bannerUrl?: string
   pricing?: Course['pricing']
   hours?: number
   publish?: boolean
@@ -101,6 +103,8 @@ export async function bulkImport(payload: BulkPayload, language: TargetLanguage)
         level: c.level || 'A1–A2',
         targetLanguage: c.targetLanguage || language,
         cover: c.cover || pickCover(c.title),
+        thumbnailUrl: c.thumbnailUrl,
+        bannerUrl: c.bannerUrl,
         pricing: c.pricing || { kind: 'free' },
         rating: 0,
         reviewCount: 0,

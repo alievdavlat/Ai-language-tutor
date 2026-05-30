@@ -6,6 +6,7 @@ import { IconBook, IconPlay, IconStar } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { useContentState } from '../../services/content/progress'
 import { useTargetLanguageCode } from '../../lib/language'
+import { isImageCover } from '../../lib/cover'
 import type { Course } from '@shared/types'
 
 type Filter = 'all' | 'progress' | 'free'
@@ -18,15 +19,22 @@ const FILTERS: TabItem<Filter>[] = [
 function CourseCard({ course, progress, onOpen }: { course: Course; progress: number; onOpen: () => void }): JSX.Element {
   const isBook = course.title.toLowerCase().includes('coursebook') || course.id === 'c_egiu'
   const price = course.pricing.kind === 'free' ? 'Free' : course.pricing.kind === 'one-off' ? `$${course.pricing.usd}` : `$${course.pricing.usdPerMo}/mo`
+  const thumb = course.thumbnailUrl
   return (
     <button onClick={onOpen} className="text-left rounded-2xl p-1 ring-1 ring-white/10 hover:ring-white/25 transition">
-      <div className={cn('relative rounded-xl bg-gradient-to-br p-4 h-32 flex flex-col justify-between overflow-hidden', course.cover)}>
+      <div className={cn('relative rounded-xl p-4 h-32 flex flex-col justify-between overflow-hidden', !isImageCover(thumb) && `bg-gradient-to-br ${course.cover}`)}>
+        {isImageCover(thumb) && (
+          <>
+            <img src={thumb} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10" />
+          </>
+        )}
         {isBook && <div aria-hidden className="absolute left-3 top-0 bottom-0 w-px bg-white/20" />}
-        <div className="flex items-center justify-between">
+        <div className="relative z-10 flex items-center justify-between">
           {isBook ? <IconBook className="w-5 h-5 text-white/70" /> : <IconPlay className="w-5 h-5 text-white/70" />}
           <span className="text-[10px] font-bold uppercase tracking-wider bg-black/25 text-white rounded-full px-2 py-0.5">{course.level}</span>
         </div>
-        <div>
+        <div className="relative z-10">
           <p className="text-sm font-bold text-white leading-tight line-clamp-2">{course.title}</p>
           <p className="text-[11px] text-white/70 mt-0.5 inline-flex items-center gap-1"><IconStar className="w-3 h-3" /> {course.rating} · {price}</p>
         </div>
