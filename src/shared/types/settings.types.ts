@@ -68,4 +68,11 @@ export interface UserSettings {
   ai?: AIConfig
   /** Voice (TTS) provider configuration. `undefined` = use the system voice. */
   tts?: TTSConfig
+  /**
+   * Privacy (#39). All optional + undefined-safe so old profiles keep working.
+   * - contentSafety: filter mature/unsafe content (default ON when undefined).
+   * - incognito: pause activity tracking — no streak/stat updates (default OFF).
+   */
+  contentSafety?: boolean
+  incognito?: boolean
 }

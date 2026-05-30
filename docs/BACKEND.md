@@ -83,3 +83,62 @@ session originated.
   share the same seeded courses/posts.
 - Wipe by running `localStorage.removeItem('speakai.backend.v1')` in DevTools,
   or call `backend.signOut()` plus a hard reload.
+
+## Extended data layer (2026-05-30 — platform foundation)
+
+The `Backend` interface now covers every platform domain so feature sessions
+wire to real data. New shapes live in `src/shared/types/platform-ext.types.ts`;
+the Supabase tables in `supabase/migrations/0002_platform_ext.sql`. Both
+`local.ts` and `supabase.ts` implement all of it behind the one interface.
+
+Domains + key methods (all async, all on `backend`):
+
+- **Users:** `listUsers({role?, q?, limit?})`, `signOut()`.
+- **Enrollments:** `setEnrollmentProgress(userId, courseId, 0–100)`.
+- **Reviews:** `listReviews(courseId)`, `createReview(...)` (recomputes course
+  rating), `myReview(userId, courseId)`.
+- **Groups / clubs:** `listGroups`, `getGroup`, `upsertGroup`, `joinGroup`,
+  `leaveGroup`, `myGroups`, `groupMembers`.
+- **Challenges:** `listChallenges({language?, active?})`, `upsertChallenge`,
+  `joinChallenge`, `leaveChallenge`, `updateChallengeProgress`, `myChallenges`.
+- **Exam attempts:** `recordExamAttempt(...)`, `listExamAttempts(userId, kind?)`.
+- **Vocab (FSRS):** `listVocab`, `upsertVocab`, `deleteVocab`, `dueVocab` —
+  `VocabItem` already carries the FSRS fields (`due/stability/difficulty/reps/
+  lapses/state`). The scheduling algorithm is feature #7's job; the store is ready.
+- **DMs:** `listThreads`, `getOrCreateThread`, `listMessages`, `sendMessage`,
+  `markThreadRead`.
+- **Media:** `listMedia`, `createMedia`, `deleteMedia`.
+- **Announcements / notifications:** `createAnnouncement`, `createNotif`.
+- **Stats & activity (#6/#18):** `getStats`, `recordActivity`, `listActivity`,
+  `setDailyGoal`. Prefer the `services/activity` wrappers (`logActivity`,
+  `useStats`, `useTodayProgress`) — they award default XP, fire realtime, and
+  respect incognito.
+- **GDPR (#39):** `exportUserData(userId)`, `deleteUserData(userId)`.
+
+### Helpers around the backend (`services/backend` re-exports)
+
+- **Uploads (#24):** `uploadFile(file, {prefix})` → `{url, path, …}`;
+  `uploadAndRecord(file, ownerId)` → persisted `MediaAsset`. Supabase Storage
+  `uploads` bucket when configured, base64 `data:` URL (≤4 MB) in local mode.
+- **Realtime (#26):** `subscribeTable(table, cb, {event?, filter?})` and
+  `joinRoom(roomId, presence?)`. Supabase Realtime when configured; same-tab
+  `EventTarget` + cross-tab `storage` event fallback otherwise. `emitLocalChange`
+  for optimistic local echoes.
+- **One client:** `services/backend/client.ts` exposes `getSupabaseClient()` +
+  `hasSupabaseEnv`; backend, storage, and realtime share it.
+
+### Auth (#30)
+
+`services/auth` — `signUp/signIn/quickContinue/signOut/persistRole`. Clerk is
+unreachable in-region (`VITE_USE_CLERK=0`), so the default is a `users`-row
+session keyed by email (offline-friendly). Set `VITE_USE_SUPABASE_AUTH=1` to
+also drive real Supabase email/password auth. Role persists to the user row +
+local store; AppRoutes role-gating is unchanged.
+
+### i18n (#38) + privacy (#39)
+
+- `src/renderer/src/i18n` — `useT()`, `useUILanguage()`, `<UILanguageSwitch>`;
+  uz/en/ru tables in `i18n/strings.ts` (extend per feature, falls back to en).
+- `services/privacy` — `exportMyData()`, `deleteMyAccount()`, `isIncognito()`,
+  `isContentSafe()`. Two new `UserSettings` flags (`contentSafety`, `incognito`),
+  undefined-safe. Surfaced in **Settings → Privacy** (`PrivacySection`).

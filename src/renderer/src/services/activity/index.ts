@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { ActivityEvent, UserStats } from '@shared/types'
 import { backend } from '../backend'
 import { emitLocalChange, subscribeTable } from '../backend/realtime'
+import { isIncognito } from '../privacy'
 
 /** XP awarded per event kind when the caller doesn't specify its own. */
 const DEFAULT_XP: Record<ActivityEvent['kind'], number> = {
@@ -31,6 +32,11 @@ const DEFAULT_XP: Record<ActivityEvent['kind'], number> = {
 export async function logActivity(
   input: Omit<ActivityEvent, 'id' | 'createdAt' | 'xp'> & { xp?: number }
 ): Promise<{ event: ActivityEvent; stats: UserStats }> {
+  // Incognito (#39) — don't persist the event or touch stats.
+  if (isIncognito()) {
+    const stats = await backend.getStats(input.userId)
+    return { event: { ...input, id: 'incognito', xp: 0, createdAt: new Date().toISOString() }, stats }
+  }
   const xp = input.xp ?? DEFAULT_XP[input.kind] ?? 0
   const res = await backend.recordActivity({ ...input, xp })
   emitLocalChange({ event: 'INSERT', table: 'activity_events', new: res.event as unknown as Record<string, unknown>, old: null })
