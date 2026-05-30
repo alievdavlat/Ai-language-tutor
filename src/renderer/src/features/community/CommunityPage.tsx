@@ -1,6 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { PlatformUser, Post, PostKind } from '@shared/types'
+import type {
+  Challenge,
+  Group,
+  LeaderboardRow,
+  PlatformUser,
+  Post,
+  PostKind,
+  SearchResults
+} from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
 import {
@@ -13,6 +21,7 @@ import {
   IconMic,
   IconPlay,
   IconPlus,
+  IconSearch,
   IconStar,
   IconTrophy,
   IconUsers,
@@ -22,6 +31,8 @@ import {
 } from '../../components/icons'
 import { useAppStore } from '../../store/useAppStore'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
+import { social, meId, ensureSocialBootstrap } from '../../services/backend/social'
+import { daysUntil, timeAgo } from '../../lib/time'
 
 type Filter = 'recent' | 'popular' | 'following'
 const FILTERS: TabItem<Filter>[] = [
@@ -47,14 +58,12 @@ const KIND: Record<PostKind, KindMeta> = {
 
 const REACTION_EMOJI = ['❤️', '👍', '🔥', '🎯', '👏', '🤔', '🧠'] as const
 
-const CHALLENGES = [
-  { title: '7-day speaking streak', people: '1,240 joined' },
-  { title: 'Learn 50 new words', people: '870 joined' }
-]
-const GROUPS = [
-  { title: 'IELTS Warriors', people: '3.2k' },
-  { title: 'Daily Speaking Club', people: '5.1k' },
-  { title: 'Grammar Nerds', people: '1.8k' }
+const GROUP_COVERS = [
+  'from-rose-500 to-pink-700',
+  'from-sky-500 to-blue-700',
+  'from-violet-500 to-purple-700',
+  'from-amber-500 to-orange-700',
+  'from-emerald-500 to-teal-700'
 ]
 
 function relTime(iso: string): string {
@@ -433,9 +442,496 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
   )
 }
 
+// ─── Mega-search ─────────────────────────────────────────────────────────────
+
+function MegaSearch(): JSX.Element {
+  const navigate = useNavigate()
+  const [q, setQ] = useState('')
+  const [results, setResults] = useState<SearchResults | null>(null)
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    const term = q.trim()
+    if (term.length < 2) {
+      setResults(null)
+      return
+    }
+    setBusy(true)
+    const handle = setTimeout(() => {
+      void social.search(term, { limit: 6 }).then((r) => {
+        setResults(r)
+        setBusy(false)
+      })
+    }, 200)
+    return () => clearTimeout(handle)
+  }, [q])
+
+  const go = (to: string): void => {
+    setOpen(false)
+    setQ('')
+    navigate(to)
+  }
+
+  return (
+    <div className="relative w-full max-w-md">
+      <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="Search courses, clips, lessons, people, groups…"
+        className="input pl-9 text-sm w-full"
+      />
+      {open && q.trim().length >= 2 && (
+        <div className="absolute z-30 mt-2 w-full max-h-[70vh] overflow-y-auto rounded-card border border-white/12 bg-canvas-soft shadow-2xl shadow-black/50 p-2">
+          {busy && !results ? (
+            <p className="px-3 py-4 text-xs text-slate-500">Searching…</p>
+          ) : results && results.total === 0 ? (
+            <p className="px-3 py-4 text-xs text-slate-500">No results for “{results.query}”.</p>
+          ) : results ? (
+            <div className="flex flex-col gap-1">
+              <SearchGroup title="People" show={results.users.length > 0}>
+                {results.users.map((u) => (
+                  <button key={u.id} onMouseDown={() => go('/explore')} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
+                    <AvatarCircle name={u.name} size="sm" />
+                    <span className="text-sm text-white">{u.name}</span>
+                    <span className="text-[10px] text-slate-500 ml-auto capitalize">{u.role}</span>
+                  </button>
+                ))}
+              </SearchGroup>
+              <SearchGroup title="Courses" show={results.courses.length > 0}>
+                {results.courses.map((c) => (
+                  <button key={c.id} onMouseDown={() => go('/courses')} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
+                    <span className={cn('w-7 h-7 rounded-lg bg-gradient-to-br shrink-0', c.cover)} />
+                    <span className="text-sm text-white truncate">{c.title}</span>
+                    <span className="text-[10px] text-slate-500 ml-auto">{c.level}</span>
+                  </button>
+                ))}
+              </SearchGroup>
+              <SearchGroup title="Clips" show={results.clips.length > 0}>
+                {results.clips.map((c) => (
+                  <button key={c.id} onMouseDown={() => go('/clips')} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
+                    <span className={cn('w-7 h-7 rounded-lg bg-gradient-to-br shrink-0', c.cover)} />
+                    <span className="text-sm text-white truncate">{c.title}</span>
+                    <span className="text-[10px] text-slate-500 ml-auto truncate">{c.artist}</span>
+                  </button>
+                ))}
+              </SearchGroup>
+              <SearchGroup title="Lessons" show={results.lessons.length > 0}>
+                {results.lessons.map((l) => (
+                  <button key={l.lessonId} onMouseDown={() => go('/courses')} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
+                    <IconBook className="w-4 h-4 text-violet-300 shrink-0" />
+                    <span className="text-sm text-white truncate">{l.title}</span>
+                    <span className="text-[10px] text-slate-500 ml-auto truncate">{l.courseTitle}</span>
+                  </button>
+                ))}
+              </SearchGroup>
+              <SearchGroup title="Groups" show={results.groups.length > 0}>
+                {results.groups.map((g) => (
+                  <button key={g.id} onMouseDown={() => go('/community')} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
+                    <span className="w-7 h-7 rounded-lg bg-grad-brand flex items-center justify-center text-white text-[11px] font-bold shrink-0">{g.name[0]}</span>
+                    <span className="text-sm text-white truncate">{g.name}</span>
+                  </button>
+                ))}
+              </SearchGroup>
+              <SearchGroup title="Posts" show={results.posts.length > 0}>
+                {results.posts.map((p) => (
+                  <div key={p.id} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05]">
+                    <IconChat className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="text-sm text-slate-200 truncate">{p.text}</span>
+                  </div>
+                ))}
+              </SearchGroup>
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SearchGroup({ title, show, children }: { title: string; show: boolean; children: React.ReactNode }): JSX.Element | null {
+  if (!show) return null
+  return (
+    <div className="mb-1">
+      <p className="px-2 py-1 text-[10px] uppercase tracking-widest text-slate-500 font-bold">{title}</p>
+      {children}
+    </div>
+  )
+}
+
+// ─── Groups & clubs ──────────────────────────────────────────────────────────
+
+function GroupsView(): JSX.Element {
+  const me = meId()
+  const profile = useAppStore((s) => s.profile)
+  const [groups, setGroups] = useState<Group[]>([])
+  const [myIds, setMyIds] = useState<Set<string>>(new Set())
+  const [creating, setCreating] = useState(false)
+  const [q, setQ] = useState('')
+
+  const reload = useCallback(async () => {
+    const [all, mine] = await Promise.all([backend.listGroups(), backend.myGroups(me)])
+    setGroups(all)
+    setMyIds(new Set(mine.map((g) => g.id)))
+  }, [me])
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
+
+  const toggle = async (g: Group): Promise<void> => {
+    if (myIds.has(g.id)) await backend.leaveGroup(me, g.id)
+    else await backend.joinGroup(me, g.id)
+    await reload()
+  }
+
+  const filtered = groups.filter((g) => !q.trim() || g.name.toLowerCase().includes(q.trim().toLowerCase()))
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search groups & clubs" className="input pl-9 text-sm" />
+        </div>
+        <button onClick={() => setCreating(true)} className="btn-primary text-xs px-4 py-2 inline-flex items-center gap-1.5 shrink-0">
+          <IconPlus className="w-4 h-4" /> Create
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {filtered.map((g) => {
+          const joined = myIds.has(g.id)
+          return (
+            <article key={g.id} className="rounded-card border border-white/10 bg-white/[0.025] overflow-hidden">
+              <div className={cn('h-20 bg-gradient-to-br', g.cover)} />
+              <div className="p-4">
+                <p className="text-sm font-bold text-white">{g.name}</p>
+                <p className="text-xs text-slate-400 line-clamp-2 mt-1 min-h-[2.4em]">{g.description}</p>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-[11px] text-slate-500 inline-flex items-center gap-1">
+                    <IconUsers className="w-3.5 h-3.5" /> {g.memberCount.toLocaleString()} members
+                  </span>
+                  <button
+                    onClick={() => void toggle(g)}
+                    className={cn(
+                      'text-xs font-semibold rounded-lg px-3 py-1.5 transition',
+                      joined ? 'bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]' : 'bg-grad-brand text-white hover:brightness-110'
+                    )}
+                  >
+                    {joined ? 'Joined ✓' : 'Join'}
+                  </button>
+                </div>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+
+      {creating && (
+        <CreateGroupModal
+          ownerId={me}
+          defaultLanguage={profile?.targetLanguage ?? 'en'}
+          onClose={() => setCreating(false)}
+          onCreated={async () => {
+            setCreating(false)
+            await reload()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+function CreateGroupModal({
+  ownerId,
+  defaultLanguage,
+  onClose,
+  onCreated
+}: {
+  ownerId: string
+  defaultLanguage: Group['language']
+  onClose: () => void
+  onCreated: () => Promise<void>
+}): JSX.Element {
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [coverIdx, setCoverIdx] = useState(0)
+  const [saving, setSaving] = useState(false)
+
+  const create = async (): Promise<void> => {
+    if (name.trim().length < 3 || saving) return
+    setSaving(true)
+    try {
+      await backend.upsertGroup({
+        id: `g_${Math.random().toString(36).slice(2, 9)}`,
+        name: name.trim(),
+        description: description.trim() || 'A new community group.',
+        language: defaultLanguage,
+        ownerId,
+        cover: GROUP_COVERS[coverIdx],
+        visibility: 'public',
+        memberCount: 1,
+        createdAt: new Date().toISOString()
+      })
+      await onCreated()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+      <div className="relative w-full max-w-md rounded-card border border-white/12 bg-canvas-soft p-5 shadow-2xl">
+        <h3 className="text-lg font-bold text-white mb-4">Create a group or club</h3>
+        <div className="flex flex-col gap-3">
+          <input value={name} onChange={(e) => setName(e.target.value)} className="input text-sm" placeholder="Group name (e.g. Morning Speaking Crew)" />
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="input text-sm min-h-[80px] resize-none" placeholder="What's this group about?" />
+          <div>
+            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Cover</p>
+            <div className="flex gap-2">
+              {GROUP_COVERS.map((c, i) => (
+                <button
+                  key={c}
+                  onClick={() => setCoverIdx(i)}
+                  className={cn('h-9 flex-1 rounded-lg bg-gradient-to-br transition', c, coverIdx === i ? 'ring-2 ring-white' : 'opacity-70 hover:opacity-100')}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2 mt-5">
+          <button onClick={onClose} className="btn-ghost text-xs px-4 py-2">Cancel</button>
+          <button onClick={() => void create()} disabled={name.trim().length < 3 || saving} className="btn-primary text-xs px-4 py-2">
+            {saving ? 'Creating…' : 'Create group'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Challenges & events (with leaderboards) ─────────────────────────────────
+
+function ChallengesView(): JSX.Element {
+  const me = meId()
+  const [challenges, setChallenges] = useState<Challenge[]>([])
+  const [joined, setJoined] = useState<Set<string>>(new Set())
+  const [leaderboard, setLeaderboard] = useState<{ challenge: Challenge; rows: LeaderboardRow[] } | null>(null)
+
+  const reload = useCallback(async () => {
+    const [all, mine] = await Promise.all([backend.listChallenges(), backend.myChallenges(me)])
+    setChallenges(all)
+    setJoined(new Set(mine.map((m) => m.challenge.id)))
+  }, [me])
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
+
+  const join = async (c: Challenge): Promise<void> => {
+    if (joined.has(c.id)) await backend.leaveChallenge(me, c.id)
+    else await backend.joinChallenge(me, c.id)
+    await reload()
+  }
+
+  const openBoard = async (c: Challenge): Promise<void> => {
+    const rows = await social.challengeLeaderboard(c.id)
+    setLeaderboard({ challenge: c, rows })
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {challenges.length === 0 && <p className="text-sm text-slate-500">No active challenges right now.</p>}
+      {challenges.map((c) => {
+        const left = daysUntil(c.endsAt)
+        const isJoined = joined.has(c.id)
+        return (
+          <article key={c.id} className="rounded-card border border-white/10 bg-white/[0.025] overflow-hidden">
+            <div className="flex">
+              <div className={cn('w-2 bg-gradient-to-b', c.cover)} />
+              <div className="flex-1 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-white">{c.title}</p>
+                      <span className="text-[10px] uppercase tracking-widest font-bold rounded-full bg-white/[0.06] text-slate-400 px-2 py-0.5">{c.kind}</span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">{c.description}</p>
+                    <p className="text-[11px] text-slate-500 mt-2">
+                      🎯 Goal {c.goal} · 👥 {c.participantCount.toLocaleString()} joined · ⏳ {left > 0 ? `${left}d left` : 'ended'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mt-3">
+                  <button
+                    onClick={() => void join(c)}
+                    className={cn(
+                      'text-xs font-semibold rounded-lg px-3 py-1.5 transition',
+                      isJoined ? 'bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]' : 'bg-grad-brand text-white hover:brightness-110'
+                    )}
+                  >
+                    {isJoined ? 'Joined ✓' : 'Join challenge'}
+                  </button>
+                  <button onClick={() => void openBoard(c)} className="text-xs font-semibold rounded-lg px-3 py-1.5 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 inline-flex items-center gap-1.5">
+                    <IconTrophy className="w-3.5 h-3.5" /> Leaderboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          </article>
+        )
+      })}
+
+      {leaderboard && (
+        <LeaderboardModal me={me} data={leaderboard} onClose={() => setLeaderboard(null)} />
+      )}
+    </div>
+  )
+}
+
+function LeaderboardModal({
+  me,
+  data,
+  onClose
+}: {
+  me: string
+  data: { challenge: Challenge; rows: LeaderboardRow[] }
+  onClose: () => void
+}): JSX.Element {
+  const { challenge, rows } = data
+  const medal = ['🥇', '🥈', '🥉']
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+      <div className="relative w-full max-w-md rounded-card border border-white/12 bg-canvas-soft p-5 shadow-2xl max-h-[80vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-lg font-bold text-white inline-flex items-center gap-2"><IconTrophy className="w-5 h-5 text-amber-300" /> Leaderboard</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+        </div>
+        <p className="text-xs text-slate-400 mb-4">{challenge.title} · goal {challenge.goal}</p>
+        {rows.length === 0 ? (
+          <p className="text-sm text-slate-500">No participants yet — be the first to join.</p>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {rows.map((r, i) => (
+              <div
+                key={r.userId}
+                className={cn(
+                  'flex items-center gap-3 rounded-xl px-3 py-2',
+                  r.userId === me ? 'bg-brand-500/15 ring-1 ring-brand-400/40' : 'bg-white/[0.03]'
+                )}
+              >
+                <span className="w-6 text-center text-sm font-bold text-slate-400">{i < 3 ? medal[i] : i + 1}</span>
+                <AvatarCircle name={r.name} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">
+                    {r.name} {r.userId === me && <span className="text-[10px] text-brand-300">· you</span>}
+                  </p>
+                  <div className="h-1.5 rounded-full bg-white/[0.06] mt-1 overflow-hidden">
+                    <span className={cn('block h-full rounded-full bg-gradient-to-r', challenge.cover)} style={{ width: `${r.pct}%` }} />
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-white">{r.progress}</p>
+                  {r.completed && <p className="text-[10px] text-emerald-300">done ✓</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Right rail (real data) ──────────────────────────────────────────────────
+
+function RightRail({ onSeeGroups, onSeeChallenges }: { onSeeGroups: () => void; onSeeChallenges: () => void }): JSX.Element {
+  const navigate = useNavigate()
+  const challenges = useBackendQuery(() => backend.listChallenges({ active: true }), [], [])
+  const groups = useBackendQuery(() => backend.listGroups(), [], [])
+  const live = useBackendQuery(() => backend.listLiveNow(), [], [])
+
+  return (
+    <aside className="flex flex-col gap-5">
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Active challenges</p>
+          <button onClick={onSeeChallenges} className="text-[11px] text-brand-300 hover:text-brand-200 font-semibold">See all</button>
+        </div>
+        <div className="flex flex-col gap-2">
+          {challenges.data.slice(0, 2).map((c) => (
+            <button key={c.id} onClick={onSeeChallenges} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 text-left hover:bg-white/[0.05]">
+              <p className="text-sm font-semibold text-white">{c.title}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{c.participantCount.toLocaleString()} joined · {daysUntil(c.endsAt)}d left</p>
+            </button>
+          ))}
+          {challenges.data.length === 0 && <p className="text-xs text-slate-500">No active challenges.</p>}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Popular groups</p>
+          <button onClick={onSeeGroups} className="text-brand-300 hover:text-brand-200"><IconPlus className="w-4 h-4" /></button>
+        </div>
+        <div className="flex flex-col gap-2">
+          {groups.data.slice(0, 3).map((g) => (
+            <button key={g.id} onClick={onSeeGroups} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5 text-left hover:bg-white/[0.05]">
+              <span className="w-9 h-9 rounded-xl bg-grad-brand flex items-center justify-center text-white text-xs font-bold">{g.name[0]}</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-white truncate">{g.name}</p>
+                <p className="text-xs text-slate-500">{g.memberCount.toLocaleString()} members</p>
+              </div>
+            </button>
+          ))}
+          {groups.data.length === 0 && <p className="text-xs text-slate-500">No groups yet.</p>}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">Now live</p>
+        {live.data.length === 0 ? (
+          <p className="text-xs text-slate-500">No streams live right now.</p>
+        ) : (
+          <button onClick={() => navigate('/live')} className="block w-full text-left rounded-2xl border border-rose-400/30 bg-gradient-to-br from-rose-500/10 to-pink-500/10 p-3 hover:brightness-110">
+            <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-rose-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" /> {live.data.length} stream{live.data.length === 1 ? '' : 's'} live
+            </p>
+            <p className="text-sm font-semibold text-white mt-1">{live.data[0].title}</p>
+            <p className="text-[11px] text-slate-400">{live.data[0].viewerCount} watching</p>
+          </button>
+        )}
+      </div>
+    </aside>
+  )
+}
+
+// ─── Page ────────────────────────────────────────────────────────────────────
+
+type View = 'feed' | 'groups' | 'challenges'
+const VIEWS: TabItem<View>[] = [
+  { id: 'feed', label: 'Feed' },
+  { id: 'groups', label: 'Groups & Clubs' },
+  { id: 'challenges', label: 'Challenges & Events' }
+]
+
 export default function CommunityPage(): JSX.Element {
+  const navigate = useNavigate()
+  const [view, setView] = useState<View>('feed')
   const [filter, setFilter] = useState<Filter>('recent')
   const feed = useBackendQuery(() => backend.listFeed(), [], [])
+  const me = backend.currentUserId()
+  const following = useBackendQuery(
+    () => (me ? backend.following(me) : Promise.resolve([])),
+    [me],
+    [] as PlatformUser[]
+  )
   const authors = useBackendQuery(async () => {
     const ids = Array.from(new Set(feed.data.map((p) => p.authorId)))
     const users = await Promise.all(ids.map((id) => backend.getUser(id)))
@@ -444,90 +940,59 @@ export default function CommunityPage(): JSX.Element {
     return map
   }, [feed.data], {} as Record<string, PlatformUser>)
 
+  // Populate groups/challenges/DMs/learner history on first open.
+  useEffect(() => {
+    void ensureSocialBootstrap().then(() => feed.refresh())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const sorted = (() => {
     if (filter === 'popular') return [...feed.data].sort((a, b) => b.likeCount - a.likeCount)
+    if (filter === 'following') {
+      const ids = new Set(following.data.map((u) => u.id))
+      return feed.data.filter((p) => ids.has(p.authorId))
+    }
     return feed.data
   })()
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 w-full w-full">
-        <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="px-6 py-6 w-full">
+        <div className="mb-5 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Community</h1>
-            <p className="text-sm text-slate-400 mt-1">Share resources, ask questions, vote on polls, join live sessions.</p>
+            <p className="text-sm text-slate-400 mt-1">Share resources, join groups, compete in challenges, search everything.</p>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 text-emerald-200 text-xs font-bold px-3 py-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> {feed.data.length} posts today
-          </span>
+          <MegaSearch />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6">
-          {/* Feed */}
-          <div className="flex flex-col gap-4">
-            <Composer onPosted={feed.refresh} />
-            <Tabs items={FILTERS} active={filter} onChange={setFilter} className="self-start" />
-            {sorted.length === 0 && !feed.loading && (
-              <div className="rounded-card border border-white/10 bg-white/[0.025] p-6 text-center text-sm text-slate-400">
-                No posts yet — be the first.
-              </div>
-            )}
-            {sorted.map((p) => (
-              <PostCard
-                key={p.id}
-                post={p}
-                author={authors.data[p.authorId] ?? null}
-                onAfterChange={feed.refresh}
-              />
-            ))}
-          </div>
+        <Tabs items={VIEWS} active={view} onChange={setView} className="self-start mb-5" />
 
-          {/* Right rail */}
-          <aside className="flex flex-col gap-5">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Active challenges</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                {CHALLENGES.map((c) => (
-                  <div key={c.title} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3">
-                    <p className="text-sm font-semibold text-white">{c.title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{c.people}</p>
-                    <button className="text-xs font-semibold text-brand-300 hover:text-brand-200 mt-2">Join →</button>
-                  </div>
-                ))}
-              </div>
+        {view === 'feed' && (
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6">
+            <div className="flex flex-col gap-4">
+              <Composer onPosted={feed.refresh} />
+              <Tabs items={FILTERS} active={filter} onChange={setFilter} className="self-start" />
+              {filter === 'following' && following.data.length === 0 && (
+                <div className="rounded-card border border-white/10 bg-white/[0.025] p-6 text-center text-sm text-slate-400">
+                  You're not following anyone yet. Find people on <button onClick={() => navigate('/explore')} className="text-brand-300">Explore</button>.
+                </div>
+              )}
+              {sorted.length === 0 && !feed.loading && filter !== 'following' && (
+                <div className="rounded-card border border-white/10 bg-white/[0.025] p-6 text-center text-sm text-slate-400">
+                  No posts yet — be the first.
+                </div>
+              )}
+              {sorted.map((p) => (
+                <PostCard key={p.id} post={p} author={authors.data[p.authorId] ?? null} onAfterChange={feed.refresh} />
+              ))}
             </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Popular groups</p>
-                <button className="text-brand-300 hover:text-brand-200"><IconPlus className="w-4 h-4" /></button>
-              </div>
-              <div className="flex flex-col gap-2">
-                {GROUPS.map((g) => (
-                  <div key={g.title} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5">
-                    <span className="w-9 h-9 rounded-xl bg-grad-brand flex items-center justify-center text-white text-xs font-bold">{g.title[0]}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-white truncate">{g.title}</p>
-                      <p className="text-xs text-slate-500">{g.people} members</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">Now live</p>
-              <div className="rounded-2xl border border-rose-400/30 bg-gradient-to-br from-rose-500/10 to-pink-500/10 p-3">
-                <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-rose-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" /> 3 streams live
-                </p>
-                <p className="text-sm font-semibold text-white mt-1">Coffee chat · Free talk</p>
-                <p className="text-[11px] text-slate-400">Marco B. · 124 watching</p>
-                <button className="text-xs font-semibold text-rose-300 hover:text-rose-200 mt-2">Watch →</button>
-              </div>
-            </div>
-          </aside>
-        </div>
+            <RightRail onSeeGroups={() => setView('groups')} onSeeChallenges={() => setView('challenges')} />
+          </div>
+        )}
+
+        {view === 'groups' && <GroupsView />}
+        {view === 'challenges' && <ChallengesView />}
       </div>
     </div>
   )

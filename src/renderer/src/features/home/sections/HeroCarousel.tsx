@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../../lib/classnames'
 import { IconArrowRight } from '../../../components/icons'
+import { backend, useBackendQuery } from '../../../services/backend/useBackend'
+import { dateTime } from '../../../lib/time'
+import type { Course, LiveAnnouncement, Challenge, PlatformUser } from '@shared/types'
 
 interface Slide {
+  key: string
   badge: string
   badgeTone: string
   title: string
@@ -14,54 +18,104 @@ interface Slide {
   to: string
 }
 
-const SLIDES: Slide[] = [
-  {
-    badge: 'LIVE TODAY',
-    badgeTone: 'bg-rose-500 text-white',
-    title: 'Mastering Past Tenses',
-    subtitle: 'Open live lesson with Emma Carter',
-    meta: 'Today · 7:00 PM · free for everyone',
-    cta: 'Set reminder',
-    cover: 'from-rose-600 via-red-700 to-slate-950',
-    to: '/exams'
-  },
-  {
-    badge: 'NEW COURSE',
-    badgeTone: 'bg-brand-500 text-white',
-    title: 'IELTS Speaking Bootcamp',
-    subtitle: 'Band 7+ in 4 weeks · by James Lee',
-    meta: '24 video lessons · mock exam included',
-    cta: 'Explore course',
-    cover: 'from-blue-600 via-indigo-700 to-slate-950',
-    to: '/courses'
-  },
-  {
-    badge: 'CHALLENGE',
-    badgeTone: 'bg-amber-500 text-black',
-    title: '7-Day Speaking Streak',
-    subtitle: 'Join 1,240 learners this week',
-    meta: 'Win XP & a badge',
-    cta: 'Join challenge',
-    cover: 'from-amber-500 via-orange-700 to-slate-950',
-    to: '/speaking'
-  }
-]
-
+/**
+ * Home hero. Teacher announcements (posted from the Teacher dashboard via
+ * backend.createAnnouncement) lead the carousel, followed by a live top course
+ * and the most-joined active challenge — all real backend data (#28).
+ */
 export default function HeroCarousel(): JSX.Element {
   const navigate = useNavigate()
   const [i, setI] = useState(0)
 
-  useEffect(() => {
-    const t = setInterval(() => setI((v) => (v + 1) % SLIDES.length), 5500)
-    return () => clearInterval(t)
-  }, [])
+  const announcements = useBackendQuery(() => backend.listAnnouncements(), [], [] as LiveAnnouncement[])
+  const courses = useBackendQuery(() => backend.listCourses(), [], [] as Course[])
+  const challenges = useBackendQuery(() => backend.listChallenges({ active: true }), [], [] as Challenge[])
+  const teachers = useBackendQuery(async () => {
+    const ids = Array.from(new Set(announcements.data.map((a) => a.teacherId)))
+    const users = await Promise.all(ids.map((id) => backend.getUser(id)))
+    const map: Record<string, PlatformUser> = {}
+    for (const u of users) if (u) map[u.id] = u
+    return map
+  }, [announcements.data], {} as Record<string, PlatformUser>)
 
-  const s = SLIDES[i]
+  const slides = useMemo<Slide[]>(() => {
+    const out: Slide[] = []
+    for (const a of announcements.data.slice(0, 4)) {
+      const teacher = teachers.data[a.teacherId]
+      out.push({
+        key: a.id,
+        badge: 'FROM YOUR TEACHERS',
+        badgeTone: 'bg-rose-500 text-white',
+        title: a.title,
+        subtitle: teacher ? `${a.body} — ${teacher.name}` : a.body,
+        meta: dateTime(a.whenISO),
+        cta: 'View details',
+        cover: `bg-gradient-to-br ${a.cover ?? 'from-rose-600 via-red-700 to-slate-950'}`,
+        to: '/community'
+      })
+    }
+    const topCourse = courses.data[0]
+    if (topCourse) {
+      out.push({
+        key: `course_${topCourse.id}`,
+        badge: 'FEATURED COURSE',
+        badgeTone: 'bg-brand-500 text-white',
+        title: topCourse.title,
+        subtitle: topCourse.description,
+        meta: `${topCourse.level} · ${topCourse.hours}h · ${topCourse.enrollmentCount.toLocaleString()} learners`,
+        cta: 'Explore course',
+        cover: `bg-gradient-to-br ${topCourse.cover}`,
+        to: '/courses'
+      })
+    }
+    const topChallenge = challenges.data[0]
+    if (topChallenge) {
+      out.push({
+        key: `ch_${topChallenge.id}`,
+        badge: 'CHALLENGE',
+        badgeTone: 'bg-amber-500 text-black',
+        title: topChallenge.title,
+        subtitle: `Join ${topChallenge.participantCount.toLocaleString()} learners`,
+        meta: topChallenge.description,
+        cta: 'Join challenge',
+        cover: `bg-gradient-to-br ${topChallenge.cover}`,
+        to: '/community'
+      })
+    }
+    if (out.length === 0) {
+      out.push({
+        key: 'fallback',
+        badge: 'WELCOME',
+        badgeTone: 'bg-brand-500 text-white',
+        title: 'Start speaking today',
+        subtitle: 'Pick a companion and have your first conversation',
+        meta: 'AI tutors · live rooms · daily practice',
+        cta: 'Start now',
+        cover: 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-950',
+        to: '/speaking'
+      })
+    }
+    return out
+  }, [announcements.data, courses.data, challenges.data, teachers.data])
+
+  // Keep index in range as slides load.
+  useEffect(() => {
+    if (i >= slides.length) setI(0)
+  }, [slides.length, i])
+
+  useEffect(() => {
+    if (slides.length <= 1) return
+    const t = setInterval(() => setI((v) => (v + 1) % slides.length), 5500)
+    return () => clearInterval(t)
+  }, [slides.length])
+
+  const s = slides[i] ?? slides[0]
+  if (!s) return <div className="rounded-card min-h-[200px] bg-white/[0.03] animate-pulse" />
 
   return (
     <div className="relative">
       <div
-        className={cn('relative overflow-hidden rounded-card bg-gradient-to-br p-7 min-h-[200px] flex flex-col justify-end ring-1 ring-white/10 transition-all duration-500', s.cover)}
+        className={cn('relative overflow-hidden rounded-card p-7 min-h-[200px] flex flex-col justify-end ring-1 ring-white/10 transition-all duration-500', s.cover)}
       >
         <div aria-hidden className="pointer-events-none absolute -top-20 -right-10 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
         <span className={cn('absolute top-5 left-7 text-[10px] font-bold uppercase tracking-widest rounded-full px-2.5 py-1', s.badgeTone)}>
@@ -69,7 +123,7 @@ export default function HeroCarousel(): JSX.Element {
         </span>
         <div className="relative">
           <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{s.title}</h2>
-          <p className="text-white/85 mt-1">{s.subtitle}</p>
+          <p className="text-white/85 mt-1 line-clamp-2">{s.subtitle}</p>
           <p className="text-white/60 text-xs mt-1">{s.meta}</p>
           <button
             onClick={() => navigate(s.to)}
@@ -80,17 +134,18 @@ export default function HeroCarousel(): JSX.Element {
         </div>
       </div>
 
-      {/* Dots */}
-      <div className="flex items-center justify-center gap-2 mt-3">
-        {SLIDES.map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => setI(idx)}
-            className={cn('h-1.5 rounded-full transition-all', idx === i ? 'w-6 bg-brand-400' : 'w-1.5 bg-white/20 hover:bg-white/40')}
-            aria-label={`Slide ${idx + 1}`}
-          />
-        ))}
-      </div>
+      {slides.length > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-3">
+          {slides.map((slide, idx) => (
+            <button
+              key={slide.key}
+              onClick={() => setI(idx)}
+              className={cn('h-1.5 rounded-full transition-all', idx === i ? 'w-6 bg-brand-400' : 'w-1.5 bg-white/20 hover:bg-white/40')}
+              aria-label={`Slide ${idx + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
