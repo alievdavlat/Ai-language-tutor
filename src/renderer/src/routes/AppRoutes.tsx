@@ -43,6 +43,9 @@ import LiveQuizPage from '../features/quizlive/LiveQuizPage'
 import StoriesPage from '../features/stories/StoriesPage'
 import ShadowingPage from '../features/shadowing/ShadowingPage'
 import WatchPage from '../features/watch/WatchPage'
+import ClipsPage from '../features/clips/ClipsPage'
+import ClipSetupPage from '../features/clips/ClipSetupPage'
+import ClipPlayPage from '../features/clips/ClipPlayPage'
 import FeedbackExchangePage from '../features/feedback/FeedbackExchangePage'
 import FlashcardsPage from '../features/flashcards/FlashcardsPage'
 import SignInPage from '../features/auth/SignInPage'
@@ -272,6 +275,23 @@ export default function AppRoutes(): JSX.Element {
           </AppShell>
         }
       />
+      <Route
+        path="/clips"
+        element={
+          <AppShell>
+            <ClipsPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/clips/setup"
+        element={
+          <AppShell>
+            <ClipSetupPage />
+          </AppShell>
+        }
+      />
+      <Route path="/clips/play" element={<ClipPlayPage />} />
       <Route
         path="/feedback"
         element={

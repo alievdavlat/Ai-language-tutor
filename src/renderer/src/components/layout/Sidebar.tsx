@@ -12,6 +12,7 @@ import {
   IconChevronRight,
   IconClipboard,
   IconGear,
+  IconHeadphones,
   IconHome,
   IconLibrary,
   IconLive,
@@ -35,6 +36,7 @@ const LEARN_NAV = [
 
 const PRACTICE_NAV = [
   { to: '/speaking', label: 'Speaking', Icon: IconMic },
+  { to: '/clips', label: 'Clips', Icon: IconHeadphones },
   { to: '/meet', label: 'Speaking partner', Icon: IconUsers },
   { to: '/exams', label: 'Exams', Icon: IconClipboard }
 ] as const
@@ -55,6 +57,7 @@ const TEACHER_LEARN = [
   { to: '/courses', label: 'Courses', Icon: IconBook },
   { to: '/library', label: 'Library', Icon: IconLibrary },
   { to: '/speaking', label: 'Speaking', Icon: IconMic },
+  { to: '/clips', label: 'Clips', Icon: IconHeadphones },
   { to: '/exams', label: 'Exams', Icon: IconClipboard }
 ] as const
 
