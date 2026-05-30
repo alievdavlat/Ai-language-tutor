@@ -73,7 +73,7 @@ export const TTS_PROVIDERS: TTSProvider[] = [
     hasFreeTier: true,
     freeTier: 'Free · no key, no signup · neural quality',
     needsKey: false,
-    status: 'soon',
+    status: 'ready',
     verifiedOn: '2026-05-30'
   },
   {
@@ -118,7 +118,7 @@ export const TTS_PROVIDERS: TTSProvider[] = [
     hasFreeTier: true,
     freeTier: 'Free · no key · rate-limited',
     needsKey: false,
-    status: 'soon',
+    status: 'ready',
     verifiedOn: '2026-05-30'
   },
   {
@@ -139,7 +139,7 @@ export const TTS_PROVIDERS: TTSProvider[] = [
       { label: 'Open Profile → API Keys' },
       { label: 'Create a key and copy it' }
     ],
-    status: 'soon',
+    status: 'ready',
     verifiedOn: '2026-05-30'
   },
   {
@@ -160,7 +160,7 @@ export const TTS_PROVIDERS: TTSProvider[] = [
       { label: 'Create a secret key (billing required)' },
       { label: 'Copy the key (starts with sk-…)' }
     ],
-    status: 'soon',
+    status: 'ready',
     verifiedOn: '2026-05-30'
   },
   {
@@ -181,7 +181,7 @@ export const TTS_PROVIDERS: TTSProvider[] = [
       { label: 'Enable the Text-to-Speech API' },
       { label: 'Create an API key and copy it' }
     ],
-    status: 'soon',
+    status: 'ready',
     verifiedOn: '2026-05-30'
   },
   {

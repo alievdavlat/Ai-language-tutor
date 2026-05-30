@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { TTS_PROVIDERS, type TTSProvider } from '@shared/constants'
+import { TTS_PROVIDERS, type TTSProvider, type TTSProviderId } from '@shared/constants'
 import type { TTSConfig } from '@shared/types'
 import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 import { IconArrowRight } from '../../../components/icons'
+import { useAppStore } from '../../../store/useAppStore'
+import { synthesizeSpeech } from '../../../services/tts/synthesize'
 
 interface TTSProviderSectionProps {
   tts: TTSConfig | undefined
@@ -44,6 +46,33 @@ function ProviderCard({
   const persisted = cfg.tokens?.[p.id] ?? ''
   const [token, setToken] = useState(persisted)
   useEffect(() => setToken(persisted), [persisted])
+  const [testing, setTesting] = useState(false)
+  const [testErr, setTestErr] = useState<string | null>(null)
+  const accent = useAppStore((s) => s.profile?.settings.accent) ?? 'us'
+
+  const testCloud = async (): Promise<void> => {
+    setTesting(true)
+    setTestErr(null)
+    try {
+      const blob = await synthesizeSpeech({
+        provider: p.id as TTSProviderId,
+        text: 'Hi! This is how I sound.',
+        accent,
+        rate: 1,
+        voice: cfg.voices?.[p.id],
+        apiKey: token || undefined
+      })
+      if (!blob) throw new Error('No audio')
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      audio.onended = () => URL.revokeObjectURL(url)
+      await audio.play()
+    } catch (e) {
+      setTestErr(e instanceof Error ? e.message : 'Test failed')
+    } finally {
+      setTesting(false)
+    }
+  }
 
   const setKey = (v: string): void => {
     setToken(v)
@@ -137,12 +166,21 @@ function ProviderCard({
               <button onClick={testSystemVoice} className="rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-xs px-3 py-2.5 text-slate-200">
                 🔊 Test voice
               </button>
+            ) : p.status === 'ready' ? (
+              <button
+                onClick={testCloud}
+                disabled={testing || (p.needsKey && !token)}
+                className="rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-xs px-3 py-2.5 text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {testing ? '⏳ Synthesizing…' : '🔊 Test voice'}
+              </button>
             ) : (
               <span className="text-[11px] text-amber-300/90">
-                {p.status === 'soon' ? '🚧 Playback wiring in progress — falls back to the system voice for now.' : ''}
+                🚧 Playback wiring in progress — falls back to the system voice for now.
               </span>
             )}
           </div>
+          {testErr && <p className="text-[11px] text-rose-300">⚠ {testErr} — will fall back to the system voice in chat.</p>}
           <p className="text-[10px] text-slate-500">Keys are stored on this device only · never uploaded.</p>
         </div>
       )}
