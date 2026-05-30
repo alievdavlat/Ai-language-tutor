@@ -14,6 +14,7 @@ import {
   IconYouTube
 } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
+import { library } from '../../services/library/store'
 import { useTargetLanguage } from '../../lib/language'
 
 type Tab = 'top' | 'videos' | 'people' | 'live' | 'buddies'
@@ -131,15 +132,25 @@ export default function ExplorePage(): JSX.Element {
   // posts that carry a resource. Search filters across everything.
   const courses = useBackendQuery(() => backend.listCourses({ language: lang.code }), [lang.code], [])
   const feed = useBackendQuery(() => backend.listFeed({ limit: 60 }), [], [])
+  const libItems = useBackendQuery(() => library.list(undefined, lang.code), [lang.code], [])
 
   const tiles = useMemo<ExploreTile[]>(() => {
     const courseTiles: ExploreTile[] = courses.data.map((c) => ({
       id: `c_${c.id}`,
       kind: 'course',
       title: c.title,
-      subtitle: `Course · ${c.level} · ★ ${c.rating}`,
-      cover: c.cover || coverFor(c.title),
+      subtitle: `Course · ${c.level}${c.reviewCount > 0 ? ` · ★ ${c.rating}` : ''}`,
+      cover: c.thumbnailUrl || c.cover || coverFor(c.title),
       go: () => navigate(`/course/${c.id}`)
+    }))
+    // Library books / videos / audio are searchable too.
+    const libTiles: ExploreTile[] = libItems.data.map((it) => ({
+      id: `l_${it.id}`,
+      kind: it.kind === 'audio' ? 'voice' : it.kind === 'video' ? 'video' : 'post',
+      title: it.title,
+      subtitle: `${it.kind === 'book' ? 'Book' : it.kind === 'video' ? 'Video' : 'Audio'}${it.author ? ` · ${it.author}` : ''}`,
+      cover: it.thumbnailUrl || coverFor(it.id),
+      go: () => navigate(it.kind === 'book' ? `/library/book/${it.id}` : '/library')
     }))
     const postTiles: ExploreTile[] = feed.data
       .filter((p) => p.resource || p.kind === 'voice')
@@ -151,11 +162,11 @@ export default function ExplorePage(): JSX.Element {
         cover: coverFor(p.id),
         go: () => navigate('/community')
       }))
-    const all = [...courseTiles, ...postTiles]
+    const all = [...courseTiles, ...libTiles, ...postTiles]
     const needle = q.trim().toLowerCase()
     if (!needle) return all
     return all.filter((t) => t.title.toLowerCase().includes(needle) || t.subtitle.toLowerCase().includes(needle))
-  }, [courses.data, feed.data, q, navigate])
+  }, [courses.data, libItems.data, feed.data, q, navigate])
 
   const videoTiles = useMemo(() => tiles.filter((t) => t.kind === 'video' || t.kind === 'course'), [tiles])
 
@@ -202,16 +213,33 @@ export default function ExplorePage(): JSX.Element {
         {/* Top grid — Instagram explore style, real content */}
         {tab === 'top' && (
           <>
-            <SectionHeading title={q ? `Results for "${q}"` : 'Top this week'} subtitle={`${tiles.length} item${tiles.length === 1 ? '' : 's'}`} />
-            {tiles.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-8">Nothing matches “{q}”. Try another search.</p>
-            ) : (
+            <SectionHeading title={q ? `Results for "${q}"` : 'Top this week'} subtitle={`${tiles.length + (q ? matchedPeople.length : 0)} result${tiles.length + (q ? matchedPeople.length : 0) === 1 ? '' : 's'}`} />
+
+            {/* People matches first when searching */}
+            {q && matchedPeople.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {matchedPeople.map((u) => (
+                  <div key={u.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex items-center gap-3">
+                    <AvatarCircle name={u.name} src={(u as { avatarUrl?: string }).avatarUrl} size="md" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">{u.name}</p>
+                      <p className="text-[11px] text-slate-400 line-clamp-1">{u.bio ?? `${u.country ?? ''} · Level ${u.level ?? 'A2'}`}</p>
+                    </div>
+                    <button onClick={() => navigate(`/channel?id=${u.id}`)} className="text-xs font-semibold text-brand-300 hover:text-brand-200">View →</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {q && tiles.length === 0 && matchedPeople.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-8">Nothing matches “{q}”. Try a course, book, video or teacher name.</p>
+            ) : tiles.length > 0 ? (
               <div className="grid grid-cols-4 auto-rows-[110px] gap-2">
                 {tiles.slice(0, 18).map((tile, i) => (
                   <TopTileCard key={tile.id} tile={tile} shape={TILE_SHAPES[i % TILE_SHAPES.length]} />
                 ))}
               </div>
-            )}
+            ) : null}
 
             {!q && (
               <>
@@ -219,7 +247,7 @@ export default function ExplorePage(): JSX.Element {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {creators.data.map((u) => (
                     <div key={u.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex items-center gap-3">
-                      <AvatarCircle name={u.name} size="md" />
+                      <AvatarCircle name={u.name} src={(u as { avatarUrl?: string }).avatarUrl} size="md" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-white truncate">{u.name}</p>
                         <p className="text-[11px] text-slate-400 line-clamp-1">{u.bio}</p>
