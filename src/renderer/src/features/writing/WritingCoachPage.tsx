@@ -25,10 +25,20 @@ interface LegendRow {
   count: number
 }
 
+// Plain-language guide shown in the "How it works" panel.
+const GUIDE: { color: string; label: string; tip: string }[] = [
+  { color: '#f59e0b', label: 'Yellow sentence', tip: 'long & complex — try to split it in two.' },
+  { color: '#f43f5e', label: 'Red sentence', tip: 'very hard to read — rewrite it shorter.' },
+  { color: '#a855f7', label: 'Purple word', tip: 'a simpler everyday word exists — swap it.' },
+  { color: '#0ea5e9', label: 'Blue word', tip: 'an adverb or weakener (just, very, really) — usually cut it.' },
+  { color: '#10b981', label: 'Green word', tip: 'passive voice — prefer the active voice.' }
+]
+
 export default function WritingCoachPage(): JSX.Element {
   const [text, setText] = useState(SAMPLE_TEXT)
   const [mode, setMode] = useState<Mode>('edit')
   const [aiNote, setAiNote] = useState<string | null>(null)
+  const [showHelp, setShowHelp] = useState(true)
 
   const a = useMemo(() => analyze(text), [text])
 
@@ -59,7 +69,50 @@ export default function WritingCoachPage(): JSX.Element {
           title="Writing Coach"
           subtitle="Real-time readability feedback — bold, clear sentences win."
           back="/home"
+          action={
+            !showHelp ? (
+              <button
+                onClick={() => setShowHelp(true)}
+                className="inline-flex items-center gap-2 rounded-pill bg-white/[0.05] border border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.09] px-3.5 py-2 text-sm font-medium transition"
+              >
+                ℹ How it works
+              </button>
+            ) : undefined
+          }
         />
+
+        {/* How-it-works instructions */}
+        {showHelp && (
+          <div className="relative rounded-2xl border border-brand-400/25 bg-brand-500/[0.07] p-5">
+            <button
+              onClick={() => setShowHelp(false)}
+              className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 flex items-center justify-center transition"
+              title="Dismiss"
+            >
+              ✕
+            </button>
+            <h3 className="text-base font-bold text-white">How Writing Coach works</h3>
+            <p className="text-sm text-slate-300 mt-1 max-w-2xl">
+              Write or paste your English in <b className="text-white">Write</b> mode, then switch to{' '}
+              <b className="text-white">Edit</b> to see what to improve. Each color points to one fix.
+              A <b className="text-white">lower readability grade</b> means your writing is easier to read.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 mt-4">
+              {GUIDE.map((g) => (
+                <div key={g.label} className="flex items-start gap-2.5">
+                  <span className="w-3.5 h-3.5 rounded-sm mt-0.5 shrink-0" style={{ background: g.color }} />
+                  <p className="text-sm text-slate-300">
+                    <b className="text-white">{g.label}</b> — {g.tip}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-slate-400 mt-4">
+              Tip: hover a <span className="text-violet-300 underline decoration-violet-400/40">purple</span> word to
+              see a simpler alternative. Use <b className="text-white">Rewrite</b> to let AI simplify it for you.
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
           {/* Editor */}
