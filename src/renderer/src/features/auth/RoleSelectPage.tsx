@@ -1,5 +1,6 @@
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../../store/useAppStore'
+import { persistRole } from '../../services/auth'
 import { IconBook, IconUsers } from '../../components/icons'
 
 export default function RoleSelectPage(): JSX.Element {
@@ -12,6 +13,9 @@ export default function RoleSelectPage(): JSX.Element {
 
   const pick = (role: 'student' | 'teacher'): void => {
     setRole(role)
+    // Mirror the chosen role onto the backend user so it survives reloads and
+    // returning sign-ins land in the right UI.
+    void persistRole(role)
     // After role is selected, run the rest of onboarding (language, goals, placement).
     // If onboarding is already complete (e.g. user navigated back to /role manually),
     // jump straight to the right home.

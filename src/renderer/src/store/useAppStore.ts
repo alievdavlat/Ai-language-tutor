@@ -169,6 +169,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     writeBool(LS_AUTH, false)
     writeBool(LS_ONBOARDING, false)
     if (typeof window !== 'undefined') window.localStorage?.removeItem(LS_ROLE)
+    // Clear the backend session too (best-effort — supabase.auth or local current user).
+    void backend.signOut().catch(() => undefined)
     set({ authenticated: false, onboardingComplete: false, profile: null, role: 'student', roleSelected: false })
   },
 

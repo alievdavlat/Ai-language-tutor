@@ -4,6 +4,7 @@ import { SignIn, SignUp, useUser, useAuth } from '@clerk/clerk-react'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { backend } from '../../services/backend'
+import * as auth from '../../services/auth'
 import { IconMic } from '../../components/icons'
 
 type Mode = 'signin' | 'signup'
@@ -21,6 +22,11 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
   const onboardingComplete = useAppStore((s) => s.onboardingComplete)
   const role = useAppStore((s) => s.role)
   const [mode, setMode] = useState<Mode>(defaultMode)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // ── Clerk session sync ─────────────────────────────────────────────────
   // When Clerk reports the user is signed in, mirror that into our local
@@ -53,9 +59,44 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
     else navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
   }
 
-  const handleAuth = (): void => {
-    setAuthenticated(true)
-    route()
+  // Real local/Supabase-row auth (Clerk is unreachable in this region).
+  const submitEmail = async (): Promise<void> => {
+    setError(null)
+    const trimmed = email.trim()
+    if (!trimmed || !/.+@.+\..+/.test(trimmed)) {
+      setError('Enter a valid email address.')
+      return
+    }
+    setBusy(true)
+    try {
+      if (mode === 'signup') {
+        await auth.signUp({ name, email: trimmed, password: password || undefined })
+      } else {
+        const user = await auth.signIn({ email: trimmed, password: password || undefined })
+        if (!user) {
+          // No account yet — create one so the user isn't stuck.
+          await auth.signUp({ name, email: trimmed, password: password || undefined })
+        }
+      }
+      route()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sign-in failed. Try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleOAuth = async (provider: 'google' | 'apple'): Promise<void> => {
+    setBusy(true)
+    setError(null)
+    try {
+      await auth.quickContinue(provider)
+      route()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sign-in failed.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -138,11 +179,11 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
           {!useClerk && (<>
           {/* OAuth */}
           <div className="flex flex-col gap-2 mt-6">
-            <button onClick={handleAuth} className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition">
+            <button disabled={busy} onClick={() => void handleOAuth('google')} className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition disabled:opacity-50">
               <span className="w-5 h-5 rounded-full bg-white text-slate-900 text-[10px] font-black flex items-center justify-center">G</span>
               Continue with Google
             </button>
-            <button onClick={handleAuth} className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition">
+            <button disabled={busy} onClick={() => void handleOAuth('apple')} className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition disabled:opacity-50">
               <span className="w-5 h-5 rounded-full bg-white text-slate-900 text-sm flex items-center justify-center"></span>
               Continue with Apple
             </button>
@@ -155,22 +196,23 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
           </div>
 
           {/* Email form */}
-          <div className="flex flex-col gap-3">
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={(e) => { e.preventDefault(); void submitEmail() }}
+          >
             {mode === 'signup' && (
-              <input type="text" placeholder="Full name" className="input" />
+              <input type="text" placeholder="Full name" className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
             )}
-            <input type="email" placeholder="Email" className="input" />
-            <input type="password" placeholder="Password" className="input" />
+            <input type="email" placeholder="Email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+            <input type="password" placeholder="Password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} />
             {mode === 'signin' && (
-              <button className="text-[11px] font-semibold text-brand-300 hover:text-brand-200 self-end -mt-1">Forgot password?</button>
+              <button type="button" className="text-[11px] font-semibold text-brand-300 hover:text-brand-200 self-end -mt-1">Forgot password?</button>
             )}
-            <button
-              onClick={handleAuth}
-              className="btn-primary py-2.5 mt-2"
-            >
-              {mode === 'signin' ? 'Sign in' : 'Create account'}
+            {error && <p className="text-[12px] text-rose-400 font-medium">{error}</p>}
+            <button type="submit" disabled={busy} className="btn-primary py-2.5 mt-2 disabled:opacity-60">
+              {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
-          </div>
+          </form>
           </>)}
 
           <p className="text-[11px] text-slate-500 text-center mt-6">
