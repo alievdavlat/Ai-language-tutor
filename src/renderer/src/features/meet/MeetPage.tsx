@@ -1,37 +1,69 @@
 import { useEffect, useState } from 'react'
 import { cn } from '../../lib/classnames'
-import { AvatarCircle, Spinner } from '../../components/ui'
+import { useAppStore } from '../../store/useAppStore'
+import { Spinner } from '../../components/ui'
+import VideoTile from '../../components/realtime/VideoTile'
+import RealtimeStatus from '../../components/realtime/RealtimeStatus'
 import { IconArrowRight, IconMic, IconUsers, IconX } from '../../components/icons'
+import { useMeetQueue } from './useMeetQueue'
+import { useMediaRoom } from '../../hooks/realtime/useMediaRoom'
 
 type Phase = 'lobby' | 'matching' | 'call'
 
 const LEVELS = ['Any', 'A2', 'B1', 'B2', 'C1']
 const TOPICS = ['Free talk', 'Travel', 'Work', 'Movies', 'Daily life']
+const GROUP_TONES = ['from-emerald-700 to-teal-900', 'from-rose-700 to-pink-900', 'from-amber-600 to-orange-900', 'from-brand-600 to-indigo-800']
 
 export default function MeetPage(): JSX.Element {
+  const name = useAppStore((s) => s.profile?.name) ?? 'You'
   const [phase, setPhase] = useState<Phase>('lobby')
   const [level, setLevel] = useState('Any')
   const [topic, setTopic] = useState('Free talk')
   const [mode, setMode] = useState<'solo' | 'group'>('solo')
+  const [roomId, setRoomId] = useState<string | null>(null)
+  const [partnerName, setPartnerName] = useState('Partner')
 
+  const queue = useMeetQueue({ name, level, topic, enabled: phase === 'matching' && mode === 'solo' })
+
+  // When the queue matches us, drop into the call.
   useEffect(() => {
-    if (phase !== 'matching') return
-    const t = setTimeout(() => setPhase('call'), 1800)
-    return () => clearTimeout(t)
-  }, [phase])
+    if (phase === 'matching' && mode === 'solo' && queue.match) {
+      setRoomId(queue.match.roomId)
+      setPartnerName(queue.match.partnerName)
+      setPhase('call')
+    }
+  }, [phase, mode, queue.match])
 
-  // ── Lobby ────────────────────────────────────────────────────────────────
+  const startMatching = (): void => {
+    if (mode === 'group') {
+      setRoomId('meet:group')
+      setPhase('call')
+    } else {
+      setPhase('matching')
+    }
+  }
+
+  const nextPartner = (): void => {
+    setRoomId(null)
+    setPartnerName('Partner')
+    setPhase('matching')
+  }
+  const endCall = (): void => {
+    setRoomId(null)
+    setPhase('lobby')
+  }
+
+  // ── Lobby ──────────────────────────────────────────────────────────────
   if (phase === 'lobby') {
     return (
       <div className="h-full overflow-y-auto">
         <div className="px-6 py-6 max-w-xl mx-auto w-full flex flex-col gap-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Speaking partner</h1>
-            <p className="text-sm text-slate-400 mt-1">Get matched with a real learner for a 1-on-1 video chat.</p>
-            <p className="inline-flex items-center gap-1.5 text-xs text-emerald-300 mt-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> 1,820 learners online now
-            </p>
+            <p className="text-sm text-slate-400 mt-1">Get matched with a real learner for a live video chat.</p>
           </div>
+
+          <RealtimeStatus />
 
           <div className="rounded-card border border-white/10 bg-white/[0.03] p-5 flex flex-col gap-5">
             <div>
@@ -62,8 +94,8 @@ export default function MeetPage(): JSX.Element {
             </div>
           </div>
 
-          <button onClick={() => setPhase('matching')} className="btn-primary py-3.5 text-base inline-flex items-center justify-center gap-2">
-            <IconUsers className="w-5 h-5" /> Start matching
+          <button onClick={startMatching} className="btn-primary py-3.5 text-base inline-flex items-center justify-center gap-2">
+            <IconUsers className="w-5 h-5" /> {mode === 'group' ? 'Join group room' : 'Start matching'}
           </button>
           <p className="text-xs text-slate-500 text-center">Be respectful · English only · you can skip or report anytime.</p>
         </div>
@@ -71,65 +103,141 @@ export default function MeetPage(): JSX.Element {
     )
   }
 
-  // ── Matching ─────────────────────────────────────────────────────────────
+  // ── Matching ───────────────────────────────────────────────────────────
   if (phase === 'matching') {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-5">
         <Spinner size="lg" />
         <p className="text-slate-300 font-medium">Finding a partner…</p>
         <p className="text-xs text-slate-500">{level} · {topic}</p>
-        <button onClick={() => setPhase('lobby')} className="text-xs text-slate-500 hover:text-slate-300 mt-2">Cancel</button>
+        <p className="inline-flex items-center gap-1.5 text-xs text-emerald-300">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> {queue.waitingCount} learner{queue.waitingCount === 1 ? '' : 's'} searching now
+        </p>
+        <button onClick={endCall} className="text-xs text-slate-500 hover:text-slate-300 mt-2">Cancel</button>
       </div>
     )
   }
 
-  // ── Call ─────────────────────────────────────────────────────────────────
+  // ── Call (mounting MeetCall (un)subscribes the media room) ───────────────
+  return (
+    <MeetCall
+      key={roomId ?? 'call'}
+      roomId={roomId ?? 'meet:group'}
+      mode={mode}
+      selfName={name}
+      partnerName={partnerName}
+      topic={topic}
+      onNext={mode === 'solo' ? nextPartner : undefined}
+      onEnd={endCall}
+    />
+  )
+}
+
+function MeetCall({
+  roomId,
+  mode,
+  selfName,
+  partnerName,
+  topic,
+  onNext,
+  onEnd
+}: {
+  roomId: string
+  mode: 'solo' | 'group'
+  selfName: string
+  partnerName: string
+  topic: string
+  onNext?: () => void
+  onEnd: () => void
+}): JSX.Element {
+  const room = useMediaRoom(roomId, {
+    presence: { name: selfName },
+    publish: true,
+    video: true,
+    audio: true
+  })
+
+  const remotes = Object.entries(room.remoteStreams)
+  const otherPeers = room.peers.filter((p) => p.peerId !== room.peerId)
+
   return (
     <div className="h-full flex flex-col bg-black">
-      <div className="flex-1 relative flex items-center justify-center bg-gradient-to-br from-indigo-950 via-slate-900 to-black p-4">
+      <div className="flex-1 relative bg-gradient-to-br from-indigo-950 via-slate-900 to-black p-4">
         {mode === 'group' ? (
-          <div className="grid grid-cols-2 gap-3 w-full max-w-2xl">
-            {[
-              { name: 'Lucas · B1', tone: 'from-emerald-700 to-teal-900' },
-              { name: 'Aiko · B2', tone: 'from-rose-700 to-pink-900' },
-              { name: 'Omar · B1', tone: 'from-amber-600 to-orange-900' },
-              { name: 'You', tone: 'from-brand-600 to-indigo-800' }
-            ].map((p) => (
-              <div key={p.name} className={cn('relative rounded-2xl aspect-video flex items-center justify-center ring-1 ring-white/10 bg-gradient-to-br', p.tone)}>
-                <AvatarCircle name={p.name} size="md" />
-                <span className="absolute bottom-2 left-2 text-xs font-medium text-white bg-black/50 rounded px-2 py-0.5">{p.name}</span>
-              </div>
+          <div className="grid grid-cols-2 gap-3 w-full max-w-3xl mx-auto h-full content-center">
+            {otherPeers.slice(0, 3).map((p, i) => (
+              <VideoTile
+                key={p.peerId}
+                stream={room.remoteStreams[p.peerId]}
+                name={(p.name as string) ?? 'Guest'}
+                tone={GROUP_TONES[i % GROUP_TONES.length]}
+                className="aspect-video"
+              />
             ))}
+            <VideoTile
+              stream={room.localStream}
+              name={selfName}
+              label="You"
+              mirror
+              muted
+              micOff={!room.micOn}
+              tone="from-brand-600 to-indigo-800"
+              className="aspect-video"
+            />
+            {otherPeers.length === 0 && (
+              <div className="col-span-2 text-center text-slate-400 text-sm py-6">
+                Waiting for others to join this group room…
+              </div>
+            )}
           </div>
         ) : (
-          <div className="text-center">
-            <AvatarCircle name="Lucas B" size="lg" className="!w-24 !h-24 !text-3xl mx-auto" />
-            <p className="text-white font-semibold mt-3">Lucas · B1</p>
-            <p className="text-slate-400 text-sm">🇧🇷 Brazil · learning English</p>
-          </div>
+          <>
+            <VideoTile
+              stream={remotes[0]?.[1]}
+              name={partnerName}
+              tone="from-emerald-700 to-teal-900"
+              className="absolute inset-4"
+              label={otherPeers[0]?.name as string ?? partnerName}
+            />
+            <VideoTile
+              stream={room.localStream}
+              name={selfName}
+              label="You"
+              mirror
+              muted
+              micOff={!room.micOn}
+              tone="from-brand-600 to-indigo-800"
+              className="absolute bottom-4 right-4 w-32 h-44 z-10"
+            />
+            {remotes.length === 0 && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                <Spinner size="md" />
+                <p className="text-slate-300 text-sm mt-3">Connecting to {partnerName}…</p>
+              </div>
+            )}
+          </>
         )}
 
-        {/* topic card */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-black/50 backdrop-blur px-4 py-2 text-sm text-white">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-black/50 backdrop-blur px-4 py-2 text-sm text-white z-20">
           Talk about: <b>{topic}</b>
         </div>
-
-        {mode === 'solo' && (
-          <div className="absolute bottom-4 right-4 w-32 h-44 rounded-2xl bg-gradient-to-br from-brand-600 to-indigo-800 ring-2 ring-white/20 flex items-center justify-center">
-            <span className="text-xs text-white/80">You</span>
+        {room.mediaError && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 rounded-full bg-rose-600/80 px-4 py-1.5 text-xs text-white z-20">
+            {room.mediaError}
           </div>
         )}
       </div>
 
-      {/* Controls */}
       <div className="flex items-center justify-center gap-3 py-4 bg-canvas-soft/80">
-        <button className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Mute">
+        <button onClick={room.toggleMic} className={cn('w-12 h-12 rounded-full text-white flex items-center justify-center transition', room.micOn ? 'bg-white/10 hover:bg-white/20' : 'bg-rose-600 hover:bg-rose-500')} title={room.micOn ? 'Mute' : 'Unmute'}>
           <IconMic className="w-5 h-5" />
         </button>
-        <button onClick={() => setPhase('matching')} className="px-5 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold inline-flex items-center gap-2 transition" title="Next partner">
-          Next <IconArrowRight className="w-4 h-4" />
-        </button>
-        <button onClick={() => setPhase('lobby')} className="w-12 h-12 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center transition" title="End">
+        {onNext && (
+          <button onClick={onNext} className="px-5 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold inline-flex items-center gap-2 transition" title="Next partner">
+            Next <IconArrowRight className="w-4 h-4" />
+          </button>
+        )}
+        <button onClick={onEnd} className="w-12 h-12 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center transition" title="End">
           <IconX className="w-5 h-5" />
         </button>
       </div>

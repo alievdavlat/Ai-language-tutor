@@ -1,56 +1,223 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { AvatarCircle } from '../../components/ui'
-import { IconHeart, IconUsers, IconX } from '../../components/icons'
+import { useAppStore } from '../../store/useAppStore'
+import VideoTile from '../../components/realtime/VideoTile'
+import { IconHeart, IconMic, IconUsers, IconX } from '../../components/icons'
+import { useMediaRoom } from '../../hooks/realtime/useMediaRoom'
 
-const CHAT = [
-  { name: 'Dilnoza', text: 'Hello from Tashkent! 👋' },
-  { name: 'Bekzod', text: 'Can you explain "used to" again?' },
-  { name: 'Emma Carter', text: 'Sure! Great question Bekzod.', teacher: true },
-  { name: 'Madina', text: 'This is so helpful, thank you!' },
-  { name: 'Sardor', text: '🔥🔥🔥' }
+interface ChatMsg {
+  id: string
+  name: string
+  text: string
+  role?: string
+}
+interface FloatReaction {
+  id: string
+  emoji: string
+  x: number
+}
+
+const GROUP_TONES = [
+  'from-brand-700 to-indigo-900',
+  'from-emerald-700 to-teal-900',
+  'from-rose-700 to-pink-900',
+  'from-amber-600 to-orange-900'
 ]
-
-const GROUP_HOSTS = ['Sara Kim', 'Bekzod', 'Dilnoza', 'Tom Reed']
+const REACTIONS = ['❤️', '🔥', '👏', '🎉']
 
 export default function LiveRoomPage({ group = false }: { group?: boolean }): JSX.Element {
   const navigate = useNavigate()
-  const [msg, setMsg] = useState('')
+  const [params] = useSearchParams()
+  const name = useAppStore((s) => s.profile?.name) ?? 'You'
+
+  const streamId = params.get('id') ?? (group ? 'group-demo' : 'demo')
+  const isHost = params.get('host') === '1'
+  // In a group room, hosts AND co-hosts publish video; in a 1-host stream only
+  // the host publishes and everyone else is a viewing audience.
+  const role: 'host' | 'cohost' | 'viewer' = isHost ? 'host' : group ? 'cohost' : 'viewer'
+  const publish = role === 'host' || role === 'cohost'
+  const roomId = group ? `live:group:${streamId}` : `live:${streamId}`
+
+  const room = useMediaRoom(roomId, {
+    presence: { name, role },
+    publish,
+    video: true,
+    audio: true
+  })
+
+  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [draft, setDraft] = useState('')
+  const [reactions, setReactions] = useState<FloatReaction[]>([])
+  const [kicked, setKicked] = useState(false)
+  const chatEndRef = useRef<HTMLDivElement>(null)
+
+  // ── Wire chat + reactions + kick ─────────────────────────────────────────
+  useEffect(() => {
+    if (!room.channel) return
+    const ch = room.channel
+    const offChat = ch.on('chat', (p) => {
+      const m = p as { name: string; text: string; role?: string }
+      setMessages((prev) => [...prev.slice(-80), { id: Math.random().toString(36).slice(2), ...m }])
+    })
+    const offReact = ch.on('reaction', (p) => {
+      const e = (p as { emoji: string }).emoji
+      pushReaction(e)
+    })
+    const offKick = ch.on('kick', (p) => {
+      if ((p as { peerId: string }).peerId === room.peerId) setKicked(true)
+    })
+    return () => {
+      offChat()
+      offReact()
+      offKick()
+    }
+  }, [room.channel, room.peerId])
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Leave the room if a host removed us.
+  useEffect(() => {
+    if (kicked) {
+      const t = setTimeout(() => navigate('/live'), 1200)
+      return () => clearTimeout(t)
+    }
+  }, [kicked, navigate])
+
+  function pushReaction(emoji: string): void {
+    const r: FloatReaction = { id: Math.random().toString(36).slice(2), emoji, x: 10 + Math.random() * 60 }
+    setReactions((prev) => [...prev, r])
+    setTimeout(() => setReactions((prev) => prev.filter((x) => x.id !== r.id)), 2600)
+  }
+
+  const sendChat = (): void => {
+    const text = draft.trim()
+    if (!text) return
+    room.send('chat', { name, text, role })
+    setMessages((prev) => [...prev.slice(-80), { id: Math.random().toString(36).slice(2), name, text, role }])
+    setDraft('')
+  }
+
+  const sendReaction = (emoji: string): void => {
+    room.send('reaction', { emoji })
+    pushReaction(emoji)
+  }
+
+  const kick = (peerId: string): void => room.send('kick', { peerId })
+
+  // ── Roster math ──────────────────────────────────────────────────────────
+  const publishers = useMemo(
+    () => room.peers.filter((p) => p.peerId !== room.peerId && (p.role === 'host' || p.role === 'cohost')),
+    [room.peers, room.peerId]
+  )
+  const totalInRoom = room.peers.length
+
+  if (kicked) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-black gap-3">
+        <p className="text-white font-semibold">You were removed from the room.</p>
+        <p className="text-slate-400 text-sm">Returning to Live…</p>
+      </div>
+    )
+  }
 
   return (
     <div className="h-full flex flex-col lg:flex-row bg-black">
       {/* Stage */}
-      <div className="flex-1 relative flex items-center justify-center bg-gradient-to-br from-slate-900 to-black min-h-[40vh] p-4">
+      <div className="flex-1 relative flex items-center justify-center bg-gradient-to-br from-slate-900 to-black min-h-[40vh] p-4 overflow-hidden">
         {group ? (
-          <div className="grid grid-cols-2 gap-3 w-full max-w-2xl">
-            {GROUP_HOSTS.map((h, i) => (
-              <div key={h} className={cn('relative rounded-2xl aspect-video flex items-center justify-center ring-1 ring-white/10 bg-gradient-to-br', ['from-brand-700 to-indigo-900', 'from-emerald-700 to-teal-900', 'from-rose-700 to-pink-900', 'from-amber-600 to-orange-900'][i % 4])}>
-                <AvatarCircle name={h} size="md" />
-                <span className="absolute bottom-2 left-2 text-xs font-medium text-white bg-black/50 rounded px-2 py-0.5">{h}{i === 0 ? ' · host' : ''}</span>
+          <div className="grid grid-cols-2 gap-3 w-full max-w-3xl">
+            {/* Self tile first when publishing */}
+            {publish && (
+              <VideoTile
+                stream={room.localStream}
+                name={name}
+                label={`${name} · you${role === 'host' ? ' · host' : ''}`}
+                mirror
+                muted
+                micOff={!room.micOn}
+                tone={GROUP_TONES[0]}
+                className="aspect-video"
+              />
+            )}
+            {publishers.slice(0, publish ? 3 : 4).map((p, i) => (
+              <div key={p.peerId} className="relative">
+                <VideoTile
+                  stream={room.remoteStreams[p.peerId]}
+                  name={(p.name as string) ?? 'Guest'}
+                  label={`${(p.name as string) ?? 'Guest'}${p.role === 'host' ? ' · host' : ''}`}
+                  tone={GROUP_TONES[(i + 1) % GROUP_TONES.length]}
+                  className="aspect-video"
+                />
+                {isHost && (
+                  <button
+                    onClick={() => kick(p.peerId)}
+                    title="Remove from room"
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center"
+                  >
+                    <IconX className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             ))}
+            {publishers.length === 0 && !publish && (
+              <div className="col-span-2 text-center text-slate-400 text-sm py-10">Waiting for co-hosts to go live…</div>
+            )}
           </div>
+        ) : isHost ? (
+          // Single-stream host: show own camera big.
+          <VideoTile stream={room.localStream} name={name} label={`${name} · you`} mirror muted micOff={!room.micOn} tone="from-brand-700 to-indigo-900" className="absolute inset-4" />
         ) : (
-          <div className="text-center">
-            <AvatarCircle name="Emma Carter" size="lg" className="!w-24 !h-24 !text-3xl mx-auto" />
-            <p className="text-white font-semibold mt-3">Emma Carter</p>
-            <p className="text-slate-400 text-sm">Everyday English: Small Talk</p>
+          // Single-stream viewer: show the host's video.
+          <VideoTile
+            stream={publishers[0] ? room.remoteStreams[publishers[0].peerId] : null}
+            name={(publishers[0]?.name as string) ?? 'Host'}
+            label={(publishers[0]?.name as string) ?? 'Host'}
+            tone="from-rose-700 to-pink-900"
+            className="absolute inset-4"
+          />
+        )}
+
+        {!isHost && !group && publishers.length === 0 && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+            <p className="text-white font-semibold">The host hasn&apos;t started the camera yet</p>
+            <p className="text-slate-400 text-sm mt-1">You&apos;ll see them as soon as they go live.</p>
           </div>
         )}
-        <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest bg-rose-600 text-white rounded-full px-2.5 py-1">
+
+        <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest bg-rose-600 text-white rounded-full px-2.5 py-1 z-20">
           <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {group ? 'Group live' : 'Live'}
         </span>
-        <span className="absolute top-4 right-4 inline-flex items-center gap-1 text-xs text-white bg-black/50 rounded-full px-3 py-1.5">
-          <IconUsers className="w-3.5 h-3.5" /> 342
+        <span className="absolute top-4 right-4 inline-flex items-center gap-1 text-xs text-white bg-black/50 rounded-full px-3 py-1.5 z-20">
+          <IconUsers className="w-3.5 h-3.5" /> {totalInRoom}
         </span>
-        <button onClick={() => navigate('/live')} className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm px-4 py-2 transition">
-          <IconX className="w-4 h-4" /> Leave
-        </button>
-        {/* floating reactions */}
-        <div className="absolute bottom-4 left-4 flex gap-2">
-          {['❤️', '🔥', '👏'].map((e) => (
-            <button key={e} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur flex items-center justify-center text-lg transition">{e}</button>
+        {room.mediaError && publish && (
+          <div className="absolute top-14 left-4 rounded-full bg-rose-600/80 px-3 py-1.5 text-[11px] text-white z-20">{room.mediaError}</div>
+        )}
+
+        {/* Controls */}
+        <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
+          {publish && (
+            <button onClick={room.toggleMic} className={cn('w-10 h-10 rounded-full text-white flex items-center justify-center transition', room.micOn ? 'bg-white/10 hover:bg-white/20' : 'bg-rose-600 hover:bg-rose-500')} title={room.micOn ? 'Mute' : 'Unmute'}>
+              <IconMic className="w-4 h-4" />
+            </button>
+          )}
+          <button onClick={() => navigate('/live')} className="inline-flex items-center gap-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm px-4 py-2 transition">
+            <IconX className="w-4 h-4" /> Leave
+          </button>
+        </div>
+
+        {/* Floating reactions */}
+        <div className="absolute bottom-16 left-4 flex gap-2 z-20">
+          {REACTIONS.map((e) => (
+            <button key={e} onClick={() => sendReaction(e)} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur flex items-center justify-center text-lg transition">{e}</button>
+          ))}
+        </div>
+        <div className="pointer-events-none absolute inset-0 z-10">
+          {reactions.map((r) => (
+            <span key={r.id} className="absolute bottom-24 text-2xl animate-[float-up_2.6s_ease-out_forwards]" style={{ left: `${r.x}%` }}>{r.emoji}</span>
           ))}
         </div>
       </div>
@@ -60,19 +227,25 @@ export default function LiveRoomPage({ group = false }: { group?: boolean }): JS
         <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
           <IconHeart className="w-4 h-4 text-rose-400" />
           <span className="text-sm font-semibold text-white">Live chat</span>
+          <span className="ml-auto text-[11px] text-slate-400">{totalInRoom} here</span>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
-          {CHAT.map((c, i) => (
-            <div key={i} className="text-sm">
-              <span className={c.teacher ? 'text-brand-300 font-semibold' : 'text-slate-400 font-medium'}>{c.name}</span>{' '}
+          {messages.length === 0 && (
+            <p className="text-xs text-slate-500">Say hi to start the conversation 👋</p>
+          )}
+          {messages.map((c) => (
+            <div key={c.id} className="text-sm">
+              <span className={c.role === 'host' ? 'text-brand-300 font-semibold' : 'text-slate-400 font-medium'}>{c.name}</span>{' '}
               <span className="text-slate-200">{c.text}</span>
             </div>
           ))}
+          <div ref={chatEndRef} />
         </div>
         <div className="p-3 border-t border-white/10">
           <input
-            value={msg}
-            onChange={(e) => setMsg(e.target.value)}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') sendChat() }}
             placeholder="Say something…"
             className="w-full rounded-pill bg-white/[0.05] border border-white/10 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:outline-none"
           />

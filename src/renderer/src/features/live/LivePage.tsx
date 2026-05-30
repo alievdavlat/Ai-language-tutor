@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
+import RealtimeStatus from '../../components/realtime/RealtimeStatus'
 import { IconLive, IconPlus, IconUsers } from '../../components/icons'
+
+/** Stable room slug from a title so a viewer joins the same room each time. */
+const slug = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 type Filter = 'following' | 'courses' | 'teachers' | 'students'
 const FILTERS: TabItem<Filter>[] = [
@@ -55,7 +59,7 @@ function StoryRing({ name, onClick, add }: { name: string; onClick: () => void; 
 function StreamCard({ s }: { s: Stream }): JSX.Element {
   const navigate = useNavigate()
   return (
-    <button onClick={() => navigate(s.group ? '/live/group' : '/live/room')} className="text-left group">
+    <button onClick={() => navigate(`${s.group ? '/live/group' : '/live/room'}?id=${slug(s.title)}`)} className="text-left group">
       <div className={cn('relative rounded-xl bg-gradient-to-br h-40 ring-1 ring-white/10 overflow-hidden', s.cover)}>
         <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider bg-rose-600 text-white rounded px-1.5 py-0.5">Live</span>
         <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[11px] font-semibold bg-black/60 text-white rounded px-1.5 py-0.5">
@@ -102,23 +106,25 @@ export default function LivePage(): JSX.Element {
             <p className="text-sm text-slate-400 mt-1">Watch live lessons, join group streams, or go live.</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => navigate('/live/group')} className="btn-ghost px-4 py-2.5 inline-flex items-center gap-2 text-sm">
+            <button onClick={() => navigate('/live/group?host=1&id=my-room')} className="btn-ghost px-4 py-2.5 inline-flex items-center gap-2 text-sm">
               <IconUsers className="w-4 h-4" /> Group live
             </button>
-            <button onClick={() => navigate('/live/room')} className="btn-primary px-5 py-2.5 inline-flex items-center gap-2">
+            <button onClick={() => navigate('/live/room?host=1&id=my-stream')} className="btn-primary px-5 py-2.5 inline-flex items-center gap-2">
               <IconLive className="w-4 h-4" /> Go live
             </button>
           </div>
         </div>
 
+        <RealtimeStatus />
+
         {/* Live-now stories */}
         <div className="flex gap-4 overflow-x-auto pb-1 -mx-6 px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <StoryRing name="You" add onClick={() => navigate('/live/room')} />
-          {STORIES.map((n) => <StoryRing key={n} name={n} onClick={() => navigate('/live/room')} />)}
+          <StoryRing name="You" add onClick={() => navigate('/live/room?host=1&id=my-stream')} />
+          {STORIES.map((n) => <StoryRing key={n} name={n} onClick={() => navigate(`/live/room?id=${slug(n)}`)} />)}
         </div>
 
         {/* Featured */}
-        <button onClick={() => navigate(featured.group ? '/live/group' : '/live/room')} className="text-left">
+        <button onClick={() => navigate(`${featured.group ? '/live/group' : '/live/room'}?id=${slug(featured.title)}`)} className="text-left">
           <div className={cn('relative overflow-hidden rounded-card bg-gradient-to-br h-56 sm:h-64 ring-1 ring-white/10 flex flex-col justify-end p-6', featured.cover)}>
             <div aria-hidden className="absolute -top-16 -right-10 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
             <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest bg-rose-600 text-white rounded-full px-2.5 py-1">
