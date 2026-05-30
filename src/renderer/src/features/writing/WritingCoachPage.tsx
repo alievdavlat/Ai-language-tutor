@@ -3,6 +3,10 @@ import { cn } from '../../lib/classnames'
 import { PageHeader, SectionHeading } from '../../components/ui'
 import { IconPencilEdit, IconBolt, IconRefresh } from '../../components/icons'
 import { analyze, SAMPLE_TEXT, type WordIssue, type SentenceLevel } from './analyze'
+import { useChatStream } from '../../hooks/useChatStream'
+import { useIsAIReady } from '../../lib/ai'
+import { scoreWriting, type WritingScore } from '../exams/writingScore'
+import { rewriteSimpler, getClarityFeedback } from './ai'
 
 type Mode = 'write' | 'edit'
 
@@ -37,8 +41,15 @@ const GUIDE: { color: string; label: string; tip: string }[] = [
 export default function WritingCoachPage(): JSX.Element {
   const [text, setText] = useState(SAMPLE_TEXT)
   const [mode, setMode] = useState<Mode>('edit')
-  const [aiNote, setAiNote] = useState<string | null>(null)
   const [showHelp, setShowHelp] = useState(true)
+
+  const aiReady = useIsAIReady()
+  const { send } = useChatStream('')
+  const [busy, setBusy] = useState<'rewrite' | 'feedback' | null>(null)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [rewrite, setRewrite] = useState<string | null>(null)
+  const [band, setBand] = useState<WritingScore | null>(null)
+  const [feedback, setFeedback] = useState<string[] | null>(null)
 
   const a = useMemo(() => analyze(text), [text])
 
@@ -53,12 +64,46 @@ export default function WritingCoachPage(): JSX.Element {
   const gradeTone =
     a.grade === 0 ? 'text-slate-400' : a.grade <= 8 ? 'text-emerald-300' : a.grade <= 10 ? 'text-amber-300' : 'text-rose-300'
 
-  const runAi = (kind: 'rewrite' | 'feedback'): void => {
-    setAiNote(
-      kind === 'rewrite'
-        ? 'AI rewrite will simplify flagged sentences using your cloud model (Gemini). Wiring to the AI router is the next pass.'
-        : 'AI feedback (clarity, tone, grammar) will run on your cloud model. Wiring to the AI router is the next pass.'
-    )
+  const runAi = async (kind: 'rewrite' | 'feedback'): Promise<void> => {
+    if (busy) return
+    setAiError(null)
+    if (!aiReady) {
+      setAiError('No AI provider configured. Add one in Settings → AI to use the coach.')
+      return
+    }
+    if (!text.trim()) {
+      setAiError('Write something first.')
+      return
+    }
+    setBusy(kind)
+    try {
+      if (kind === 'rewrite') {
+        setRewrite(null)
+        const result = await rewriteSimpler(text, (m) => send(m))
+        if (!result) throw new Error('The model returned nothing — check your AI key in Settings → AI.')
+        setRewrite(result)
+      } else {
+        setBand(null)
+        setFeedback(null)
+        const [clarity, scored] = await Promise.all([
+          getClarityFeedback(text, (m) => send(m)),
+          scoreWriting('ielts', text, (m) => send(m))
+        ])
+        setFeedback(clarity.bullets)
+        setBand(scored) // null when essay too short to band fairly
+      }
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'AI request failed. Try again.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const applyRewrite = (): void => {
+    if (!rewrite) return
+    setText(rewrite)
+    setRewrite(null)
+    setMode('edit')
   }
 
   return (
@@ -200,19 +245,77 @@ export default function WritingCoachPage(): JSX.Element {
             <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 flex flex-col gap-2">
               <SectionHeading title="AI help" subtitle="Powered by your cloud model" />
               <button
-                onClick={() => runAi('rewrite')}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-grad-brand text-white font-bold py-2.5 shadow-glow hover:brightness-110 transition"
+                onClick={() => void runAi('rewrite')}
+                disabled={busy !== null}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-grad-brand text-white font-bold py-2.5 shadow-glow hover:brightness-110 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <IconBolt className="w-4 h-4" /> Rewrite to simplify
+                <IconBolt className="w-4 h-4" /> {busy === 'rewrite' ? 'Rewriting…' : 'Rewrite to simplify'}
               </button>
               <button
-                onClick={() => runAi('feedback')}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.05] border border-white/10 text-slate-200 font-semibold py-2.5 hover:bg-white/[0.09] transition"
+                onClick={() => void runAi('feedback')}
+                disabled={busy !== null}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.05] border border-white/10 text-slate-200 font-semibold py-2.5 hover:bg-white/[0.09] transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <IconRefresh className="w-4 h-4" /> Get feedback
+                <IconRefresh className={cn('w-4 h-4', busy === 'feedback' && 'animate-spin')} />{' '}
+                {busy === 'feedback' ? 'Analyzing…' : 'Get feedback'}
               </button>
-              {aiNote && <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">{aiNote}</p>}
+              {!aiReady && (
+                <p className="text-[11px] text-amber-300/90 mt-1 leading-relaxed">
+                  Add a cloud model in Settings → AI to enable the coach.
+                </p>
+              )}
+              {aiError && <p className="text-[11px] text-rose-300 mt-1 leading-relaxed">⚠ {aiError}</p>}
             </div>
+
+            {/* AI rewrite result */}
+            {rewrite && (
+              <div className="rounded-2xl border border-brand-400/30 bg-brand-500/[0.06] p-4 flex flex-col gap-3">
+                <SectionHeading title="Simplified rewrite" subtitle="Clearer, bolder version" />
+                <p className="text-[14px] leading-relaxed text-slate-100 whitespace-pre-wrap max-h-64 overflow-y-auto">
+                  {rewrite}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={applyRewrite}
+                    className="flex-1 rounded-xl bg-grad-brand text-white font-bold py-2 text-sm shadow-glow hover:brightness-110 transition"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={() => setRewrite(null)}
+                    className="rounded-xl bg-white/[0.05] border border-white/10 text-slate-300 font-semibold py-2 px-4 text-sm hover:bg-white/[0.09] transition"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* AI feedback result */}
+            {feedback && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 flex flex-col gap-3">
+                <SectionHeading title="Coach feedback" subtitle="Clarity, tone & grammar" />
+                {band && (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-extrabold text-emerald-300 leading-none">{band.score}</span>
+                    <span className="text-xs text-slate-400">est. IELTS band</span>
+                  </div>
+                )}
+                <ul className="flex flex-col gap-2">
+                  {feedback.map((f, i) => (
+                    <li
+                      key={i}
+                      className={cn(
+                        'text-sm leading-snug flex items-start gap-2',
+                        f.startsWith('✓') ? 'text-emerald-200' : 'text-slate-200'
+                      )}
+                    >
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </aside>
         </div>
       </div>
