@@ -26,6 +26,7 @@ function seed(): LibraryItem[] {
     {
       id: 'lib_book_grammar', ownerId: 'u_emma', kind: 'book', title: 'English Grammar — Quick Reference',
       author: 'SpeakAI', description: 'A multi-page reference you can read page by page, with read-along audio.', level: 'A2', language: 'en',
+      thumbnailUrl: 'https://picsum.photos/seed/grammar-book/800/450',
       pdfUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf', pageCount: 14,
       fullAudioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', createdAt: t
     },
@@ -62,8 +63,16 @@ function db(): LibraryDb {
   if (typeof window === 'undefined' || !window.localStorage) { cache = emptyDb(); return cache }
   const raw = window.localStorage.getItem(LS_KEY)
   if (!raw) { cache = emptyDb(); persist(); return cache }
-  try { cache = { ...emptyDb(), ...(JSON.parse(raw) as Partial<LibraryDb>) } as LibraryDb }
-  catch { cache = emptyDb() }
+  try {
+    const parsed = JSON.parse(raw) as Partial<LibraryDb>
+    cache = { ...emptyDb(), ...parsed } as LibraryDb
+    // Migration: always refresh seed items to the latest content (new PDF,
+    // thumbnails) while preserving anything the user added.
+    const seedItems = seed()
+    const seedIds = new Set(seedItems.map((s) => s.id))
+    const userItems = (cache.items ?? []).filter((i) => !seedIds.has(i.id))
+    cache.items = [...seedItems, ...userItems]
+  } catch { cache = emptyDb() }
   return cache
 }
 function persist(): void {

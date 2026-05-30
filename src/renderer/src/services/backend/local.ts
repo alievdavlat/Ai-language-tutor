@@ -123,9 +123,19 @@ function loadDb(): Db {
  */
 function hydrateContent(stored: Db): Db {
   const next = { ...stored }
-  const courseIds = new Set((next.courses ?? []).map((c) => c.id))
+  const seedById = new Map(SEED_COURSES.map((c) => [c.id, c]))
+  const existing = next.courses ?? []
+  const courseIds = new Set(existing.map((c) => c.id))
+  // Refresh the editorial/display fields of SEED courses already in the store
+  // (truthful counts + cover/banner images) WITHOUT touching user-created
+  // courses or any user rows (enrollments, progress, reviews live separately).
+  next.courses = existing.map((c) => {
+    const s = seedById.get(c.id)
+    if (!s) return c // user-created course — leave it alone
+    return { ...c, rating: s.rating, reviewCount: s.reviewCount, enrollmentCount: s.enrollmentCount, cover: s.cover, thumbnailUrl: s.thumbnailUrl, bannerUrl: s.bannerUrl }
+  })
   const missingCourses = SEED_COURSES.filter((c) => !courseIds.has(c.id))
-  if (missingCourses.length) next.courses = [...(next.courses ?? []), ...missingCourses]
+  if (missingCourses.length) next.courses = [...next.courses, ...missingCourses]
   if (!next.units || next.units.length === 0) next.units = [...SEED_UNITS]
   if (!next.lessons || next.lessons.length === 0) next.lessons = [...SEED_LESSONS]
   return next
