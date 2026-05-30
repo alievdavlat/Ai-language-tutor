@@ -68,7 +68,7 @@ export default function DailyProgressCard({
         {/* Text info */}
         <div className="min-w-0">
           <p className={cn('text-sm font-semibold', done ? 'text-emerald-400' : 'text-slate-200')}>
-            {done ? '✓ Goal reached!' : `${goal - current} min left`}
+            {done ? '✓ Goal reached!' : `${goal - current} XP to go`}
           </p>
           <p className="text-xs text-slate-500 mt-1 leading-relaxed">
             {done
