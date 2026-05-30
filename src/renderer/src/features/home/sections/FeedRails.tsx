@@ -5,6 +5,7 @@ import { AvatarCircle, ProgressBar, Rail } from '../../../components/ui'
 import { IconBook, IconHeadphones, IconPlay, IconStar, IconYouTube } from '../../../components/icons'
 import { backend, useBackendQuery } from '../../../services/backend/useBackend'
 import { library } from '../../../services/library/store'
+import { rankCourses, rankByFollowers } from '../../../services/ranking'
 import { isImageCover } from '../../../lib/cover'
 import { useTargetLanguageCode } from '../../../lib/language'
 
@@ -115,16 +116,15 @@ export default function FeedRails(): JSX.Element {
   const books = useBackendQuery(() => library.list('book', lang), [lang], [])
 
   const teachers = useBackendQuery(async () => {
-    const allUsers = await Promise.all(['u_emma', 'u_james', 'u_marco'].map((id) => backend.getUser(id)))
+    const all = await backend.listUsers({ role: 'teacher' })
     const me = backend.currentUserId()
     const rows: TeacherCardData[] = []
-    for (const u of allUsers) {
-      if (!u) continue
+    for (const u of all) {
       const counts = await backend.followCounts(u.id)
       const isFollowing = me ? await backend.isFollowing(me, u.id) : false
       rows.push({ id: u.id, name: u.name, avatarUrl: (u as { avatarUrl?: string }).avatarUrl, followers: counts.followers, isFollowing })
     }
-    return rows
+    return rankByFollowers(rows).slice(0, 8)
   }, [], [])
 
   const toggleFollow = async (teacherId: string): Promise<void> => {
@@ -147,7 +147,7 @@ export default function FeedRails(): JSX.Element {
       <Rail title="Popular courses" action={<SeeAll onClick={() => navigate('/courses')} />}>
         {courses.data.length === 0 && !courses.loading
           ? <p className="text-xs text-slate-500 px-4">No courses yet for this language.</p>
-          : courses.data.slice(0, 8).map((c) => <CourseCard key={c.id} c={c} onClick={() => navigate(`/course/${c.id}`)} />)}
+          : rankCourses(courses.data).slice(0, 8).map((c) => <CourseCard key={c.id} c={c} onClick={() => navigate(`/course/${c.id}`)} />)}
       </Rail>
 
       <Rail title="Trending videos" action={<SeeAll onClick={() => navigate('/library')} />}>

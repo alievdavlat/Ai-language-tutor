@@ -15,6 +15,7 @@ import {
 } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { library } from '../../services/library/store'
+import { rankCourses, rankLibraryByRecency, rankByFollowers } from '../../services/ranking'
 import { useTargetLanguage } from '../../lib/language'
 
 type Tab = 'top' | 'videos' | 'people' | 'live' | 'buddies'
@@ -112,11 +113,13 @@ export default function ExplorePage(): JSX.Element {
   const [tab, setTab] = useState<Tab>('top')
   const [q, setQ] = useState(params.get('q') ?? '')
 
-  // Featured creators — teachers in seed.
+  // Featured/trending creators — all teachers, ranked by real follower count.
   const creators = useBackendQuery(async () => {
-    const ids = ['u_emma', 'u_james', 'u_marco']
-    const r = await Promise.all(ids.map((id) => backend.getUser(id)))
-    return r.filter((u): u is PlatformUser => u !== null)
+    const teachers = await backend.listUsers({ role: 'teacher' })
+    const withCounts = await Promise.all(
+      teachers.map(async (u) => ({ u, followers: (await backend.followCounts(u.id)).followers }))
+    )
+    return rankByFollowers(withCounts).map((x) => x.u).slice(0, 6)
   }, [], [])
 
   // Study buddies — students learning the same language.
@@ -135,7 +138,7 @@ export default function ExplorePage(): JSX.Element {
   const libItems = useBackendQuery(() => library.list(undefined, lang.code), [lang.code], [])
 
   const tiles = useMemo<ExploreTile[]>(() => {
-    const courseTiles: ExploreTile[] = courses.data.map((c) => ({
+    const courseTiles: ExploreTile[] = rankCourses(courses.data).map((c) => ({
       id: `c_${c.id}`,
       kind: 'course',
       title: c.title,
@@ -143,8 +146,8 @@ export default function ExplorePage(): JSX.Element {
       cover: c.thumbnailUrl || c.cover || coverFor(c.title),
       go: () => navigate(`/course/${c.id}`)
     }))
-    // Library books / videos / audio are searchable too.
-    const libTiles: ExploreTile[] = libItems.data.map((it) => ({
+    // Library books / videos / audio are searchable too (newest first).
+    const libTiles: ExploreTile[] = rankLibraryByRecency(libItems.data).map((it) => ({
       id: `l_${it.id}`,
       kind: it.kind === 'audio' ? 'voice' : it.kind === 'video' ? 'video' : 'post',
       title: it.title,
