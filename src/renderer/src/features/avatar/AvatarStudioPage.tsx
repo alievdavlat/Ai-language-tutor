@@ -9,8 +9,10 @@ import {
   type CharacterInfo,
   type CorrectionStyle,
   type HairStyle,
+  type MemoryNote,
   type SpeakingStyle,
-  type UserProfile
+  type UserProfile,
+  type UserSettings
 } from '@shared/types'
 import { ACCENTS, ACCENT_LABELS, resolveCharacter } from '@shared/constants'
 import { characterAvatarUrl } from '@shared/utils/avatar'
@@ -18,9 +20,22 @@ import { useAppStore } from '../../store/useAppStore'
 import { cn } from '../../lib/classnames'
 import PageHeader from '../../components/layout/PageHeader'
 import BackButton from '../../components/layout/BackButton'
-import { Button, Input, TextArea } from '../../components/ui'
+import { Button, Input, TextArea, Tabs, type TabItem } from '../../components/ui'
 import { Avatar } from '../../components/avatar'
 import AvatarStudioCanvas from './AvatarStudioCanvas'
+import CompanionMemory from '../settings/sections/CompanionMemory'
+import TTSProviderSection from '../settings/sections/TTSProviderSection'
+import VoiceSection from '../settings/sections/VoiceSection'
+import SpeakingRateSection from '../settings/sections/SpeakingRateSection'
+import CompanionPreviewChat from '../settings/sections/CompanionPreviewChat'
+
+type StudioTab = 'persona' | 'memory' | 'voice' | 'preview'
+const STUDIO_TABS: readonly TabItem<StudioTab>[] = [
+  { id: 'persona', label: 'Persona' },
+  { id: 'memory', label: 'Memory' },
+  { id: 'voice', label: 'Voice' },
+  { id: 'preview', label: 'Preview chat' }
+] as const
 
 type AvatarKind = '2d' | '3d' | 'vrm'
 
@@ -122,10 +137,12 @@ export default function AvatarStudioPage(): JSX.Element {
   const [cfg, setCfg] = useState<Avatar3DConfig>(profile?.avatar3d ?? DEFAULT_AVATAR_3D)
   const [vrmUrl, setVrmUrl] = useState(existing?.vrmUrl ?? '')
   const [saving, setSaving] = useState(false)
+  const [studioTab, setStudioTab] = useState<StudioTab>('persona')
 
   const kind: AvatarKind = form.avatarKind ?? '2d'
   const isEditingPreset = !!existing && !existing.isCustom
   const isEditing = !!existing
+  const hasName = form.name.trim().length > 0
 
   const update = <K extends keyof CharacterInfo>(key: K, value: CharacterInfo[K]): void => {
     setForm((prev) => {
@@ -143,26 +160,56 @@ export default function AvatarStudioPage(): JSX.Element {
   }
 
   const canSave = form.name.trim().length > 0
+  const draftId = form.id || slugify(form.name)
+
+  /** The form normalised into a CharacterInfo — used by save, preview and memory. */
+  const normalized = (): CharacterInfo => ({
+    ...form,
+    id: draftId,
+    isCustom: true,
+    avatarKind: kind,
+    traits: form.traits ?? [],
+    interests: form.interests ?? [],
+    personality: form.personality ?? { ...DEFAULT_PERSONALITY },
+    greeting: form.greeting?.trim() || undefined,
+    vrmUrl: kind === 'vrm' ? vrmUrl.trim() || undefined : form.vrmUrl,
+    avatarSeed: kind === '2d' ? form.avatarSeed?.trim() || draftId : form.avatarSeed,
+    appearance: kind === '3d'
+      ? { skinTone: cfg.skinTone, hairColor: cfg.hairColor, hairStyle: cfg.hairStyle, eyeColor: cfg.eyeColor, outfitColor: cfg.outfitColor }
+      : form.appearance
+  })
+
+  // Live preview profile — injects the in-progress draft as the active
+  // companion so Preview chat + Memory reflect what you're editing right now.
+  const previewProfile: UserProfile | null = profile
+    ? {
+        ...profile,
+        customCharacters: [...(profile.customCharacters ?? []).filter((c) => c.id !== draftId), normalized()],
+        settings: { ...profile.settings, characterId: draftId, accent: form.accent }
+      }
+    : null
+
+  // Memory + Voice changes persist immediately (independent of the Save button).
+  const patchSettings = (p: Partial<UserSettings>): void => {
+    const cur = useAppStore.getState().profile
+    if (!cur) return
+    const next: UserProfile = { ...cur, settings: { ...cur.settings, ...p }, updatedAt: new Date().toISOString() }
+    setProfile(next)
+    void window.api.profile.save(next)
+  }
+  const patchMemory = (map: Record<string, MemoryNote[]>): void => {
+    const cur = useAppStore.getState().profile
+    if (!cur) return
+    const next: UserProfile = { ...cur, companionMemory: map, updatedAt: new Date().toISOString() }
+    setProfile(next)
+    void window.api.profile.save(next)
+  }
 
   const save = async (): Promise<void> => {
     if (!canSave || !profile) return
     setSaving(true)
-    const id = form.id || slugify(form.name)
-    const next: CharacterInfo = {
-      ...form,
-      id,
-      isCustom: true,
-      avatarKind: kind,
-      traits: form.traits ?? [],
-      interests: form.interests ?? [],
-      personality: form.personality ?? { ...DEFAULT_PERSONALITY },
-      greeting: form.greeting?.trim() || undefined,
-      vrmUrl: kind === 'vrm' ? vrmUrl.trim() || undefined : form.vrmUrl,
-      avatarSeed: kind === '2d' ? form.avatarSeed?.trim() || id : form.avatarSeed,
-      appearance: kind === '3d'
-        ? { skinTone: cfg.skinTone, hairColor: cfg.hairColor, hairStyle: cfg.hairStyle, eyeColor: cfg.eyeColor, outfitColor: cfg.outfitColor }
-        : form.appearance
-    }
+    const id = draftId
+    const next = normalized()
     const customs = (profile.customCharacters ?? []).filter((c) => c.id !== id)
     const avatarMode = kind === '2d' ? '2d' : '3d'
     const updated: UserProfile = {
@@ -207,6 +254,11 @@ export default function AvatarStudioPage(): JSX.Element {
         }
       />
 
+      <div className="w-full px-6 pt-5">
+        <Tabs items={STUDIO_TABS} active={studioTab} onChange={setStudioTab} />
+      </div>
+
+      {studioTab === 'persona' && (
       <div className="w-full px-6 py-6 grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6">
         {/* Live preview */}
         <div className="rounded-3xl border border-white/10 overflow-hidden bg-black/30 min-h-[460px] flex items-center justify-center p-4">
@@ -356,6 +408,35 @@ export default function AvatarStudioPage(): JSX.Element {
           )}
         </div>
       </div>
+      )}
+
+      {studioTab === 'memory' && profile && (
+        <div className="w-full px-6 py-6 max-w-3xl">
+          {hasName ? (
+            <CompanionMemory profile={profile} character={normalized()} onChange={patchMemory} />
+          ) : (
+            <p className="text-sm text-slate-400 px-1">Add a name on the <b>Persona</b> tab first — then you can give this companion memories.</p>
+          )}
+        </div>
+      )}
+
+      {studioTab === 'voice' && profile && (
+        <div className="w-full px-6 py-6 flex flex-col gap-4">
+          <TTSProviderSection tts={profile.settings.tts} onChange={(tts) => patchSettings({ tts })} />
+          <VoiceSection accent={form.accent} currentVoiceURI={profile.settings.voiceURI} onPick={(voiceURI) => patchSettings({ voiceURI })} />
+          <SpeakingRateSection current={profile.settings.ttsSpeed} onChange={(ttsSpeed) => patchSettings({ ttsSpeed })} />
+        </div>
+      )}
+
+      {studioTab === 'preview' && (
+        <div className="w-full px-6 py-6 max-w-2xl">
+          {hasName && previewProfile ? (
+            <CompanionPreviewChat profile={previewProfile} />
+          ) : (
+            <p className="text-sm text-slate-400 px-1">Add a name on the <b>Persona</b> tab to preview a chat with this companion.</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
