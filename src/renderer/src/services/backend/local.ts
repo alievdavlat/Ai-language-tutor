@@ -34,6 +34,7 @@ import type {
 import type { Backend, CourseFilter, ID } from './types'
 import { computeStats } from './stats'
 import { SEED_COURSES, SEED_LIVE, SEED_POSTS, SEED_ANNOUNCEMENTS, SEED_USERS, SEED_NOTIFS } from './seed'
+import { SEED_UNITS, SEED_LESSONS } from '../content/curriculum'
 
 // ─── Storage ───────────────────────────────────────────────────────────────
 
@@ -72,8 +73,8 @@ function emptyDb(): Db {
     users: [...SEED_USERS],
     currentUserId: null,
     courses: [...SEED_COURSES],
-    units: [],
-    lessons: [],
+    units: [...SEED_UNITS],
+    lessons: [...SEED_LESSONS],
     enrollments: [],
     reviews: [],
     posts: [...SEED_POSTS],
@@ -106,12 +107,28 @@ function loadDb(): Db {
     return fresh
   }
   try {
-    return JSON.parse(raw) as Db
+    return hydrateContent(JSON.parse(raw) as Db)
   } catch {
     const fresh = emptyDb()
     saveDb(fresh)
     return fresh
   }
+}
+
+/**
+ * Back-fill the learning-content seed (courses curriculum) into an existing
+ * store created before the content slice landed, without disturbing the user's
+ * own rows (enrollments, vocab, etc.). Adds any missing seed courses and, when
+ * the curriculum is empty, the units + lessons.
+ */
+function hydrateContent(stored: Db): Db {
+  const next = { ...stored }
+  const courseIds = new Set((next.courses ?? []).map((c) => c.id))
+  const missingCourses = SEED_COURSES.filter((c) => !courseIds.has(c.id))
+  if (missingCourses.length) next.courses = [...(next.courses ?? []), ...missingCourses]
+  if (!next.units || next.units.length === 0) next.units = [...SEED_UNITS]
+  if (!next.lessons || next.lessons.length === 0) next.lessons = [...SEED_LESSONS]
+  return next
 }
 
 function saveDb(db: Db): void {

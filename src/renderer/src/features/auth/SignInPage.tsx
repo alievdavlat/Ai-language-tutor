@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { SignIn, SignUp, useUser, useAuth } from '@clerk/clerk-react'
+import { SignIn, SignUp, useUser } from '@clerk/clerk-react'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { backend } from '../../services/backend'
@@ -32,7 +32,6 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
   // When Clerk reports the user is signed in, mirror that into our local
   // store and (if not already) into the backend.users row.
   const clerk = useClerk ? useUser() : null
-  const auth = useClerk ? useAuth() : null
   useEffect(() => {
     if (!useClerk || !clerk?.isSignedIn || !clerk.user) return
     const sync = async (): Promise<void> => {

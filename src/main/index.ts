@@ -3,6 +3,7 @@ import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { createAppWindow } from './app/window.js'
 import { registerAllIpcHandlers } from './ipc/index.js'
 import { bootstrapSidecars, getSidecarManager } from './services/sidecars/index.js'
+import { disposeAutoUpdater } from './services/updater/index.js'
 
 // Silence Chromium noise that doesn't apply to Electron:
 //   - Autofill DevTools Protocol methods (no browser autofill here)
@@ -52,6 +53,7 @@ app.whenReady().then(async () => {
 })
 
 app.on('before-quit', async () => {
+  disposeAutoUpdater()
   try {
     await getSidecarManager().stopAll()
   } catch (err) {

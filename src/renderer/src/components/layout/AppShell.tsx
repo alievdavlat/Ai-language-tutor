@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import Sidebar from './Sidebar'
+import RetentionNudges from '../../features/retention/RetentionNudges'
 
 interface AppShellProps {
   children: ReactNode
@@ -19,6 +20,7 @@ export default function AppShell({ children }: AppShellProps): JSX.Element {
         onToggle={() => setCollapsed((v) => !v)}
       />
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">{children}</main>
+      <RetentionNudges />
     </div>
   )
 }

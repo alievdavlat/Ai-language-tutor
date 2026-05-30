@@ -2,9 +2,11 @@ import { registerGrammarIpc } from './grammar.ipc.js'
 import { registerHardwareIpc } from './hardware.ipc.js'
 import { registerOllamaIpc } from './ollama.ipc.js'
 import { registerPlacementIpc } from './placement.ipc.js'
+import { registerProductivityIpc } from './productivity.ipc.js'
 import { registerProfileIpc } from './profile.ipc.js'
 import { registerSidecarIpc } from './sidecars.ipc.js'
 import { registerSttIpc } from './stt.ipc.js'
+import { registerUpdateIpc } from './update.ipc.js'
 import type { IpcContext } from './types.js'
 
 export function registerAllIpcHandlers(ctx: IpcContext): void {
@@ -15,6 +17,8 @@ export function registerAllIpcHandlers(ctx: IpcContext): void {
   registerGrammarIpc(ctx)
   registerSttIpc(ctx)
   registerSidecarIpc(ctx)
+  registerProductivityIpc(ctx)
+  registerUpdateIpc(ctx)
 }
 
 export type { IpcContext } from './types.js'

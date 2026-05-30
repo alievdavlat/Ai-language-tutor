@@ -4,6 +4,7 @@ import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import AvatarCircle from '../ui/AvatarCircle'
 import {
+  IconBolt,
   IconBook,
   IconBookmark,
   IconChart,
@@ -11,8 +12,11 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconClipboard,
+  IconDownload,
+  IconFlame,
   IconGear,
   IconHeadphones,
+  IconHeart,
   IconHome,
   IconLibrary,
   IconLive,
@@ -32,7 +36,10 @@ const LEARN_NAV = [
   { to: '/courses', label: 'Courses', Icon: IconBook },
   { to: '/library', label: 'Library', Icon: IconLibrary },
   { to: '/vocabulary', label: 'Vocabulary', Icon: IconBookmark },
-  { to: '/progress', label: 'Progress', Icon: IconChart }
+  { to: '/dictionary', label: 'Dictionary', Icon: IconSearch },
+  { to: '/progress', label: 'Progress', Icon: IconChart },
+  { to: '/retention', label: 'Goals & Streak', Icon: IconFlame },
+  { to: '/downloads', label: 'Downloads', Icon: IconDownload }
 ] as const
 
 const PRACTICE_NAV = [
@@ -40,12 +47,14 @@ const PRACTICE_NAV = [
   { to: '/clips', label: 'Clips', Icon: IconHeadphones },
   { to: '/writing', label: 'Writing Coach', Icon: IconPencilEdit },
   { to: '/meet', label: 'Speaking partner', Icon: IconUsers },
-  { to: '/exams', label: 'Exams', Icon: IconClipboard }
+  { to: '/exams', label: 'Exams', Icon: IconClipboard },
+  { to: '/productivity', label: 'Productivity', Icon: IconBolt }
 ] as const
 
 const COMMUNITY_NAV = [
   { to: '/explore', label: 'Explore', Icon: IconSearch },
   { to: '/community', label: 'Community', Icon: IconChat },
+  { to: '/buddy', label: 'Study buddy', Icon: IconHeart },
   { to: '/live', label: 'Live', Icon: IconLive }
 ] as const
 
@@ -277,6 +286,13 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
 
       {/* Profile */}
       {profile && <ProfileCard profile={profile} collapsed={collapsed} />}
+
+      {/* App version footer */}
+      <div className={cn('pb-3 text-center', collapsed ? 'px-1' : 'px-3')}>
+        <span className="text-[10px] text-slate-600 tracking-wide">
+          v{typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.1'}
+        </span>
+      </div>
     </aside>
   )
 }

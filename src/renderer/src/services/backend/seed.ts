@@ -83,6 +83,21 @@ export const SEED_COURSES: Course[] = [
     enrollmentCount: 1640,
     hours: 6,
     publishedAt: t(60 * 24 * 7)
+  },
+  {
+    id: 'c_egiu',
+    teacherId: 'u_emma',
+    title: 'English Grammar in Use (coursebook)',
+    description: 'Study a classic grammar textbook unit by unit — rules then exercises',
+    level: 'B1',
+    targetLanguage: 'en',
+    cover: 'from-blue-600 to-blue-800',
+    pricing: { kind: 'free' },
+    rating: 4.9,
+    reviewCount: 540,
+    enrollmentCount: 9800,
+    hours: 10,
+    publishedAt: t(60 * 24 * 90)
   }
 ]
 

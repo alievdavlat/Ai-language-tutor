@@ -7,14 +7,18 @@ import CompanionWorkshop from './sections/CompanionWorkshop'
 import MicProcessingSection from './sections/MicProcessingSection'
 import LanguageSection from './sections/LanguageSection'
 import AISection from './sections/AISection'
+import PrivacySection from './sections/PrivacySection'
+import AboutSection from './sections/AboutSection'
 
-type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone'
+type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone' | 'privacy' | 'about'
 
 const TABS: readonly TabItem<SettingsTab>[] = [
   { id: 'ai', label: 'AI' },
   { id: 'language', label: 'Language' },
   { id: 'companion', label: 'Companion' },
-  { id: 'microphone', label: 'Microphone' }
+  { id: 'microphone', label: 'Microphone' },
+  { id: 'privacy', label: 'Privacy' },
+  { id: 'about', label: 'About' }
 ] as const
 
 export default function SettingsPage(): JSX.Element {
@@ -99,6 +103,22 @@ export default function SettingsPage(): JSX.Element {
             <p className="text-[11px] text-slate-500 px-1">
               Speech recognition is automatic — it uses your system's built-in recognizer. No setup needed.
             </p>
+          </div>
+        )}
+
+        {/* ── Privacy ───────────────────────────────────────────────────── */}
+        {tab === 'privacy' && (
+          <PrivacySection
+            contentSafety={s.contentSafety ?? true}
+            incognito={s.incognito ?? false}
+            onChange={(p) => void patch(p)}
+          />
+        )}
+
+        {/* ── About / auto-update ───────────────────────────────────────── */}
+        {tab === 'about' && (
+          <div className="grid grid-cols-1 gap-4">
+            <AboutSection />
           </div>
         )}
       </div>

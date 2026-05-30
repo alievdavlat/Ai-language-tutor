@@ -12,6 +12,7 @@ import SpeakingPage from '../features/speaking/SpeakingPage'
 import CallPage from '../features/speaking/CallPage'
 import SettingsPage from '../features/settings/SettingsPage'
 import VocabularyPage from '../features/vocabulary/VocabularyPage'
+import VocabReviewPage from '../features/vocabulary/VocabReviewPage'
 import ProgressPage from '../features/progress/ProgressPage'
 import CoursesPage from '../features/courses/CoursesPage'
 import ClassroomPage from '../features/courses/ClassroomPage'
@@ -26,7 +27,7 @@ import MeetPage from '../features/meet/MeetPage'
 import ExercisePlayer from '../features/exercise/ExercisePlayer'
 import LevelTestPage from '../features/leveltest/LevelTestPage'
 import ExamsHubPage from '../features/exams/ExamsHubPage'
-import ExamMock from '../features/exams/ExamMock'
+import ExamEngine from '../features/exams/ExamEngine'
 import ExamPracticeHub from '../features/exams/ExamPracticeHub'
 import CefrHubPage from '../features/exams/CefrHubPage'
 import AccountPage from '../features/account/AccountPage'
@@ -41,8 +42,10 @@ import TutorsPage from '../features/tutors/TutorsPage'
 import PathsPage from '../features/paths/PathsPage'
 import LiveQuizPage from '../features/quizlive/LiveQuizPage'
 import StoriesPage from '../features/stories/StoriesPage'
+import StoryReaderPage from '../features/stories/StoryReaderPage'
 import ShadowingPage from '../features/shadowing/ShadowingPage'
 import WatchPage from '../features/watch/WatchPage'
+import DictionaryPage from '../features/dictionary/DictionaryPage'
 import ClipsPage from '../features/clips/ClipsPage'
 import ClipSetupPage from '../features/clips/ClipSetupPage'
 import ClipPlayPage from '../features/clips/ClipPlayPage'
@@ -51,6 +54,8 @@ import FeedbackExchangePage from '../features/feedback/FeedbackExchangePage'
 import FlashcardsPage from '../features/flashcards/FlashcardsPage'
 import SignInPage from '../features/auth/SignInPage'
 import GrammarPage from '../features/grammar/GrammarPage'
+import GrammarGuidePage from '../features/grammar/GrammarGuidePage'
+import GrammarChallengePage from '../features/grammar/GrammarChallengePage'
 import RoleSelectPage from '../features/auth/RoleSelectPage'
 import LeaderboardPage from '../features/gamification/LeaderboardPage'
 import AdminPage from '../features/admin/AdminPage'
@@ -63,6 +68,18 @@ import AchievementsPage from '../features/gamification/AchievementsPage'
 import ProfilePage from '../features/profile/ProfilePage'
 import NotificationsPage from '../features/notifications/NotificationsPage'
 import InboxPage from '../features/inbox/InboxPage'
+import RetentionPage from '../features/retention/RetentionPage'
+import BuddyPage from '../features/buddy/BuddyPage'
+// [8/8] Teacher / monetization / admin / productivity slice
+import LessonBuilderPage from '../features/teacher/lesson/LessonBuilderPage'
+import LessonPlayerPage from '../features/teacher/lesson/LessonPlayerPage'
+import ClipsComposerPage from '../features/teacher/clips/ClipsComposerPage'
+import YouTubeConnectPage from '../features/teacher/youtube/YouTubeConnectPage'
+import DownloadsPage from '../features/downloads/DownloadsPage'
+import ProductivityPage from '../features/productivity/ProductivityPage'
+import WidgetPage from '../features/widget/WidgetPage'
+import QuickLookup from '../components/QuickLookup'
+import UpdateToast from '../components/UpdateToast'
 
 /**
  * After bootstrap completes, send the user through the first-launch funnel:
@@ -119,6 +136,9 @@ export default function AppRoutes(): JSX.Element {
   useAdminShortcut()
 
   return (
+    <>
+    <QuickLookup />
+    <UpdateToast />
     <Routes>
       <Route path="/" element={<BootPage />} />
       <Route path="/onboarding/*" element={<OnboardingPage />} />
@@ -157,6 +177,22 @@ export default function AppRoutes(): JSX.Element {
         }
       />
       <Route
+        path="/course/:courseId"
+        element={
+          <AppShell>
+            <CourseDetailPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/learn/:courseId/:lessonId"
+        element={
+          <AppShell>
+            <ClassroomPage />
+          </AppShell>
+        }
+      />
+      <Route
         path="/learn/book"
         element={
           <AppShell>
@@ -164,12 +200,31 @@ export default function AppRoutes(): JSX.Element {
           </AppShell>
         }
       />
+      <Route
+        path="/learn/book/:courseId/:lessonId"
+        element={
+          <AppShell>
+            <BookReaderPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/dictionary"
+        element={
+          <AppShell>
+            <DictionaryPage />
+          </AppShell>
+        }
+      />
       <Route path="/level-test" element={<LevelTestPage />} />
       <Route path="/exams/ielts" element={<AppShell><ExamPracticeHub examId="ielts" /></AppShell>} />
       <Route path="/exams/toefl" element={<AppShell><ExamPracticeHub examId="toefl" /></AppShell>} />
-      <Route path="/exams/ielts/mock" element={<ExamMock kind="ielts" />} />
+      <Route path="/exams/ielts/mock" element={<ExamEngine bankId="ielts" />} />
       <Route path="/exams/ielts/speaking" element={<IeltsSpeakingSimPage />} />
-      <Route path="/exams/toefl/mock" element={<ExamMock kind="toefl" />} />
+      <Route path="/exams/toefl/mock" element={<ExamEngine bankId="toefl" />} />
+      <Route path="/exams/cefr/mock" element={<ExamEngine bankId="cefr" />} />
+      <Route path="/exams/sat/mock" element={<ExamEngine bankId="sat" />} />
+      <Route path="/exams/gmat/mock" element={<ExamEngine bankId="gmat" />} />
       <Route path="/exams/cefr" element={<AppShell><CefrHubPage /></AppShell>} />
       <Route
         path="/exams"
@@ -261,6 +316,14 @@ export default function AppRoutes(): JSX.Element {
         }
       />
       <Route
+        path="/stories/:storyId"
+        element={
+          <AppShell>
+            <StoryReaderPage />
+          </AppShell>
+        }
+      />
+      <Route
         path="/shadowing"
         element={
           <AppShell>
@@ -270,6 +333,14 @@ export default function AppRoutes(): JSX.Element {
       />
       <Route
         path="/watch"
+        element={
+          <AppShell>
+            <WatchPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/watch/:videoId"
         element={
           <AppShell>
             <WatchPage />
@@ -333,11 +404,44 @@ export default function AppRoutes(): JSX.Element {
           </RequireRole>
         }
       />
+      {/* /teacher/new is now the TED-Ed interactive lesson builder (#3). */}
       <Route
         path="/teacher/new"
         element={
           <RequireRole role="teacher">
+            <AppShell><LessonBuilderPage /></AppShell>
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/teacher/lesson"
+        element={
+          <RequireRole role="teacher">
+            <AppShell><LessonBuilderPage /></AppShell>
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/teacher/course/new"
+        element={
+          <RequireRole role="teacher">
             <AppShell><CourseAuthoringPage /></AppShell>
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/teacher/clips"
+        element={
+          <RequireRole role="teacher">
+            <AppShell><ClipsComposerPage /></AppShell>
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/teacher/youtube"
+        element={
+          <RequireRole role="teacher">
+            <AppShell><YouTubeConnectPage /></AppShell>
           </RequireRole>
         }
       />
@@ -381,6 +485,14 @@ export default function AppRoutes(): JSX.Element {
           </RequireRole>
         }
       />
+      {/* Shareable interactive lesson player (#3). */}
+      <Route path="/lesson" element={<AppShell><LessonPlayerPage /></AppShell>} />
+      {/* Offline downloads + cross-device sync (#35). */}
+      <Route path="/downloads" element={<AppShell><DownloadsPage /></AppShell>} />
+      {/* Productivity hub: hotkey + widget + extension (#37). */}
+      <Route path="/productivity" element={<AppShell><ProductivityPage /></AppShell>} />
+      {/* Frameless desktop widget window (#37) — no shell. */}
+      <Route path="/widget" element={<WidgetPage />} />
       <Route
         path="/explore"
         element={
@@ -395,6 +507,7 @@ export default function AppRoutes(): JSX.Element {
           </AppShell>
         }
       />
+      <Route path="/vocabulary/review" element={<VocabReviewPage />} />
       <Route
         path="/grammar"
         element={
@@ -403,6 +516,8 @@ export default function AppRoutes(): JSX.Element {
           </AppShell>
         }
       />
+      <Route path="/grammar/guide/:topic" element={<AppShell><GrammarGuidePage /></AppShell>} />
+      <Route path="/grammar/challenge/:topic" element={<AppShell><GrammarChallengePage /></AppShell>} />
       <Route
         path="/progress"
         element={
@@ -460,6 +575,22 @@ export default function AppRoutes(): JSX.Element {
         }
       />
       <Route
+        path="/retention"
+        element={
+          <AppShell>
+            <RetentionPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/buddy"
+        element={
+          <AppShell>
+            <BuddyPage />
+          </AppShell>
+        }
+      />
+      <Route
         path="/settings"
         element={
           <AppShell>
@@ -469,5 +600,6 @@ export default function AppRoutes(): JSX.Element {
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }

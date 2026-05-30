@@ -4,6 +4,7 @@ import { resolveCharacter } from '@shared/constants'
 import { buildCorrectionFeedback, buildSystemPrompt, naturalGrammarMatches } from '../../../services/prompts'
 import { createId } from '../../../lib/ids'
 import { useStreamingSpeaker } from '../../../hooks/useStreamingSpeaker'
+import { recordActivity } from '../../../services/progress'
 import type { ChatTurn } from '../types'
 
 const HISTORY_WINDOW = 20
@@ -146,6 +147,9 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
       // Phase 8 — a real exchange happened; let the caller grow the bond.
       optsRef.current.onExchangeComplete?.()
 
+      // Progress — log the speaking exchange so XP / streak / mastery update.
+      recordActivity('speaking_exchange', { skill: 'speaking', meta: { topic } })
+
       // Wait for the streamed main reply to finish speaking before the
       // correction follow-up.
       await streamer.flushAndWait()
@@ -166,6 +170,9 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
             mistake
           }
         })
+
+        // Progress — a correction the learner received strengthens grammar.
+        recordActivity('correction', { skill: 'grammar', count: matches.length })
 
         const feedback = buildCorrectionFeedback(userText, matches)
         const character = resolveCharacter(profile, profile.settings.characterId)

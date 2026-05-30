@@ -1,4 +1,5 @@
 import { useAppStore } from '../../store/useAppStore'
+import { goalDef, useStats, useProgressStore, weekDays } from '../../services/progress'
 import GreetingHeader from './sections/GreetingHeader'
 import MegaSearch from './sections/MegaSearch'
 import HeroCarousel from './sections/HeroCarousel'
@@ -48,6 +49,14 @@ function AISetupBanner(): JSX.Element | null {
 
 export default function HomePage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
+  const stats = useStats()
+  const dailyGoalId = useProgressStore((s) => s.dailyGoalId)
+  const events = useProgressStore((s) => s.events)
+  const frozenDates = useProgressStore((s) => s.frozenDates)
+  const goalXp = goalDef(dailyGoalId).xp
+  const practisedDays = weekDays(events, frozenDates, new Date())
+    .map((d, i) => (d.state === 'done' ? i : -1))
+    .filter((i) => i >= 0)
 
   if (!profile) {
     return <div className="h-full flex items-center justify-center text-slate-400 text-sm">Loading…</div>
@@ -73,9 +82,9 @@ export default function HomePage(): JSX.Element {
 
         {/* Today — keep the learner's daily loop */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <DailyProgressCard current={0} goal={10} />
+          <DailyProgressCard current={stats.todayXp} goal={goalXp} />
           <DailyQuestCard />
-          <WeekStreakCard streak={0} />
+          <WeekStreakCard streak={stats.streak} practisedDays={practisedDays} />
         </div>
 
         {/* Content feed */}

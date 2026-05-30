@@ -46,6 +46,28 @@ export const SIDECAR_CHANNELS = {
   LOG: 'sidecar:log'
 } as const
 
+// Productivity (#37): global quick-lookup hotkey + desktop widget window.
+export const PRODUCTIVITY_CHANNELS = {
+  /** Main → renderer: the global shortcut fired; open the quick-lookup overlay. */
+  QUICK_LOOKUP: 'productivity:quick-lookup',
+  /** Renderer → main: toggle the always-on-top desktop widget window. */
+  TOGGLE_WIDGET: 'productivity:toggle-widget',
+  /** Renderer → main: query whether the global shortcut registered OK. */
+  SHORTCUT_STATUS: 'productivity:shortcut-status'
+} as const
+
+// Auto-update (#43): silent background updates via electron-updater + GitHub
+// Releases. The renderer only ever reads status (Settings → About) — it never
+// drives the install, which happens automatically on app quit.
+export const UPDATE_CHANNELS = {
+  /** Renderer → main: get the latest known UpdateStatus snapshot. */
+  STATUS: 'update:status',
+  /** Renderer → main: force an immediate check (also runs on launch + every 4h). */
+  CHECK: 'update:check',
+  /** Main → renderer: push a fresh UpdateStatus whenever it changes. */
+  CHANGED: 'update:changed'
+} as const
+
 export const IPC = {
   hardware: HARDWARE_CHANNELS,
   ollama: OLLAMA_CHANNELS,
@@ -53,5 +75,7 @@ export const IPC = {
   placement: PLACEMENT_CHANNELS,
   grammar: GRAMMAR_CHANNELS,
   stt: STT_CHANNELS,
-  sidecar: SIDECAR_CHANNELS
+  sidecar: SIDECAR_CHANNELS,
+  productivity: PRODUCTIVITY_CHANNELS,
+  update: UPDATE_CHANNELS
 } as const

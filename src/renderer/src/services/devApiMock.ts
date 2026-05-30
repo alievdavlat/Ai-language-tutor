@@ -65,9 +65,9 @@ function buildMockProfile(): UserProfile {
       characterId: 'emma',
       ttsSpeed: 1.0,
       vadSilenceMs: 1500,
-      sttEngine: 'web-speech',
+      sttEngine: 'whisper-local',
       ttsEngine: 'web-speech',
-      whisperModel: 'base.en',
+      whisperModel: 'tiny.en',
       llmModel: '',
       voiceURI: '',
       noiseSuppression: true,
@@ -190,6 +190,16 @@ export function installDevApiMock(): void {
       restart: async () => ({ ok: true }),
       onStateChange: () => noopUnsub,
       onLog: () => noopUnsub
+    },
+    productivity: {
+      onQuickLookup: () => noopUnsub,
+      toggleWidget: async () => false,
+      shortcutStatus: async () => false
+    },
+    update: {
+      status: async () => ({ phase: 'up-to-date', currentVersion: __APP_VERSION__ }),
+      check: async () => ({ phase: 'up-to-date', currentVersion: __APP_VERSION__ }),
+      onChange: () => noopUnsub
     }
   }
 
