@@ -5,6 +5,7 @@ import { useAppStore } from '../../store/useAppStore'
 import { useTargetLanguage } from '../../lib/language'
 import { bandFromDob, BAND_LABEL } from '../../lib/age'
 import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
+import DangerZoneSection from '../settings/sections/DangerZoneSection'
 import {
   IconBook,
   IconBookmark,
@@ -120,7 +121,7 @@ export default function AccountPage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 w-full w-full flex flex-col gap-6">
+      <div className="px-6 py-6 w-full flex flex-col gap-6">
         {/* Profile header */}
         <div className="flex items-center gap-4">
           <AvatarCircle name={displayName} size="lg" className="!w-20 !h-20 !text-2xl" />
@@ -186,6 +187,11 @@ export default function AccountPage(): JSX.Element {
             ))}
           </div>
         )}
+
+        {/* Data & reset (moved here from the old Conversation settings tab). */}
+        <div className="mt-2">
+          <DangerZoneSection />
+        </div>
       </div>
     </div>
   )

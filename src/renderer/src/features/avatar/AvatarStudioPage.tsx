@@ -7,6 +7,7 @@ import {
   type Accent,
   type Avatar3DConfig,
   type CharacterInfo,
+  type CorrectionStyle,
   type HairStyle,
   type SpeakingStyle,
   type UserProfile
@@ -29,6 +30,12 @@ const HAIR_COLORS = ['#1c1410', '#3a281c', '#6b4423', '#a8702d', '#d9b06a', '#9b
 const EYE_COLORS = ['#1a2b4a', '#3b6b3b', '#6b4423', '#2f2f2f', '#5a7fa8']
 const OUTFIT_COLORS = ['#3b4a66', '#2f5d50', '#7a3b5d', '#b3402f', '#26303f', '#5a4a8a']
 const BACKGROUNDS = ['#0b1020', '#142033', '#1e1430', '#0f2420', '#2a1622']
+const CORRECTION_STYLES: { id: CorrectionStyle; label: string; desc: string }[] = [
+  { id: 'gentle', label: 'Gentle', desc: 'Corrects kindly, after the reply.' },
+  { id: 'strict', label: 'Strict', desc: 'Calls out every mistake right away.' },
+  { id: 'inline', label: 'Inline', desc: 'Shows fixes quietly, no spoken nag.' },
+  { id: 'silent', label: 'Silent', desc: "Doesn't correct — just chats." }
+]
 const HAIR_STYLES: { id: HairStyle; label: string }[] = [
   { id: 'short', label: 'Short' },
   { id: 'long', label: 'Long' },
@@ -108,7 +115,7 @@ export default function AvatarStudioPage(): JSX.Element {
     existing ?? {
       id: '', name: '', emoji: '🙂', accent: 'us', age: 25, origin: '', headline: '', traits: [],
       bio: '', personaHint: '', personality: { ...DEFAULT_PERSONALITY }, interests: [], speakingStyle: 'neutral',
-      greeting: '', avatarStyle: 'lorelei', avatarSeed: '', avatarKind: '2d', isCustom: true
+      correctionStyle: 'gentle', greeting: '', avatarStyle: 'lorelei', avatarSeed: '', avatarKind: '2d', isCustom: true
     }
   )
   const [idTouched, setIdTouched] = useState(!!existing?.id)
@@ -326,6 +333,17 @@ export default function AvatarStudioPage(): JSX.Element {
                 <button key={s.id} onClick={() => update('speakingStyle', s.id as SpeakingStyle)}
                   className={cn('text-left rounded-lg border p-2 transition', (form.speakingStyle ?? 'neutral') === s.id ? 'border-brand-400 bg-brand-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10')}>
                   <div className="text-xs font-semibold">{s.label}</div>
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Corrections" hint="How this companion handles your mistakes.">
+            <div className="grid grid-cols-2 gap-2">
+              {CORRECTION_STYLES.map((cs) => (
+                <button key={cs.id} onClick={() => update('correctionStyle', cs.id)}
+                  className={cn('text-left rounded-lg border p-2 transition', (form.correctionStyle ?? 'gentle') === cs.id ? 'border-brand-400 bg-brand-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10')}>
+                  <div className="text-xs font-semibold">{cs.label}</div>
+                  <div className="text-[10px] text-slate-400">{cs.desc}</div>
                 </button>
               ))}
             </div>

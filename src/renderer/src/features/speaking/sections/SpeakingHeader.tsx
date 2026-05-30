@@ -50,7 +50,7 @@ export default function SpeakingHeader({
           <span className="block text-lg font-bold tracking-tight leading-none">{name}</span>
           <span className="block text-[11px] text-slate-400 mt-0.5">
             {character ? ACCENT_LABELS[character.accent] : ''}
-            {mood ? ` · ${mood.emoji} ${mood.label}` : ''} · Level {level} · {correctionStyle} corrections
+            {mood ? ` · ${mood.emoji} ${mood.label}` : ''} · Level {level} · {character?.correctionStyle ?? correctionStyle} corrections
           </span>
         </span>
       </button>

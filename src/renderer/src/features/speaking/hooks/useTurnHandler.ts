@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatMessage, CorrectionStyle, GrammarMatch, UserProfile } from '@shared/types'
+import { resolveCharacter } from '@shared/constants'
 import { buildCorrectionFeedback, buildSystemPrompt, naturalGrammarMatches } from '../../../services/prompts'
 import { createId } from '../../../lib/ids'
 import { useStreamingSpeaker } from '../../../hooks/useStreamingSpeaker'
@@ -167,8 +168,9 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
         })
 
         const feedback = buildCorrectionFeedback(userText, matches)
+        const character = resolveCharacter(profile, profile.settings.characterId)
         await appendCorrectionSpeech(
-          profile.settings.correctionStyle,
+          character?.correctionStyle ?? profile.settings.correctionStyle,
           feedback,
           optsRef.current.speak
         )

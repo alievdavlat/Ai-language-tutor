@@ -144,7 +144,8 @@ export function buildSystemPrompt(profile: UserProfile, opts: BuildOptions = {})
     '- Sound spoken, not written: contractions, casual connectors ("so", "yeah", "honestly").',
     '- Never use lists, bullets, markdown, or emoji — this will be spoken aloud.',
     '- Never say "As an AI" or describe yourself as a model.',
-    CORRECTION_RULE[profile.settings.correctionStyle]
+    // Per-companion correction style wins over the global default.
+    CORRECTION_RULE[character?.correctionStyle ?? profile.settings.correctionStyle]
   ].filter((x): x is string => !!x)
 
   return lines.join(' ')

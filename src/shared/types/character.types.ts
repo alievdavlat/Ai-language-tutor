@@ -1,4 +1,5 @@
 import type { Accent } from './learning.types'
+import type { CorrectionStyle } from './settings.types'
 
 /**
  * Phase 7 adds these three core temperament axes. All values are 0..100:
@@ -82,6 +83,12 @@ export interface CharacterInfo {
   isCustom?: boolean
   /** Phase 9 — companion role (friend / teacher / coach / examiner / storyteller). */
   category?: CompanionCategory
+  /**
+   * Phase 14 — how this companion corrects mistakes (gentle / strict / silent /
+   * inline). Set in the Avatar Studio; falls back to the global setting when
+   * unset. Lets a strict examiner and a gentle friend behave differently.
+   */
+  correctionStyle?: CorrectionStyle
   /**
    * Phase 14 — how this companion is rendered in Speaking:
    *   '2d'  → flat DiceBear portrait (default)

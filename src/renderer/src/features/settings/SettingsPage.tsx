@@ -2,23 +2,19 @@ import { useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { Tabs, type TabItem } from '../../components/ui'
 import { useSettingsPatch } from './hooks/useSettingsPatch'
-import AccentSection from './sections/AccentSection'
 import MicModeSection from './sections/MicModeSection'
-import CorrectionSection from './sections/CorrectionSection'
 import CompanionWorkshop from './sections/CompanionWorkshop'
 import MicProcessingSection from './sections/MicProcessingSection'
 import STTEngineSection from './sections/STTEngineSection'
-import DangerZoneSection from './sections/DangerZoneSection'
 import LanguageSection from './sections/LanguageSection'
 import AISection from './sections/AISection'
 
-type SettingsTab = 'ai' | 'language' | 'companion' | 'conversation' | 'microphone'
+type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone'
 
 const TABS: readonly TabItem<SettingsTab>[] = [
   { id: 'ai', label: 'AI' },
   { id: 'language', label: 'Language' },
   { id: 'companion', label: 'Companion' },
-  { id: 'conversation', label: 'Conversation' },
   { id: 'microphone', label: 'Microphone' }
 ] as const
 
@@ -88,27 +84,13 @@ export default function SettingsPage(): JSX.Element {
           />
         )}
 
-        {/* ── Conversation ──────────────────────────────────────────────── */}
-        {tab === 'conversation' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <AccentSection current={s.accent} onChange={(accent) => void patch({ accent })} />
-            <CorrectionSection
-              current={s.correctionStyle}
-              onChange={(correctionStyle) => void patch({ correctionStyle })}
-            />
+        {/* ── Microphone ────────────────────────────────────────────────── */}
+        {tab === 'microphone' && (
+          <div className="grid grid-cols-1 gap-4">
             <MicModeSection
               current={s.micMode}
               onChange={(micMode) => void patch({ micMode })}
             />
-            <div className="md:col-span-2">
-              <DangerZoneSection />
-            </div>
-          </div>
-        )}
-
-        {/* ── Microphone ────────────────────────────────────────────────── */}
-        {tab === 'microphone' && (
-          <div className="grid grid-cols-1 gap-4">
             <MicProcessingSection
               noiseSuppression={s.noiseSuppression ?? true}
               echoCancellation={s.echoCancellation ?? true}
