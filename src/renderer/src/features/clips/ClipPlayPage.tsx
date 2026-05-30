@@ -58,6 +58,8 @@ export default function ClipPlayPage(): JSX.Element {
   const [active, setActive] = useState(0)
   const [paused, setPaused] = useState(false)
   const [shake, setShake] = useState<string | null>(null)
+  /** bumped on restart to remount the video iframe → replays from the start */
+  const [videoNonce, setVideoNonce] = useState(0)
 
   const key = (li: number, wi: number): string => `${li}-${wi}`
   const get = (li: number, wi: number): BlankState => blanks[key(li, wi)] ?? { value: '', status: 'idle' }
@@ -156,6 +158,7 @@ export default function ClipPlayPage(): JSX.Element {
     setBonus(1)
     setActive(0)
     setPaused(false)
+    setVideoNonce((n) => n + 1)
     if (mode !== 'choice' && mode !== 'karaoke') window.setTimeout(() => focusKey(order[0]), 60)
   }
 
@@ -209,9 +212,10 @@ export default function ClipPlayPage(): JSX.Element {
         <div className="relative w-full max-w-3xl aspect-video rounded-xl overflow-hidden ring-1 ring-white/10">
           {clip.youtubeId ? (
             <iframe
+              key={videoNonce}
               title={clip.title}
               className="w-full h-full"
-              src={`https://www.youtube.com/embed/${clip.youtubeId}`}
+              src={`https://www.youtube.com/embed/${clip.youtubeId}?autoplay=1`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             />
           ) : (
