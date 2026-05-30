@@ -22,6 +22,7 @@ import { getFinalExam } from '../../services/content/exams'
 import { downloadCertificate } from '../../lib/certificate'
 import type { Lesson } from '@shared/types'
 import ExamRunner from './ExamRunner'
+import CoursePath from './CoursePath'
 import CommentsSection from '../../components/CommentsSection'
 import { studio } from '../../services/studio/store'
 
@@ -314,51 +315,12 @@ export default function CourseDetailPage(): JSX.Element {
                   <IconLock className="w-3.5 h-3.5" /> {course.pricing.kind === 'free' ? 'Enroll free to unlock all lessons.' : 'Buy this course to unlock all lessons.'}
                 </p>
               )}
-              <div className="flex flex-col gap-4">
-                {view.units.map(({ unit, lessons }) => (
-                  <div key={unit.id}>
-                    <p className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">{unit.title}</p>
-                    <div className="flex flex-col gap-1.5">
-                      {lessons.map((l) => {
-                        // Not enrolled (or not purchased) → everything is locked.
-                        // Enrolled → lessons unlock by progression/drip (state).
-                        const locked = !enrolled || l.state === 'locked'
-                        return (
-                          <button
-                            key={l.id}
-                            onClick={() => !locked && openLesson(l)}
-                            disabled={locked}
-                            className={cn('flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition', locked ? 'border-white/[0.05] bg-white/[0.015] opacity-60' : 'border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06]')}
-                          >
-                            <span className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center shrink-0">
-                              {l.state === 'done' ? <IconCheck className="w-4 h-4 text-emerald-300" /> : locked ? <IconLock className="w-3.5 h-3.5 text-slate-600" /> : l.kind === 'exam' ? <IconTrophy className="w-3.5 h-3.5 text-amber-300" /> : <IconPlay className="w-3.5 h-3.5 text-brand-300" />}
-                            </span>
-                            <span className="flex-1 text-sm text-slate-200">{l.title}</span>
-                            <span className="text-[10px] uppercase tracking-wider text-slate-500">{l.kind === 'rule' ? 'book' : l.kind}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
-                {/* Final exam row */}
-                {view.hasFinal && (
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Final</p>
-                    <button
-                      onClick={() => view.finalUnlocked && setShowFinal(true)}
-                      disabled={!view.finalUnlocked}
-                      className={cn('w-full flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition', !view.finalUnlocked ? 'border-white/[0.05] bg-white/[0.015] opacity-60' : 'border-amber-400/30 bg-amber-500/10 hover:bg-amber-500/15')}
-                    >
-                      <span className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center shrink-0">
-                        {view.finalPassed ? <IconCheck className="w-4 h-4 text-emerald-300" /> : !view.finalUnlocked ? <IconLock className="w-3.5 h-3.5 text-slate-600" /> : <IconTrophy className="w-3.5 h-3.5 text-amber-300" />}
-                      </span>
-                      <span className="flex-1 text-sm text-slate-200">Final exam{view.finalPassed ? ' — passed' : ''}</span>
-                      <span className="text-[10px] uppercase tracking-wider text-slate-500">exam</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+              <CoursePath
+                view={view}
+                enrolled={enrolled}
+                onOpenLesson={(l) => openLesson(l)}
+                onOpenFinal={() => setShowFinal(true)}
+              />
             </section>
 
             {/* Reviews */}
