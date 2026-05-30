@@ -19,6 +19,7 @@ import ClassroomPage from '../features/courses/ClassroomPage'
 import CourseDetailPage from '../features/courses/CourseDetailPage'
 import BookReaderPage from '../features/courses/BookReaderPage'
 import LibraryPage from '../features/library/LibraryPage'
+import LibraryBookPage from '../features/library/LibraryBookPage'
 import TeacherChannelPage from '../features/channel/TeacherChannelPage'
 import CommunityPage from '../features/community/CommunityPage'
 import LivePage from '../features/live/LivePage'
@@ -248,6 +249,14 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <LibraryPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/library/book/:id"
+        element={
+          <AppShell>
+            <LibraryBookPage />
           </AppShell>
         }
       />
