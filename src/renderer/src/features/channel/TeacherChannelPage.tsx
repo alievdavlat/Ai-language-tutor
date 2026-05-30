@@ -47,9 +47,10 @@ export default function TeacherChannelPage(): JSX.Element {
     followerCount.refresh()
   }
 
-  const name = owner.data?.name ?? 'Teacher'
+  const isTeacher = owner.data?.role === 'teacher'
+  const name = owner.data?.name ?? (isTeacher ? 'Teacher' : 'Learner')
   const handle = '@' + name.toLowerCase().replace(/[^a-z]+/g, '')
-  const bio = owner.data?.bio ?? 'Language teacher on SpeakAI.'
+  const bio = owner.data?.bio ?? (isTeacher ? 'Language teacher on SpeakAI.' : 'Language learner on SpeakAI.')
   const avgRating = courses.data.length
     ? (courses.data.reduce((a, c) => a + c.rating, 0) / courses.data.length).toFixed(1)
     : '—'
@@ -65,12 +66,14 @@ export default function TeacherChannelPage(): JSX.Element {
         {/* Header */}
         <div className="flex items-end gap-4 -mt-10">
           <div className="ring-4 ring-canvas rounded-full">
-            <AvatarCircle name={name} size="lg" className="!w-20 !h-20 !text-2xl" />
+            <AvatarCircle name={name} src={(owner.data as { avatarUrl?: string } | null)?.avatarUrl} size="lg" className="!w-20 !h-20 !text-2xl" />
           </div>
           <div className="flex-1 min-w-0 pb-1">
             <h1 className="text-2xl font-bold tracking-tight">{name}</h1>
             <p className="text-sm text-slate-400">
-              {handle} · {followerCount.data.toLocaleString()} followers · {courses.data.length} courses · {lessons.data.length} videos
+              {isTeacher
+                ? `${handle} · ${followerCount.data.toLocaleString()} followers · ${courses.data.length} courses · ${lessons.data.length} videos`
+                : `Learner${owner.data?.country ? ` · ${owner.data.country}` : ''} · Level ${owner.data?.level ?? 'A2'} · ${followerCount.data.toLocaleString()} followers`}
             </p>
           </div>
           {me !== channelOwnerId && (
@@ -86,6 +89,7 @@ export default function TeacherChannelPage(): JSX.Element {
           )}
         </div>
 
+        {isTeacher ? (<>
         {/* Tabs */}
         <div className="mt-5 border-b border-white/10">
           <Tabs items={TABS} active={tab} onChange={setTab} className="!bg-transparent !border-0 !p-0 !gap-1" />
@@ -177,6 +181,27 @@ export default function TeacherChannelPage(): JSX.Element {
             </div>
           )}
         </div>
+        </>) : (
+          /* Learner profile (non-teacher) */
+          <div className="mt-6 max-w-xl">
+            <p className="text-sm text-slate-300 leading-relaxed">{bio}</p>
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-center">
+                <p className="text-xl font-black text-white">{owner.data?.level ?? 'A2'}</p>
+                <p className="text-[11px] text-slate-400">Level</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-center">
+                <p className="text-xl font-black text-white">{followerCount.data}</p>
+                <p className="text-[11px] text-slate-400">Followers</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-center">
+                <p className="text-xl font-black text-white">{owner.data?.country ?? '—'}</p>
+                <p className="text-[11px] text-slate-400">Country</p>
+              </div>
+            </div>
+            <button onClick={() => navigate('/meet')} className="btn-ghost px-4 py-2 text-sm mt-4">Practice together →</button>
+          </div>
+        )}
       </div>
     </div>
   )
