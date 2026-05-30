@@ -23,6 +23,7 @@ import { downloadCertificate } from '../../lib/certificate'
 import type { Lesson } from '@shared/types'
 import ExamRunner from './ExamRunner'
 import CommentsSection from '../../components/CommentsSection'
+import { studio } from '../../services/studio/store'
 
 const FALLBACK_COURSE = 'c_everyday'
 const FINAL_PASS = 65
@@ -102,9 +103,26 @@ export default function CourseDetailPage(): JSX.Element {
     navigate(`${base}/${lesson.id}`)
   }
 
+  const [buying, setBuying] = useState(false)
+
   async function handleEnroll(): Promise<void> {
-    if (!userId) return
-    await backend.enroll(userId, courseId).catch(() => {})
+    if (!userId || !course) return
+    // Paid courses go through checkout first (records an order + enrolls).
+    if (course.pricing.kind !== 'free') {
+      setBuying(true)
+      const amountUsd = course.pricing.kind === 'one-off' ? course.pricing.usd : course.pricing.usdPerMo
+      await studio.checkout({
+        buyerId: userId,
+        teacherId: course.teacherId,
+        courseId,
+        kind: course.pricing.kind === 'sub' ? 'subscription' : 'course',
+        amountUsd,
+        provider: 'payme'
+      }).catch(() => {})
+      setBuying(false)
+    } else {
+      await backend.enroll(userId, courseId).catch(() => {})
+    }
     await backend.recordActivity({ userId, kind: 'course_enroll', meta: { courseId } }).catch(() => {})
     refreshEnroll()
     if (view.next) openLesson(view.next)
@@ -207,8 +225,8 @@ export default function CourseDetailPage(): JSX.Element {
         {/* Action row */}
         <div className="flex items-center gap-3 mb-3">
           {!enrolled ? (
-            <button onClick={handleEnroll} className="btn-primary px-8 py-3">
-              {course.pricing.kind === 'free' ? 'Enroll free →' : 'Enroll →'}
+            <button onClick={handleEnroll} disabled={buying} className="btn-primary px-8 py-3 disabled:opacity-60">
+              {buying ? 'Processing…' : course.pricing.kind === 'free' ? 'Enroll free →' : course.pricing.kind === 'one-off' ? `Buy · $${course.pricing.usd} →` : `Subscribe · $${course.pricing.usdPerMo}/mo →`}
             </button>
           ) : view.next ? (
             <button onClick={handleContinue} className="btn-primary px-8 py-3">Continue learning →</button>
@@ -290,14 +308,21 @@ export default function CourseDetailPage(): JSX.Element {
 
             {/* Curriculum */}
             <section>
-              <h2 className="text-base font-bold mb-3">Curriculum</h2>
+              <h2 className="text-base font-bold mb-1">Curriculum</h2>
+              {!enrolled && (
+                <p className="text-xs text-slate-400 mb-3 inline-flex items-center gap-1.5">
+                  <IconLock className="w-3.5 h-3.5" /> {course.pricing.kind === 'free' ? 'Enroll free to unlock all lessons.' : 'Buy this course to unlock all lessons.'}
+                </p>
+              )}
               <div className="flex flex-col gap-4">
                 {view.units.map(({ unit, lessons }) => (
                   <div key={unit.id}>
                     <p className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">{unit.title}</p>
                     <div className="flex flex-col gap-1.5">
                       {lessons.map((l) => {
-                        const locked = l.state === 'locked' && !enrolled ? false : l.state === 'locked'
+                        // Not enrolled (or not purchased) → everything is locked.
+                        // Enrolled → lessons unlock by progression/drip (state).
+                        const locked = !enrolled || l.state === 'locked'
                         return (
                           <button
                             key={l.id}
