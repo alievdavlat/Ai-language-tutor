@@ -8,6 +8,8 @@ import { useTargetLanguage } from '../../lib/language'
 import { bandFromDob, BAND_LABEL } from '../../lib/age'
 import { AvatarCircle, Input, Tabs, type TabItem } from '../../components/ui'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
+import { fileToDataUrl } from '../../lib/cover'
+import { useRef } from 'react'
 import DangerZoneSection from '../settings/sections/DangerZoneSection'
 
 const LEVELS: readonly CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
@@ -155,9 +157,20 @@ function ProfileEditModal({ profile, onClose }: { profile: UserProfile; onClose:
 export default function AccountPage(): JSX.Element {
   const navigate = useNavigate()
   const profile = useAppStore((s) => s.profile)
+  const setProfile = useAppStore((s) => s.setProfile)
   const lang = useTargetLanguage()
   const [tab, setTab] = useState<Tab>('saved')
   const [editing, setEditing] = useState(false)
+  const avatarInput = useRef<HTMLInputElement>(null)
+
+  const uploadAvatar = async (file?: File): Promise<void> => {
+    if (!file || !profile) return
+    if (file.size > 4 * 1024 * 1024) return
+    const url = await fileToDataUrl(file)
+    const next = { ...profile, avatarUrl: url, updatedAt: new Date().toISOString() }
+    await window.api.profile.save(next)
+    setProfile(next)
+  }
   const displayName = profile?.name?.trim() || 'You'
   const level = profile?.level ?? 'B1'
   const band = bandFromDob(profile?.dateOfBirth)
@@ -207,7 +220,13 @@ export default function AccountPage(): JSX.Element {
       <div className="px-6 py-6 w-full flex flex-col gap-6">
         {/* Profile header */}
         <div className="flex items-center gap-4">
-          <AvatarCircle name={displayName} size="lg" className="!w-20 !h-20 !text-2xl" />
+          <div className="relative group shrink-0">
+            <AvatarCircle name={displayName} src={profile?.avatarUrl} size="lg" className="!w-20 !h-20 !text-2xl" />
+            <input ref={avatarInput} type="file" accept="image/*" className="hidden" onChange={(e) => void uploadAvatar(e.target.files?.[0])} />
+            <button onClick={() => avatarInput.current?.click()} className="absolute inset-0 rounded-full bg-black/55 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[10px] font-bold text-white" title="Change photo">
+              Change
+            </button>
+          </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
             <p className="text-sm text-slate-400">Level {level} · learning {lang.name} {lang.flag}</p>

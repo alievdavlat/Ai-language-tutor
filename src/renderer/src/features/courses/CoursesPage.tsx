@@ -36,12 +36,14 @@ function CourseCard({ course, progress, onOpen }: { course: Course; progress: nu
         </div>
         <div className="relative z-10">
           <p className="text-sm font-bold text-white leading-tight line-clamp-2">{course.title}</p>
-          <p className="text-[11px] text-white/70 mt-0.5 inline-flex items-center gap-1"><IconStar className="w-3 h-3" /> {course.rating} · {price}</p>
+          <p className="text-[11px] text-white/70 mt-0.5 inline-flex items-center gap-1">
+            {course.reviewCount > 0 ? <><IconStar className="w-3 h-3" /> {course.rating.toFixed(1)} · </> : <span className="text-emerald-200 font-semibold">New · </span>}{price}
+          </p>
         </div>
       </div>
       <div className="px-1.5 pt-2.5 pb-1">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[11px] text-slate-500">{course.enrollmentCount.toLocaleString()} learners</span>
+          <span className="text-[11px] text-slate-500">{course.enrollmentCount > 0 ? `${course.enrollmentCount.toLocaleString()} learners` : 'Be the first'}</span>
           <span className="text-[11px] font-semibold text-slate-300">{progress}%</span>
         </div>
         <ProgressBar value={progress} />

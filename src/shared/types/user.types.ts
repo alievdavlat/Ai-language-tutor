@@ -68,6 +68,8 @@ export interface UserProfile {
   ageBand?: AgeBand
   /** Phase 12 / #54 — the user's customised 3D avatar (Memoji-style). */
   avatar3d?: Avatar3DConfig
+  /** Uploaded profile photo (data: or remote URL). Used by AvatarCircle everywhere. */
+  avatarUrl?: string
 }
 
 export type AgeBand = 'under13' | 'teen' | 'adult'

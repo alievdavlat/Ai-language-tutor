@@ -187,8 +187,10 @@ export default function CourseDetailPage(): JSX.Element {
           <h1 className="text-3xl font-bold text-white tracking-tight">{course.title}</h1>
           <p className="text-sm text-white/85 mt-1 max-w-2xl">{course.description}</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-white/85">
-            <span className="inline-flex items-center gap-1.5"><Stars n={Math.round(avgRating)} /> {avgRating.toFixed(1)} ({reviews.length || course.reviewCount})</span>
-            <span>{course.enrollmentCount.toLocaleString()} learners</span>
+            {reviews.length > 0
+              ? <span className="inline-flex items-center gap-1.5"><Stars n={Math.round(avgRating)} /> {avgRating.toFixed(1)} ({reviews.length})</span>
+              : <span className="font-semibold text-emerald-200">New course</span>}
+            {course.enrollmentCount > 0 && <span>{course.enrollmentCount.toLocaleString()} learners</span>}
             <span>{view.totalCount} lessons · {course.hours}h</span>
           </div>
           {teacher && (
