@@ -99,15 +99,21 @@ export default function FeedRails(): JSX.Element {
   const lang = useTargetLanguageCode()
   const userId = backend.currentUserId()
 
-  // Continue learning — real enrollments with progress.
+  // Continue learning — only courses actually STARTED (progress 1–99), most
+  // recent first. Not-yet-started (0%) or finished (100%) enrolments don't
+  // belong here (they'd otherwise show paid courses you only just enrolled in).
   const continueLearning = useBackendQuery(async () => {
-    if (!userId) return [] as { course: Course; progress: number }[]
+    if (!userId) return [] as { course: Course; progress: number; lastActiveAt: string }[]
     const ens = await backend.myEnrollments(userId)
     const rows = await Promise.all(ens.map(async (e) => {
       const c = await backend.getCourse(e.courseId)
-      return c ? { course: c, progress: e.progress } : null
+      return c && e.progress > 0 && e.progress < 100
+        ? { course: c, progress: e.progress, lastActiveAt: e.lastActiveAt }
+        : null
     }))
-    return rows.filter((r): r is { course: Course; progress: number } => r !== null)
+    return rows
+      .filter((r): r is { course: Course; progress: number; lastActiveAt: string } => r !== null)
+      .sort((a, b) => (b.lastActiveAt ?? '').localeCompare(a.lastActiveAt ?? ''))
   }, [userId], [])
 
   const courses = useBackendQuery(() => backend.listCourses({ language: lang }), [lang], [])
