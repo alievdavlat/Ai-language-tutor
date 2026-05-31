@@ -24,9 +24,11 @@ export default function TeacherChannelPage(): JSX.Element {
   const [params] = useSearchParams()
   const [tab, setTab] = useState<Tab>('courses')
   const [following, setFollowing] = useState(false)
-  // Channel owner comes from ?id= (Explore "View" links pass it), else Emma.
-  const channelOwnerId = params.get('id') || 'u_emma'
   const me = backend.currentUserId()
+  // Channel owner comes from ?id= (Explore "View" links pass it); with no id this
+  // is the viewer's OWN channel ("My channel"), falling back to a seed only when
+  // signed out. (Was hardcoded to Emma → My channel wrongly showed Emma's page.)
+  const channelOwnerId = params.get('id') || me || 'u_emma'
 
   const owner = useBackendQuery(() => backend.getUser(channelOwnerId), [channelOwnerId], null)
   const courses = useBackendQuery(() => backend.myCourses(channelOwnerId), [channelOwnerId], [])
