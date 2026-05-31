@@ -43,11 +43,10 @@ export default function OnboardingPage(): JSX.Element {
   // DangerZone reset → re-onboarding) doesn't have to re-pick everything.
   const [name, setName] = useState(profile?.name ?? '')
   const [targetLanguage, setTargetLanguage] = useState<TargetLanguage>(profile?.targetLanguage ?? 'en')
-  const [nativeLanguage, setNativeLanguage] = useState<UILanguage>(
-    (['en', 'uz', 'ru'] as const).includes(profile?.nativeLanguage as UILanguage)
-      ? (profile?.nativeLanguage as UILanguage)
-      : uiLang
-  )
+  // Native language can be ANY supported language (the app is global). The UI
+  // text follows it only where a string table exists (en/uz/ru), else English.
+  const [nativeLanguage, setNativeLanguage] = useState<string>(profile?.nativeLanguage ?? uiLang)
+  const toUILang = (c: string): UILanguage => (c === 'uz' || c === 'ru' || c === 'en' ? c : 'en')
   const [goals, setGoals] = useState<LearningGoal[]>([])
   const [interests, setInterests] = useState<Interest[]>([])
   const [placementQuestions, setPlacementQuestions] = useState<PlacementQuestion[] | null>(null)
@@ -96,7 +95,7 @@ export default function OnboardingPage(): JSX.Element {
     }
     await window.api.profile.save(profile)
     setProfile(profile)
-    setUILang(nativeLanguage)
+    setUILang(toUILang(nativeLanguage))
     setOnboardingComplete(true)
     navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
   }
@@ -122,7 +121,7 @@ export default function OnboardingPage(): JSX.Element {
         {flow.step === 'nativeLanguage' && (
           <NativeLanguageStep
             value={nativeLanguage}
-            onChange={(l) => { setNativeLanguage(l); setUILang(l) }}
+            onChange={(l) => { setNativeLanguage(l); setUILang(toUILang(l)) }}
             onNext={flow.next}
             onBack={flow.back}
           />

@@ -1,19 +1,19 @@
-import { UI_LANGUAGES, type UILanguage } from '../../../i18n'
+import { SUPPORTED_LANGUAGES } from '@shared/constants'
 import { Button } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 
 interface NativeLanguageStepProps {
-  value: UILanguage
-  onChange: (lang: UILanguage) => void
+  value: string
+  onChange: (lang: string) => void
   onNext: () => void
   onBack: () => void
 }
 
 /**
- * Second language step: the learner's OWN language. Drives the whole-app UI
- * text (sidebar, pages) and the language vocabulary meanings are shown in.
- * Offered set = the languages we ship full UI translations for (en/uz/ru);
- * more are added as their string tables land.
+ * Second language step: the learner's OWN language. Drives word meanings
+ * (translated into it) and — for the languages we ship UI string tables for
+ * (en/uz/ru) — the whole-app UI text too. Any supported language can be picked
+ * since the app is global; meanings are translated on demand.
  */
 export default function NativeLanguageStep({
   value,
@@ -28,12 +28,13 @@ export default function NativeLanguageStep({
         <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">Step 2 — Your language</p>
         <h1 className="text-3xl font-black tracking-tight text-white mt-1">What&apos;s your native language?</h1>
         <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
-          The app&apos;s menus and text will be in this language, and word meanings will be translated into it.
+          Word meanings are translated into this language. Menus and page text follow it
+          where a translation exists (more interface languages are on the way).
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {UI_LANGUAGES.map((l) => {
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[340px] overflow-y-auto pr-1">
+        {SUPPORTED_LANGUAGES.map((l) => {
           const active = value === l.code
           return (
             <button
@@ -48,8 +49,8 @@ export default function NativeLanguageStep({
             >
               <span className="text-3xl leading-none">{l.flag}</span>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-white">{l.nativeName}</p>
-                <p className="text-[11px] text-slate-400 truncate">{l.label}</p>
+                <p className="text-sm font-bold text-white truncate">{l.nativeName}</p>
+                <p className="text-[11px] text-slate-400 truncate">{l.name}</p>
               </div>
             </button>
           )
@@ -57,7 +58,7 @@ export default function NativeLanguageStep({
       </div>
 
       <p className="text-[11px] text-slate-500 text-center mt-5">
-        You can change this later in Settings. More interface languages are on the way.
+        You can change this later in Settings.
       </p>
 
       <div className="flex items-center justify-between mt-6 gap-3">

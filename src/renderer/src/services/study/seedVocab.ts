@@ -32,9 +32,14 @@ export const STARTER_VOCAB: SeedWord[] = [
   { term: 'ambiguous', gloss: 'open to more than one interpretation', tr: { uz: 'noaniq, ikki ma‘noli', ru: 'неоднозначный' }, example: 'The instructions were ambiguous and confusing.', deck: 'Academic' }
 ]
 
-/** The meaning to store for a seed word, given the learner's native language. */
-export function seedMeaning(word: SeedWord, native: string): string {
+/**
+ * The bundled meaning for a seed word in the learner's native language, or
+ * `undefined` when we don't ship one for that language (the caller then
+ * translates on demand). English natives get the English gloss.
+ */
+export function seedMeaning(word: SeedWord, native: string): string | undefined {
   if (native === 'uz') return word.tr.uz
   if (native === 'ru') return word.tr.ru
-  return word.gloss
+  if (native === 'en') return word.gloss
+  return undefined
 }

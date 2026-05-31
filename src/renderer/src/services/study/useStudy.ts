@@ -100,24 +100,30 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
     ;(async () => {
       let list = await backend.listVocab(userId, { language })
       if (list.length === 0) {
-        // Seed a small starter deck once so stats/review aren't empty.
+        // Seed a small starter deck once so stats/review aren't empty. Meanings
+        // are bundled for en/uz/ru and translated on demand for other natives.
         const now = Date.now()
-        const seeded = STARTER_VOCAB.map((s, i) =>
-          newVocabItem({
+        const seeded: VocabItem[] = []
+        let i = 0
+        for (const s of STARTER_VOCAB) {
+          const meaning = seedMeaning(s, native) ?? (await translate(s.term, language, native)) ?? s.gloss
+          const item = newVocabItem({
             id: createId('vocab'),
             userId,
             language,
             term: s.term,
-            translation: seedMeaning(s, native),
+            translation: meaning,
             example: s.example,
             deck: s.deck,
             // Stagger due times slightly so the queue has a natural order.
             nowMs: now - i
           })
-        )
-        for (const item of seeded) await backend.upsertVocab(item)
+          await backend.upsertVocab(item)
+          seeded.push(item)
+          i++
+        }
         list = seeded
-      } else if (native === 'uz' || native === 'ru') {
+      } else if (native !== 'en') {
         // Migrate legacy seed cards (stored with the English gloss) to the
         // native meaning, so existing installs also show the learner's
         // language instead of an English-to-English flashcard pair.
@@ -126,7 +132,8 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
         for (const c of list) {
           const w = byTerm.get(c.term.toLowerCase())
           if (w && c.translation === w.gloss) {
-            const updated = { ...c, translation: seedMeaning(w, native) }
+            const meaning = seedMeaning(w, native) ?? (await translate(w.term, language, native)) ?? w.gloss
+            const updated = { ...c, translation: meaning }
             await backend.upsertVocab(updated)
             migrated.push(updated)
           } else {
@@ -135,6 +142,23 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
         }
         list = migrated
       }
+
+      // Drop accidental duplicates (same term in the same language) — older
+      // builds could double-seed under a mount race, leaving two identical
+      // cards that show up as duplicate, ambiguous flashcard tiles.
+      const seen = new Set<string>()
+      const deduped: VocabItem[] = []
+      const extras: VocabItem[] = []
+      for (const c of list) {
+        const k = c.term.trim().toLowerCase()
+        if (seen.has(k)) extras.push(c)
+        else { seen.add(k); deduped.push(c) }
+      }
+      if (extras.length > 0) {
+        for (const e of extras) { try { await backend.deleteVocab(e.id) } catch { /* best-effort */ } }
+        list = deduped
+      }
+
       if (!cancelled) {
         setCards(list)
         setLoading(false)

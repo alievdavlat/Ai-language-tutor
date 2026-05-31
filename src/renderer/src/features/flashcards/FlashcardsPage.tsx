@@ -110,8 +110,24 @@ export default function FlashcardsPage(): JSX.Element {
     return shuffle([answer, ...distractors])
   }, [answer, roundCards])
 
-  // ── Match: a stable set of pairs for the round, tiles shuffled once. ──
-  const matchPairs = useMemo(() => shuffle(roundCards).slice(0, MATCH_SIZE), [roundCards, mode])
+  // ── Match: a stable set of pairs for the round, tiles shuffled once.
+  //    Pick cards with a DISTINCT term AND distinct meaning so no two tiles
+  //    ever show the same text (which would make a pair ambiguous). ──
+  const matchPairs = useMemo(() => {
+    const seenTerm = new Set<string>()
+    const seenTr = new Set<string>()
+    const picked: VocabItem[] = []
+    for (const c of shuffle(roundCards)) {
+      const t = c.term.trim().toLowerCase()
+      const tr = c.translation.trim().toLowerCase()
+      if (seenTerm.has(t) || seenTr.has(tr)) continue
+      seenTerm.add(t)
+      seenTr.add(tr)
+      picked.push(c)
+      if (picked.length >= MATCH_SIZE) break
+    }
+    return picked
+  }, [roundCards, mode])
   const matchTiles = useMemo<MatchTile[]>(() => {
     const tiles = matchPairs.flatMap((c) => [
       { key: `${c.id}:t`, cardId: c.id, text: c.term },
