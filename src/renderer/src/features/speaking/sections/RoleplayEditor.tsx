@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { Input } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
-import { fileToDataUrl, isImageCover } from '../../../lib/cover'
+import { isImageCover } from '../../../lib/cover'
+import { uploadUrl } from '../../../services/backend'
 import { IconPlus, IconX } from '../../../components/icons'
 import {
   roleplays,
@@ -48,7 +49,7 @@ export default function RoleplayEditor({ initial, authorId, onClose, onSaved }: 
 
   const onPickFile = async (file?: File): Promise<void> => {
     if (!file) return
-    setThumb(await fileToDataUrl(file))
+    setThumb(await uploadUrl(file, 'covers'))
   }
 
   const save = async (): Promise<void> => {

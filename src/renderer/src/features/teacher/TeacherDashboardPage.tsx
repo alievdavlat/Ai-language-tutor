@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { fileToDataUrl, isImageCover } from '../../lib/cover'
+import { isImageCover } from '../../lib/cover'
+import { uploadUrl } from '../../services/backend'
 import { useAppStore } from '../../store/useAppStore'
 import { AvatarCircle, StatCard } from '../../components/ui'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
@@ -215,7 +216,7 @@ function AnnouncementComposer({
 
   const pickImage = async (file?: File): Promise<void> => {
     if (!file || file.size > 4 * 1024 * 1024) return
-    setImage(await fileToDataUrl(file))
+    setImage(await uploadUrl(file, 'covers'))
   }
 
   const post = async (): Promise<void> => {

@@ -25,7 +25,7 @@ if (typeof window !== 'undefined') {
 }
 
 export type { Backend, CourseFilter, ID } from './types'
-export { uploadFile, uploadAndRecord, deleteUpload, inferMediaKind } from './storage'
+export { uploadFile, uploadUrl, uploadAndRecord, deleteUpload, inferMediaKind } from './storage'
 export type { UploadResult } from './storage'
 export { subscribeTable, joinRoom, emitLocalChange } from './realtime'
 export type { TableChange, RoomChannel, Unsubscribe } from './realtime'

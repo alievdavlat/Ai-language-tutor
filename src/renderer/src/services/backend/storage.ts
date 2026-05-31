@@ -88,6 +88,15 @@ export async function uploadFile(
   return { url, path, sizeBytes: file.size, contentType }
 }
 
+/**
+ * Convenience: upload a file and return just its URL (Supabase Storage public
+ * URL when configured, else a data: URL ≤4 MB). Drop-in replacement for the old
+ * `fileToDataUrl(file)` — pass a folder prefix (covers/avatars/library/…).
+ */
+export async function uploadUrl(file: File, prefix?: string): Promise<string> {
+  return (await uploadFile(file, { prefix })).url
+}
+
 /** Upload + record a MediaAsset for `ownerId`, returning the persisted row. */
 export async function uploadAndRecord(file: File, ownerId: string): Promise<MediaAsset> {
   const kind = inferMediaKind(file)

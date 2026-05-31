@@ -4,7 +4,8 @@ import { Spinner } from '../../components/ui'
 import PdfViewer from '../../components/PdfViewer'
 import { IconChevronLeft, IconChevronRight, IconDownload, IconBookmark, IconHeart, IconVolume, IconYouTube, IconPlus } from '../../components/icons'
 import { cn } from '../../lib/classnames'
-import { fileToDataUrl, isImageCover } from '../../lib/cover'
+import { isImageCover } from '../../lib/cover'
+import { uploadUrl } from '../../services/backend'
 import { library } from '../../services/library/store'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 
@@ -37,7 +38,7 @@ export default function LibraryBookPage(): JSX.Element {
   const attach = async (kind: 'audio' | 'video', file?: File): Promise<void> => {
     if (!file) return
     if (file.size > 8 * 1024 * 1024) return
-    const url = await fileToDataUrl(file)
+    const url = await uploadUrl(file, 'library')
     const list = [...(book.pageMedia ?? [])]
     const i = list.findIndex((p) => p.page === page)
     const entry = i >= 0 ? { ...list[i] } : { page }

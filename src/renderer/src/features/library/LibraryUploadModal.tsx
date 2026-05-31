@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import type { LibraryKind, TargetLanguage } from '@shared/types'
 import { cn } from '../../lib/classnames'
-import { fileToDataUrl, isImageCover } from '../../lib/cover'
+import { isImageCover } from '../../lib/cover'
+import { uploadUrl } from '../../services/backend'
 import { library } from '../../services/library/store'
 import { Input } from '../../components/ui'
 import { IconBook, IconCheck, IconChevronRight, IconHeadphones, IconPlus, IconX, IconYouTube } from '../../components/icons'
@@ -79,7 +80,7 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
     setErr(null)
     if (!file) return
     if (file.size > max * 1024 * 1024) { setErr(`File must be under ${max} MB (offline storage limit).`); return }
-    set(await fileToDataUrl(file))
+    set(await uploadUrl(file, 'library'))
   }
 
   const canSave = !!title.trim() && (kind === 'book' ? !!pdf : kind === 'video' ? !!(videoLink || fullVideo) : !!audio)

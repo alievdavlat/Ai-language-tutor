@@ -4,7 +4,8 @@ import type { Course, Lesson, Unit } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { backend } from '../../services/backend/useBackend'
-import { fileToDataUrl, isImageCover } from '../../lib/cover'
+import { isImageCover } from '../../lib/cover'
+import { uploadUrl } from '../../services/backend'
 import { Tabs, type TabItem } from '../../components/ui'
 import {
   IconBook,
@@ -130,7 +131,7 @@ export default function CourseAuthoringPage(): JSX.Element {
     if (!file) return
     if (!file.type.startsWith('image/')) { setImgError('Please choose an image file.'); return }
     if (file.size > 4 * 1024 * 1024) { setImgError('Image must be under 4 MB.'); return }
-    const url = await fileToDataUrl(file)
+    const url = await uploadUrl(file, 'covers')
     if (kind === 'thumb') setThumbnailUrl(url)
     else setBannerUrl(url)
   }

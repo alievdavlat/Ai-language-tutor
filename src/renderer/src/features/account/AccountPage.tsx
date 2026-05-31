@@ -8,7 +8,7 @@ import { useTargetLanguage } from '../../lib/language'
 import { bandFromDob, BAND_LABEL } from '../../lib/age'
 import { AvatarCircle, Input, Tabs, type TabItem } from '../../components/ui'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
-import { fileToDataUrl } from '../../lib/cover'
+import { uploadUrl } from '../../services/backend'
 import { useRef } from 'react'
 import DangerZoneSection from '../settings/sections/DangerZoneSection'
 
@@ -166,7 +166,7 @@ export default function AccountPage(): JSX.Element {
   const uploadAvatar = async (file?: File): Promise<void> => {
     if (!file || !profile) return
     if (file.size > 4 * 1024 * 1024) return
-    const url = await fileToDataUrl(file)
+    const url = await uploadUrl(file, 'avatars')
     const next = { ...profile, avatarUrl: url, updatedAt: new Date().toISOString() }
     await window.api.profile.save(next)
     setProfile(next)
