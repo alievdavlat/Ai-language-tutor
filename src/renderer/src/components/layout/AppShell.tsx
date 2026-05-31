@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import Sidebar from './Sidebar'
+import DockedChat from './DockedChat'
 import RetentionNudges from '../../features/retention/RetentionNudges'
 import { useDailyReminder } from '../../hooks/useDailyReminder'
 
@@ -23,6 +24,7 @@ export default function AppShell({ children }: AppShellProps): JSX.Element {
       />
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">{children}</main>
       <RetentionNudges />
+      <DockedChat />
     </div>
   )
 }

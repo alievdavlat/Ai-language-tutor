@@ -57,11 +57,11 @@ export default function NowBar(): JSX.Element {
     <div className="px-6 pb-3 border-b border-white/[0.06]">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Now</span>
-        {live.length > 0 && (
-          <span className="text-[10px] text-rose-400 font-bold inline-flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> {live.length} live
-          </span>
-        )}
+        <button onClick={() => navigate('/live')} className="text-[11px] font-bold inline-flex items-center gap-1.5 text-slate-400 hover:text-white transition">
+          {live.length > 0 && <span className="inline-flex items-center gap-1 text-rose-400"><span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> {live.length} live</span>}
+          <span>See all</span>
+          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+        </button>
       </div>
       <div className="flex gap-4 overflow-x-auto pb-1">
         {/* Go live */}
