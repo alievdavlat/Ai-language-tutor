@@ -206,7 +206,7 @@ export default function ClassroomPage(): JSX.Element {
                 {/* Teacher-authored rich material */}
                 {lc.body && (
                   <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-                    <RichTextView text={lc.body} />
+                    <RichTextView html={lc.body} />
                   </div>
                 )}
 

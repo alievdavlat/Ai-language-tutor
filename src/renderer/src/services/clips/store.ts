@@ -251,7 +251,7 @@ export const playlists = {
         return updated
       }
     }
-    const created: Playlist = { dots: ['#10b981', '#f59e0b', '#fb923c', '#f43f5e'], ...input, id: input.id ?? createId('pl') }
+    const created: Playlist = { ...input, id: input.id ?? createId('pl'), dots: input.dots ?? ['#10b981', '#f59e0b', '#fb923c', '#f43f5e'] }
     writeList(PLAYLISTS_KEY, [created, ...list])
     return created
   },

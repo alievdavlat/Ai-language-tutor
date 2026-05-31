@@ -502,7 +502,7 @@ function LessonCard({
             <textarea value={lesson.about} onChange={(e) => onChange({ about: e.target.value })} placeholder="In this lesson you'll…" className="input min-h-[60px] resize-y text-sm w-full" />
           </Field>
           <Field label="Lesson material" hint="The written article / notes learners read. Bold, headings, lists and links all render.">
-            <RichTextEditor value={lesson.body} onChange={(v) => onChange({ body: v })} minRows={6} />
+            <RichTextEditor value={lesson.body} onChange={(v) => onChange({ body: v })} />
           </Field>
           <Field label="Materials" hint="Attach PDFs or audio learners can download.">
             <MaterialsField value={lesson.materials} onChange={(m) => onChange({ materials: m })} />

@@ -6,6 +6,7 @@ import type {
   OllamaStatus,
   UserProfile
 } from '@shared/types'
+import { DEFAULT_DESKTOP_SETTINGS } from '@shared/types'
 
 /**
  * Standalone browser preview only. When the renderer runs outside Electron
@@ -200,6 +201,11 @@ export function installDevApiMock(): void {
       status: async () => ({ phase: 'up-to-date', currentVersion: __APP_VERSION__ }),
       check: async () => ({ phase: 'up-to-date', currentVersion: __APP_VERSION__ }),
       onChange: () => noopUnsub
+    },
+    desktop: {
+      getSettings: async () => DEFAULT_DESKTOP_SETTINGS,
+      setSettings: async (patch) => ({ ...DEFAULT_DESKTOP_SETTINGS, ...patch }),
+      onNavigate: () => noopUnsub
     }
   }
 

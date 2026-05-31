@@ -5,7 +5,7 @@ import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
 import RealtimeStatus from '../../components/realtime/RealtimeStatus'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { resolveLiveStreams, type ResolvedStream } from '../../services/social/liveFeed'
-import { IconLive, IconPlus, IconUsers } from '../../components/icons'
+import { IconLive, IconPlus, IconTrophy, IconUsers } from '../../components/icons'
 
 const roomLink = (r: ResolvedStream): string => `${r.group ? '/live/group' : '/live/room'}?id=${r.stream.id}`
 

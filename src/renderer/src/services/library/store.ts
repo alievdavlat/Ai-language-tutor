@@ -164,7 +164,7 @@ export const library = {
       const out: T[] = []
       for (const r of rows) {
         const refId = drop.has(r.refId) ? keepId : r.refId
-        const key = `${(r as { userId: ID }).userId}|${refId}`
+        const key = `${(r as unknown as { userId: ID }).userId}|${refId}`
         if (seen.has(key)) continue // collapse dup bookmarks after repoint
         seen.add(key)
         out.push({ ...r, refId })

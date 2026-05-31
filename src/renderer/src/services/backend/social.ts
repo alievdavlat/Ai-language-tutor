@@ -39,7 +39,7 @@ import type {
   TutorReview,
   UserStats
 } from '@shared/types'
-import { CLIPS } from '../../features/clips/data'
+import { searchClips } from '../clips/store'
 import { backend, backendKind } from './index'
 import { getSupabaseClient } from './client'
 import {
@@ -289,11 +289,9 @@ async function computeSearch(query: string, limit = 8): Promise<SearchResults> {
     if (lessonHits.length >= limit) break
   }
 
-  const clipHits = CLIPS.filter(
-    (c) => c.title.toLowerCase().includes(q) || c.artist.toLowerCase().includes(q)
-  )
+  const clipHits = searchClips(q)
     .slice(0, limit)
-    .map((c) => ({ id: c.id, title: c.title, artist: c.artist, kind: c.kind, cover: c.cover, level: c.level }))
+    .map((c) => ({ id: c.id, title: c.title, artist: c.artist ?? '', kind: c.kind, cover: c.cover, level: c.level }))
 
   const courseHits = courses.slice(0, limit)
   const total =

@@ -5,6 +5,7 @@ import { PageHeader, SectionHeading, ProgressRing } from '../../components/ui'
 import { IconHeadphones, IconPlay, IconFlame, IconBookmark, IconSearch, IconPlus, IconLock } from '../../components/icons'
 import { CEFR_ORDER, type CEFRLevel } from '@shared/types'
 import { useAppStore } from '../../store/useAppStore'
+import { backend } from '../../services/backend/useBackend'
 import { useStats } from '../../services/activity'
 import { useTargetLanguage } from '../../lib/language'
 import {
@@ -293,7 +294,7 @@ export default function ClipsPage(): JSX.Element {
 
       {editing && (
         <ClipEditor
-          authorId={profile?.id}
+          authorId={backend.currentUserId() ?? undefined}
           onClose={() => { setEditing(false); if (params.get('create')) { params.delete('create'); setParams(params, { replace: true }) } }}
           onSaved={() => { setEditing(false); refresh(); if (params.get('create')) { params.delete('create'); setParams(params, { replace: true }) } }}
         />

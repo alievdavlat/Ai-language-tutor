@@ -414,32 +414,30 @@ export const RESOURCES: ResourceDef[] = [
         <div className="flex items-center gap-2.5 min-w-0"><Cover cover={p.cover} /><span className="truncate font-semibold text-white">{p.title}</span></div>
       ) },
       { key: 'level', label: 'Level', render: (p) => <Tag>{p.level}</Tag>, cls: 'w-28' },
-      { key: 'courses', label: 'Courses', render: (p) => <span className="text-slate-400 tabular-nums">{p.courses}</span>, cls: 'w-20 text-right' },
-      { key: 'hours', label: 'Hours', render: (p) => <span className="text-slate-400 tabular-nums">{p.hours}h</span>, cls: 'w-20 text-right' }
+      { key: 'courses', label: 'Courses', render: (p) => <span className="text-slate-400 tabular-nums">{p.courseIds.length}</span>, cls: 'w-24 text-right' }
     ],
     fields: [
       { name: 'title', label: 'Title', type: 'text', required: true, full: true },
       { name: 'subtitle', label: 'Subtitle', type: 'text', full: true },
       { name: 'level', label: 'Level range', type: 'text', placeholder: 'B1 → C1' },
-      { name: 'courses', label: 'Course count', type: 'number', min: 1 },
-      { name: 'hours', label: 'Total hours', type: 'number', min: 0 },
       { name: 'capstone', label: 'Capstone', type: 'textarea', full: true, rows: 2 },
       { name: 'cover', label: 'Cover gradient', type: 'gradient', full: true }
     ],
-    toForm: (p) => ({ title: p.title, subtitle: p.subtitle, level: p.level, courses: p.courses, hours: p.hours, capstone: p.capstone, cover: p.cover }),
+    toForm: (p) => ({ title: p.title, subtitle: p.subtitle, level: p.level, capstone: p.capstone, cover: p.cover }),
     save: async (v, existing) => {
       paths.upsert({
         id: existing?.id ?? createId('path'),
         title: String(v.title || '').trim() || 'Untitled path',
         subtitle: String(v.subtitle || ''), level: String(v.level || 'A1 → B1'),
-        courses: Number(v.courses) || 1, hours: Number(v.hours) || 0,
-        enrolled: existing?.enrolled ?? 0, rating: existing?.rating ?? 0,
         cover: String(v.cover || 'from-rose-500 to-pink-700'),
-        capstone: String(v.capstone || ''), builtIn: existing?.builtIn, authorId: existing?.authorId ?? me()
+        capstone: String(v.capstone || ''),
+        courseIds: existing?.courseIds ?? [],
+        goal: existing?.goal ?? 'foundations',
+        builtIn: existing?.builtIn, authorId: existing?.authorId ?? me()
       })
     },
     remove: async (p) => { paths.remove(p.id) },
-    bulkImport: async (rows) => { let n = 0; for (const r of rows) { paths.upsert({ id: r.id ?? createId('path'), enrolled: 0, rating: 0, courses: 1, hours: 0, cover: 'from-rose-500 to-pink-700', subtitle: '', level: 'A1', capstone: '', ...r }); n++ } return n }
+    bulkImport: async (rows) => { let n = 0; for (const r of rows) { paths.upsert({ id: r.id ?? createId('path'), subtitle: '', level: 'A1', capstone: '', cover: 'from-rose-500 to-pink-700', courseIds: [], goal: 'foundations', ...r }); n++ } return n }
   },
 
   // ── Groups / clubs ────────────────────────────────────────────────────────────

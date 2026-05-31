@@ -4,7 +4,6 @@ import { cn } from '../../lib/classnames'
 import { PageHeader } from '../../components/ui'
 import { IconPlay, IconHeart, IconBookmark, IconTrophy } from '../../components/icons'
 import {
-  findClip,
   GAME_MODES,
   DIFFICULTIES,
   KIND_LABEL,
@@ -12,6 +11,7 @@ import {
   type Difficulty,
   type DifficultyDef
 } from './data'
+import { findClip } from '../../services/clips/store'
 
 const TONE_RING: Record<string, string> = {
   emerald: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200',

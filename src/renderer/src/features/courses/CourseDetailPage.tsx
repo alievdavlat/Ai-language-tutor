@@ -371,7 +371,7 @@ export default function CourseDetailPage(): JSX.Element {
             <section>
               <h2 className="text-base font-bold mb-2">About this course</h2>
               {course.about?.trim()
-                ? <RichTextView text={course.about} />
+                ? <RichTextView html={course.about} />
                 : <p className="text-sm text-slate-300 leading-relaxed">{course.description}</p>}
             </section>
 

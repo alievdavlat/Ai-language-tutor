@@ -34,6 +34,10 @@ export { default as MediaPicker } from './MediaPicker'
 // Rich text
 export { default as RichTextEditor } from './RichTextEditor'
 export { default as RichText, sanitizeRichText } from './RichText'
+// Read-only renderer alias (lesson/course content view, #A46).
+export { default as RichTextView } from './RichText'
+// Lesson materials (PDF / audio attachments) field (#A46).
+export { default as MaterialsField } from './MaterialsField'
 
 // Bulk import
 export { default as BulkImportPanel } from './BulkImportPanel'
