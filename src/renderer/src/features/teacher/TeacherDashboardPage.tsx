@@ -21,13 +21,6 @@ import {
   type IconProps
 } from '../../components/icons'
 
-const STATS = [
-  { value: '1,240', label: 'Students', tone: 'brand' as const },
-  { value: '12.4k', label: 'Followers', tone: 'violet' as const },
-  { value: '3.2k h', label: 'Watch time', tone: 'emerald' as const },
-  { value: '4.8', label: 'Avg rating', tone: 'amber' as const }
-]
-
 const ACTIONS: { label: string; Icon: (p: IconProps) => JSX.Element; to: string; tone: string }[] = [
   { label: 'New lesson', Icon: IconPlus, to: '/teacher/new', tone: 'bg-grad-brand text-white' },
   { label: 'New course', Icon: IconBook, to: '/teacher/course/new', tone: 'bg-white/[0.06] text-slate-200 border border-white/10' },
@@ -41,19 +34,6 @@ const SECONDARY_NAV: { label: string; to: string; Icon: (p: IconProps) => JSX.El
   { label: 'Earnings', to: '/teacher/monetization', Icon: IconTrophy },
   { label: 'Live & clips', to: '/teacher/live', Icon: IconLive },
   { label: 'Clips composer', to: '/teacher/clips', Icon: IconYouTube }
-]
-
-const COURSES = [
-  { title: 'Everyday Conversation', students: 420, rating: '4.8', cover: 'from-sky-500 to-blue-700' },
-  { title: 'IELTS Speaking Bootcamp', students: 312, rating: '4.9', cover: 'from-rose-500 to-pink-700' },
-  { title: 'Grammar Foundations', students: 508, rating: '4.7', cover: 'from-emerald-500 to-teal-700' }
-]
-
-const ACTIVITY = [
-  { who: 'Dilnoza', what: 'enrolled in Everyday Conversation', when: '5m' },
-  { who: 'Bekzod', what: 'left a 5★ review on IELTS Bootcamp', when: '1h' },
-  { who: 'Madina', what: 'completed Unit 3', when: '2h' },
-  { who: 'Sardor', what: 'started following you', when: '3h' }
 ]
 
 export default function TeacherDashboardPage(): JSX.Element {
@@ -78,6 +58,46 @@ export default function TeacherDashboardPage(): JSX.Element {
     [me],
     []
   )
+  const followers = useBackendQuery(
+    () => (me ? backend.followCounts(me).then((c) => c.followers) : Promise.resolve(0)),
+    [me],
+    0
+  )
+  // Real recent-activity feed: student enrolments + reviews on this teacher's
+  // courses, newest first. Replaces the old hardcoded Dilnoza/Bekzod mock.
+  const activity = useBackendQuery<{ who: string; what: string; at: string }[]>(
+    async () => {
+      if (!me) return []
+      const items: { who: string; what: string; at: string }[] = []
+      const studs = await backend.studentsOf(me)
+      for (const s of studs) {
+        items.push({ who: s.user.name, what: `enrolled in ${s.course.title}`, at: s.enrollment.enrolledAt })
+      }
+      const courses = await backend.myCourses(me)
+      const reviewLists = await Promise.all(
+        courses.map((c) => backend.listReviews(c.id).then((rs) => rs.map((r) => ({ r, c }))))
+      )
+      for (const { r, c } of reviewLists.flat()) {
+        const u = await backend.getUser(r.userId)
+        items.push({ who: u?.name ?? 'A student', what: `left a ${r.rating}★ review on ${c.title}`, at: r.createdAt })
+      }
+      return items.sort((a, b) => (b.at || '').localeCompare(a.at || '')).slice(0, 6)
+    },
+    [me],
+    []
+  )
+
+  // Real headline stats derived from this teacher's actual data.
+  const ratedCourses = myCourses.data.filter((c) => c.rating > 0)
+  const avgRating = ratedCourses.length
+    ? (ratedCourses.reduce((a, c) => a + c.rating, 0) / ratedCourses.length).toFixed(1)
+    : '—'
+  const STATS = [
+    { value: students.data.length.toLocaleString(), label: 'Students', tone: 'brand' as const },
+    { value: followers.data.toLocaleString(), label: 'Followers', tone: 'violet' as const },
+    { value: String(myCourses.data.length), label: 'Courses', tone: 'emerald' as const },
+    { value: avgRating, label: 'Avg rating', tone: 'amber' as const }
+  ]
 
   return (
     <div className="h-full overflow-y-auto">
@@ -168,17 +188,21 @@ export default function TeacherDashboardPage(): JSX.Element {
           {/* Activity */}
           <aside className="lg:border-l lg:border-white/10 lg:pl-6">
             <h2 className="text-base font-bold mb-3">Recent activity</h2>
-            <div className="flex flex-col gap-3">
-              {ACTIVITY.map((a, i) => (
-                <div key={i} className="flex items-start gap-2.5">
-                  <AvatarCircle name={a.who} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-slate-200 leading-snug"><b className="text-white">{a.who}</b> {a.what}</p>
-                    <p className="text-xs text-slate-500">{a.when} ago</p>
+            {activity.data.length === 0 ? (
+              <p className="text-sm text-slate-400">No recent activity yet. As students enrol and review your courses, it appears here.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {activity.data.map((a, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <AvatarCircle name={a.who} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-slate-200 leading-snug"><b className="text-white">{a.who}</b> {a.what}</p>
+                      <p className="text-xs text-slate-500">{a.at ? `${timeAgo(a.at)}` : ''}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             <button onClick={() => navigate('/channel')} className="mt-4 w-full btn-ghost py-2 text-sm inline-flex items-center justify-center gap-1">
               Manage channel <IconArrowRight className="w-4 h-4" />
             </button>
