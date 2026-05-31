@@ -34,7 +34,19 @@ import type {
   ExamKind
 } from '@shared/types'
 
-export interface CourseFilter {
+/**
+ * Pagination window for list endpoints (scaling — #A64). All fields optional so
+ * existing callers that pass nothing keep getting the full (sorted) result set;
+ * pass `{ limit, offset }` to fetch one page at a time once a table grows.
+ */
+export interface Page {
+  /** Max rows to return. Omit for "all" (current default behaviour). */
+  limit?: number
+  /** Rows to skip from the start of the ordered result (0-based). */
+  offset?: number
+}
+
+export interface CourseFilter extends Page {
   language?: string
   level?: string
   teacherId?: ID
@@ -55,7 +67,7 @@ export interface Backend {
   getUser(id: ID): Promise<PlatformUser | null>
   updateUser(id: ID, patch: Partial<PlatformUser>): Promise<PlatformUser>
   /** List users (for search / DM start / admin). */
-  listUsers(filter?: { role?: 'student' | 'teacher'; q?: string; limit?: number }): Promise<PlatformUser[]>
+  listUsers(filter?: { role?: 'student' | 'teacher'; q?: string } & Page): Promise<PlatformUser[]>
 
   // Courses
   listCourses(filter?: CourseFilter): Promise<Course[]>
@@ -85,7 +97,7 @@ export interface Backend {
   myReview(userId: ID, courseId: ID): Promise<Review | null>
 
   // Community
-  listFeed(opts?: { authorRole?: 'teacher' | 'student'; limit?: number }): Promise<Post[]>
+  listFeed(opts?: { authorRole?: 'teacher' | 'student' } & Page): Promise<Post[]>
   createPost(input: Omit<Post, 'id' | 'createdAt' | 'likeCount' | 'commentCount'>): Promise<Post>
   like(userId: ID, postId: ID): Promise<{ liked: boolean; likeCount: number }>
   save(userId: ID, target: Save['target']): Promise<{ saved: boolean }>
@@ -155,7 +167,7 @@ export interface Backend {
   // Stats & activity (foundation for Progress #6 / Gamification #18)
   getStats(userId: ID): Promise<UserStats>
   recordActivity(event: Omit<ActivityEvent, 'id' | 'createdAt'>): Promise<{ event: ActivityEvent; stats: UserStats }>
-  listActivity(userId: ID, opts?: { since?: string; limit?: number }): Promise<ActivityEvent[]>
+  listActivity(userId: ID, opts?: { since?: string } & Page): Promise<ActivityEvent[]>
   setDailyGoal(userId: ID, minutes: number): Promise<UserStats>
 
   // Privacy / GDPR (#39)
