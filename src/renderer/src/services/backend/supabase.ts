@@ -81,6 +81,8 @@ const c2c = (r: Record<string, unknown>): Course => ({
   level: r.level as string,
   targetLanguage: r.target_language as Course['targetLanguage'],
   cover: r.cover as string,
+  thumbnailUrl: (r.thumbnail_url as string | null) ?? undefined,
+  bannerUrl: (r.banner_url as string | null) ?? undefined,
   pricing: r.pricing as Course['pricing'],
   rating: Number(r.rating ?? 0),
   reviewCount: r.review_count as number,
@@ -143,7 +145,8 @@ const s2s = (r: Record<string, unknown>): LiveStream => ({
   language: r.language as LiveStream['language'],
   viewerCount: r.viewer_count as number,
   startedAt: r.started_at as string,
-  cover: r.cover as string
+  cover: r.cover as string,
+  imageUrl: (r.image_url as string | null) ?? undefined
 })
 
 const a2a = (r: Record<string, unknown>): LiveAnnouncement => ({
@@ -152,7 +155,8 @@ const a2a = (r: Record<string, unknown>): LiveAnnouncement => ({
   title: r.title as string,
   body: r.body as string,
   whenISO: r.when_iso as string,
-  cover: r.cover as string
+  cover: r.cover as string,
+  imageUrl: (r.image_url as string | null) ?? undefined
 })
 
 const n2n = (r: Record<string, unknown>): Notif => ({
@@ -182,6 +186,7 @@ const g2g = (r: Record<string, unknown>): Group => ({
   language: r.language as Group['language'],
   ownerId: r.owner_id as string,
   cover: r.cover as string,
+  imageUrl: (r.image_url as string | null) ?? undefined,
   visibility: r.visibility as Group['visibility'],
   memberCount: r.member_count as number,
   createdAt: r.created_at as string
@@ -198,6 +203,7 @@ const ch2ch = (r: Record<string, unknown>): Challenge => ({
   startsAt: r.starts_at as string,
   endsAt: r.ends_at as string,
   cover: r.cover as string,
+  imageUrl: (r.image_url as string | null) ?? undefined,
   participantCount: r.participant_count as number,
   createdAt: r.created_at as string
 })
@@ -406,6 +412,8 @@ export const supabaseBackend: Backend = {
       level: course.level,
       target_language: course.targetLanguage,
       cover: course.cover,
+      thumbnail_url: course.thumbnailUrl ?? null,
+      banner_url: course.bannerUrl ?? null,
       pricing: course.pricing,
       rating: course.rating,
       review_count: course.reviewCount,
@@ -633,7 +641,8 @@ export const supabaseBackend: Backend = {
   async createAnnouncement(input): Promise<LiveAnnouncement> {
     const row = {
       id: newId('a'), teacher_id: input.teacherId, title: input.title,
-      body: input.body, when_iso: input.whenISO, cover: input.cover
+      body: input.body, when_iso: input.whenISO, cover: input.cover,
+      image_url: input.imageUrl ?? null
     }
     const { data, error } = await sb.from('live_announcements').insert(row).select().single()
     if (error) throw error
@@ -688,7 +697,8 @@ export const supabaseBackend: Backend = {
   async upsertGroup(group): Promise<Group> {
     const row = {
       id: group.id, name: group.name, description: group.description, language: group.language,
-      owner_id: group.ownerId, cover: group.cover, visibility: group.visibility,
+      owner_id: group.ownerId, cover: group.cover, image_url: group.imageUrl ?? null,
+      visibility: group.visibility,
       member_count: group.memberCount, created_at: group.createdAt
     }
     const { data, error } = await sb.from('groups').upsert(row).select().single()
@@ -739,6 +749,7 @@ export const supabaseBackend: Backend = {
       id: challenge.id, title: challenge.title, description: challenge.description, kind: challenge.kind,
       goal: challenge.goal, language: challenge.language, created_by: challenge.createdBy,
       starts_at: challenge.startsAt, ends_at: challenge.endsAt, cover: challenge.cover,
+      image_url: challenge.imageUrl ?? null,
       participant_count: challenge.participantCount, created_at: challenge.createdAt
     }
     const { data, error } = await sb.from('challenges').upsert(row).select().single()
