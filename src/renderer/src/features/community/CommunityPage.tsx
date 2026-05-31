@@ -357,37 +357,74 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
   const [text, setText] = useState('')
   const [kind, setKind] = useState<PostKind>('text')
   const [posting, setPosting] = useState(false)
+  // Rich-payload capture so poll/resource posts a learner creates match the feed
+  // (previously these set only the kind label → broken polls, no attachment).
+  const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
+  const [resourceUrl, setResourceUrl] = useState('')
+
+  const validOptions = pollOptions.map((o) => o.trim()).filter(Boolean)
+  const canSubmit =
+    !!text.trim() &&
+    (kind !== 'poll' || validOptions.length >= 2) &&
+    (kind !== 'resource' || !!resourceUrl.trim())
+
+  const reset = (): void => {
+    setText('')
+    setKind('text')
+    setPollOptions(['', ''])
+    setResourceUrl('')
+  }
 
   const submit = async (): Promise<void> => {
     const me = backend.currentUserId()
-    if (!me || !text.trim()) return
+    if (!me || !canSubmit || posting) return
     setPosting(true)
     const base = { authorId: me, kind, text: text.trim() }
-    if (kind === 'achievement') {
-      await backend.createPost({
-        ...base,
-        achievement: { title: 'Achievement', emoji: '🏆', description: text.trim() }
-      })
-    } else if (kind === 'study-session') {
-      await backend.createPost({
-        ...base,
-        studySession: {
-          topic: text.trim(),
-          language: profile?.targetLanguage ?? 'en',
-          level: profile?.level ?? 'B1',
-          whenISO: new Date(Date.now() + 60 * 60_000).toISOString(),
-          durationMin: 60,
-          capacity: 8,
-          joinedIds: []
-        }
-      })
-    } else {
-      await backend.createPost(base)
+    try {
+      if (kind === 'achievement') {
+        await backend.createPost({
+          ...base,
+          achievement: { title: 'Achievement', emoji: '🏆', description: text.trim() }
+        })
+      } else if (kind === 'study-session') {
+        await backend.createPost({
+          ...base,
+          studySession: {
+            topic: text.trim(),
+            language: profile?.targetLanguage ?? 'en',
+            level: profile?.level ?? 'B1',
+            whenISO: new Date(Date.now() + 60 * 60_000).toISOString(),
+            durationMin: 60,
+            capacity: 8,
+            joinedIds: []
+          }
+        })
+      } else if (kind === 'poll') {
+        await backend.createPost({
+          ...base,
+          poll: {
+            question: text.trim(),
+            options: validOptions.map((label, i) => ({ id: String.fromCharCode(97 + i), label, votes: 0 }))
+          }
+        })
+      } else if (kind === 'resource') {
+        const url = resourceUrl.trim()
+        const rkind: 'youtube' | 'pdf' | 'audio' = /youtu\.?be/i.test(url)
+          ? 'youtube'
+          : /\.pdf($|\?)/i.test(url)
+            ? 'pdf'
+            : /\.(mp3|wav|m4a|ogg)($|\?)/i.test(url)
+              ? 'audio'
+              : 'youtube'
+        await backend.createPost({ ...base, resource: { kind: rkind, url, title: text.trim() || undefined } })
+      } else {
+        await backend.createPost(base)
+      }
+      reset()
+      onPosted()
+    } finally {
+      setPosting(false)
     }
-    setText('')
-    setKind('text')
-    setPosting(false)
-    onPosted()
   }
 
   const placeholder: Record<PostKind, string> = {
@@ -413,6 +450,42 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
           className="flex-1 rounded-2xl bg-white/[0.05] border border-white/10 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:outline-none resize-none"
         />
       </div>
+
+      {/* Poll options — at least two needed to post a poll */}
+      {kind === 'poll' && (
+        <div className="mt-3 pl-11 flex flex-col gap-2">
+          {pollOptions.map((opt, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-500 w-4">{String.fromCharCode(65 + i)}</span>
+              <input
+                value={opt}
+                onChange={(e) => setPollOptions((prev) => prev.map((o, j) => (j === i ? e.target.value : o)))}
+                placeholder={`Option ${i + 1}`}
+                className="flex-1 rounded-xl bg-white/[0.05] border border-white/10 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:outline-none"
+              />
+              {pollOptions.length > 2 && (
+                <button onClick={() => setPollOptions((prev) => prev.filter((_, j) => j !== i))} className="text-slate-500 hover:text-rose-300 text-lg leading-none px-1" title="Remove">×</button>
+              )}
+            </div>
+          ))}
+          {pollOptions.length < 6 && (
+            <button onClick={() => setPollOptions((prev) => [...prev, ''])} className="self-start text-xs font-semibold text-brand-300 hover:text-brand-200 pl-6">+ Add option</button>
+          )}
+        </div>
+      )}
+
+      {/* Resource link — YouTube / PDF / audio URL */}
+      {kind === 'resource' && (
+        <div className="mt-3 pl-11">
+          <input
+            value={resourceUrl}
+            onChange={(e) => setResourceUrl(e.target.value)}
+            placeholder="Paste a YouTube, PDF or audio link…"
+            className="w-full rounded-xl bg-white/[0.05] border border-white/10 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:outline-none"
+          />
+        </div>
+      )}
+
       <div className="flex items-center gap-1.5 mt-3 pl-11 flex-wrap">
         {(['text', 'question', 'resource', 'achievement', 'poll', 'study-session', 'voice'] as PostKind[]).map((k) => {
           const m = KIND[k]
@@ -432,7 +505,7 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
         })}
         <button
           onClick={() => void submit()}
-          disabled={posting || !text.trim()}
+          disabled={posting || !canSubmit}
           className="btn-primary text-xs px-4 py-1.5 ml-auto disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {posting ? 'Posting…' : 'Post'}
