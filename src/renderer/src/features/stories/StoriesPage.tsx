@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { PageHeader, SectionHeading, Tabs, type TabItem } from '../../components/ui'
-import { IconBolt } from '../../components/icons'
-import { STORIES, type Story } from '../../services/content/stories'
+import { IconBolt, IconPlus } from '../../components/icons'
+import { type Story } from '../../services/content/stories'
+import { useStories } from '../../services/stories/store'
+import { useAppStore } from '../../store/useAppStore'
+import StoryEditor from './StoryEditor'
 import { useContentState, getStoryProgress } from '../../services/content/progress'
 
 type Tab = 'mixed' | 'reading' | 'listening'
@@ -50,13 +53,17 @@ export default function StoriesPage(): JSX.Element {
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('mixed')
   const [level, setLevel] = useState('All')
+  const role = useAppStore((s) => s.role)
+  const canAuthor = role === 'teacher' || role === 'admin'
+  const [editing, setEditing] = useState(false)
+  const { list: allStories, refresh } = useStories()
   useContentState()
 
-  const resume = STORIES.map((s) => ({ s, p: getStoryProgress(s.id) }))
+  const resume = allStories.map((s) => ({ s, p: getStoryProgress(s.id) }))
     .filter((x) => x.p && !x.p.completed)
     .sort((a, b) => (b.p!.lastAt).localeCompare(a.p!.lastAt))[0]
 
-  const filtered = STORIES.filter((s) => {
+  const filtered = allStories.filter((s) => {
     if (level !== 'All' && s.level !== level) return false
     if (tab === 'mixed') return true
     return s.kind === tab || s.kind === 'mixed'
@@ -71,6 +78,7 @@ export default function StoriesPage(): JSX.Element {
           subtitle="Short reading and listening stories with comprehension checks."
           back="/library"
           crumbs={[{ label: 'Library', to: '/library' }, { label: 'Stories' }]}
+          action={canAuthor ? <button onClick={() => setEditing(true)} className="btn-primary px-4 py-2 text-sm inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> Create story</button> : undefined}
         />
 
         {resume && (
@@ -95,7 +103,7 @@ export default function StoriesPage(): JSX.Element {
           </div>
         </div>
 
-        <SectionHeading title={tab === 'reading' ? 'Reading stories' : tab === 'listening' ? 'Listening stories' : 'All stories'} subtitle={`${filtered.length} of ${STORIES.length} stories`} />
+        <SectionHeading title={tab === 'reading' ? 'Reading stories' : tab === 'listening' ? 'Listening stories' : 'All stories'} subtitle={`${filtered.length} of ${allStories.length} stories`} />
         {filtered.length === 0 ? (
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-8 text-center">
             <p className="text-sm text-slate-400">No stories match this filter yet.</p>
@@ -106,6 +114,10 @@ export default function StoriesPage(): JSX.Element {
           </div>
         )}
       </div>
+
+      {editing && (
+        <StoryEditor onClose={() => setEditing(false)} onSaved={() => { setEditing(false); refresh() }} />
+      )}
     </div>
   )
 }
