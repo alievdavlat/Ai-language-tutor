@@ -91,12 +91,6 @@ const EXAMS: ExamDef[] = [
   }
 ]
 
-const COMMUNITY_MOCKS = [
-  { name: 'IELTS Writing — Task 2 set', author: 'Emma Carter', role: 'teacher', tries: '1.2k' },
-  { name: 'B1 Grammar mock #4', author: 'Bekzod', role: 'student', tries: '340' },
-  { name: 'TOEFL Speaking drills', author: 'James Lee', role: 'teacher', tries: '880' }
-]
-
 const RECENT = [
   { name: 'IELTS Academic', date: '12 May', score: '6.5', tone: 'text-amber-300' },
   { name: 'CEFR placement', date: '5 May', score: 'B1', tone: 'text-brand-300' },
@@ -261,41 +255,27 @@ export default function ExamsHubPage(): JSX.Element {
           <IconArrowRight className="w-5 h-5 text-brand-300 shrink-0" />
         </button>
 
-        {/* Free practice by provider */}
-        <div>
-          <SectionHeading title="Free practice by provider" subtitle="Official section practice, answer keys, sample answers & tips" />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { name: 'British Council', sub: 'IELTS', to: '/exams/ielts', tone: 'from-rose-600 to-red-800' },
-              { name: 'IDP', sub: 'IELTS', to: '/exams/ielts', tone: 'from-blue-600 to-indigo-800' },
-              { name: 'Cambridge', sub: 'IELTS · books', to: '/exams/ielts', tone: 'from-violet-600 to-purple-800' },
-              { name: 'College Board', sub: 'SAT', to: '/exams', tone: 'from-emerald-600 to-teal-800' }
-            ].map((p) => (
-              <button key={p.name} onClick={() => navigate(p.to)} className="rounded-2xl p-1 ring-1 ring-white/10 hover:ring-white/25 transition text-left">
-                <div className={cn('rounded-xl bg-gradient-to-br h-16 flex items-end p-3', p.tone)}>
-                  <span className="text-sm font-bold text-white leading-tight">{p.name}</span>
-                </div>
-                <p className="text-[11px] text-slate-400 px-1.5 pt-1.5">{p.sub}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Community mocks */}
+        {/* Community mocks — real teacher/learner-authored exams from the store */}
         <div>
           <SectionHeading title="Community mock tests" subtitle="Created by teachers and learners" />
           <div className="flex flex-col gap-2">
-            {COMMUNITY_MOCKS.map((m) => (
-              <button key={m.name} onClick={() => navigate('/exams/ielts')} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-left hover:bg-white/[0.06] transition">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{m.name}</p>
-                  <p className="text-xs text-slate-500">
-                    {m.author} <span className={cn('uppercase tracking-wider', m.role === 'teacher' ? 'text-brand-300' : 'text-slate-400')}>· {m.role}</span> · {m.tries} attempts
-                  </p>
-                </div>
-                <IconArrowRight className="w-4 h-4 text-slate-500 shrink-0" />
-              </button>
-            ))}
+            {customExams.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-6 text-center text-sm text-slate-400">
+                No community mock tests yet. Teachers and admins can create one with “New exam”.
+              </div>
+            ) : (
+              customExams.map((m) => (
+                <button key={m.id} onClick={() => navigate(`/exams/run/${m.id}`)} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-left hover:bg-white/[0.06] transition">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white truncate">{m.title}</p>
+                    <p className="text-xs text-slate-500">
+                      <span className="uppercase tracking-wider text-brand-300">{m.kind}</span> · {m.sections?.length ?? 0} section{(m.sections?.length ?? 0) === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  <IconArrowRight className="w-4 h-4 text-slate-500 shrink-0" />
+                </button>
+              ))
+            )}
           </div>
         </div>
 

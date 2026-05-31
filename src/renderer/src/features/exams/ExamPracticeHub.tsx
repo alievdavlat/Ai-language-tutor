@@ -98,13 +98,6 @@ export default function ExamPracticeHub({ examId }: { examId: ExamId }): JSX.Ele
           back="/exams"
           crumbs={[{ label: 'Exams', to: '/exams' }, { label: bank.title }]}
         />
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] text-slate-500">Free practice from</span>
-          {['British Council', 'IDP', 'Cambridge', 'Recent actual'].map((p) => (
-            <span key={p} className="text-[11px] font-medium rounded-full bg-white/[0.05] border border-white/10 px-2.5 py-1 text-slate-300">{p}</span>
-          ))}
-        </div>
-
         {/* Stats — real values from the user's attempt history */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard value={best} label="Best score" tone="brand" />
