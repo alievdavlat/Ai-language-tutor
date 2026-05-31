@@ -174,7 +174,10 @@ export interface SidebarProps {
 
 export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps): JSX.Element {
   const role = useAppStore((s) => s.role)
-  const isTeacher = role === 'teacher'
+  const isAdmin = role === 'admin'
+  // Admin is a superset of teacher (matches RequireRole in AppRoutes): admins get
+  // the full Manage/Learn/Engage nav plus an Admin link.
+  const isTeacher = role === 'teacher' || isAdmin
 
   return (
     <aside
@@ -208,6 +211,7 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
               {TEACHER_MANAGE.map((item) => (
                 <NavItem key={item.to} {...item} collapsed={collapsed} />
               ))}
+              {isAdmin && <NavItem to="/admin" label="Admin" Icon={IconClipboard} collapsed={collapsed} />}
             </div>
             {!collapsed && <p className="section-title px-3 mb-2 mt-5">Learn</p>}
             {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
@@ -262,7 +266,7 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
               : 'bg-brand-500/10 border border-brand-400/20 text-brand-200'
           )}>
             <span className={cn('w-1.5 h-1.5 rounded-full', isTeacher ? 'bg-emerald-400' : 'bg-brand-400')} />
-            {isTeacher ? 'Teacher' : 'Student'} account
+            {isAdmin ? 'Admin' : isTeacher ? 'Teacher' : 'Student'} account
           </div>
         </div>
       )}
