@@ -1,6 +1,7 @@
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../../store/useAppStore'
 import { persistRole } from '../../services/auth'
+import { homeForRole } from '@shared/constants'
 import { IconBook, IconUsers } from '../../components/icons'
 
 export default function RoleSelectPage(): JSX.Element {
@@ -22,7 +23,7 @@ export default function RoleSelectPage(): JSX.Element {
     if (!onboardingComplete) {
       navigate('/onboarding', { replace: true })
     } else {
-      navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
+      navigate(homeForRole(role), { replace: true })
     }
   }
 

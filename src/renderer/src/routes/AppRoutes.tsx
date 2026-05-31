@@ -7,6 +7,7 @@ import { useAdminShortcut } from '../hooks/useAdminShortcut'
 import { useI18n, type UILanguage } from '../i18n'
 import { backend } from '../services/backend'
 import type { PlatformUser } from '@shared/types'
+import { canAuthorContent, homeForRole, isAdminRole } from '@shared/constants'
 import AppShell from '../components/layout/AppShell'
 import BootPage from '../features/boot/BootPage'
 import OnboardingPage from '../features/onboarding/OnboardingPage'
@@ -100,9 +101,12 @@ function RequireRole({ role: required, children }: { role: UserRole; children: R
   const role = useAppStore((s) => s.role)
   const roleSelected = useAppStore((s) => s.roleSelected)
   if (!roleSelected) return <Navigate to="/role" replace />
-  // Admin/owner is a superset — can reach teacher authoring routes too (so the
-  // admin CMS can create courses/lessons/clips/announcements). #A36/#A37.
-  if (role !== required && role !== 'admin') return <Navigate to={role === 'teacher' ? '/teacher' : '/home'} replace />
+  // Gate by capability, not by role string (#A55):
+  //  - admin routes  → anyone who can reach the admin console (admin, owner).
+  //  - teacher routes → anyone who can author content (teacher own-scope, plus
+  //    admin/owner platform-wide — so the admin CMS keeps working).
+  const allowed = required === 'admin' ? isAdminRole(role) : canAuthorContent(role)
+  if (!allowed) return <Navigate to={homeForRole(role)} replace />
   return <>{children}</>
 }
 
@@ -137,7 +141,9 @@ function usePostBootRedirect(): void {
       navigate('/onboarding', { replace: true })
       return
     }
-    navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
+    // Land each role in its own shell (admin/owner → the admin console, not a
+    // learner home — admins are operators, not learners). #A55.
+    navigate(homeForRole(role), { replace: true })
   }, [booted, authenticated, roleSelected, onboardingComplete, role, location.pathname, navigate])
 }
 
@@ -181,7 +187,7 @@ function useSyncUserToBackend(): void {
       nativeLanguage: profile.nativeLanguage,
       targetLanguage: profile.targetLanguage
     }
-    if (role === 'teacher' || role === 'student') patch.role = role
+    patch.role = role
     const fp = `${me}|${JSON.stringify(patch)}`
     if (fp === last.current) return
     last.current = fp

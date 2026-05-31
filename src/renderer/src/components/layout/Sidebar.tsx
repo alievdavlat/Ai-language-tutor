@@ -1,10 +1,10 @@
 import { NavLink } from 'react-router-dom'
 import type { UserProfile } from '@shared/types'
+import { isAdminRole, ROLE_META } from '@shared/constants'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import AvatarCircle from '../ui/AvatarCircle'
 import {
-  IconBolt,
   IconBook,
   IconBookmark,
   IconChart,
@@ -67,6 +67,18 @@ const TEACHER_LEARN = [
 
 const TEACHER_ENGAGE = [
   { to: '/community', label: 'Explore', Icon: IconSearch }
+] as const
+
+/**
+ * Admin / owner shell navigation (#A55 / #A57). Admins are operators, NOT
+ * learners — they do not get the Learn / Practice / Social groups. This is the
+ * minimal operator shell (a single console entry). The Admin CMS+CRM (#A56)
+ * OWNS the content of /admin and registers its own sections here — extend this
+ * array (or render its sub-nav inside AdminPage) rather than building a second
+ * shell. See docs/ADMIN-SHELL.md for the interface contract.
+ */
+export const ADMIN_NAV = [
+  { to: '/admin', label: 'Console', Icon: IconClipboard }
 ] as const
 
 const BOTTOM_NAV = [
@@ -174,10 +186,10 @@ export interface SidebarProps {
 
 export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps): JSX.Element {
   const role = useAppStore((s) => s.role)
-  const isAdmin = role === 'admin'
-  // Admin is a superset of teacher (matches RequireRole in AppRoutes): admins get
-  // the full Manage/Learn/Engage nav plus an Admin link.
-  const isTeacher = role === 'teacher' || isAdmin
+  // Admin/owner operate the platform from a dedicated operator shell — they are
+  // NOT learners, so they do NOT get the learner Learn/Practice/Social nav (#A55).
+  const isAdmin = isAdminRole(role)
+  const isTeacher = role === 'teacher'
 
   return (
     <aside
@@ -204,14 +216,22 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
 
       {/* Primary navigation */}
       <nav className={cn('flex-1 py-1 overflow-y-auto', collapsed ? 'px-1' : 'px-3')}>
-        {isTeacher ? (
+        {isAdmin ? (
+          <>
+            {!collapsed && <p className="section-title px-3 mb-2">Platform</p>}
+            <div className="space-y-0.5">
+              {ADMIN_NAV.map((item) => (
+                <NavItem key={item.to} {...item} collapsed={collapsed} />
+              ))}
+            </div>
+          </>
+        ) : isTeacher ? (
           <>
             {!collapsed && <p className="section-title px-3 mb-2">Manage</p>}
             <div className="space-y-0.5">
               {TEACHER_MANAGE.map((item) => (
                 <NavItem key={item.to} {...item} collapsed={collapsed} />
               ))}
-              {isAdmin && <NavItem to="/admin" label="Admin" Icon={IconClipboard} collapsed={collapsed} />}
             </div>
             {!collapsed && <p className="section-title px-3 mb-2 mt-5">Learn</p>}
             {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
@@ -261,12 +281,14 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
         <div className="px-3 pb-2">
           <div className={cn(
             'w-full rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-widest flex items-center gap-2',
-            isTeacher
-              ? 'bg-emerald-500/10 border border-emerald-400/20 text-emerald-200'
-              : 'bg-brand-500/10 border border-brand-400/20 text-brand-200'
+            isAdmin
+              ? 'bg-amber-500/10 border border-amber-400/20 text-amber-200'
+              : isTeacher
+                ? 'bg-emerald-500/10 border border-emerald-400/20 text-emerald-200'
+                : 'bg-brand-500/10 border border-brand-400/20 text-brand-200'
           )}>
-            <span className={cn('w-1.5 h-1.5 rounded-full', isTeacher ? 'bg-emerald-400' : 'bg-brand-400')} />
-            {isAdmin ? 'Admin' : isTeacher ? 'Teacher' : 'Student'} account
+            <span className={cn('w-1.5 h-1.5 rounded-full', isAdmin ? 'bg-amber-400' : isTeacher ? 'bg-emerald-400' : 'bg-brand-400')} />
+            {ROLE_META[role].label} account
           </div>
         </div>
       )}

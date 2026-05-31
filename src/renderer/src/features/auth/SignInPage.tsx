@@ -5,6 +5,7 @@ import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { backend } from '../../services/backend'
 import * as auth from '../../services/auth'
+import { homeForRole } from '@shared/constants'
 import { IconMic } from '../../components/icons'
 
 type Mode = 'signin' | 'signup'
@@ -60,7 +61,7 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
   const route = (): void => {
     if (!roleSelected) navigate('/role', { replace: true })
     else if (!onboardingComplete) navigate('/onboarding', { replace: true })
-    else navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
+    else navigate(homeForRole(role), { replace: true })
   }
 
   // Real local/Supabase-row auth (Clerk is unreachable in this region).

@@ -1,0 +1,8 @@
+
+> speaking-app@0.0.1 typecheck
+> npm run typecheck:node && npm run typecheck:web
+
+
+> speaking-app@0.0.1 typecheck:node
+> tsc --noEmit -p tsconfig.node.json
+

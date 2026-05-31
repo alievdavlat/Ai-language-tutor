@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { SectionHeading } from '../../components/ui'
 import { useAppStore } from '../../store/useAppStore'
+import { canAuthorContent } from '@shared/constants'
 import { useExams } from '../../services/exams/store'
 import ExamEditor from './ExamEditor'
 import { useTargetLanguage } from '../../lib/language'
@@ -147,7 +148,7 @@ export default function ExamsHubPage(): JSX.Element {
   const navigate = useNavigate()
   const lang = useTargetLanguage()
   const role = useAppStore((s) => s.role)
-  const canAuthor = role === 'teacher' || role === 'admin'
+  const canAuthor = canAuthorContent(role)
   const [editing, setEditing] = useState(false)
   const { list: allExams, refresh } = useExams()
   const customExams = allExams.filter((e) => !e.builtIn)

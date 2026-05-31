@@ -9,7 +9,11 @@ import type { TargetLanguage } from './user.types'
 
 export type ID = string
 
-export type Role = 'student' | 'teacher'
+// Canonical role hierarchy lives in the shared permissions module (#A55).
+// Re-exported here so the platform data model and the permission matrix never
+// drift apart.
+export type { Role } from '../constants/roles'
+import type { Role } from '../constants/roles'
 
 // ─── Identity ──────────────────────────────────────────────────────────────
 
