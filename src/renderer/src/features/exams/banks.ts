@@ -27,9 +27,20 @@ export interface MCQSection {
   label: string
   kind: 'mcq'
   minutes: number
-  /** Optional reading/listening stimulus shown above the questions. */
+  /** Optional reading stimulus shown above the questions. */
   passage?: string
-  /** For listening sections — a transcript stands in for audio in this offline build. */
+  /**
+   * For listening sections — a real audio recording (uploaded file or recorded
+   * clip): a public/Storage URL or a `data:` URL. When present the player
+   * streams this; otherwise the player synthesizes the `audioTranscript` with
+   * neural TTS so a listening section is never silent.
+   */
+  audioUrl?: string
+  /**
+   * Listening script. Drives TTS playback when there is no `audioUrl`, and is
+   * the text revealed in the post-test review. It is HIDDEN during the attempt
+   * so a listening section tests listening, not reading.
+   */
   audioTranscript?: string
   items: MCQItem[]
 }
@@ -61,11 +72,23 @@ export interface ExamBank {
   sections: ExamSection[]
 }
 
-// ─── Shared passages ──────────────────────────────────────────────────────────
+// ─── Passages (distinct per family so Listening ≠ Reading and no two
+//     families share a stimulus) ────────────────────────────────────────────
 
+// IELTS reading.
 const INDUSTRIAL = `The Industrial Revolution marked a major turning point in history. Almost every aspect of daily life was influenced in some way. Average income and population began to exhibit unprecedented sustained growth. Economists argue that the most important effect was that the standard of living for the general population began to increase consistently for the first time in history, although others have said it did not begin to improve meaningfully until the late 19th and 20th centuries.`
 
+// IELTS listening — library enquiry.
 const LIBRARY_DIALOGUE = `WOMAN: Hi, I'd like to know your opening hours. MAN: Sure. On weekdays we're open from nine in the morning until eight in the evening. WOMAN: And weekends? MAN: Saturdays ten to six, and we're closed on Sundays. To borrow books you'll need a membership card, which is free for students. You can keep most books for three weeks.`
+
+// TOEFL reading — an academic science passage.
+const BEE_DANCE = `Honeybees communicate the location of food through a behaviour known as the waggle dance. When a foraging bee returns to the hive after finding a rich source of nectar, it performs a figure-eight movement on the vertical surface of the comb. The angle of the straight "waggle" run relative to vertical encodes the direction of the food in relation to the sun, while the duration of the waggle signals the distance. Other bees follow the dancer in the dark, sensing its movements through touch and vibration, and then fly directly to the source. First decoded by Karl von Frisch, the dance showed that a non-human animal could convey abstract spatial information through a symbolic code.`
+
+// TOEFL listening — a campus advising conversation.
+const ADVISING_DIALOGUE = `STUDENT: Hi, Professor Lee, I wanted to ask about dropping the statistics course. ADVISOR: Of course. You should know the deadline to drop without a grade penalty is this Friday. STUDENT: Oh, I didn't realise it was so soon. If I drop it, will I still be a full-time student? ADVISOR: Good question. You're taking fifteen credits, and statistics is four, so dropping it leaves you at eleven. Full-time status needs twelve, so you'd fall just below. STUDENT: That could affect my scholarship. ADVISOR: Exactly. Speak with the financial aid office before you decide, and consider switching to the pass/fail option instead of dropping.`
+
+// SAT reading & writing — a history passage.
+const PRINTING_PRESS = `When Johannes Gutenberg introduced movable-type printing to Europe in the mid-fifteenth century, few could have predicted how thoroughly it would reshape society. Before the press, books were copied by hand, a process so slow and costly that literacy remained the privilege of a narrow elite. The new technology drove the price of a book down dramatically within a few decades, and as texts multiplied, so did readers. Ideas that once travelled at the pace of a walking scribe now spread across the continent in months. Some scholars argue that without this sudden abundance of printed material, neither the Reformation nor the scientific revolution would have unfolded as rapidly as they did.`
 
 // ─── Banks ──────────────────────────────────────────────────────────────────
 
@@ -139,14 +162,14 @@ export const BANKS: Record<string, ExamBank> = {
         label: 'Reading',
         kind: 'mcq',
         minutes: 54,
-        passage: INDUSTRIAL,
+        passage: BEE_DANCE,
         items: [
-          { id: 'r1', prompt: 'What is the main idea of the passage?', options: ['The Revolution changed daily life', 'Factories were dangerous', 'Trade declined', 'Population fell'], correct: 0 },
-          { id: 'r2', prompt: 'According to the passage, income and population…', options: ['stayed flat', 'grew without precedent', 'shrank', 'were unrelated'], correct: 1 },
-          { id: 'r3', prompt: 'The disagreement among scholars concerns…', options: ['when living standards rose', 'who invented the engine', 'where it started', 'why it ended'], correct: 0 },
-          { id: 'r4', prompt: '"Sustained" most nearly means…', options: ['brief', 'continuous', 'damaged', 'reduced'], correct: 1 },
-          { id: 'r5', prompt: 'The passage implies that before this period, living standards…', options: ['rose steadily', 'did not consistently improve', 'were the highest ever', 'fell every year'], correct: 1 },
-          { id: 'r6', prompt: 'Which would best continue the passage?', options: ['Specific economic data', 'A poem', 'A recipe', 'A map legend'], correct: 0 }
+          { id: 'r1', prompt: 'What is the passage mainly about?', options: ['How bees make honey', 'How bees signal where food is', 'Why bees sting', 'How hives are built'], correct: 1 },
+          { id: 'r2', prompt: 'The angle of the waggle run encodes the food\'s…', options: ['size', 'direction relative to the sun', 'colour', 'sweetness'], correct: 1 },
+          { id: 'r3', prompt: 'The duration of the waggle signals the…', options: ['distance to the food', 'number of bees needed', 'time of day', 'wind speed'], correct: 0 },
+          { id: 'r4', prompt: 'How do other bees perceive the dance in the dark hive?', options: ['By sight', 'Through touch and vibration', 'By smell only', 'Through sound alone'], correct: 1 },
+          { id: 'r5', prompt: '"Abstract spatial information" suggests the dance works as a…', options: ['random movement', 'symbolic code', 'warning signal', 'mating display'], correct: 1 },
+          { id: 'r6', prompt: 'Who first decoded the waggle dance?', options: ['Charles Darwin', 'Karl von Frisch', 'Gregor Mendel', 'Jane Goodall'], correct: 1 }
         ]
       },
       {
@@ -154,14 +177,14 @@ export const BANKS: Record<string, ExamBank> = {
         label: 'Listening',
         kind: 'mcq',
         minutes: 41,
-        audioTranscript: LIBRARY_DIALOGUE,
+        audioTranscript: ADVISING_DIALOGUE,
         items: [
-          { id: 'l1', prompt: 'Why is the woman calling?', options: ['To complain', 'To ask about hours', 'To return a book', 'To get a job'], correct: 1 },
-          { id: 'l2', prompt: 'Weekday closing time is…', options: ['6 pm', '8 pm', '9 pm', '10 pm'], correct: 1 },
-          { id: 'l3', prompt: 'Student membership is…', options: ['$5', 'free', '$15', 'unavailable'], correct: 1 },
-          { id: 'l4', prompt: 'Loan period for most books is…', options: ['1 week', '2 weeks', '3 weeks', '4 weeks'], correct: 2 },
-          { id: 'l5', prompt: 'The library is closed on…', options: ['Mondays', 'Saturdays', 'Sundays', 'holidays only'], correct: 2 },
-          { id: 'l6', prompt: 'The man\'s attitude is…', options: ['unhelpful', 'helpful', 'rude', 'confused'], correct: 1 }
+          { id: 'l1', prompt: 'Why is the student speaking with the advisor?', options: ['To choose a major', 'To ask about dropping a course', 'To request a recommendation', 'To report a grade error'], correct: 1 },
+          { id: 'l2', prompt: 'When is the deadline to drop without a grade penalty?', options: ['Today', 'This Friday', 'Next month', 'End of term'], correct: 1 },
+          { id: 'l3', prompt: 'How many credits is the statistics course?', options: ['Two', 'Three', 'Four', 'Five'], correct: 2 },
+          { id: 'l4', prompt: 'After dropping it, how many credits would the student have?', options: ['Nine', 'Eleven', 'Twelve', 'Fifteen'], correct: 1 },
+          { id: 'l5', prompt: 'Why does dropping the course matter beyond academics?', options: ['It could affect the scholarship', 'It changes the dorm', 'It costs a fee', 'It delays graduation by a year'], correct: 0 },
+          { id: 'l6', prompt: 'What alternative does the advisor suggest?', options: ['Taking an exam early', 'Switching to pass/fail', 'Hiring a tutor', 'Auditing the class'], correct: 1 }
         ]
       },
       {
@@ -225,16 +248,16 @@ export const BANKS: Record<string, ExamBank> = {
         label: 'Reading & Writing',
         kind: 'mcq',
         minutes: 64,
-        passage: INDUSTRIAL,
+        passage: PRINTING_PRESS,
         items: [
-          { id: 'rw1', prompt: 'Which choice best states the main idea of the passage?', options: ['The Revolution reshaped daily life', 'Factories caused pollution', 'Trade routes closed', 'Population declined'], correct: 0 },
-          { id: 'rw2', prompt: 'As used in the passage, "exhibit" most nearly means…', options: ['display', 'hide', 'sell', 'paint'], correct: 0 },
-          { id: 'rw3', prompt: 'Choose the option that makes the sentence grammatical: "Neither the workers nor the owner ___ satisfied."', options: ['were', 'was', 'be', 'being'], correct: 1 },
-          { id: 'rw4', prompt: 'Select the best transition: "Income rose. ___, living standards lagged for decades."', options: ['Therefore', 'However', 'Likewise', 'For example'], correct: 1 },
-          { id: 'rw5', prompt: 'Which is correctly punctuated?', options: ['Its a long history.', "It's a long history.", 'Its\' a long history.', 'Its; a long history.'], correct: 1 },
-          { id: 'rw6', prompt: 'The author\'s primary purpose is to…', options: ['inform', 'persuade against industry', 'entertain', 'advertise'], correct: 0 },
-          { id: 'rw7', prompt: 'Choose the most concise option: "due to the fact that"', options: ['because', 'owing to the fact that', 'in light of the reality', 'considering that the'], correct: 0 },
-          { id: 'rw8', prompt: 'Subject–verb agreement: "The list of items ___ on the desk."', options: ['are', 'is', 'were', 'be'], correct: 1 }
+          { id: 'rw1', prompt: 'Which choice best states the main idea of the passage?', options: ['The printing press transformed European society', 'Gutenberg was a poor businessman', 'Scribes worked very quickly', 'Books were always cheap'], correct: 0 },
+          { id: 'rw2', prompt: 'The phrase "privilege of a narrow elite" implies that literacy was…', options: ['limited to a few', 'common among all', 'illegal', 'declining'], correct: 0 },
+          { id: 'rw3', prompt: 'According to the passage, the press caused the price of books to…', options: ['rise sharply', 'stay fixed', 'fall sharply', 'double'], correct: 2 },
+          { id: 'rw4', prompt: 'The author suggests the press helped bring about the…', options: ['fall of Rome', 'Reformation and scientific revolution', 'discovery of fire', 'end of all handwriting'], correct: 1 },
+          { id: 'rw5', prompt: 'Choose the grammatical option: "Neither the scribes nor the printer ___ able to keep up."', options: ['were', 'was', 'be', 'being'], correct: 1 },
+          { id: 'rw6', prompt: 'Select the best transition: "Books were once rare. ___, they soon became common."', options: ['Therefore', 'However', 'Likewise', 'For example'], correct: 1 },
+          { id: 'rw7', prompt: 'Choose the most concise option: "in spite of the fact that"', options: ['although', 'owing to the fact that', 'in light of the reality that', 'considering that the'], correct: 0 },
+          { id: 'rw8', prompt: 'Which is correctly punctuated?', options: ['Its a remarkable story.', "It's a remarkable story.", 'Its\' a remarkable story.', 'Its; a remarkable story.'], correct: 1 }
         ]
       },
       {
@@ -360,9 +383,13 @@ export function scoreExam(bank: ExamBank, sections: SectionResult[]): ExamScore 
     const total = sections.reduce((s, x) => s + x.numeric, 0)
     return { overall: String(total), overallNumeric: total, scaleLabel: 'Total score (/1600)', sections }
   }
-  // gmat
-  const total = sections.reduce((s, x) => s + x.numeric, 0)
-  return { overall: String(total), overallNumeric: total, scaleLabel: 'Total score (200–800)', sections }
+  if (bank.kind === 'gmat') {
+    const total = sections.reduce((s, x) => s + x.numeric, 0)
+    return { overall: String(total), overallNumeric: total, scaleLabel: 'Total score (200–800)', sections }
+  }
+  // custom — average the per-section percentages into an overall /100.
+  const avgPct = sections.length ? Math.round(sections.reduce((s, x) => s + x.pct, 0) / sections.length) : 0
+  return { overall: `${avgPct}%`, overallNumeric: avgPct, scaleLabel: 'Overall score', sections }
 }
 
 /** Build the per-section `SectionResult` for an objective (mcq) section. */
@@ -385,6 +412,6 @@ export function scoreMcqSection(bank: ExamBank, section: MCQSection, correct: nu
     const scaled = Math.round((correct / total) * 300)
     return { id: section.id, label: section.label, correct, total, score: `+${scaled}`, numeric: 100 + scaled, pct: Math.round((correct / total) * 100) }
   }
-  // cefr
+  // cefr / custom — raw correct out of total, percentage drives the band.
   return { id: section.id, label: section.label, correct, total, score: `${correct}/${total}`, numeric: Math.round((correct / total) * 100), pct: Math.round((correct / total) * 100) }
 }
