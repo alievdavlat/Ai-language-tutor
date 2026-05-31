@@ -179,7 +179,7 @@ export default function LessonBuilderPage(): JSX.Element {
         <PageHeader
           eyebrow="Teacher · Interactive lesson"
           title={editId ? 'Edit lesson' : 'Build an interactive lesson'}
-          subtitle="TED-Ed style: a video, then Think · Dig Deeper · Discuss · And Finally."
+          subtitle="A video, then Think · Dig Deeper · Discuss · And Finally."
           back="/teacher"
           crumbs={[{ label: 'Teacher', to: '/teacher' }, { label: 'Lesson builder' }]}
           action={

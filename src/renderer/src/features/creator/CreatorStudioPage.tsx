@@ -26,7 +26,7 @@ import {
 
 const CREATE_ACTIONS = [
   { icon: IconBook, label: 'New course', desc: 'Units, lessons, drip schedule & pricing', to: '/teacher/course/new', tone: 'from-sky-500/20 to-blue-600/10 text-sky-300' },
-  { icon: IconYouTube, label: 'Interactive lesson', desc: 'TED-Ed style: video + Think / Discuss', to: '/teacher/new', tone: 'from-rose-500/20 to-pink-600/10 text-rose-300' },
+  { icon: IconYouTube, label: 'Interactive lesson', desc: 'Video + Think / Discuss blocks', to: '/teacher/new', tone: 'from-rose-500/20 to-pink-600/10 text-rose-300' },
   { icon: IconBolt, label: 'Short / clip', desc: 'Cut a 9:16 clip from a video or stream', to: '/teacher/clips', tone: 'from-amber-500/20 to-orange-600/10 text-amber-300' },
   { icon: IconStar, label: 'Vocab deck', desc: 'Add words — or bulk-import below', to: '/vocabulary', tone: 'from-violet-500/20 to-purple-600/10 text-violet-300' }
 ]

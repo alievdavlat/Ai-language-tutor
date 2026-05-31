@@ -38,7 +38,7 @@ const REASON_TINT: Record<Report['reason'], string> = {
 
 const CREATE_LINKS: { label: string; desc: string; to: string; emoji: string }[] = [
   { label: 'New course', desc: 'Curriculum + cover + pricing', to: '/teacher/course/new', emoji: '🎓' },
-  { label: 'New lesson', desc: 'Interactive TED-Ed lesson', to: '/teacher/new', emoji: '📖' },
+  { label: 'New lesson', desc: 'Interactive video lesson', to: '/teacher/new', emoji: '📖' },
   { label: 'New clip', desc: 'Short fill-in-the-blank clip', to: '/teacher/clips', emoji: '🎬' },
   { label: 'Creator Studio', desc: 'Bulk import + seed content', to: '/studio', emoji: '🧰' }
 ]
