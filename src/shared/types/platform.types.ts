@@ -9,9 +9,9 @@ import type { TargetLanguage } from './user.types'
 
 export type ID = string
 
-// Canonical role hierarchy lives in the shared permissions module (#A55).
-// Re-exported here so the platform data model and the permission matrix never
-// drift apart.
+// Canonical role hierarchy (Owner > Admin > Teacher > Student) lives in the
+// shared permissions module (#A55). Re-exported here so the platform data model
+// and the permission matrix never drift apart. 'admin' is server-persisted.
 export type { Role } from '../constants/roles'
 import type { Role } from '../constants/roles'
 

@@ -217,8 +217,10 @@ export default function AppRoutes(): JSX.Element {
   useSyncUILanguage()
   useSyncUserToBackend()
   useDesktopDeepLink()
-  // Ctrl+Shift+A → elevate to Owner/Admin and open the admin panel.
-  useAdminShortcut(() => { setRole('admin'); navigate('/admin') })
+  // Ctrl+Shift+A → elevate to Owner/Admin and open the admin panel. DEV-only:
+  // in production builds admin is a server-assigned role and can't be self-granted
+  // from the client (would defeat role enforcement — #A54).
+  useAdminShortcut(() => { if (import.meta.env.DEV) { setRole('admin'); navigate('/admin') } })
 
   return (
     <>
@@ -682,12 +684,15 @@ export default function AppRoutes(): JSX.Element {
           </AppShell>
         }
       />
+      {/* Creator Studio is teacher/owner scope — students must not reach it (#A54/#A37). */}
       <Route
         path="/studio"
         element={
-          <AppShell>
-            <CreatorStudioPage />
-          </AppShell>
+          <RequireRole role="teacher">
+            <AppShell>
+              <CreatorStudioPage />
+            </AppShell>
+          </RequireRole>
         }
       />
       <Route

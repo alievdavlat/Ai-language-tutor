@@ -74,7 +74,6 @@ export interface Backend {
   /** List users (for search / DM start / admin). */
   listUsers(filter?: { role?: Role; q?: string } & Page): Promise<PlatformUser[]>
 
-
   // Courses
   listCourses(filter?: CourseFilter): Promise<Course[]>
   getCourse(id: ID): Promise<Course | null>

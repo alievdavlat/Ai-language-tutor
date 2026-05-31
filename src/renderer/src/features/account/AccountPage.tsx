@@ -336,8 +336,10 @@ export default function AccountPage(): JSX.Element {
           </div>
         )}
 
-        {/* Role switcher — test the Student / Teacher / Owner (admin) views. */}
-        <RoleSwitcher />
+        {/* Dev-only role switcher — lets QA preview the Student / Teacher / Owner
+            views. Stripped from production builds: in prod, role is server-assigned
+            and cannot be self-changed (see #A54). */}
+        {import.meta.env.DEV && <RoleSwitcher />}
 
         {/* Data & reset (moved here from the old Conversation settings tab). */}
         <div className="mt-2">
