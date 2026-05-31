@@ -4,13 +4,13 @@ import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { IconPlay, IconYouTube } from '../../components/icons'
 import {
-  findClip,
   DIFFICULTIES,
   pickBlanks,
   type GameMode,
   type Difficulty,
   type LyricLine
 } from './data'
+import { findClip, clips } from '../../services/clips/store'
 import { fetchSyncedLyrics } from './lrclib'
 import { useYouTubePlayer } from './youtube'
 import { saveScore, getBestScore, type ClipScore } from './leaderboard'
@@ -130,6 +130,12 @@ export default function ClipPlayPage(): JSX.Element {
       }
     }
   }
+
+  // Record the play once per mount → feeds "Hot right now" + "your activity".
+  useEffect(() => {
+    if (clip.id) clips.recordPlay(clip.id, new Date().toISOString())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clip.id])
 
   // ⭐ Auto-pause when the window/tab loses focus (user-requested): a tab
   // switch fires visibilitychange (document.hidden), switching to another app

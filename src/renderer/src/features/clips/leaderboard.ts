@@ -53,3 +53,30 @@ export function saveScore(clipId: string, entry: Omit<ClipScore, 'at'>): ClipSco
   write(store)
   return getLeaderboard(clipId)
 }
+
+/**
+ * Roll-up of a learner's real clip activity, derived from their leaderboard
+ * runs across every clip. Drives the Clips hero stats (no hardcoded numbers):
+ *  - `clipsPlayed`  = distinct clips they have at least one run in
+ *  - `wordsFilled`  = total correctly-filled words across all runs
+ *  - `bestScore`    = their single highest score
+ */
+export function userClipStats(name: string): {
+  clipsPlayed: number
+  wordsFilled: number
+  bestScore: number
+} {
+  const store = read()
+  let clipsPlayed = 0
+  let wordsFilled = 0
+  let bestScore = 0
+  for (const list of Object.values(store)) {
+    const mine = list.filter((r) => r.name === name)
+    if (mine.length) clipsPlayed += 1
+    for (const r of mine) {
+      wordsFilled += r.hits
+      if (r.score > bestScore) bestScore = r.score
+    }
+  }
+  return { clipsPlayed, wordsFilled, bestScore }
+}
