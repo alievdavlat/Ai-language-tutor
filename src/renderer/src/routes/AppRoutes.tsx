@@ -6,6 +6,7 @@ import { useBootstrap } from '../hooks/useBootstrap'
 import { useAdminShortcut } from '../hooks/useAdminShortcut'
 import { useI18n, type UILanguage } from '../i18n'
 import { backend } from '../services/backend'
+import { startPresence } from '../services/social/presence'
 import type { PlatformUser } from '@shared/types'
 import AppShell from '../components/layout/AppShell'
 import BootPage from '../features/boot/BootPage'
@@ -190,6 +191,19 @@ function useSyncUserToBackend(): void {
   }, [profile, role])
 }
 
+/**
+ * Heartbeat the current viewer's presence while the app is open, so the
+ * "online" dots in the Now bar / Live page reflect who is actually here.
+ */
+function usePresenceHeartbeat(): void {
+  const profile = useAppStore((s) => s.profile)
+  useEffect(() => {
+    const me = backend.currentUserId()
+    if (!me) return
+    return startPresence(me)
+  }, [profile])
+}
+
 export default function AppRoutes(): JSX.Element {
   const navigate = useNavigate()
   const setRole = useAppStore((s) => s.setRole)
@@ -197,6 +211,7 @@ export default function AppRoutes(): JSX.Element {
   usePostBootRedirect()
   useSyncUILanguage()
   useSyncUserToBackend()
+  usePresenceHeartbeat()
   // Ctrl+Shift+A → elevate to Owner/Admin and open the admin panel.
   useAdminShortcut(() => { setRole('admin'); navigate('/admin') })
 
