@@ -1,7 +1,8 @@
-// Mock data + types for the Clips module (LingoClip / LyricsTraining-style
-// fill-in-the-blank video game). UI-first: all data is hardcoded here.
-// Real wiring (LRCLIB lyrics, youtube-transcript-api, difficulty blank-picker)
-// comes in the feature/backend pass — see feature_backlog.md section D.
+// Types + seed for the Clips module (fill-in-the-blank video game). The CLIPS
+// const below is the SEED; the live catalog is the localStorage-backed
+// services/clips/store (so admin/teachers can author + edit clips). `findClip`
+// and `clipsByIds` read through that store. (#A63 data layer.)
+import { clips } from '../../services/clips/store'
 
 export type ClipKind = 'song' | 'movie' | 'tv' | 'talk'
 export type GameMode = 'choice' | 'type' | 'karaoke' | 'scribe'
@@ -122,7 +123,10 @@ export const CLIPS: Clip[] = [
 ]
 
 export function findClip(id: string | null): Clip {
-  return CLIPS.find((c) => c.id === id) ?? CLIPS[0]
+  // Read through the clips store so admin/teacher edits (and authored clips)
+  // are reflected on the setup/play surfaces. Falls back to the seed.
+  const list = clips.list()
+  return list.find((c) => c.id === id) ?? list[0] ?? CLIPS[0]
 }
 
 // ─── Home sections ─────────────────────────────────────────────────────────
@@ -146,7 +150,8 @@ export const GENRES = [
 ]
 
 export function clipsByIds(ids: string[]): Clip[] {
-  return ids.map((id) => CLIPS.find((c) => c.id === id)).filter((c): c is Clip => Boolean(c))
+  const list = clips.list()
+  return ids.map((id) => list.find((c) => c.id === id)).filter((c): c is Clip => Boolean(c))
 }
 
 /**
