@@ -34,7 +34,7 @@ const LEARN_NAV = [
   { to: '/courses', label: 'Courses', Icon: IconBook },
   { to: '/library', label: 'Library', Icon: IconLibrary },
   { to: '/vocabulary', label: 'Vocabulary', Icon: IconBookmark },
-  { to: '/dictionary', label: 'Dictionary', Icon: IconSearch },
+  // Dictionary moved into Vocabulary (a tab) — no longer a separate sidebar item.
   { to: '/progress', label: 'Progress', Icon: IconChart }
 ] as const
 

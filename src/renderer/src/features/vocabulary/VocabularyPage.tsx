@@ -7,11 +7,13 @@ import { useTargetLanguage } from '../../lib/language'
 import { useVocab } from '../../services/study/useStudy'
 import { formatInterval } from '../../services/study/fsrs'
 import { IconBolt, IconBook, IconBookmark, IconPlus, IconStar, IconVolume, IconX } from '../../components/icons'
+import DictionaryPanel from '../dictionary/DictionaryPanel'
 
-type Tab = 'mine' | 'saved'
+type Tab = 'mine' | 'saved' | 'dictionary'
 const TABS: TabItem<Tab>[] = [
   { id: 'mine', label: 'My words' },
-  { id: 'saved', label: 'Saved' }
+  { id: 'saved', label: 'Saved' },
+  { id: 'dictionary', label: 'Dictionary' }
 ]
 
 function speak(text: string, lang: string): void {
@@ -147,6 +149,7 @@ export default function VocabularyPage(): JSX.Element {
         </div>
 
         {/* Stats + retention */}
+        {tab !== 'dictionary' && (
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-center">
           <StatCard value={stats.due} label="To review" tone="rose" icon={<IconBolt />} />
           <StatCard value={stats.learning + stats.new} label="Learning" tone="amber" icon={<IconStar />} />
@@ -157,11 +160,14 @@ export default function VocabularyPage(): JSX.Element {
             </ProgressRing>
           </div>
         </div>
+        )}
 
         <Tabs items={TABS} active={tab} onChange={(t) => { setTab(t); setCategory(null) }} className="self-start" />
 
+        {tab === 'dictionary' && <DictionaryPanel />}
+
         {/* Category filter */}
-        {categories.length > 0 && (
+        {tab !== 'dictionary' && categories.length > 0 && (
           <div className="flex flex-wrap gap-2">
             <button onClick={() => setCategory(null)} className={cn('rounded-pill border px-3 py-1.5 text-xs font-bold transition', category === null ? 'border-brand-400 bg-brand-500/15 text-white' : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]')}>
               All ({tabCards.length})
@@ -175,7 +181,7 @@ export default function VocabularyPage(): JSX.Element {
         )}
 
         {/* Cards */}
-        {loading ? (
+        {tab !== 'dictionary' && (loading ? (
           <p className="text-sm text-slate-400 text-center py-10">Loading…</p>
         ) : visible.length === 0 ? (
           <div className="rounded-card border border-dashed border-white/12 bg-white/[0.02] p-10 text-center">
@@ -188,7 +194,7 @@ export default function VocabularyPage(): JSX.Element {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {visible.map((w) => <WordCard key={w.id} w={w} lang={lang.code} onRemove={() => void remove(w.id)} />)}
           </div>
-        )}
+        ))}
       </div>
 
       {adding && <AddWordModal onClose={() => setAdding(false)} onSave={async (v) => { await add(v); setTab('mine'); setCategory(null) }} />}
