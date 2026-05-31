@@ -5,12 +5,6 @@ import { IconChat, IconSearch, IconStar } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 
 type Tab = 'all' | 'active' | 'lagging' | 'finished'
-const TABS: TabItem<Tab>[] = [
-  { id: 'all', label: 'All · 142' },
-  { id: 'active', label: 'Active · 96' },
-  { id: 'lagging', label: 'Falling behind · 24' },
-  { id: 'finished', label: 'Finished · 22' }
-]
 
 interface Student {
   name: string
@@ -20,17 +14,6 @@ interface Student {
   state: 'active' | 'lagging' | 'finished'
   rating?: number
 }
-
-const STUDENTS: Student[] = [
-  { name: 'Aziz K.', course: 'IELTS Speaking Bootcamp', progress: 64, lastActive: 'Today', state: 'active' },
-  { name: 'Priya S.', course: 'Past Tenses Deep Dive', progress: 88, lastActive: 'Today', state: 'active', rating: 5 },
-  { name: 'Wei Lin', course: 'IELTS Speaking Bootcamp', progress: 100, lastActive: '2d ago', state: 'finished', rating: 5 },
-  { name: 'Emma W.', course: 'Business English 101', progress: 12, lastActive: '12d ago', state: 'lagging' },
-  { name: 'Marco B.', course: 'IELTS Speaking Bootcamp', progress: 41, lastActive: 'Yesterday', state: 'active' },
-  { name: 'Yui T.', course: 'Past Tenses Deep Dive', progress: 100, lastActive: '5d ago', state: 'finished', rating: 4 },
-  { name: 'Liam O.', course: 'Business English 101', progress: 9, lastActive: '18d ago', state: 'lagging' },
-  { name: 'Nadia R.', course: 'IELTS Speaking Bootcamp', progress: 54, lastActive: 'Today', state: 'active' }
-]
 
 const STATE_CHIP: Record<Student['state'], { label: string; tint: string }> = {
   active: { label: 'Active', tint: 'bg-emerald-500/15 text-emerald-300' },
@@ -54,25 +37,44 @@ function relDays(iso: string): string {
 
 export default function TeacherStudentsPage(): JSX.Element {
   const [tab, setTab] = useState<Tab>('all')
+  const [query, setQuery] = useState('')
+  const [courseFilter, setCourseFilter] = useState('all')
   const me = backend.currentUserId()
   const rows = useBackendQuery(
     () => me ? backend.studentsOf(me) : Promise.resolve([]),
     [me],
     []
   )
-  const seeded = rows.data.length > 0
-  const liveStudents: Student[] = seeded
-    ? rows.data.map((r) => ({
-        name: r.user.name,
-        course: r.course.title,
-        progress: r.enrollment.progress,
-        lastActive: relDays(r.enrollment.lastActiveAt),
-        state: progressState(r.enrollment.progress, r.enrollment.lastActiveAt)
-      }))
-    : STUDENTS
-  const list = tab === 'all'
-    ? liveStudents
-    : liveStudents.filter((s) => s.state === (tab === 'lagging' ? 'lagging' : tab === 'finished' ? 'finished' : 'active'))
+  // Real students for the signed-in teacher (no mock fallback).
+  const liveStudents: Student[] = rows.data.map((r) => ({
+    name: r.user.name,
+    course: r.course.title,
+    progress: r.enrollment.progress,
+    lastActive: relDays(r.enrollment.lastActiveAt),
+    state: progressState(r.enrollment.progress, r.enrollment.lastActiveAt)
+  }))
+
+  // Derived counts + course list — all from real data.
+  const counts = {
+    all: liveStudents.length,
+    active: liveStudents.filter((s) => s.state === 'active').length,
+    lagging: liveStudents.filter((s) => s.state === 'lagging').length,
+    finished: liveStudents.filter((s) => s.state === 'finished').length
+  }
+  const courseTitles = [...new Set(liveStudents.map((s) => s.course))]
+  const TABS: TabItem<Tab>[] = [
+    { id: 'all', label: `All · ${counts.all}` },
+    { id: 'active', label: `Active · ${counts.active}` },
+    { id: 'lagging', label: `Falling behind · ${counts.lagging}` },
+    { id: 'finished', label: `Finished · ${counts.finished}` }
+  ]
+
+  // Functional filtering: tab + course dropdown + search.
+  const q = query.trim().toLowerCase()
+  const list = liveStudents
+    .filter((s) => (tab === 'all' ? true : s.state === tab))
+    .filter((s) => (courseFilter === 'all' ? true : s.course === courseFilter))
+    .filter((s) => (q ? s.name.toLowerCase().includes(q) || s.course.toLowerCase().includes(q) : true))
 
   return (
     <div className="h-full overflow-y-auto">
@@ -80,7 +82,7 @@ export default function TeacherStudentsPage(): JSX.Element {
         <PageHeader
           eyebrow="Teacher · Students"
           title="Your students"
-          subtitle="142 enrolled · 96 active this week"
+          subtitle={`${counts.all} enrolled · ${counts.active} active this week`}
           back="/teacher"
           crumbs={[{ label: 'Teacher', to: '/teacher' }, { label: 'Students' }]}
           action={<button className="btn-primary text-xs px-4 py-2">Invite student</button>}
@@ -89,13 +91,11 @@ export default function TeacherStudentsPage(): JSX.Element {
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 min-w-0">
             <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-            <input type="text" placeholder="Search students by name or course" className="input pl-9 text-sm" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} type="text" placeholder="Search students by name or course" className="input pl-9 text-sm" />
           </div>
-          <select className="input text-sm sm:w-48">
-            <option>All courses</option>
-            <option>IELTS Speaking Bootcamp</option>
-            <option>Past Tenses Deep Dive</option>
-            <option>Business English 101</option>
+          <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="input text-sm sm:w-48">
+            <option value="all">All courses</option>
+            {courseTitles.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
 
@@ -111,6 +111,13 @@ export default function TeacherStudentsPage(): JSX.Element {
             <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Status</span>
             <span />
           </div>
+          {list.length === 0 && (
+            <div className="px-4 py-10 text-center text-sm text-slate-400">
+              {liveStudents.length === 0
+                ? 'No students enrolled yet. When learners enrol in your courses, they appear here.'
+                : 'No students match this filter.'}
+            </div>
+          )}
           {list.map((s, i) => (
             <div
               key={i}
