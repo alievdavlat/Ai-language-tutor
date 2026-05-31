@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type {
   Challenge,
@@ -17,21 +17,27 @@ import {
   IconBookmark,
   IconChat,
   IconChart,
+  IconFilm,
   IconHeart,
+  IconImage,
   IconMic,
   IconPlay,
   IconPlus,
   IconSearch,
+  IconStop,
   IconStar,
   IconTrophy,
   IconUsers,
   IconVolume,
+  IconX,
   IconYouTube,
   type IconProps
 } from '../../components/icons'
 import { useAppStore } from '../../store/useAppStore'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { social, meId, ensureSocialBootstrap } from '../../services/backend/social'
+import { uploadUrl } from '../../services/backend/storage'
+import CommentsSection from '../../components/CommentsSection'
 import { daysUntil, timeAgo } from '../../lib/time'
 
 type Filter = 'recent' | 'popular' | 'following'
@@ -57,6 +63,7 @@ const KIND: Record<PostKind, KindMeta> = {
 }
 
 const REACTION_EMOJI = ['❤️', '👍', '🔥', '🎯', '👏', '🤔', '🧠'] as const
+const ACHIEVEMENT_EMOJI = ['🏆', '🔥', '🎯', '⭐', '🥇', '📚', '🎓', '💪', '🚀', '🧠'] as const
 
 const GROUP_COVERS = [
   'from-rose-500 to-pink-700',
@@ -89,6 +96,20 @@ function relUntil(iso: string): string {
 // ─── Body renderers per kind ───────────────────────────────────────────────
 
 function Attachment({ resource }: { resource: NonNullable<Post['resource']> }): JSX.Element {
+  if (resource.kind === 'image') {
+    return (
+      <div className="mt-3 rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black/20">
+        <img src={resource.url} alt={resource.title ?? 'Image'} className="w-full max-h-[28rem] object-contain" />
+      </div>
+    )
+  }
+  if (resource.kind === 'video') {
+    return (
+      <div className="mt-3 rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black">
+        <video src={resource.url} controls preload="metadata" className="w-full max-h-[28rem]" />
+      </div>
+    )
+  }
   if (resource.kind === 'youtube') {
     return (
       <div className="relative rounded-2xl bg-gradient-to-br from-sky-600 to-blue-800 h-40 flex items-center justify-center ring-1 ring-white/10 mt-3">
@@ -120,11 +141,35 @@ function Attachment({ resource }: { resource: NonNullable<Post['resource']> }): 
   )
 }
 
-function PollBody({ poll, postId }: { poll: NonNullable<Post['poll']>; postId: string }): JSX.Element {
-  // Visual-only voting (frontend) so the bars react immediately on tap.
-  // A backend-persisted vote is a follow-up — for now we mirror likes pattern.
-  const total = poll.options.reduce((acc, o) => acc + o.votes, 0)
+function PollBody({ poll: initialPoll, postId }: { poll: NonNullable<Post['poll']>; postId: string }): JSX.Element {
+  // Real, persisted voting via the Backend (poll_votes table / local store).
+  // Tallies survive reload; the viewer can change or withdraw their vote.
+  const me = backend.currentUserId()
+  const [poll, setPoll] = useState<NonNullable<Post['poll']>>(initialPoll)
   const [voted, setVoted] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    setPoll(initialPoll)
+    if (!me) { setVoted(null); return }
+    void backend.myPollVote(me, postId).then(setVoted)
+  }, [me, postId, initialPoll])
+
+  const total = poll.options.reduce((acc, o) => acc + o.votes, 0)
+  const showResults = voted != null
+
+  const vote = async (optionId: string): Promise<void> => {
+    if (!me || busy) return
+    setBusy(true)
+    try {
+      const res = await backend.votePoll(me, postId, optionId)
+      setPoll(res.poll)
+      setVoted(res.myVote)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="mt-3 flex flex-col gap-2">
       {poll.options.map((o) => {
@@ -133,37 +178,60 @@ function PollBody({ poll, postId }: { poll: NonNullable<Post['poll']>; postId: s
         return (
           <button
             key={`${postId}-${o.id}`}
-            onClick={() => setVoted(o.id)}
-            disabled={voted !== null}
+            onClick={() => void vote(o.id)}
+            disabled={busy || !me}
             className={cn(
-              'relative rounded-xl border px-3 py-2 text-left transition overflow-hidden',
-              voted == null && 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06] cursor-pointer',
-              voted != null && !isVoted && 'border-white/10 bg-white/[0.025]',
+              'relative rounded-xl border px-3 py-2 text-left transition overflow-hidden disabled:cursor-not-allowed',
+              !isVoted && 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06] cursor-pointer',
               isVoted && 'border-brand-400/60 bg-brand-500/10'
             )}
           >
-            {voted != null && (
+            {showResults && (
               <span
-                className={cn('absolute inset-y-0 left-0 -z-0', isVoted ? 'bg-brand-500/15' : 'bg-white/[0.04]')}
+                className={cn('absolute inset-y-0 left-0 -z-0 transition-[width] duration-500', isVoted ? 'bg-brand-500/20' : 'bg-white/[0.04]')}
                 style={{ width: `${pct}%` }}
               />
             )}
-            <div className="relative flex items-center justify-between">
+            <div className="relative flex items-center justify-between gap-3">
               <span className={cn('text-sm', isVoted ? 'text-white font-bold' : 'text-slate-200')}>{o.label}</span>
-              {voted != null && <span className="text-xs font-bold text-slate-300">{pct}%</span>}
+              {showResults && <span className="text-xs font-bold text-slate-300 shrink-0">{pct}%</span>}
             </div>
           </button>
         )
       })}
-      {voted != null && (
-        <p className="text-[10px] text-slate-500 mt-0.5">{total.toLocaleString()} votes</p>
-      )}
+      <p className="text-[10px] text-slate-500 mt-0.5">
+        {total.toLocaleString()} vote{total === 1 ? '' : 's'}
+        {showResults && ' · tap your choice again to undo'}
+        {!me && ' · sign in to vote'}
+      </p>
     </div>
   )
 }
 
-function StudySessionBody({ s }: { s: NonNullable<Post['studySession']> }): JSX.Element {
-  const seatsLeft = Math.max(0, s.capacity - s.joinedIds.length)
+function StudySessionBody({ s, postId }: { s: NonNullable<Post['studySession']>; postId: string }): JSX.Element {
+  const navigate = useNavigate()
+  const me = backend.currentUserId()
+  const [joinedIds, setJoinedIds] = useState<string[]>(s.joinedIds)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { setJoinedIds(s.joinedIds) }, [s.joinedIds])
+
+  const joined = !!me && joinedIds.includes(me)
+  const seatsLeft = Math.max(0, s.capacity - joinedIds.length)
+  const full = seatsLeft === 0 && !joined
+
+  const toggle = async (): Promise<void> => {
+    if (!me || busy) return
+    if (full) return
+    setBusy(true)
+    try {
+      const res = await backend.joinStudySession(me, postId)
+      setJoinedIds(res.joinedIds)
+      if (res.joined) navigate('/meet')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="mt-3 rounded-2xl border border-rose-400/30 bg-gradient-to-br from-rose-500/10 to-amber-500/10 p-4">
       <div className="flex items-center gap-2 mb-2">
@@ -171,8 +239,17 @@ function StudySessionBody({ s }: { s: NonNullable<Post['studySession']> }): JSX.
         <span className="text-[11px] text-rose-200">{relUntil(s.whenISO)} · {s.durationMin} min</span>
       </div>
       <p className="text-base font-bold text-white">{s.topic}</p>
-      <p className="text-xs text-slate-300 mt-1">{s.language.toUpperCase()} · {s.level} · {s.joinedIds.length}/{s.capacity} joined · {seatsLeft} seat{seatsLeft === 1 ? '' : 's'} left</p>
-      <button className="btn-primary w-full mt-3 py-2 text-sm">Join session</button>
+      <p className="text-xs text-slate-300 mt-1">{s.language.toUpperCase()} · {s.level} · {joinedIds.length}/{s.capacity} joined · {seatsLeft} seat{seatsLeft === 1 ? '' : 's'} left</p>
+      <button
+        onClick={() => void toggle()}
+        disabled={busy || !me || full}
+        className={cn(
+          'w-full mt-3 py-2 text-sm rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed',
+          joined ? 'bg-white/[0.08] text-rose-100 hover:bg-white/[0.12] ring-1 ring-rose-400/40' : 'btn-primary'
+        )}
+      >
+        {!me ? 'Sign in to join' : full ? 'Session full' : joined ? 'Joined ✓ · Open room' : 'Join session'}
+      </button>
     </div>
   )
 }
@@ -191,21 +268,40 @@ function AchievementBody({ a }: { a: NonNullable<Post['achievement']> }): JSX.El
 }
 
 function VoiceBody({ v }: { v: NonNullable<Post['voice']> }): JSX.Element {
+  const [playing, setPlaying] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const mm = String(Math.floor(v.durationSec / 60)).padStart(2, '0')
   const ss = String(v.durationSec % 60).padStart(2, '0')
+
+  const toggle = (): void => {
+    const el = audioRef.current
+    if (!el) return
+    if (el.paused) { void el.play(); setPlaying(true) }
+    else { el.pause(); setPlaying(false) }
+  }
+
   return (
     <div className="mt-3 rounded-2xl border border-pink-400/30 bg-pink-500/[0.08] p-4">
       <div className="flex items-center gap-3">
-        <button className="w-12 h-12 rounded-full bg-pink-500 hover:bg-pink-400 text-white flex items-center justify-center"><IconPlay className="w-5 h-5 ml-0.5" /></button>
+        <button
+          onClick={toggle}
+          disabled={!v.audioUrl}
+          className="w-12 h-12 rounded-full bg-pink-500 hover:bg-pink-400 text-white flex items-center justify-center disabled:opacity-40 shrink-0"
+        >
+          {playing ? <IconStop className="w-4 h-4" /> : <IconPlay className="w-5 h-5 ml-0.5" />}
+        </button>
         <div className="flex-1">
           <div className="flex items-end gap-0.5 h-6 mb-1">
             {Array.from({ length: 40 }).map((_, i) => (
-              <span key={i} className="flex-1 rounded-t bg-pink-300/70" style={{ height: `${30 + Math.abs(Math.sin(i * 0.4)) * 60}%` }} />
+              <span key={i} className={cn('flex-1 rounded-t', playing ? 'bg-pink-200' : 'bg-pink-300/70')} style={{ height: `${30 + Math.abs(Math.sin(i * 0.4)) * 60}%` }} />
             ))}
           </div>
           <p className="text-[11px] text-pink-200 font-mono">{mm}:{ss}</p>
         </div>
       </div>
+      {v.audioUrl && (
+        <audio ref={audioRef} src={v.audioUrl} onEnded={() => setPlaying(false)} className="hidden" />
+      )}
       {v.transcript && (
         <p className="text-xs text-slate-300 italic mt-3 line-clamp-2">"{v.transcript}"</p>
       )}
@@ -224,12 +320,16 @@ function PostCard({ post, author, onAfterChange }: { post: Post; author: Platfor
   const [showReactions, setShowReactions] = useState(false)
   const [reactions, setReactions] = useState<Record<string, number>>(post.reactions ?? {})
   const [myReaction, setMyReaction] = useState<string | null>(null)
+  const [reacting, setReacting] = useState(false)
+  const [showComments, setShowComments] = useState(false)
+  const [commentCount, setCommentCount] = useState(post.commentCount)
   const meta = KIND[post.kind] ?? KIND.text
 
   useEffect(() => {
     if (!me) return
     void backend.isLiked(me, post.id).then(setLiked)
     void backend.isSaved(me, { kind: 'post', id: post.id }).then(setSaved)
+    void backend.myReaction(me, post.id).then(setMyReaction)
   }, [me, post.id])
 
   const toggleLike = async (): Promise<void> => {
@@ -244,24 +344,17 @@ function PostCard({ post, author, onAfterChange }: { post: Post; author: Platfor
     const res = await backend.save(me, { kind: 'post', id: post.id })
     setSaved(res.saved)
   }
-  const pickReaction = (emoji: string): void => {
-    setReactions((prev) => {
-      const next = { ...prev }
-      // Remove previous reaction
-      if (myReaction && next[myReaction]) {
-        next[myReaction] = Math.max(0, next[myReaction] - 1)
-        if (next[myReaction] === 0) delete next[myReaction]
-      }
-      // Toggle off if same emoji clicked
-      if (myReaction === emoji) {
-        setMyReaction(null)
-        return next
-      }
-      next[emoji] = (next[emoji] ?? 0) + 1
-      setMyReaction(emoji)
-      return next
-    })
+  const pickReaction = async (emoji: string): Promise<void> => {
     setShowReactions(false)
+    if (!me || reacting) return
+    setReacting(true)
+    try {
+      const res = await backend.reactToPost(me, post.id, emoji)
+      setReactions(res.reactions)
+      setMyReaction(res.myReaction)
+    } finally {
+      setReacting(false)
+    }
   }
 
   return (
@@ -291,7 +384,7 @@ function PostCard({ post, author, onAfterChange }: { post: Post; author: Platfor
       {/* Kind-specific bodies */}
       {post.resource && <Attachment resource={post.resource} />}
       {post.kind === 'poll' && post.poll && <PollBody poll={post.poll} postId={post.id} />}
-      {post.kind === 'study-session' && post.studySession && <StudySessionBody s={post.studySession} />}
+      {post.kind === 'study-session' && post.studySession && <StudySessionBody s={post.studySession} postId={post.id} />}
       {post.kind === 'achievement' && post.achievement && <AchievementBody a={post.achievement} />}
       {post.kind === 'voice' && post.voice && <VoiceBody v={post.voice} />}
 
@@ -301,7 +394,7 @@ function PostCard({ post, author, onAfterChange }: { post: Post; author: Platfor
           {Object.entries(reactions).sort((a, b) => b[1] - a[1]).map(([emoji, n]) => (
             <button
               key={emoji}
-              onClick={() => pickReaction(emoji)}
+              onClick={() => void pickReaction(emoji)}
               className={cn(
                 'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition',
                 myReaction === emoji
@@ -320,8 +413,8 @@ function PostCard({ post, author, onAfterChange }: { post: Post; author: Platfor
         <button onClick={() => void toggleLike()} className={cn('inline-flex items-center gap-1.5 text-sm transition rounded-full px-2 py-1', liked ? 'text-rose-300' : 'hover:text-white hover:bg-white/[0.04]')}>
           <IconHeart className="w-4 h-4" /> {likeCount}
         </button>
-        <button className="inline-flex items-center gap-1.5 text-sm hover:text-white hover:bg-white/[0.04] rounded-full px-2 py-1">
-          <IconChat className="w-4 h-4" /> {post.commentCount}
+        <button onClick={() => setShowComments((v) => !v)} className={cn('inline-flex items-center gap-1.5 text-sm rounded-full px-2 py-1 transition', showComments ? 'text-brand-200 bg-brand-500/10' : 'hover:text-white hover:bg-white/[0.04]')}>
+          <IconChat className="w-4 h-4" /> {commentCount}
         </button>
         <div className="relative">
           <button onClick={() => setShowReactions((v) => !v)} className="inline-flex items-center gap-1.5 text-sm hover:text-white hover:bg-white/[0.04] rounded-full px-2 py-1">
@@ -332,7 +425,7 @@ function PostCard({ post, author, onAfterChange }: { post: Post; author: Platfor
               {REACTION_EMOJI.map((e) => (
                 <button
                   key={e}
-                  onClick={() => pickReaction(e)}
+                  onClick={() => void pickReaction(e)}
                   className="text-lg w-8 h-8 rounded-full hover:bg-white/10 hover:scale-125 transition"
                 >{e}</button>
               ))}
@@ -345,6 +438,110 @@ function PostCard({ post, author, onAfterChange }: { post: Post; author: Platfor
         <button onClick={() => void toggleSave()} className={cn('inline-flex items-center gap-1.5 text-sm transition ml-auto rounded-full px-2 py-1', saved ? 'text-amber-300' : 'hover:text-white hover:bg-white/[0.04]')}>
           <IconBookmark className="w-4 h-4" /> {saved ? 'Saved' : 'Save'}
         </button>
+      </div>
+
+      {/* Threaded comments — persisted via the backend (comments table). */}
+      {showComments && (
+        <div className="mt-4 pt-4 border-t border-white/[0.07]">
+          <CommentsSection targetKind="post" targetId={post.id} onCountChange={setCommentCount} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Voice recorder (MediaRecorder → upload) ────────────────────────────────
+
+function VoiceRecorder({
+  value,
+  onChange
+}: {
+  value: { audioUrl: string; durationSec: number } | null
+  onChange: (v: { audioUrl: string; durationSec: number } | null) => void
+}): JSX.Element {
+  const [recording, setRecording] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const startedAtRef = useRef<number>(0)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const stopTimer = (): void => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+  }
+
+  useEffect(() => () => {
+    stopTimer()
+    recorderRef.current?.stream.getTracks().forEach((t) => t.stop())
+  }, [])
+
+  const start = async (): Promise<void> => {
+    setError(null)
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setError('Recording is not supported here.')
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const rec = new MediaRecorder(stream)
+      chunksRef.current = []
+      rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+      rec.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop())
+        const durationSec = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000))
+        const blob = new Blob(chunksRef.current, { type: rec.mimeType || 'audio/webm' })
+        const ext = (rec.mimeType || 'audio/webm').includes('ogg') ? 'ogg' : 'webm'
+        const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: blob.type })
+        setUploading(true)
+        void uploadUrl(file, 'posts')
+          .then((url) => onChange({ audioUrl: url, durationSec }))
+          .catch((e) => setError(e instanceof Error ? e.message : 'Upload failed'))
+          .finally(() => setUploading(false))
+      }
+      recorderRef.current = rec
+      startedAtRef.current = Date.now()
+      rec.start()
+      setRecording(true)
+      setElapsed(0)
+      timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000)
+    } catch {
+      setError('Microphone permission denied.')
+    }
+  }
+
+  const stop = (): void => {
+    stopTimer()
+    setRecording(false)
+    recorderRef.current?.stop()
+  }
+
+  const fmt = (s: number): string => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+
+  if (value) {
+    return (
+      <div className="rounded-xl border border-pink-400/30 bg-pink-500/[0.08] p-3 flex items-center gap-3">
+        <span className="w-9 h-9 rounded-full bg-pink-500/80 text-white flex items-center justify-center shrink-0"><IconMic className="w-4 h-4" /></span>
+        <audio src={value.audioUrl} controls className="flex-1 h-9" />
+        <span className="text-[11px] text-pink-200 font-mono shrink-0">{fmt(value.durationSec)}</span>
+        <button onClick={() => onChange(null)} className="text-slate-400 hover:text-rose-300 shrink-0" title="Re-record"><IconX className="w-4 h-4" /></button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3 flex items-center gap-3">
+      <button
+        onClick={() => (recording ? stop() : void start())}
+        disabled={uploading}
+        className={cn('w-10 h-10 rounded-full flex items-center justify-center text-white transition shrink-0', recording ? 'bg-rose-500 hover:bg-rose-400 animate-pulse' : 'bg-pink-500 hover:bg-pink-400 disabled:opacity-50')}
+      >
+        {recording ? <IconStop className="w-4 h-4" /> : <IconMic className="w-5 h-5" />}
+      </button>
+      <div className="flex-1">
+        <p className="text-sm font-semibold text-white">{uploading ? 'Saving clip…' : recording ? 'Recording…' : 'Record a voice clip'}</p>
+        <p className="text-[11px] text-slate-400 font-mono">{recording ? fmt(elapsed) : error ?? 'Tap the mic to start'}</p>
       </div>
     </div>
   )
@@ -361,18 +558,57 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
   // (previously these set only the kind label → broken polls, no attachment).
   const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
   const [resourceUrl, setResourceUrl] = useState('')
+  // Uploaded photo / video attachment (any kind).
+  const [media, setMedia] = useState<{ kind: 'image' | 'video'; url: string; name: string } | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  // Achievement picker.
+  const [achEmoji, setAchEmoji] = useState<string>(ACHIEVEMENT_EMOJI[0])
+  const [achTitle, setAchTitle] = useState('')
+  // Recorded voice clip.
+  const [voice, setVoice] = useState<{ audioUrl: string; durationSec: number } | null>(null)
+  const photoInput = useRef<HTMLInputElement | null>(null)
+  const videoInput = useRef<HTMLInputElement | null>(null)
 
   const validOptions = pollOptions.map((o) => o.trim()).filter(Boolean)
   const canSubmit =
-    !!text.trim() &&
-    (kind !== 'poll' || validOptions.length >= 2) &&
-    (kind !== 'resource' || !!resourceUrl.trim())
+    !posting &&
+    (kind === 'poll'
+      ? !!text.trim() && validOptions.length >= 2
+      : kind === 'resource'
+        ? !!resourceUrl.trim()
+        : kind === 'voice'
+          ? !!voice
+          : kind === 'achievement'
+            ? !!text.trim()
+            : !!text.trim() || !!media)
 
   const reset = (): void => {
     setText('')
     setKind('text')
     setPollOptions(['', ''])
     setResourceUrl('')
+    setMedia(null)
+    setUploadError(null)
+    setAchEmoji(ACHIEVEMENT_EMOJI[0])
+    setAchTitle('')
+    setVoice(null)
+  }
+
+  const pickMedia = async (file: File | undefined, mediaKind: 'image' | 'video'): Promise<void> => {
+    if (!file) return
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const url = await uploadUrl(file, 'posts')
+      setMedia({ kind: mediaKind, url, name: file.name })
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+      if (photoInput.current) photoInput.current.value = ''
+      if (videoInput.current) videoInput.current.value = ''
+    }
   }
 
   const submit = async (): Promise<void> => {
@@ -384,7 +620,7 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
       if (kind === 'achievement') {
         await backend.createPost({
           ...base,
-          achievement: { title: 'Achievement', emoji: '🏆', description: text.trim() }
+          achievement: { title: achTitle.trim() || 'Achievement unlocked', emoji: achEmoji, description: text.trim() }
         })
       } else if (kind === 'study-session') {
         await backend.createPost({
@@ -407,6 +643,8 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
             options: validOptions.map((label, i) => ({ id: String.fromCharCode(97 + i), label, votes: 0 }))
           }
         })
+      } else if (kind === 'voice' && voice) {
+        await backend.createPost({ ...base, voice: { durationSec: voice.durationSec, audioUrl: voice.audioUrl } })
       } else if (kind === 'resource') {
         const url = resourceUrl.trim()
         const rkind: 'youtube' | 'pdf' | 'audio' = /youtu\.?be/i.test(url)
@@ -417,6 +655,9 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
               ? 'audio'
               : 'youtube'
         await backend.createPost({ ...base, resource: { kind: rkind, url, title: text.trim() || undefined } })
+      } else if (media) {
+        // Photo/video attachment on a text or question post.
+        await backend.createPost({ ...base, resource: { kind: media.kind, url: media.url, title: text.trim() || undefined } })
       } else {
         await backend.createPost(base)
       }
@@ -486,7 +727,73 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
         </div>
       )}
 
+      {/* Achievement picker — emoji + title; the text box becomes the description */}
+      {kind === 'achievement' && (
+        <div className="mt-3 pl-11 flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {ACHIEVEMENT_EMOJI.map((e) => (
+              <button
+                key={e}
+                onClick={() => setAchEmoji(e)}
+                className={cn('text-xl w-9 h-9 rounded-xl transition', achEmoji === e ? 'bg-amber-500/25 ring-1 ring-amber-400/50' : 'bg-white/[0.04] hover:bg-white/[0.08]')}
+              >{e}</button>
+            ))}
+          </div>
+          <input
+            value={achTitle}
+            onChange={(e) => setAchTitle(e.target.value)}
+            placeholder="Achievement title (e.g. 30-day streak)"
+            className="w-full rounded-xl bg-white/[0.05] border border-white/10 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:outline-none"
+          />
+        </div>
+      )}
+
+      {/* Voice recorder — records a clip, uploads it, stores audioUrl on the post */}
+      {kind === 'voice' && (
+        <div className="mt-3 pl-11">
+          <VoiceRecorder value={voice} onChange={setVoice} />
+        </div>
+      )}
+
+      {/* Uploaded photo / video preview */}
+      {media && (
+        <div className="mt-3 pl-11">
+          <div className="relative rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black/30">
+            {media.kind === 'image'
+              ? <img src={media.url} alt={media.name} className="w-full max-h-72 object-contain" />
+              : <video src={media.url} controls preload="metadata" className="w-full max-h-72" />}
+            <button
+              onClick={() => setMedia(null)}
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
+              title="Remove"
+            ><IconX className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+      {uploadError && <p className="mt-2 pl-11 text-xs text-rose-300">{uploadError}</p>}
+
+      {/* Hidden file inputs driven by the attach buttons below */}
+      <input ref={photoInput} type="file" accept="image/*" className="hidden" onChange={(e) => void pickMedia(e.target.files?.[0], 'image')} />
+      <input ref={videoInput} type="file" accept="video/*" className="hidden" onChange={(e) => void pickMedia(e.target.files?.[0], 'video')} />
+
       <div className="flex items-center gap-1.5 mt-3 pl-11 flex-wrap">
+        <button
+          onClick={() => photoInput.current?.click()}
+          disabled={uploading}
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition border bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08] disabled:opacity-50"
+          title="Attach a photo"
+        >
+          <IconImage className="w-3.5 h-3.5" /> Photo
+        </button>
+        <button
+          onClick={() => videoInput.current?.click()}
+          disabled={uploading}
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition border bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08] disabled:opacity-50"
+          title="Attach a video"
+        >
+          <IconFilm className="w-3.5 h-3.5" /> {uploading ? 'Uploading…' : 'Video'}
+        </button>
+        <span className="w-px h-5 bg-white/10 mx-0.5" />
         {(['text', 'question', 'resource', 'achievement', 'poll', 'study-session', 'voice'] as PostKind[]).map((k) => {
           const m = KIND[k]
           const active = kind === k

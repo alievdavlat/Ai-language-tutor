@@ -1,22 +1,20 @@
 import { useState } from 'react'
-import type { Comment, CommentTargetKind, PlatformUser } from '@shared/types'
+import type { CommentTargetKind, CommentView, PlatformUser } from '@shared/types'
 import { cn } from '../lib/classnames'
 import { timeAgo } from '../lib/time'
 import { AvatarCircle } from './ui'
 import { IconHeart } from './icons'
 import { backend, useBackendQuery } from '../services/backend/useBackend'
-import { comments } from '../services/comments/store'
 
-function CommentRow({ c, user, onReply, onLike, onDelete, isReply }: {
-  c: Comment
+function CommentRow({ c, user, canDelete, onReply, onLike, onDelete, isReply }: {
+  c: CommentView
   user?: PlatformUser
+  canDelete: boolean
   onReply: () => void
   onLike: () => void
   onDelete: () => void
   isReply?: boolean
 }): JSX.Element {
-  const liked = comments.isLiked(c.id)
-  const likes = comments.likeCount(c.id)
   return (
     <div className={cn('flex gap-3', isReply && 'ml-11')}>
       <AvatarCircle name={user?.name} src={(user as { avatarUrl?: string } | undefined)?.avatarUrl} size={isReply ? 'sm' : 'md'} />
@@ -27,27 +25,33 @@ function CommentRow({ c, user, onReply, onLike, onDelete, isReply }: {
         </p>
         <p className="text-sm text-slate-200 mt-0.5 whitespace-pre-wrap break-words">{c.text}</p>
         <div className="flex items-center gap-4 mt-1.5">
-          <button onClick={onLike} className={cn('inline-flex items-center gap-1 text-xs transition', liked ? 'text-rose-300' : 'text-slate-400 hover:text-slate-200')}>
-            <IconHeart className="w-3.5 h-3.5" /> {likes > 0 ? likes : ''}
+          <button onClick={onLike} className={cn('inline-flex items-center gap-1 text-xs transition', c.likedByMe ? 'text-rose-300' : 'text-slate-400 hover:text-slate-200')}>
+            <IconHeart className="w-3.5 h-3.5" /> {c.likeCount > 0 ? c.likeCount : ''}
           </button>
           {!isReply && <button onClick={onReply} className="text-xs font-semibold text-slate-400 hover:text-slate-200">Reply</button>}
-          {comments.canDelete(c) && <button onClick={onDelete} className="text-xs text-slate-500 hover:text-rose-300">Delete</button>}
+          {canDelete && <button onClick={onDelete} className="text-xs text-slate-500 hover:text-rose-300">Delete</button>}
         </div>
       </div>
     </div>
   )
 }
 
-export default function CommentsSection({ targetKind, targetId }: { targetKind: CommentTargetKind; targetId: string }): JSX.Element {
+export default function CommentsSection({ targetKind, targetId, onCountChange }: {
+  targetKind: CommentTargetKind
+  targetId: string
+  /** Reports the total comment count (tops + replies) after each load/change. */
+  onCountChange?: (n: number) => void
+}): JSX.Element {
   const meId = backend.currentUserId()
   const q = useBackendQuery(async () => {
-    const list = await comments.list(targetKind, targetId)
+    const list = await backend.listComments(targetKind, targetId, meId)
     const ids = [...new Set(list.map((c) => c.authorId))]
     const users = await Promise.all(ids.map((id) => backend.getUser(id)))
     const map: Record<string, PlatformUser> = {}
     for (const u of users) if (u) map[u.id] = u
+    onCountChange?.(list.length)
     return { list, map }
-  }, [targetKind, targetId], { list: [] as Comment[], map: {} as Record<string, PlatformUser> })
+  }, [targetKind, targetId, meId], { list: [] as CommentView[], map: {} as Record<string, PlatformUser> })
 
   const me = useBackendQuery(() => (meId ? backend.getUser(meId) : Promise.resolve(null)), [meId], null)
   const [text, setText] = useState('')
@@ -55,19 +59,28 @@ export default function CommentsSection({ targetKind, targetId }: { targetKind: 
   const [replyText, setReplyText] = useState('')
 
   const tops = q.data.list.filter((c) => !c.parentId)
-  const repliesOf = (id: string): Comment[] => q.data.list.filter((c) => c.parentId === id).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  const repliesOf = (id: string): CommentView[] => q.data.list.filter((c) => c.parentId === id).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
   const post = async (): Promise<void> => {
-    if (!text.trim()) return
-    await comments.add({ targetKind, targetId, text })
+    if (!text.trim() || !meId) return
+    await backend.addComment({ targetKind, targetId, authorId: meId, text })
     setText('')
     q.refresh()
   }
   const postReply = async (parentId: string): Promise<void> => {
-    if (!replyText.trim()) return
-    await comments.add({ targetKind, targetId, text: replyText, parentId })
+    if (!replyText.trim() || !meId) return
+    await backend.addComment({ targetKind, targetId, authorId: meId, text: replyText, parentId })
     setReplyText('')
     setReplyTo(null)
+    q.refresh()
+  }
+  const like = async (id: string): Promise<void> => {
+    if (!meId) return
+    await backend.toggleCommentLike(id, meId)
+    q.refresh()
+  }
+  const remove = async (id: string): Promise<void> => {
+    await backend.removeComment(id)
     q.refresh()
   }
 
@@ -101,9 +114,9 @@ export default function CommentsSection({ targetKind, targetId }: { targetKind: 
         {tops.length === 0 && <p className="text-sm text-slate-500">No comments yet — be the first.</p>}
         {tops.map((c) => (
           <div key={c.id} className="flex flex-col gap-3">
-            <CommentRow c={c} user={q.data.map[c.authorId]} onReply={() => setReplyTo(replyTo === c.id ? null : c.id)} onLike={() => { comments.toggleLike(c.id); q.refresh() }} onDelete={() => { void comments.remove(c.id).then(() => q.refresh()) }} />
+            <CommentRow c={c} user={q.data.map[c.authorId]} canDelete={c.authorId === meId} onReply={() => setReplyTo(replyTo === c.id ? null : c.id)} onLike={() => void like(c.id)} onDelete={() => void remove(c.id)} />
             {repliesOf(c.id).map((r) => (
-              <CommentRow key={r.id} c={r} user={q.data.map[r.authorId]} isReply onReply={() => {}} onLike={() => { comments.toggleLike(r.id); q.refresh() }} onDelete={() => { void comments.remove(r.id).then(() => q.refresh()) }} />
+              <CommentRow key={r.id} c={r} user={q.data.map[r.authorId]} canDelete={r.authorId === meId} isReply onReply={() => {}} onLike={() => void like(r.id)} onDelete={() => void remove(r.id)} />
             ))}
             {replyTo === c.id && meId && (
               <div className="ml-11 flex gap-2">

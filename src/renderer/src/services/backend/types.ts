@@ -10,6 +10,9 @@ import type {
   ActivityEvent,
   Challenge,
   ChallengeParticipant,
+  Comment,
+  CommentTargetKind,
+  CommentView,
   Course,
   DmMessage,
   DmThread,
@@ -23,6 +26,7 @@ import type {
   MediaAsset,
   Notif,
   PlatformUser,
+  Poll,
   Post,
   Review,
   Save,
@@ -93,6 +97,25 @@ export interface Backend {
   isLiked(userId: ID, postId: ID): Promise<boolean>
   listSaved(userId: ID): Promise<Save[]>
   listLikes(userId: ID): Promise<Like[]>
+  /** Toggle the viewer's single emoji reaction on a post. Returns the recomputed
+   *  counts map (persisted on the post) plus the viewer's current reaction. */
+  reactToPost(userId: ID, postId: ID, emoji: string): Promise<{ reactions: Record<string, number>; myReaction: string | null }>
+  /** The viewer's current reaction emoji on a post, or null. */
+  myReaction(userId: ID, postId: ID): Promise<string | null>
+  /** Cast (or change/withdraw) the viewer's vote on a poll post. Returns the
+   *  recomputed poll (vote tallies persisted) and the viewer's chosen option. */
+  votePoll(userId: ID, postId: ID, optionId: string): Promise<{ poll: Poll; myVote: string | null }>
+  /** The viewer's chosen poll option id, or null if they haven't voted. */
+  myPollVote(userId: ID, postId: ID): Promise<string | null>
+  /** Join or leave a study-session post. Returns whether the viewer is now in
+   *  and the updated joined-id roster (persisted on the post). */
+  joinStudySession(userId: ID, postId: ID): Promise<{ joined: boolean; joinedIds: ID[] }>
+
+  // Comments (threaded, persisted) — any target: course/video/lesson/book/post
+  listComments(targetKind: CommentTargetKind, targetId: ID, viewerId?: ID | null): Promise<CommentView[]>
+  addComment(input: { targetKind: CommentTargetKind; targetId: ID; authorId: ID; text: string; parentId?: ID }): Promise<Comment>
+  removeComment(commentId: ID): Promise<void>
+  toggleCommentLike(commentId: ID, userId: ID): Promise<{ liked: boolean; count: number }>
 
   // Follows
   follow(followerId: ID, followingId: ID): Promise<{ following: boolean }>

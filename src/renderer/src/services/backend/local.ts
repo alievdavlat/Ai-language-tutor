@@ -7,6 +7,9 @@ import type {
   ActivityEvent,
   Challenge,
   ChallengeParticipant,
+  Comment,
+  CommentTargetKind,
+  CommentView,
   Course,
   DmMessage,
   DmThread,
@@ -23,6 +26,7 @@ import type {
   MediaAsset,
   Notif,
   PlatformUser,
+  Poll,
   Post,
   Review,
   Save,
@@ -52,6 +56,13 @@ interface Db {
   likes: Like[]
   saves: Save[]
   follows: Follow[]
+  /** One emoji reaction per user per post. */
+  postReactions: { userId: ID; postId: ID; emoji: string }[]
+  /** One poll vote per user per post. */
+  pollVotes: { userId: ID; postId: ID; optionId: string }[]
+  /** Threaded comments for any target (course/video/lesson/book/post). */
+  comments: Comment[]
+  commentLikes: { userId: ID; commentId: ID }[]
   groups: Group[]
   groupMembers: GroupMembership[]
   challenges: Challenge[]
@@ -81,6 +92,10 @@ function emptyDb(): Db {
     likes: [],
     saves: [],
     follows: [],
+    postReactions: [],
+    pollVotes: [],
+    comments: [],
+    commentLikes: [],
     groups: [],
     groupMembers: [],
     challenges: [],
@@ -145,6 +160,23 @@ function hydrateContent(stored: Db): Db {
       const s = annById.get(a.id)
       return s ? { ...a, cover: s.cover, imageUrl: s.imageUrl } : a
     })
+  }
+  // Default the Connect-feed collections for stores created before #A28.
+  if (!Array.isArray(next.postReactions)) next.postReactions = []
+  if (!Array.isArray(next.pollVotes)) next.pollVotes = []
+  if (!Array.isArray(next.commentLikes)) next.commentLikes = []
+  if (!Array.isArray(next.comments)) {
+    next.comments = []
+    // One-time import of the legacy localStorage comments store (course comments
+    // lived in `speakai.comments.v1` before comments moved into the backend).
+    try {
+      const legacyRaw = window.localStorage.getItem('speakai.comments.v1')
+      if (legacyRaw) {
+        const legacy = JSON.parse(legacyRaw) as { comments?: Comment[]; likes?: { userId: ID; commentId: ID }[] }
+        if (Array.isArray(legacy.comments)) next.comments = legacy.comments
+        if (Array.isArray(legacy.likes)) next.commentLikes = legacy.likes
+      }
+    } catch { /* ignore malformed legacy store */ }
   }
   return next
 }
@@ -420,6 +452,140 @@ export const localBackend: Backend = {
 
   async listLikes(userId): Promise<Like[]> {
     return db().likes.filter((l) => l.userId === userId)
+  },
+
+  async reactToPost(userId, postId, emoji): Promise<{ reactions: Record<string, number>; myReaction: string | null }> {
+    const rows = db().postReactions
+    const existing = rows.find((r) => r.userId === userId && r.postId === postId)
+    let myReaction: string | null = emoji
+    if (existing) {
+      if (existing.emoji === emoji) {
+        // Same emoji tapped again → withdraw the reaction.
+        db().postReactions = rows.filter((r) => !(r.userId === userId && r.postId === postId))
+        myReaction = null
+      } else {
+        existing.emoji = emoji
+      }
+    } else {
+      rows.push({ userId, postId, emoji })
+    }
+    // Recompute the counts map and persist it onto the post so listFeed returns it.
+    const counts: Record<string, number> = {}
+    for (const r of db().postReactions.filter((r) => r.postId === postId)) {
+      counts[r.emoji] = (counts[r.emoji] ?? 0) + 1
+    }
+    const pi = db().posts.findIndex((p) => p.id === postId)
+    if (pi >= 0) db().posts[pi] = { ...db().posts[pi], reactions: counts }
+    persist()
+    return { reactions: counts, myReaction }
+  },
+
+  async myReaction(userId, postId): Promise<string | null> {
+    return db().postReactions.find((r) => r.userId === userId && r.postId === postId)?.emoji ?? null
+  },
+
+  async votePoll(userId, postId, optionId): Promise<{ poll: Poll; myVote: string | null }> {
+    const pi = db().posts.findIndex((p) => p.id === postId)
+    const post = pi >= 0 ? db().posts[pi] : undefined
+    if (!post?.poll) throw new Error('Post has no poll')
+    const votes = db().pollVotes
+    const existing = votes.find((v) => v.userId === userId && v.postId === postId)
+    let myVote: string | null = optionId
+    if (existing) {
+      if (existing.optionId === optionId) {
+        db().pollVotes = votes.filter((v) => !(v.userId === userId && v.postId === postId))
+        myVote = null
+      } else {
+        existing.optionId = optionId
+      }
+    } else {
+      votes.push({ userId, postId, optionId })
+    }
+    // Recompute per-option tallies from the vote rows + persist on the post.
+    const tally: Record<string, number> = {}
+    for (const v of db().pollVotes.filter((v) => v.postId === postId)) {
+      tally[v.optionId] = (tally[v.optionId] ?? 0) + 1
+    }
+    const poll: Poll = {
+      ...post.poll,
+      options: post.poll.options.map((o) => ({ ...o, votes: tally[o.id] ?? 0 }))
+    }
+    db().posts[pi] = { ...post, poll }
+    persist()
+    return { poll, myVote }
+  },
+
+  async myPollVote(userId, postId): Promise<string | null> {
+    return db().pollVotes.find((v) => v.userId === userId && v.postId === postId)?.optionId ?? null
+  },
+
+  async joinStudySession(userId, postId): Promise<{ joined: boolean; joinedIds: ID[] }> {
+    const pi = db().posts.findIndex((p) => p.id === postId)
+    const post = pi >= 0 ? db().posts[pi] : undefined
+    if (!post?.studySession) throw new Error('Post has no study session')
+    const set = new Set(post.studySession.joinedIds)
+    let joined: boolean
+    if (set.has(userId)) { set.delete(userId); joined = false }
+    else { set.add(userId); joined = true }
+    const joinedIds = Array.from(set)
+    db().posts[pi] = { ...post, studySession: { ...post.studySession, joinedIds } }
+    persist()
+    return { joined, joinedIds }
+  },
+
+  async listComments(targetKind, targetId, viewerId): Promise<CommentView[]> {
+    return db().comments
+      .filter((c) => c.targetKind === targetKind && c.targetId === targetId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((c) => ({
+        ...c,
+        likeCount: db().commentLikes.filter((l) => l.commentId === c.id).length,
+        likedByMe: !!viewerId && db().commentLikes.some((l) => l.commentId === c.id && l.userId === viewerId)
+      }))
+  },
+
+  async addComment(input): Promise<Comment> {
+    const c: Comment = {
+      id: newId('cm'),
+      targetKind: input.targetKind,
+      targetId: input.targetId,
+      authorId: input.authorId,
+      text: input.text.trim(),
+      parentId: input.parentId,
+      createdAt: now()
+    }
+    db().comments.unshift(c)
+    // Keep post.commentCount in sync for the feed action bar.
+    if (input.targetKind === 'post') {
+      const pi = db().posts.findIndex((p) => p.id === input.targetId)
+      if (pi >= 0) db().posts[pi] = { ...db().posts[pi], commentCount: db().posts[pi].commentCount + 1 }
+    }
+    persist()
+    return c
+  },
+
+  async removeComment(commentId): Promise<void> {
+    const c = db().comments.find((x) => x.id === commentId)
+    // Removing a top-level comment also removes its replies.
+    const removedIds = new Set<ID>([commentId, ...db().comments.filter((x) => x.parentId === commentId).map((x) => x.id)])
+    db().comments = db().comments.filter((x) => !removedIds.has(x.id))
+    db().commentLikes = db().commentLikes.filter((l) => !removedIds.has(l.commentId))
+    if (c?.targetKind === 'post') {
+      const pi = db().posts.findIndex((p) => p.id === c.targetId)
+      if (pi >= 0) db().posts[pi] = { ...db().posts[pi], commentCount: Math.max(0, db().posts[pi].commentCount - removedIds.size) }
+    }
+    persist()
+  },
+
+  async toggleCommentLike(commentId, userId): Promise<{ liked: boolean; count: number }> {
+    const i = db().commentLikes.findIndex((l) => l.commentId === commentId && l.userId === userId)
+    if (i >= 0) db().commentLikes.splice(i, 1)
+    else db().commentLikes.push({ userId, commentId })
+    persist()
+    return {
+      liked: i < 0,
+      count: db().commentLikes.filter((l) => l.commentId === commentId).length
+    }
   },
 
   async follow(followerId, followingId): Promise<{ following: boolean }> {
@@ -815,7 +981,10 @@ export const localBackend: Backend = {
       media: d.media.filter((m) => m.ownerId === userId),
       activity: d.activity.filter((e) => e.userId === userId),
       stats: d.stats.find((s) => s.userId === userId) ?? null,
-      notifications: d.notifs.filter((n) => n.userId === userId)
+      notifications: d.notifs.filter((n) => n.userId === userId),
+      comments: d.comments.filter((c) => c.authorId === userId),
+      reactions: d.postReactions.filter((r) => r.userId === userId),
+      pollVotes: d.pollVotes.filter((v) => v.userId === userId)
     }
   },
 
@@ -837,6 +1006,10 @@ export const localBackend: Backend = {
     d.activity = d.activity.filter((e) => e.userId !== userId)
     d.stats = d.stats.filter((s) => s.userId !== userId)
     d.notifs = d.notifs.filter((n) => n.userId !== userId)
+    d.comments = d.comments.filter((c) => c.authorId !== userId)
+    d.commentLikes = d.commentLikes.filter((l) => l.userId !== userId)
+    d.postReactions = d.postReactions.filter((r) => r.userId !== userId)
+    d.pollVotes = d.pollVotes.filter((v) => v.userId !== userId)
     d.users = d.users.filter((u) => u.id !== userId)
     if (d.currentUserId === userId) d.currentUserId = null
     persist()

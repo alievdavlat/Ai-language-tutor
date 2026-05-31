@@ -293,3 +293,28 @@ export function IconYouTube({ className }: IconProps): JSX.Element {
     </svg>
   )
 }
+
+export function IconImage({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l3.5-4.5 2.5 3 3-4L16 15z" clipRule="evenodd" />
+      <circle cx="7" cy="7.5" r="1.5" />
+    </svg>
+  )
+}
+
+export function IconFilm({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path fillRule="evenodd" d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h14a1 1 0 001-1V5a1 1 0 00-1-1H3zm1 2h2v1.5H4V6zm0 3h2v1.5H4V9zm0 3h2v1.5H4V12zm10-6h2v1.5h-2V6zm0 3h2v1.5h-2V9zm0 3h2v1.5h-2V12zM8 6h4v8H8V6z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
+export function IconStop({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <rect x="5" y="5" width="10" height="10" rx="2" />
+    </svg>
+  )
+}
