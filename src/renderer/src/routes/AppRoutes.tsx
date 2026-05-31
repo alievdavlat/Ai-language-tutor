@@ -35,6 +35,8 @@ import ExamsHubPage from '../features/exams/ExamsHubPage'
 import ExamEngine from '../features/exams/ExamEngine'
 import ExamPracticeHub from '../features/exams/ExamPracticeHub'
 import CefrHubPage from '../features/exams/CefrHubPage'
+import ExamDashboardPage from '../features/exams/ExamDashboardPage'
+import ExamLeaderboardPage from '../features/exams/ExamLeaderboardPage'
 import AccountPage from '../features/account/AccountPage'
 import TeacherDashboardPage from '../features/teacher/TeacherDashboardPage'
 import CourseAuthoringPage from '../features/teacher/CourseAuthoringPage'
@@ -318,6 +320,8 @@ export default function AppRoutes(): JSX.Element {
       <Route path="/exams/sat/mock" element={<ExamEngine bankId="sat" />} />
       <Route path="/exams/gmat/mock" element={<ExamEngine bankId="gmat" />} />
       <Route path="/exams/cefr" element={<AppShell><CefrHubPage /></AppShell>} />
+      <Route path="/exams/dashboard" element={<AppShell><ExamDashboardPage /></AppShell>} />
+      <Route path="/exams/leaderboard" element={<AppShell><ExamLeaderboardPage /></AppShell>} />
       <Route
         path="/exams"
         element={

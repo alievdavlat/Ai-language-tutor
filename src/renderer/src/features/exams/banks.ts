@@ -12,12 +12,48 @@
 import type { ExamKind } from '@shared/types'
 import type { SectionResult } from '@shared/types/study.types'
 
+/**
+ * Question type taxonomy — drives the progress dashboard's "weak question types"
+ * breakdown. Tagging is optional (older items default to `general`).
+ */
+export type QType =
+  | 'main-idea'
+  | 'detail'
+  | 'inference'
+  | 'vocabulary'
+  | 'reference'
+  | 'purpose'
+  | 'grammar'
+  | 'math'
+  | 'general'
+
+export const QTYPE_LABEL: Record<QType, string> = {
+  'main-idea': 'Main idea',
+  detail: 'Detail / fact',
+  inference: 'Inference',
+  vocabulary: 'Vocabulary in context',
+  reference: 'Reference',
+  purpose: "Author's purpose",
+  grammar: 'Grammar & usage',
+  math: 'Problem solving',
+  general: 'General'
+}
+
 export interface MCQItem {
   id: string
   prompt: string
   options: string[]
   /** Index of the correct option. */
   correct: number
+  /** Question type — powers the weak-question-type dashboard. */
+  qtype?: QType
+  /**
+   * Where the answer is found — a short quote/locator from the passage or
+   * transcript. Shown in the "Locate & Explain" review.
+   */
+  locate?: string
+  /** Why the correct option is right (and others wrong). Shown in review. */
+  explain?: string
 }
 
 export type SectionKind = 'mcq' | 'writing' | 'speaking'

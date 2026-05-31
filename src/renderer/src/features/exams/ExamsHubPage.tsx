@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { SectionHeading } from '../../components/ui'
+import { Rail, SectionHeading } from '../../components/ui'
 import { useAppStore } from '../../store/useAppStore'
 import { canAuthorContent } from '@shared/constants'
-import { useExams } from '../../services/exams/store'
+import { exams as examStore, useExams } from '../../services/exams/store'
 import ExamEditor from './ExamEditor'
 import { useTargetLanguage } from '../../lib/language'
 import { getExamsForLanguage } from '../../lib/contentByLanguage'
@@ -13,13 +13,25 @@ import { useBackendQuery } from '../../services/backend/useBackend'
 import {
   IconArrowRight,
   IconBook,
+  IconChart,
+  IconChat,
   IconHeadphones,
   IconMic,
   IconPencilEdit,
   IconPlus,
+  IconStar,
   IconTarget,
+  IconTrophy,
   type IconProps
 } from '../../components/icons'
+
+/** Route a stored test to its runnable URL (canonical families have dedicated routes). */
+function testRunRoute(id: string, kind: string): string {
+  if (id === kind && (kind === 'ielts' || kind === 'toefl' || kind === 'cefr' || kind === 'sat' || kind === 'gmat')) {
+    return `/exams/${kind}/mock`
+  }
+  return `/exams/run/${id}`
+}
 
 interface ExamDef {
   id: string
@@ -152,6 +164,7 @@ export default function ExamsHubPage(): JSX.Element {
   const [editing, setEditing] = useState(false)
   const { list: allExams, refresh } = useExams()
   const customExams = allExams.filter((e) => !e.builtIn)
+  const featured = examStore.featured()
   const langExams = getExamsForLanguage(lang.code)
   // Real recent attempts, persisted via the Foundation backend.
   const { data: attempts } = useBackendQuery(
@@ -177,6 +190,76 @@ export default function ExamsHubPage(): JSX.Element {
             <button onClick={() => setEditing(true)} className="btn-primary px-4 py-2 text-sm inline-flex items-center gap-1.5 shrink-0"><IconPlus className="w-4 h-4" /> Create exam</button>
           )}
         </div>
+
+        {/* Quick actions — progress dashboard, leaderboard, AI examiner & partner */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <button onClick={() => navigate('/exams/dashboard')} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex flex-col gap-2">
+            <span className="w-10 h-10 rounded-xl bg-brand-500/15 text-brand-300 flex items-center justify-center"><IconChart className="w-5 h-5" /></span>
+            <div>
+              <p className="text-sm font-bold text-white">My progress</p>
+              <p className="text-[11px] text-slate-400">Scores & weak areas</p>
+            </div>
+          </button>
+          <button onClick={() => navigate('/exams/leaderboard')} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex flex-col gap-2">
+            <span className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><IconTrophy className="w-5 h-5" /></span>
+            <div>
+              <p className="text-sm font-bold text-white">Leaderboard</p>
+              <p className="text-[11px] text-slate-400">Top scores by test</p>
+            </div>
+          </button>
+          <button onClick={() => navigate('/exams/ielts?skill=writing')} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex flex-col gap-2">
+            <span className="w-10 h-10 rounded-xl bg-violet-500/15 text-violet-300 flex items-center justify-center"><IconPencilEdit className="w-5 h-5" /></span>
+            <div>
+              <p className="text-sm font-bold text-white">AI examiner</p>
+              <p className="text-[11px] text-slate-400">Writing & speaking grading</p>
+            </div>
+          </button>
+          <button onClick={() => navigate('/speaking')} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex flex-col gap-2">
+            <span className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center"><IconChat className="w-5 h-5" /></span>
+            <div>
+              <p className="text-sm font-bold text-white">Speaking partner</p>
+              <p className="text-[11px] text-slate-400">Practise out loud</p>
+            </div>
+          </button>
+        </div>
+
+        {/* Featured tests rail */}
+        {featured.length > 0 && (
+          <Rail title="Featured tests">
+            {featured.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => navigate(testRunRoute(t.id, t.kind))}
+                className="shrink-0 w-60 snap-start rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex flex-col gap-2"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center shrink-0"><IconStar className="w-4 h-4" /></span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-amber-300">Featured</span>
+                </div>
+                <p className="text-sm font-bold text-white leading-snug">{t.title}</p>
+                {t.blurb && <p className="text-[11px] text-slate-400 line-clamp-2">{t.blurb}</p>}
+                <p className="text-[11px] text-slate-500 mt-auto">{t.sections.length} sections{t.band ? ` · ${t.band}` : ''}</p>
+              </button>
+            ))}
+          </Rail>
+        )}
+
+        {/* Recent results rail — quick resume of your latest attempts */}
+        {attempts.length > 0 && (
+          <Rail title="Continue / recent">
+            {[...attempts].sort((a, b) => b.takenAt.localeCompare(a.takenAt)).slice(0, 8).map((a) => (
+              <button
+                key={a.id}
+                onClick={() => navigate(a.kind === 'ielts' || a.kind === 'toefl' ? `/exams/${a.kind}` : '/exams')}
+                className="shrink-0 w-44 snap-start rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition"
+              >
+                <p className="text-sm font-bold text-white uppercase">{a.kind}</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">{fmtDate(a.takenAt)}</p>
+                <p className="text-2xl font-bold text-amber-300 mt-2">{a.cefr ?? a.overall}</p>
+              </button>
+            ))}
+          </Rail>
+        )}
 
         {/* Authored / community exams */}
         {customExams.length > 0 && (

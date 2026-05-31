@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { SectionResult } from '@shared/types/study.types'
 import { cn } from '../../lib/classnames'
 import { ProgressBar } from '../../components/ui'
-import { IconHeadphones, IconMic, IconX } from '../../components/icons'
+import { IconCheck, IconHeadphones, IconMic, IconSearch, IconX } from '../../components/icons'
 import { useAppStore } from '../../store/useAppStore'
 import { useChatStream } from '../../hooks/useChatStream'
 import { useTargetLanguage } from '../../lib/language'
@@ -16,7 +16,9 @@ import {
   scoreMcqSection,
   type ExamBank,
   type ExamSection,
+  type MCQItem,
   type MCQSection,
+  type QType,
   type SpeakingSection,
   type WritingSection
 } from './banks'
@@ -24,8 +26,9 @@ import { scoreWriting } from './writingScore'
 import { scoreSpeaking } from './speakingScore'
 import { exams } from '../../services/exams/store'
 import ListeningAudio from './ListeningAudio'
+import { recordTypeResults, type TypedOutcome } from '../../services/exams/insights'
 
-type Phase = 'intro' | 'running' | 'grading' | 'report'
+type Phase = 'intro' | 'running' | 'grading' | 'report' | 'review'
 
 function fmt(s: number): string {
   const m = Math.floor(s / 60)
@@ -58,6 +61,10 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
   // stats, which should only reflect complete mocks.
   const focusId = params.get('section')
   const focused = !!(focusId && rawBank?.sections.some((s) => s.id === focusId))
+  // Practice mode reveals the correct answer + explanation inline after each
+  // question (relaxed, learning-first). Exam mode holds everything until the
+  // end (timed, test-realistic). The section/exam-mode toggle lives in the hub.
+  const practice = params.get('mode') === 'practice'
   const bank: ExamBank | undefined = useMemo(() => {
     if (!rawBank) return undefined
     if (focused) return { ...rawBank, sections: rawBank.sections.filter((s) => s.id === focusId) }
@@ -122,11 +129,17 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
     setPhase('grading')
     const out: SectionResult[] = []
     const fb: string[] = []
+    const typed: TypedOutcome[] = []
     const llmKind = bank.kind === 'ielts' ? 'ielts' : bank.kind === 'toefl' ? 'toefl' : null
 
     for (const sec of bank.sections) {
       if (sec.kind === 'mcq') {
         const correct = sec.items.reduce((n, it) => n + (mcqAnswers[it.id] === it.correct ? 1 : 0), 0)
+        // Per-question-type outcomes feed the weak-question-type dashboard.
+        sec.items.forEach((it) => {
+          if (mcqAnswers[it.id] === undefined) return
+          typed.push({ qtype: (it.qtype ?? 'general') as QType, correct: mcqAnswers[it.id] === it.correct })
+        })
         out.push(scoreMcqSection(bank, sec, correct))
       } else if (sec.kind === 'writing') {
         const essay = essays[sec.id] ?? ''
@@ -171,6 +184,10 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
     setOverall({ overall: scored.overall, scaleLabel: scored.scaleLabel, numeric: scored.overallNumeric })
     setFeedback(fb)
     setPhase('report')
+
+    // Per-question-type accuracy → insights store (powers the dashboard's weak
+    // question types + the personalized study plan). Real graded outcomes.
+    try { recordTypeResults(currentUserId(), typed) } catch { /* best-effort */ }
 
     // Persist through the Foundation backend. A focused single-section run is
     // logged as practice (XP only) — only a complete mock is recorded as an
@@ -225,11 +242,16 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
   if (phase === 'intro') {
     return (
       <div className="h-full flex flex-col items-center justify-center px-6 text-center max-w-md mx-auto">
+        <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest mb-3', practice ? 'bg-emerald-500/15 text-emerald-300' : 'bg-brand-500/15 text-brand-300')}>
+          {practice ? 'Practice mode' : 'Exam mode'}
+        </span>
         <h1 className="text-3xl font-bold tracking-tight">{bank.title}</h1>
         <p className="text-slate-400 mt-2">
-          {focused
-            ? `Section practice · ${bank.sections[0]?.label} · timed.`
-            : `Full mock · ${bank.sections.length} sections · timed. Complete each section in order.`}
+          {practice
+            ? 'Practice mode — answers and explanations are revealed as you go. Relaxed, learning-first.'
+            : focused
+              ? `Section practice · ${bank.sections[0]?.label} · timed.`
+              : `Full mock · ${bank.sections.length} sections · timed. Complete each section in order.`}
         </p>
         <div className="w-full mt-6 flex flex-col gap-2">
           {bank.sections.map((s) => (
@@ -306,13 +328,24 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
             )}
           </div>
 
-          <div className="flex items-center gap-3 mt-7 w-full">
+          {bank.sections.some((s) => s.kind === 'mcq') && (
+            <button onClick={() => setPhase('review')} className="w-full mt-3 rounded-2xl border border-brand-400/30 bg-brand-500/10 px-4 py-3 text-sm font-semibold text-brand-200 inline-flex items-center justify-center gap-2 hover:bg-brand-500/20 transition">
+              <IconSearch className="w-4 h-4" /> Review answers — Locate &amp; Explain
+            </button>
+          )}
+
+          <div className="flex items-center gap-3 mt-4 w-full">
             <button onClick={() => navigate('/exams')} className="btn-ghost flex-1 py-3">Back to exams</button>
             <button onClick={() => { setPhase('intro'); setSecIdx(0); setItemIdx(0); setMcqAnswers({}); setEssays({}); setTranscripts({}); setResults([]); setShowReview(false) }} className="btn-primary flex-1 py-3">Retake</button>
           </div>
         </div>
       </div>
     )
+  }
+
+  // ── Review (Locate & Explain) ──
+  if (phase === 'review') {
+    return <ReviewBody bank={bank} answers={mcqAnswers} onBack={() => setPhase('report')} />
   }
 
   // ── Running a section ──
@@ -337,6 +370,7 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
             itemIdx={itemIdx}
             setItemIdx={setItemIdx}
             answers={mcqAnswers}
+            reveal={practice}
             onAnswer={(id, opt) => setMcqAnswers((a) => ({ ...a, [id]: opt }))}
           />
         )}
@@ -381,16 +415,22 @@ function McqBody({
   itemIdx,
   setItemIdx,
   answers,
+  reveal,
   onAnswer
 }: {
   section: MCQSection
   itemIdx: number
   setItemIdx: (n: number) => void
   answers: Record<string, number>
+  /** Practice mode: reveal correct answer + explanation after answering. */
+  reveal: boolean
   onAnswer: (id: string, opt: number) => void
 }): JSX.Element {
   const item = section.items[itemIdx]
   const answered = section.items.filter((it) => answers[it.id] !== undefined).length
+  const chosen = answers[item.id]
+  const isAnswered = chosen !== undefined
+  const showFeedback = reveal && isAnswered
   return (
     <div className="flex flex-col gap-5">
       {section.passage && (
@@ -419,15 +459,96 @@ function McqBody({
       <div>
         <p className="text-base font-bold mb-4">Q{itemIdx + 1}. {item.prompt}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {item.options.map((o, i) => (
-            <button
-              key={o}
-              onClick={() => { onAnswer(item.id, i); if (itemIdx + 1 < section.items.length) setItemIdx(itemIdx + 1) }}
-              className={cn('rounded-2xl border px-4 py-3 text-left font-medium transition', answers[item.id] === i ? 'border-brand-400 bg-brand-500/15 text-white' : 'border-white/10 bg-white/[0.03] text-slate-200 hover:bg-white/[0.07]')}
-            >
-              {o}
-            </button>
-          ))}
+          {item.options.map((o, i) => {
+            // In practice mode after answering, mark the correct option green and
+            // a wrong pick red; otherwise just highlight the selection.
+            const cls = showFeedback
+              ? i === item.correct
+                ? 'border-emerald-400 bg-emerald-500/15 text-white'
+                : i === chosen
+                  ? 'border-rose-400 bg-rose-500/15 text-white'
+                  : 'border-white/10 bg-white/[0.03] text-slate-400'
+              : chosen === i
+                ? 'border-brand-400 bg-brand-500/15 text-white'
+                : 'border-white/10 bg-white/[0.03] text-slate-200 hover:bg-white/[0.07]'
+            return (
+              <button
+                key={o}
+                disabled={showFeedback}
+                onClick={() => { onAnswer(item.id, i); if (!reveal && itemIdx + 1 < section.items.length) setItemIdx(itemIdx + 1) }}
+                className={cn('rounded-2xl border px-4 py-3 text-left font-medium transition', cls)}
+              >
+                {o}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Practice-mode inline reveal */}
+        {showFeedback && (
+          <div className={cn('mt-4 rounded-2xl border p-4 text-left', chosen === item.correct ? 'border-emerald-400/30 bg-emerald-500/10' : 'border-amber-400/30 bg-amber-500/10')}>
+            <p className={cn('text-sm font-bold flex items-center gap-2', chosen === item.correct ? 'text-emerald-300' : 'text-amber-300')}>
+              {chosen === item.correct ? <><IconCheck className="w-4 h-4" /> Correct</> : <><IconX className="w-4 h-4" /> Not quite</>}
+            </p>
+            {item.locate && (
+              <p className="text-xs text-slate-300 mt-2"><span className="font-semibold text-slate-200">Where:</span> “{item.locate}”</p>
+            )}
+            {item.explain && (
+              <p className="text-xs text-slate-300 mt-1.5"><span className="font-semibold text-slate-200">Why:</span> {item.explain}</p>
+            )}
+            {itemIdx + 1 < section.items.length && (
+              <button onClick={() => setItemIdx(itemIdx + 1)} className="btn-ghost mt-3 px-4 py-1.5 text-xs">Next question →</button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Locate & Explain review (post-exam) ────────────────────────────────────
+
+function ReviewBody({ bank, answers, onBack }: { bank: ExamBank; answers: Record<string, number>; onBack: () => void }): JSX.Element {
+  const navigate = useNavigate()
+  const mcqSections = bank.sections.filter((s): s is MCQSection => s.kind === 'mcq')
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="px-6 py-6 w-full max-w-2xl mx-auto flex flex-col gap-6">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="text-slate-500 hover:text-white transition shrink-0" title="Back to result"><IconX className="w-6 h-6" /></button>
+          <div className="flex-1 min-w-0">
+            <p className="text-lg font-bold truncate">Locate &amp; Explain</p>
+            <p className="text-[12px] text-slate-400">Where each answer is found, and why it's right.</p>
+          </div>
+        </div>
+
+        {mcqSections.map((sec) => (
+          <div key={sec.id} className="flex flex-col gap-3">
+            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-semibold">{sec.label}</p>
+            {sec.items.map((it: MCQItem, i) => {
+              const chosen = answers[it.id]
+              const right = chosen === it.correct
+              return (
+                <div key={it.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <p className="text-sm font-semibold text-white">Q{i + 1}. {it.prompt}</p>
+                  <div className="mt-2 flex flex-col gap-1 text-xs">
+                    <p className={cn('flex items-center gap-1.5', right ? 'text-emerald-300' : 'text-rose-300')}>
+                      {right ? <IconCheck className="w-3.5 h-3.5" /> : <IconX className="w-3.5 h-3.5" />}
+                      Your answer: {chosen === undefined ? '— (skipped)' : it.options[chosen]}
+                    </p>
+                    {!right && <p className="text-emerald-300 flex items-center gap-1.5"><IconCheck className="w-3.5 h-3.5" /> Correct: {it.options[it.correct]}</p>}
+                  </div>
+                  {it.locate && <p className="text-xs text-slate-300 mt-2"><span className="font-semibold text-slate-200">Where:</span> “{it.locate}”</p>}
+                  {it.explain && <p className="text-xs text-slate-300 mt-1.5"><span className="font-semibold text-slate-200">Why:</span> {it.explain}</p>}
+                </div>
+              )
+            })}
+          </div>
+        ))}
+
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="btn-ghost flex-1 py-3">Back to result</button>
+          <button onClick={() => navigate('/exams')} className="btn-primary flex-1 py-3">Done</button>
         </div>
       </div>
     </div>
