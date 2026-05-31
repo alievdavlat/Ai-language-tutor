@@ -6,7 +6,7 @@ import { ProgressRing, StatCard, Tabs, type TabItem, Input } from '../../compone
 import { useTargetLanguage } from '../../lib/language'
 import { useVocab } from '../../services/study/useStudy'
 import { formatInterval } from '../../services/study/fsrs'
-import { IconBolt, IconBookmark, IconPlus, IconStar, IconVolume, IconX } from '../../components/icons'
+import { IconBolt, IconBook, IconBookmark, IconPlus, IconStar, IconVolume, IconX } from '../../components/icons'
 
 type Tab = 'mine' | 'saved'
 const TABS: TabItem<Tab>[] = [
@@ -138,6 +138,7 @@ export default function VocabularyPage(): JSX.Element {
             <p className="text-sm text-slate-400 mt-1">Save words, group them by category, and review with spaced repetition.</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => navigate('/flashcards')} disabled={cards.length === 0} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5 disabled:opacity-40" title={cards.length === 0 ? 'Add words to practice' : 'Practice with flashcards'}><IconBook className="w-4 h-4" /> Flashcards</button>
             <button onClick={() => setAdding(true)} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> Add word</button>
             <button onClick={() => navigate('/vocabulary/review')} disabled={due.length === 0} className="btn-primary text-sm px-4 py-2 disabled:opacity-40">
               {due.length > 0 ? `Review ${due.length} →` : 'Nothing due'}
