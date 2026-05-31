@@ -5,6 +5,8 @@ import { useAppStore } from '../store/useAppStore'
 import { useBootstrap } from '../hooks/useBootstrap'
 import { useAdminShortcut } from '../hooks/useAdminShortcut'
 import { useI18n, type UILanguage } from '../i18n'
+import { backend } from '../services/backend'
+import type { PlatformUser } from '@shared/types'
 import AppShell from '../components/layout/AppShell'
 import BootPage from '../features/boot/BootPage'
 import OnboardingPage from '../features/onboarding/OnboardingPage'
@@ -159,12 +161,42 @@ function useSyncUILanguage(): void {
   }, [nativeLanguage, setLang])
 }
 
+/**
+ * Mirror the local profile into the backend `users` row so My Channel / Profile
+ * / social show the REAL signed-in user (name, role, level, languages) instead
+ * of a stale/empty backend row. Auth signUp only sets name/email/role; the
+ * onboarding profile (level, languages, role switch) never reached the backend
+ * — that's why a teacher's channel showed "Learner · A2". Fires whenever the
+ * relevant profile fields change.
+ */
+function useSyncUserToBackend(): void {
+  const profile = useAppStore((s) => s.profile)
+  const role = useAppStore((s) => s.role)
+  const last = useRef('')
+  useEffect(() => {
+    const me = backend.currentUserId()
+    if (!me || !profile) return
+    const patch: Partial<PlatformUser> = {
+      name: profile.name ?? undefined,
+      level: profile.level,
+      nativeLanguage: profile.nativeLanguage,
+      targetLanguage: profile.targetLanguage
+    }
+    if (role === 'teacher' || role === 'student') patch.role = role
+    const fp = `${me}|${JSON.stringify(patch)}`
+    if (fp === last.current) return
+    last.current = fp
+    void backend.updateUser(me, patch).catch(() => undefined)
+  }, [profile, role])
+}
+
 export default function AppRoutes(): JSX.Element {
   const navigate = useNavigate()
   const setRole = useAppStore((s) => s.setRole)
   useBootstrap()
   usePostBootRedirect()
   useSyncUILanguage()
+  useSyncUserToBackend()
   // Ctrl+Shift+A → elevate to Owner/Admin and open the admin panel.
   useAdminShortcut(() => { setRole('admin'); navigate('/admin') })
 
