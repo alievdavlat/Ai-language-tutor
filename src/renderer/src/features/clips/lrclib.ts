@@ -40,6 +40,31 @@ export function parseLRC(lrc: string): LyricLine[] {
   return out.sort((a, b) => a.t - b.t)
 }
 
+/** Render time-stamped lines back to LRC text ("[mm:ss.xx] line") for editing. */
+export function formatLRC(lines: LyricLine[]): string {
+  return lines
+    .map((l) => {
+      const m = Math.floor(l.t / 60)
+      const s = (l.t % 60).toFixed(2).padStart(5, '0')
+      return `[${String(m).padStart(2, '0')}:${s}] ${l.text}`
+    })
+    .join('\n')
+}
+
+/**
+ * Fallback timing when there's no LRC source (movies/talks, or the author only
+ * has the plain transcript): distribute each non-empty line evenly across the
+ * crop window. This is the renderer-side stand-in for the youtube-transcript-api
+ * / Whisper alignment, which run server-side.
+ */
+export function autoTimeLines(text: string, startSec: number, endSec: number): LyricLine[] {
+  const raw = text.split('\n').map((l) => l.trim()).filter(Boolean)
+  if (!raw.length) return []
+  const span = Math.max(1, endSec - startSec)
+  const step = span / raw.length
+  return raw.map((textLine, i) => ({ t: Math.round((startSec + i * step) * 100) / 100, text: textLine }))
+}
+
 interface LrclibHit {
   syncedLyrics?: string | null
   plainLyrics?: string | null

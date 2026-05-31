@@ -1,7 +1,12 @@
-// Mock data + types for the Clips module (LingoClip / LyricsTraining-style
-// fill-in-the-blank video game). UI-first: all data is hardcoded here.
-// Real wiring (LRCLIB lyrics, youtube-transcript-api, difficulty blank-picker)
-// comes in the feature/backend pass — see feature_backlog.md section D.
+// Types + pure game registries for the Clips module (LingoClip / LyricsTraining-
+// style fill-in-the-blank video game).
+//
+// The clip CATALOG (the actual songs/movies/playlists) is no longer hardcoded
+// here — it lives in `services/clips/store.ts` (a real, editable, localStorage-
+// backed store seeded from a curated set, authorable in Creator Studio / Admin,
+// and mirrored to the Supabase `clips` table for cloud sync). This file keeps
+// only the pure types + the game-mode / difficulty registries + the
+// deterministic blank-picker the play engine imports.
 
 export type ClipKind = 'song' | 'movie' | 'tv' | 'talk'
 export type GameMode = 'choice' | 'type' | 'karaoke' | 'scribe'
@@ -18,28 +23,53 @@ export interface Clip {
   title: string
   artist: string
   kind: ClipKind
-  /** tailwind gradient classes for the cover */
+  /** tailwind gradient classes for the cover (fallback when no image) */
   cover: string
+  /** real cover image — uploaded data URL, remote URL, or a YouTube thumbnail */
+  thumbnailUrl?: string
   youtubeId: string
+  /** display string for legacy seed rows ("396K") */
   plays: string
+  /** real play counter — drives "Hot right now" */
+  playCount?: number
+  /** display string for legacy seed rows ("14 years ago") */
   ago: string
+  /** ISO timestamp — drives "Recently added" */
+  createdAt?: string
+  /** ISO timestamp of the last play — drives "Based on your activity" */
+  lastPlayedAt?: string
   /** accent flag emoji */
   accent: string
   /** CEFR-ish level chip */
   level: string
   duration: string
   genre?: string
-  /** sample synced lyrics — only the demo clip carries a full set */
+  /** target-language code this clip belongs to (defaults to English) */
+  lang?: string
+  /** crop window into the video, in seconds (authoring) */
+  startSec?: number
+  endSec?: number
+  /** synced lyrics (LRC). Authored or fetched from LRCLIB at play time. */
   lines?: LyricLine[]
+  /** author id ('system' for the curated seed) */
+  authorId?: string
+  builtIn?: boolean
+  visibility?: 'public' | 'private'
 }
 
 export interface Playlist {
   id: string
   title: string
-  count: number
+  /** tailwind gradient classes for the cover */
   cover: string
   /** difficulty dot colors, easy→hard */
   dots: string[]
+  /** clip ids in this playlist (count is derived) */
+  clipIds: string[]
+  /** minimum CEFR level to unlock this playlist (level-gating) */
+  minLevel?: string
+  builtIn?: boolean
+  authorId?: string
 }
 
 // ─── Game-mode + difficulty registries ──────────────────────────────────────
@@ -81,72 +111,17 @@ export const KIND_LABEL: Record<ClipKind, string> = {
   talk: 'Talks'
 }
 
-// ─── Demo lyrics (Justin Bieber — Baby) ──────────────────────────────────────
-
-const BABY_LINES: LyricLine[] = [
-  { t: 27, text: 'You know you love me, I know you care' },
-  { t: 31, text: "Just shout whenever, and I'll be there" },
-  { t: 35, text: 'You want my love, you want my heart' },
-  { t: 39, text: 'And we will never ever ever be apart' },
-  { t: 43, text: 'Are we an item? Girl, quit playing' },
-  { t: 47, text: "We're just friends, what are you saying?" },
-  { t: 51, text: "Said there's another, and looked right in my eyes" },
-  { t: 55, text: 'My first love broke my heart for the first time' }
-]
-
-// ─── Clips library ───────────────────────────────────────────────────────────
-
-export const CLIPS: Clip[] = [
-  {
-    id: 'baby',
-    title: 'Baby',
-    artist: 'Justin Bieber ft. Ludacris',
-    kind: 'song',
-    cover: 'from-sky-500 to-blue-700',
-    youtubeId: 'kffacxfA7G4',
-    plays: '396K',
-    ago: '14 years ago',
-    accent: '🇨🇦',
-    level: 'A2',
-    duration: '3:35',
-    genre: 'Pop',
-    lines: BABY_LINES
-  },
-  { id: 'dinner', title: 'Dinner For One', artist: 'Mollie Elizabeth', kind: 'song', cover: 'from-pink-500 to-rose-700', youtubeId: '', plays: '579', ago: '2 days ago', accent: '🇺🇸', level: 'B1', duration: '3:12', genre: 'Pop' },
-  { id: 'dance', title: 'Dance All Nite', artist: 'Anja', kind: 'song', cover: 'from-fuchsia-500 to-purple-700', youtubeId: '', plays: '1.7K', ago: '2 days ago', accent: '🇬🇧', level: 'A2', duration: '2:58', genre: 'Pop' },
-  { id: 'perfect', title: 'Perfect', artist: 'Ed Sheeran', kind: 'song', cover: 'from-amber-500 to-orange-700', youtubeId: '', plays: '8.2M', ago: '9 years ago', accent: '🇬🇧', level: 'B1', duration: '4:23', genre: 'Pop' },
-  { id: 'billie', title: 'Billie Jean', artist: 'Michael Jackson', kind: 'song', cover: 'from-indigo-500 to-violet-700', youtubeId: '', plays: '234K', ago: '14 years ago', accent: '🇺🇸', level: 'B2', duration: '4:54', genre: 'Pop' },
-  { id: 'devil', title: 'The Devil Wears Prada — clip', artist: 'Movie scene', kind: 'movie', cover: 'from-slate-500 to-slate-800', youtubeId: '', plays: '92K', ago: '1 month ago', accent: '🇺🇸', level: 'B2', duration: '2:10' },
-  { id: 'friends', title: 'Friends — intro scene', artist: 'TV scene', kind: 'tv', cover: 'from-orange-500 to-red-700', youtubeId: '', plays: '120K', ago: '3 weeks ago', accent: '🇺🇸', level: 'B1', duration: '1:45' },
-  { id: 'talk-grit', title: 'The power of grit', artist: 'Inspirational talk', kind: 'talk', cover: 'from-red-500 to-rose-800', youtubeId: '', plays: '3M', ago: '5 years ago', accent: '🇺🇸', level: 'C1', duration: '6:12' }
-]
-
-export function findClip(id: string | null): Clip {
-  return CLIPS.find((c) => c.id === id) ?? CLIPS[0]
-}
-
-// ─── Home sections ─────────────────────────────────────────────────────────
-
-export const FEATURED_IDS = ['dinner', 'dance', 'billie', 'perfect']
-export const RECENT_IDS = ['baby', 'dance', 'dinner', 'friends']
-export const HOT_IDS = ['perfect', 'billie', 'baby', 'devil']
-
-export const PLAYLISTS: Playlist[] = [
-  { id: 'queens', title: 'Queens of Music', count: 30, cover: 'from-pink-500 to-rose-700', dots: ['#10b981', '#10b981', '#f59e0b', '#fb923c'] },
-  { id: 'theme', title: 'Theme Songs', count: 24, cover: 'from-amber-500 to-orange-700', dots: ['#10b981', '#f59e0b', '#fb923c', '#f43f5e'] },
-  { id: 'fearless', title: 'Fearless Femme', count: 18, cover: 'from-fuchsia-500 to-purple-700', dots: ['#10b981', '#10b981', '#f59e0b', '#fb923c'] },
-  { id: 'essence', title: 'Essence of Woman', count: 30, cover: 'from-violet-500 to-indigo-700', dots: ['#10b981', '#f59e0b', '#fb923c', '#f43f5e'] }
-]
-
-export const GENRES = [
-  { id: 'pop', label: 'Pop', cover: 'from-amber-500 to-orange-600' },
-  { id: 'rock', label: 'Rock', cover: 'from-sky-500 to-blue-700' },
-  { id: 'hardrock', label: 'Hard Rock', cover: 'from-indigo-500 to-blue-900' },
-  { id: 'metal', label: 'Heavy Metal', cover: 'from-slate-600 to-slate-900' }
-]
-
-export function clipsByIds(ids: string[]): Clip[] {
-  return ids.map((id) => CLIPS.find((c) => c.id === id)).filter((c): c is Clip => Boolean(c))
+/**
+ * Count the blankable words in a set of synced lyric lines — the real "words"
+ * total a clip offers (skips 1–2 letter words, matching `pickBlanks`). Used for
+ * the setup-page word count instead of a hardcoded number.
+ */
+export function countBlankableWords(lines: LyricLine[] | undefined): number {
+  if (!lines || !lines.length) return 0
+  return lines.reduce((sum, l) => {
+    const words = l.text.split(/\s+/).filter((w) => w.replace(/[^a-zA-Z']/g, '').length > 2)
+    return sum + words.length
+  }, 0)
 }
 
 /**
