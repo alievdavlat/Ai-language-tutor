@@ -4,6 +4,7 @@ import type { VideoMeta } from '../../../services/studio/youtube'
 import { cn } from '../../../lib/classnames'
 import { studio } from '../../../services/studio/store'
 import {
+  connectByChannel,
   connectChannel,
   fetchVideoMeta,
   importChannelVideos,
@@ -22,6 +23,11 @@ export default function YouTubeConnectPage(): JSX.Element {
   const [connecting, setConnecting] = useState(false)
   const [importing, setImporting] = useState(false)
 
+  // connect-by-link (real, API-key path)
+  const [channelLink, setChannelLink] = useState('')
+  const [linkConnecting, setLinkConnecting] = useState(false)
+  const [linkError, setLinkError] = useState('')
+
   // paste-a-link metadata demo
   const [link, setLink] = useState('')
   const [meta, setMeta] = useState<VideoMeta | null>(null)
@@ -30,8 +36,20 @@ export default function YouTubeConnectPage(): JSX.Element {
   const connect = async (): Promise<void> => {
     setConnecting(true)
     const c = await connectChannel()
-    studio.setYouTubeConnection(c)
     setConnecting(false)
+    if (!c) return // OAuth cancelled / popup closed — leave state unchanged
+    studio.setYouTubeConnection(c)
+    conn.refresh()
+  }
+  const connectLink = async (): Promise<void> => {
+    if (!channelLink.trim()) return
+    setLinkConnecting(true)
+    setLinkError('')
+    const c = await connectByChannel(channelLink.trim())
+    setLinkConnecting(false)
+    if (!c) { setLinkError("Couldn't find that channel. Paste the full channel URL or @handle."); return }
+    studio.setYouTubeConnection(c)
+    setChannelLink('')
     conn.refresh()
   }
   const disconnect = async (): Promise<void> => {
@@ -77,8 +95,21 @@ export default function YouTubeConnectPage(): JSX.Element {
           <div className="flex-1 min-w-0">
             {connected ? (
               <>
-                <p className="text-base font-bold text-white inline-flex items-center gap-2">{conn.data.channelTitle} <IconCheck className="w-4 h-4 text-emerald-300" /></p>
-                <p className="text-xs text-slate-400">{conn.data.subscriberCount?.toLocaleString()} subscribers · connected {conn.data.connectedAt ? new Date(conn.data.connectedAt).toLocaleDateString() : ''}</p>
+                <p className="text-base font-bold text-white inline-flex items-center gap-2 flex-wrap">
+                  {conn.data.channelTitle} <IconCheck className="w-4 h-4 text-emerald-300" />
+                  {conn.data.handle && <span className="text-xs font-medium text-slate-400">{conn.data.handle}</span>}
+                  {conn.data.via && conn.data.via !== 'demo' && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider rounded-full bg-emerald-500/15 text-emerald-300 px-2 py-0.5">{conn.data.via === 'oauth' ? 'Google' : 'Linked'}</span>
+                  )}
+                  {conn.data.via === 'demo' && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider rounded-full bg-amber-500/15 text-amber-300 px-2 py-0.5">Demo</span>
+                  )}
+                </p>
+                <p className="text-xs text-slate-400">
+                  {conn.data.subscriberCount != null && `${conn.data.subscriberCount.toLocaleString()} subscribers · `}
+                  {conn.data.videoCount != null && `${conn.data.videoCount.toLocaleString()} videos · `}
+                  connected {conn.data.connectedAt ? new Date(conn.data.connectedAt).toLocaleDateString() : ''}
+                </p>
               </>
             ) : (
               <>
@@ -98,7 +129,28 @@ export default function YouTubeConnectPage(): JSX.Element {
 
         {!youtubeConfigured && (
           <div className="rounded-xl border border-amber-400/20 bg-amber-500/[0.06] p-3 text-xs text-amber-200/90">
-            ⚙️ Running in <b>demo mode</b> — set <code className="text-amber-100">VITE_YT_CLIENT_ID</code>{!youtubeApiKeyConfigured && <> and <code className="text-amber-100">VITE_YT_API_KEY</code></>} in <code>.env.local</code> for the real Google OAuth flow. See <code>docs/YOUTUBE-OAUTH.md</code>.
+            ⚙️ Google sign-in runs in <b>demo mode</b> — set <code className="text-amber-100">VITE_YT_CLIENT_ID</code>{!youtubeApiKeyConfigured && <> and <code className="text-amber-100">VITE_YT_API_KEY</code></>} in <code>.env.local</code> for the real OAuth flow. See <code>docs/YOUTUBE-OAUTH.md</code>.
+          </div>
+        )}
+
+        {/* Connect by link — real, uses the Data API key (no OAuth needed) */}
+        {!connected && (
+          <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
+            <SectionHeading title="…or connect by channel link" subtitle="Paste your channel URL or @handle — we'll pull your real videos via the public API" />
+            <div className="flex gap-2 mt-1">
+              <input
+                value={channelLink}
+                onChange={(e) => { setChannelLink(e.target.value); setLinkError('') }}
+                onKeyDown={(e) => { if (e.key === 'Enter') void connectLink() }}
+                placeholder="https://youtube.com/@yourchannel"
+                className="input flex-1"
+              />
+              <button onClick={() => void connectLink()} disabled={linkConnecting || !channelLink.trim() || !youtubeApiKeyConfigured} className="btn-primary px-4 disabled:opacity-50">
+                {linkConnecting ? 'Connecting…' : 'Connect'}
+              </button>
+            </div>
+            {linkError && <p className="text-xs text-red-300 mt-2">{linkError}</p>}
+            {!youtubeApiKeyConfigured && <p className="text-xs text-amber-200/80 mt-2">Needs <code className="text-amber-100">VITE_YT_API_KEY</code> in <code>.env.local</code>.</p>}
           </div>
         )}
 

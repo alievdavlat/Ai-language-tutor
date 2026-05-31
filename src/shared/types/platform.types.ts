@@ -28,6 +28,10 @@ export interface PlatformUser {
   createdAt: string
   /** Country code shown next to the name on the channel page. */
   country?: string
+  /** Profile photo (Supabase Storage / data: URL). */
+  avatarUrl?: string
+  /** Channel banner image (Supabase Storage / data: URL). */
+  bannerUrl?: string
 }
 
 // ─── Content ───────────────────────────────────────────────────────────────

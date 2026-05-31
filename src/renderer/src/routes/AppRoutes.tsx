@@ -79,6 +79,7 @@ import LessonBuilderPage from '../features/teacher/lesson/LessonBuilderPage'
 import LessonPlayerPage from '../features/teacher/lesson/LessonPlayerPage'
 import ClipsComposerPage from '../features/teacher/clips/ClipsComposerPage'
 import YouTubeConnectPage from '../features/teacher/youtube/YouTubeConnectPage'
+import YouTubeCallbackPage from '../features/teacher/youtube/YouTubeCallbackPage'
 import DownloadsPage from '../features/downloads/DownloadsPage'
 import ProductivityPage from '../features/productivity/ProductivityPage'
 import WidgetPage from '../features/widget/WidgetPage'
@@ -224,6 +225,9 @@ export default function AppRoutes(): JSX.Element {
         }
       />
       <Route path="/speaking/call" element={<CallPage />} />
+
+      {/* OAuth popup redirect target — no shell (transient popup window). */}
+      <Route path="/youtube/callback" element={<YouTubeCallbackPage />} />
       <Route path="/learn/exercise" element={<ExercisePlayer />} />
       <Route
         path="/learn/lesson"

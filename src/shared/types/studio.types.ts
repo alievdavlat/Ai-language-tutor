@@ -251,11 +251,22 @@ export interface YouTubeConnection {
   connected: boolean
   channelId?: string
   channelTitle?: string
+  /** @handle resolved for the channel, when known. */
+  handle?: string
   thumbnail?: string
   subscriberCount?: number
+  videoCount?: number
+  /** Uploads playlist id (UU…) — the spine of a real video import. */
+  uploadsPlaylistId?: string
   connectedAt?: string
   /** OAuth scopes granted. */
   scopes?: string[]
+  /** Short-lived OAuth access token (implicit flow). Used as a bearer for import. */
+  accessToken?: string
+  /** Epoch ms when `accessToken` expires. */
+  tokenExpiresAt?: number
+  /** How the connection was established. */
+  via?: 'oauth' | 'link' | 'demo'
 }
 
 export interface YouTubeVideo {

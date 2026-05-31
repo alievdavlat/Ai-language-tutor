@@ -122,8 +122,9 @@ export default function FeedRails(): JSX.Element {
   const books = useBackendQuery(() => library.list('book', lang), [lang], [])
 
   const teachers = useBackendQuery(async () => {
-    const all = await backend.listUsers({ role: 'teacher' })
     const me = backend.currentUserId()
+    // Never list yourself among "Featured teachers" (no self-follow button).
+    const all = (await backend.listUsers({ role: 'teacher' })).filter((u) => u.id !== me)
     const rows: TeacherCardData[] = []
     for (const u of all) {
       const counts = await backend.followCounts(u.id)

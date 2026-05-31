@@ -117,8 +117,10 @@ export default function ExplorePage({ embedded }: { embedded?: boolean } = {}): 
   const [q, setQ] = useState(params.get('q') ?? '')
 
   // Featured/trending creators — all teachers, ranked by real follower count.
+  // Exclude yourself so your own card never shows a Follow/Message button.
   const creators = useBackendQuery(async () => {
-    const teachers = await backend.listUsers({ role: 'teacher' })
+    const meId = backend.currentUserId()
+    const teachers = (await backend.listUsers({ role: 'teacher' })).filter((u) => u.id !== meId)
     const withCounts = await Promise.all(
       teachers.map(async (u) => ({ u, followers: (await backend.followCounts(u.id)).followers }))
     )
@@ -177,7 +179,8 @@ export default function ExplorePage({ embedded }: { embedded?: boolean } = {}): 
   const videoTiles = useMemo(() => tiles.filter((t) => t.kind === 'video' || t.kind === 'course'), [tiles])
 
   const matchedPeople = useMemo(() => {
-    const all = [...creators.data, ...buddies.data]
+    const meId = backend.currentUserId()
+    const all = [...creators.data, ...buddies.data].filter((u) => u.id !== meId)
     const needle = q.trim().toLowerCase()
     if (!needle) return all
     return all.filter((u) => u.name.toLowerCase().includes(needle) || (u.bio ?? '').toLowerCase().includes(needle))
