@@ -64,6 +64,8 @@ export interface Group {
   ownerId: ID
   /** Cover gradient (tailwind from-…to-…) for the card. */
   cover: string
+  /** Optional card thumbnail image (data: or remote URL). Falls back to `cover` gradient. */
+  imageUrl?: string
   visibility: 'public' | 'private'
   memberCount: number
   createdAt: string
@@ -92,6 +94,8 @@ export interface Challenge {
   startsAt: string
   endsAt: string
   cover: string
+  /** Optional card thumbnail image (data: or remote URL). Falls back to `cover` gradient. */
+  imageUrl?: string
   participantCount: number
   createdAt: string
 }

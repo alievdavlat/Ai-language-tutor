@@ -82,7 +82,9 @@ export default function NowBar(): JSX.Element {
             badge={<span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black bg-rose-600 text-white px-1.5 py-px rounded">LIVE</span>}
             onClick={() => navigate(`/live/room?room=${s.id}`)}
           >
-            <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center text-white font-bold', s.cover)}>{initials(s.title)}</div>
+            <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center text-white font-bold relative overflow-hidden', s.cover)}>
+              {s.imageUrl ? <img src={s.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" /> : initials(s.title)}
+            </div>
           </Ring>
         ))}
 
@@ -95,7 +97,9 @@ export default function NowBar(): JSX.Element {
             badge={<span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-canvas" />}
             onClick={() => navigate(`/inbox?user=${u.id}&greet=1`)}
           >
-            <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center text-white font-bold', BUDDY_GRADIENTS[i % BUDDY_GRADIENTS.length])}>{initials(u.name)}</div>
+            <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center text-white font-bold relative overflow-hidden', BUDDY_GRADIENTS[i % BUDDY_GRADIENTS.length])}>
+              {(u as { avatarUrl?: string }).avatarUrl ? <img src={(u as { avatarUrl?: string }).avatarUrl} alt="" className="absolute inset-0 w-full h-full object-cover" /> : initials(u.name)}
+            </div>
           </Ring>
         ))}
       </div>

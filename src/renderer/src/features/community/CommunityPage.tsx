@@ -680,7 +680,9 @@ function GroupsView(): JSX.Element {
           const joined = myIds.has(g.id)
           return (
             <article key={g.id} className="rounded-card border border-white/10 bg-white/[0.025] overflow-hidden">
-              <div className={cn('h-20 bg-gradient-to-br', g.cover)} />
+              <div className={cn('h-20 bg-gradient-to-br relative', g.cover)}>
+                {g.imageUrl && <img src={g.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+              </div>
               <div className="p-4">
                 <p className="text-sm font-bold text-white">{g.name}</p>
                 <p className="text-xs text-slate-400 line-clamp-2 mt-1 min-h-[2.4em]">{g.description}</p>
@@ -826,7 +828,13 @@ function ChallengesView(): JSX.Element {
         return (
           <article key={c.id} className="rounded-card border border-white/10 bg-white/[0.025] overflow-hidden">
             <div className="flex">
-              <div className={cn('w-2 bg-gradient-to-b', c.cover)} />
+              {c.imageUrl ? (
+                <div className="w-24 shrink-0 relative bg-white/[0.04]">
+                  <img src={c.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className={cn('w-2 bg-gradient-to-b', c.cover)} />
+              )}
               <div className="flex-1 p-4">
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
@@ -956,7 +964,9 @@ function RightRail({ onSeeGroups, onSeeChallenges }: { onSeeGroups: () => void; 
         <div className="flex flex-col gap-2">
           {groups.data.slice(0, 3).map((g) => (
             <button key={g.id} onClick={onSeeGroups} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5 text-left hover:bg-white/[0.05]">
-              <span className="w-9 h-9 rounded-xl bg-grad-brand flex items-center justify-center text-white text-xs font-bold">{g.name[0]}</span>
+              <span className="w-9 h-9 rounded-xl bg-grad-brand flex items-center justify-center text-white text-xs font-bold overflow-hidden relative">
+                {g.imageUrl ? <img src={g.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" /> : g.name[0]}
+              </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-white truncate">{g.name}</p>
                 <p className="text-xs text-slate-500">{g.memberCount.toLocaleString()} members</p>
@@ -972,12 +982,20 @@ function RightRail({ onSeeGroups, onSeeChallenges }: { onSeeGroups: () => void; 
         {live.data.length === 0 ? (
           <p className="text-xs text-slate-500">No streams live right now.</p>
         ) : (
-          <button onClick={() => navigate('/live')} className="block w-full text-left rounded-2xl border border-rose-400/30 bg-gradient-to-br from-rose-500/10 to-pink-500/10 p-3 hover:brightness-110">
-            <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-rose-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" /> {live.data.length} stream{live.data.length === 1 ? '' : 's'} live
-            </p>
-            <p className="text-sm font-semibold text-white mt-1">{live.data[0].title}</p>
-            <p className="text-[11px] text-slate-400">{live.data[0].viewerCount} watching</p>
+          <button onClick={() => navigate('/live')} className="block w-full text-left rounded-2xl border border-rose-400/30 bg-gradient-to-br from-rose-500/10 to-pink-500/10 overflow-hidden hover:brightness-110">
+            {live.data[0].imageUrl && (
+              <div className="relative h-24">
+                <img src={live.data[0].imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+              </div>
+            )}
+            <div className="p-3">
+              <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-rose-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" /> {live.data.length} stream{live.data.length === 1 ? '' : 's'} live
+              </p>
+              <p className="text-sm font-semibold text-white mt-1">{live.data[0].title}</p>
+              <p className="text-[11px] text-slate-400">{live.data[0].viewerCount} watching</p>
+            </div>
           </button>
         )}
       </div>

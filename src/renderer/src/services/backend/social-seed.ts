@@ -255,11 +255,11 @@ export const SEED_PEER_REVIEWS: PeerReview[] = [
 //     ensureCommunitySeed() — the local Db ships these empty). ─────────────────
 
 export const SEED_GROUPS: Group[] = [
-  { id: 'g_ielts', name: 'IELTS Warriors', description: 'Daily band-7 grind — share essays, swap mock partners, post your scores.', language: 'en', ownerId: 'u_james', cover: 'from-rose-500 to-pink-700', visibility: 'public', memberCount: 3214, createdAt: t(60 * 24 * 90) },
-  { id: 'g_speak', name: 'Daily Speaking Club', description: 'A safe room to speak out loud every day. Voice notes welcome, zero judgement.', language: 'en', ownerId: 'u_emma', cover: 'from-sky-500 to-blue-700', visibility: 'public', memberCount: 5102, createdAt: t(60 * 24 * 120) },
-  { id: 'g_grammar', name: 'Grammar Nerds', description: 'For people who actually enjoy the subjunctive. Ask anything.', language: 'en', ownerId: 'u_marco', cover: 'from-violet-500 to-purple-700', visibility: 'public', memberCount: 1840, createdAt: t(60 * 24 * 60) },
-  { id: 'g_business', name: 'Business English Pros', description: 'Meetings, emails, negotiations, interviews. Level up your work English.', language: 'en', ownerId: 'u_emma', cover: 'from-amber-500 to-orange-700', visibility: 'public', memberCount: 980, createdAt: t(60 * 24 * 30) },
-  { id: 'g_jp', name: 'Japan ↔ English Exchange', description: 'Language exchange between English and Japanese learners. Tandem partners inside.', language: 'en', ownerId: 'u_yui', cover: 'from-emerald-500 to-teal-700', visibility: 'public', memberCount: 1260, createdAt: t(60 * 24 * 45) }
+  { id: 'g_ielts', name: 'IELTS Warriors', description: 'Daily band-7 grind — share essays, swap mock partners, post your scores.', language: 'en', ownerId: 'u_james', cover: 'from-rose-500 to-pink-700', imageUrl: 'https://picsum.photos/seed/grp-ielts/480/270', visibility: 'public', memberCount: 3214, createdAt: t(60 * 24 * 90) },
+  { id: 'g_speak', name: 'Daily Speaking Club', description: 'A safe room to speak out loud every day. Voice notes welcome, zero judgement.', language: 'en', ownerId: 'u_emma', cover: 'from-sky-500 to-blue-700', imageUrl: 'https://picsum.photos/seed/grp-speak/480/270', visibility: 'public', memberCount: 5102, createdAt: t(60 * 24 * 120) },
+  { id: 'g_grammar', name: 'Grammar Nerds', description: 'For people who actually enjoy the subjunctive. Ask anything.', language: 'en', ownerId: 'u_marco', cover: 'from-violet-500 to-purple-700', imageUrl: 'https://picsum.photos/seed/grp-grammar/480/270', visibility: 'public', memberCount: 1840, createdAt: t(60 * 24 * 60) },
+  { id: 'g_business', name: 'Business English Pros', description: 'Meetings, emails, negotiations, interviews. Level up your work English.', language: 'en', ownerId: 'u_emma', cover: 'from-amber-500 to-orange-700', imageUrl: 'https://picsum.photos/seed/grp-biz/480/270', visibility: 'public', memberCount: 980, createdAt: t(60 * 24 * 30) },
+  { id: 'g_jp', name: 'Japan ↔ English Exchange', description: 'Language exchange between English and Japanese learners. Tandem partners inside.', language: 'en', ownerId: 'u_yui', cover: 'from-emerald-500 to-teal-700', imageUrl: 'https://picsum.photos/seed/grp-jp/480/270', visibility: 'public', memberCount: 1260, createdAt: t(60 * 24 * 45) }
 ]
 
 /** Who is a member of which seed group (gives myGroups / members real data). */
@@ -275,9 +275,9 @@ export const SEED_GROUP_MEMBERS: { groupId: string; userId: string }[] = [
 const days = (n: number): string => new Date(Date.now() + n * 24 * 60 * 60_000).toISOString()
 
 export const SEED_CHALLENGES: Challenge[] = [
-  { id: 'ch_streak30', title: '30-Day Speaking Streak', description: 'Speak out loud for at least 5 minutes every day for 30 days.', kind: 'streak', goal: 30, language: 'en', createdBy: 'u_emma', startsAt: t(60 * 24 * 6), endsAt: days(24), cover: 'from-rose-500 to-orange-600', participantCount: 1240, createdAt: t(60 * 24 * 7) },
-  { id: 'ch_words500', title: 'Learn 500 Words', description: 'Master 500 new words this month with spaced repetition.', kind: 'words', goal: 500, language: 'en', createdBy: 'u_james', startsAt: t(60 * 24 * 10), endsAt: days(20), cover: 'from-violet-500 to-fuchsia-600', participantCount: 870, createdAt: t(60 * 24 * 10) },
-  { id: 'ch_minutes600', title: '10-Hour Listening Sprint', description: 'Rack up 600 minutes of listening practice in two weeks.', kind: 'minutes', goal: 600, language: 'en', createdBy: 'u_marco', startsAt: t(60 * 24 * 3), endsAt: days(11), cover: 'from-sky-500 to-cyan-600', participantCount: 540, createdAt: t(60 * 24 * 4) }
+  { id: 'ch_streak30', title: '30-Day Speaking Streak', description: 'Speak out loud for at least 5 minutes every day for 30 days.', kind: 'streak', goal: 30, language: 'en', createdBy: 'u_emma', startsAt: t(60 * 24 * 6), endsAt: days(24), cover: 'from-rose-500 to-orange-600', imageUrl: 'https://picsum.photos/seed/ch-streak/480/270', participantCount: 1240, createdAt: t(60 * 24 * 7) },
+  { id: 'ch_words500', title: 'Learn 500 Words', description: 'Master 500 new words this month with spaced repetition.', kind: 'words', goal: 500, language: 'en', createdBy: 'u_james', startsAt: t(60 * 24 * 10), endsAt: days(20), cover: 'from-violet-500 to-fuchsia-600', imageUrl: 'https://picsum.photos/seed/ch-words/480/270', participantCount: 870, createdAt: t(60 * 24 * 10) },
+  { id: 'ch_minutes600', title: '10-Hour Listening Sprint', description: 'Rack up 600 minutes of listening practice in two weeks.', kind: 'minutes', goal: 600, language: 'en', createdBy: 'u_marco', startsAt: t(60 * 24 * 3), endsAt: days(11), cover: 'from-sky-500 to-cyan-600', imageUrl: 'https://picsum.photos/seed/ch-listen/480/270', participantCount: 540, createdAt: t(60 * 24 * 4) }
 ]
 
 /** Seed participant progress so leaderboards have real rows. */

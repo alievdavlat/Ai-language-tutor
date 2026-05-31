@@ -172,6 +172,8 @@ export interface LiveStream {
   startedAt: string
   /** Cover gradient for the lobby/grid card. */
   cover: string
+  /** Optional card thumbnail image (data: or remote URL). Falls back to `cover` gradient. */
+  imageUrl?: string
 }
 
 export interface LiveAnnouncement {

@@ -27,16 +27,17 @@ interface Stream {
   viewers: string
   tags: string[]
   cover: string
+  imageUrl?: string
   group?: boolean
 }
 
 const STREAMS: Stream[] = [
-  { title: 'Everyday English: Small Talk', streamer: 'Emma Carter', role: 'teacher', category: 'Speaking practice', viewers: '342', tags: ['English', 'B1'], cover: 'from-rose-600 to-red-800' },
-  { title: 'IELTS Speaking — live Q&A', streamer: 'James Lee', role: 'teacher', category: 'IELTS', viewers: '210', tags: ['English', 'Exam'], cover: 'from-blue-600 to-indigo-800' },
-  { title: 'Practice hour — join the table!', streamer: 'Speaking Club', role: 'student', category: 'Group live', viewers: '96', tags: ['English', 'Group'], cover: 'from-emerald-600 to-teal-800', group: true },
-  { title: 'Pronunciation clinic', streamer: 'Sara Kim', role: 'teacher', category: 'Speaking practice', viewers: '154', tags: ['English', 'A2-B1'], cover: 'from-violet-600 to-purple-800' },
-  { title: 'Just chatting in English', streamer: 'Bekzod', role: 'student', category: 'Just chatting', viewers: '48', tags: ['English'], cover: 'from-amber-500 to-orange-700' },
-  { title: 'Business English roundtable', streamer: 'Sara & friends', role: 'student', category: 'Group live', viewers: '73', tags: ['English', 'Business'], cover: 'from-sky-600 to-blue-800', group: true }
+  { title: 'Everyday English: Small Talk', streamer: 'Emma Carter', role: 'teacher', category: 'Speaking practice', viewers: '342', tags: ['English', 'B1'], cover: 'from-rose-600 to-red-800', imageUrl: 'https://picsum.photos/seed/lv-smalltalk/640/360' },
+  { title: 'IELTS Speaking — live Q&A', streamer: 'James Lee', role: 'teacher', category: 'IELTS', viewers: '210', tags: ['English', 'Exam'], cover: 'from-blue-600 to-indigo-800', imageUrl: 'https://picsum.photos/seed/lv-ielts/640/360' },
+  { title: 'Practice hour — join the table!', streamer: 'Speaking Club', role: 'student', category: 'Group live', viewers: '96', tags: ['English', 'Group'], cover: 'from-emerald-600 to-teal-800', imageUrl: 'https://picsum.photos/seed/lv-practice/640/360', group: true },
+  { title: 'Pronunciation clinic', streamer: 'Sara Kim', role: 'teacher', category: 'Speaking practice', viewers: '154', tags: ['English', 'A2-B1'], cover: 'from-violet-600 to-purple-800', imageUrl: 'https://picsum.photos/seed/lv-pronun/640/360' },
+  { title: 'Just chatting in English', streamer: 'Bekzod', role: 'student', category: 'Just chatting', viewers: '48', tags: ['English'], cover: 'from-amber-500 to-orange-700', imageUrl: 'https://picsum.photos/seed/lv-chat/640/360' },
+  { title: 'Business English roundtable', streamer: 'Sara & friends', role: 'student', category: 'Group live', viewers: '73', tags: ['English', 'Business'], cover: 'from-sky-600 to-blue-800', imageUrl: 'https://picsum.photos/seed/lv-biz/640/360', group: true }
 ]
 
 function StoryRing({ name, onClick, add }: { name: string; onClick: () => void; add?: boolean }): JSX.Element {
@@ -61,7 +62,8 @@ function StreamCard({ s }: { s: Stream }): JSX.Element {
   return (
     <button onClick={() => navigate(`${s.group ? '/live/group' : '/live/room'}?id=${slug(s.title)}`)} className="text-left group">
       <div className={cn('relative rounded-xl bg-gradient-to-br h-40 ring-1 ring-white/10 overflow-hidden', s.cover)}>
-        <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider bg-rose-600 text-white rounded px-1.5 py-0.5">Live</span>
+        {s.imageUrl && <img src={s.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+        <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider bg-rose-600 text-white rounded px-1.5 py-0.5 z-10">Live</span>
         <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[11px] font-semibold bg-black/60 text-white rounded px-1.5 py-0.5">
           <IconUsers className="w-3 h-3" /> {s.viewers}
         </span>
@@ -126,6 +128,8 @@ export default function LivePage(): JSX.Element {
         {/* Featured */}
         <button onClick={() => navigate(`${featured.group ? '/live/group' : '/live/room'}?id=${slug(featured.title)}`)} className="text-left">
           <div className={cn('relative overflow-hidden rounded-card bg-gradient-to-br h-56 sm:h-64 ring-1 ring-white/10 flex flex-col justify-end p-6', featured.cover)}>
+            {featured.imageUrl && <img src={featured.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             <div aria-hidden className="absolute -top-16 -right-10 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
             <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest bg-rose-600 text-white rounded-full px-2.5 py-1">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live

@@ -200,9 +200,9 @@ export const SEED_POSTS: Post[] = [
 ]
 
 export const SEED_LIVE: LiveStream[] = [
-  { id: 's_1', hostId: 'u_marco', title: 'Coffee chat · free talk', category: 'Just chatting', language: 'en', viewerCount: 124, startedAt: t(20), cover: 'from-amber-500 to-rose-700' },
-  { id: 's_2', hostId: 'u_james', title: 'IELTS Part 2 practice room', category: 'IELTS', language: 'en', viewerCount: 412, startedAt: t(45), cover: 'from-rose-500 to-pink-700' },
-  { id: 's_3', hostId: 'u_emma', title: 'Past tenses live workshop', category: 'Grammar', language: 'en', viewerCount: 286, startedAt: t(8), cover: 'from-violet-500 to-purple-700' }
+  { id: 's_1', hostId: 'u_marco', title: 'Coffee chat · free talk', category: 'Just chatting', language: 'en', viewerCount: 124, startedAt: t(20), cover: 'from-amber-500 to-rose-700', imageUrl: 'https://picsum.photos/seed/live-coffee/640/360' },
+  { id: 's_2', hostId: 'u_james', title: 'IELTS Part 2 practice room', category: 'IELTS', language: 'en', viewerCount: 412, startedAt: t(45), cover: 'from-rose-500 to-pink-700', imageUrl: 'https://picsum.photos/seed/live-ielts/640/360' },
+  { id: 's_3', hostId: 'u_emma', title: 'Past tenses live workshop', category: 'Grammar', language: 'en', viewerCount: 286, startedAt: t(8), cover: 'from-violet-500 to-purple-700', imageUrl: 'https://picsum.photos/seed/live-grammar/640/360' }
 ]
 
 export const SEED_ANNOUNCEMENTS: LiveAnnouncement[] = [
