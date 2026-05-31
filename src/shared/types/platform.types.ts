@@ -32,11 +32,42 @@ export interface PlatformUser {
 
 // ─── Content ───────────────────────────────────────────────────────────────
 
+/** A downloadable resource attached to a lesson (real uploaded file URL). */
+export interface LessonMaterialRef {
+  kind: 'pdf' | 'audio'
+  /** Display name shown in the materials list. */
+  name: string
+  /** Storage / data URL produced by the upload helper. */
+  url: string
+  /** Human-friendly size (PDF) or duration (audio), optional. */
+  size?: string
+}
+
+/**
+ * Rich, teacher-authored lesson body. Stored as one JSON blob on the lesson
+ * (`Lesson.content`) so it persists in both the local and cloud backends
+ * without a column-per-field migration. Authored in Creator Studio's rich-text
+ * editor and rendered faithfully on the learner side (Classroom).
+ */
+export interface LessonContentDoc {
+  /** Short "what you'll learn" summary (markdown). */
+  about?: string
+  /** Main rich-text / blog article — the written lesson material (markdown). */
+  body?: string
+  /** Optional video transcript. */
+  transcript?: string
+  /** Downloadable PDFs / audio attached by the teacher. */
+  materials?: LessonMaterialRef[]
+}
+
 export interface Course {
   id: ID
   teacherId: ID
   title: string
+  /** Short one-line tagline shown on cards. */
   description: string
+  /** Rich "About this course" article (markdown) shown on the course page. */
+  about?: string
   level: string
   targetLanguage: TargetLanguage
   /** Gradient class fallback (e.g. "from-sky-500 to-blue-700") used when no image is set. */
@@ -74,6 +105,8 @@ export interface Lesson {
   videoUrl?: string
   durationMin?: number
   dripDays?: number
+  /** Rich teacher-authored content (article body, about, transcript, materials). */
+  content?: LessonContentDoc
 }
 
 // ─── Social / community ───────────────────────────────────────────────────

@@ -29,6 +29,8 @@ export interface BookPage {
 export interface LessonContent {
   videoTitle: string
   about: string
+  /** Teacher-authored rich article (markdown). Rendered above the tabs. */
+  body?: string
   materials: LessonMaterial[]
   transcript: string
   /** Only for coursebook (`rule`) lessons. */
@@ -192,6 +194,21 @@ const BOOK_PAGES: Record<string, BookPage[]> = {
 // ─── Lookup with sensible defaults ───────────────────────────────────────────
 
 export function getLessonContent(lesson: Lesson): LessonContent {
+  // Teacher-authored rich content (Creator Studio) takes precedence over any
+  // built-in flagship content or generated fallback — render it faithfully.
+  const c = lesson.content
+  if (c && (c.body?.trim() || c.about?.trim() || c.transcript?.trim() || (c.materials && c.materials.length))) {
+    const authored = c.materials?.map<LessonMaterial>((m) => ({ kind: m.kind, name: m.name, size: m.size ?? (m.kind === 'pdf' ? 'PDF' : 'Audio'), url: m.url })) ?? []
+    return {
+      videoTitle: lesson.title,
+      about: c.about?.trim() || `In this lesson — "${lesson.title}" — you'll work through the key ideas, then practise what you've learned.`,
+      body: c.body?.trim() || undefined,
+      materials: authored,
+      transcript: c.transcript?.trim() || 'No transcript for this lesson.',
+      bookPages: BOOK_PAGES[lesson.id]
+    }
+  }
+
   const explicit = EXPLICIT[lesson.id]
   if (explicit) return explicit
 

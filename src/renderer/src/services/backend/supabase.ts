@@ -78,9 +78,12 @@ const c2c = (r: Record<string, unknown>): Course => ({
   teacherId: r.teacher_id as string,
   title: r.title as string,
   description: r.description as string,
+  about: r.about as string | undefined,
   level: r.level as string,
   targetLanguage: r.target_language as Course['targetLanguage'],
   cover: r.cover as string,
+  thumbnailUrl: r.thumbnail_url as string | undefined,
+  bannerUrl: r.banner_url as string | undefined,
   pricing: r.pricing as Course['pricing'],
   rating: Number(r.rating ?? 0),
   reviewCount: r.review_count as number,
@@ -132,7 +135,8 @@ const l2l = (r: Record<string, unknown>): Lesson => ({
   kind: r.kind as Lesson['kind'],
   videoUrl: r.video_url as string | undefined,
   durationMin: r.duration_min as number | undefined,
-  dripDays: r.drip_days as number | undefined
+  dripDays: r.drip_days as number | undefined,
+  content: r.content as Lesson['content']
 })
 
 const s2s = (r: Record<string, unknown>): LiveStream => ({
@@ -403,9 +407,12 @@ export const supabaseBackend: Backend = {
       teacher_id: course.teacherId,
       title: course.title,
       description: course.description,
+      about: course.about ?? null,
       level: course.level,
       target_language: course.targetLanguage,
       cover: course.cover,
+      thumbnail_url: course.thumbnailUrl ?? null,
+      banner_url: course.bannerUrl ?? null,
       pricing: course.pricing,
       rating: course.rating,
       review_count: course.reviewCount,
@@ -449,7 +456,7 @@ export const supabaseBackend: Backend = {
     const row = {
       id: lesson.id, unit_id: lesson.unitId, index: lesson.index, title: lesson.title,
       kind: lesson.kind, video_url: lesson.videoUrl ?? null, duration_min: lesson.durationMin ?? null,
-      drip_days: lesson.dripDays ?? null
+      drip_days: lesson.dripDays ?? null, content: lesson.content ?? null
     }
     const { data, error } = await sb.from('lessons').upsert(row).select().single()
     if (error) throw error
