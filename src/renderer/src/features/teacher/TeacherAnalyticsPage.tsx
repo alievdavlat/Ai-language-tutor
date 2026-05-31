@@ -1,23 +1,40 @@
 import { PageHeader, ProgressBar, SectionHeading, StatCard, Spinner } from '../../components/ui'
-import { IconBolt, IconChart, IconHeart, IconStar, IconTrophy, IconUsers } from '../../components/icons'
+import { IconChart, IconStar, IconTrophy, IconUsers } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { studio } from '../../services/studio/store'
-
-const REVIEWS = [
-  { name: 'Priya S.', rating: 5, text: "Best teacher I've found here. Clear and patient." },
-  { name: 'Wei Lin', rating: 5, text: 'The IELTS course is gold.' },
-  { name: 'Marco B.', rating: 4, text: 'Great content. More practice exercises would help.' }
-]
 
 export default function TeacherAnalyticsPage(): JSX.Element {
   const me = backend.currentUserId()
   const stats = useBackendQuery(() => studio.teacherStats(me ?? undefined), [me], null)
+  // Real reviews across the teacher's courses, newest first.
+  const reviews = useBackendQuery<{ name: string; rating: number; text: string }[]>(
+    async () => {
+      if (!me) return []
+      const courses = await backend.myCourses(me)
+      const lists = await Promise.all(courses.map((c) => backend.listReviews(c.id)))
+      const flat = lists.flat().sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+      const named = await Promise.all(
+        flat.slice(0, 6).map(async (r) => ({
+          name: (await backend.getUser(r.userId))?.name ?? 'A student',
+          rating: r.rating,
+          text: r.text
+        }))
+      )
+      return named
+    },
+    [me],
+    []
+  )
 
   if (!stats.data) {
     return <div className="h-full grid place-items-center"><Spinner /></div>
   }
   const s = stats.data
   const maxPlays = Math.max(...s.weeklyPlays, 1)
+  const reviewList = reviews.data
+  const avgReview = reviewList.length
+    ? (reviewList.reduce((a, r) => a + r.rating, 0) / reviewList.length).toFixed(1)
+    : '—'
 
   return (
     <div className="h-full overflow-y-auto">
@@ -92,31 +109,22 @@ export default function TeacherAnalyticsPage(): JSX.Element {
         </div>
 
         <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-          <SectionHeading title="Latest reviews" subtitle="4.8 · 142 reviews" />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {REVIEWS.map((r) => (
-              <div key={r.name} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                <div className="flex items-center gap-1 text-amber-300 text-sm">
-                  {Array.from({ length: r.rating }).map((_, i) => <IconStar key={i} className="w-3.5 h-3.5" />)}
+          <SectionHeading title="Latest reviews" subtitle={reviewList.length ? `${avgReview} · ${reviewList.length} review${reviewList.length === 1 ? '' : 's'}` : undefined} />
+          {reviewList.length === 0 ? (
+            <p className="text-sm text-slate-400 py-6 text-center">No reviews yet. They appear here as students review your courses.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {reviewList.map((r, i) => (
+                <div key={i} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="flex items-center gap-1 text-amber-300 text-sm">
+                    {Array.from({ length: r.rating }).map((_, j) => <IconStar key={j} className="w-3.5 h-3.5" />)}
+                  </div>
+                  <p className="text-xs text-slate-300 mt-2 leading-snug">"{r.text}"</p>
+                  <p className="text-[10px] text-slate-500 mt-2">— {r.name}</p>
                 </div>
-                <p className="text-xs text-slate-300 mt-2 leading-snug">"{r.text}"</p>
-                <p className="text-[10px] text-slate-500 mt-2">— {r.name}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Likes', value: '3.2K', Icon: IconHeart, tint: 'bg-pink-500/15 text-pink-300' },
-            { label: 'Comments', value: '482', Icon: IconBolt, tint: 'bg-brand-500/15 text-brand-300' },
-            { label: 'Shares', value: '78', Icon: IconUsers, tint: 'bg-emerald-500/15 text-emerald-300' }
-          ].map((e) => (
-            <div key={e.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex items-center gap-3">
-              <span className={`w-10 h-10 rounded-xl flex items-center justify-center ${e.tint}`}><e.Icon className="w-5 h-5" /></span>
-              <div><p className="text-lg font-bold text-white leading-none">{e.value}</p><p className="text-[11px] text-slate-400 mt-1">{e.label}</p></div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

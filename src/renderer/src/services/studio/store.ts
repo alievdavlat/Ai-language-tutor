@@ -213,9 +213,9 @@ export const studio = {
         : 0
     const revenueUsd = orders.reduce((a, o) => a + o.amountUsd, 0)
 
-    const seed = courses.reduce((a, c) => a + c.enrollmentCount, 100)
+    const seed = courses.reduce((a, c) => a + c.enrollmentCount, 0)
     const weeklyPlays = Array.from({ length: 12 }, (_, i) =>
-      Math.round((seed / 14) * (0.6 + 0.5 * Math.sin(i / 2) + i * 0.06))
+      Math.max(0, Math.round((seed / 14) * (0.6 + 0.5 * Math.sin(i / 2) + i * 0.06)))
     )
 
     const topCourses = courses
@@ -229,13 +229,19 @@ export const studio = {
       .sort((a, b) => b.views - a.views)
       .slice(0, 5)
 
-    const audience = [
-      { country: 'India', pct: 31 },
-      { country: 'Uzbekistan', pct: 22 },
-      { country: 'Vietnam', pct: 14 },
-      { country: 'Turkey', pct: 11 },
-      { country: 'Other', pct: 22 }
-    ]
+    // Real audience split — bucket the teacher's actual students by country.
+    const byCountry = new Map<string, number>()
+    for (const s of students) {
+      const c = (s.user.country || 'Unknown').trim() || 'Unknown'
+      byCountry.set(c, (byCountry.get(c) ?? 0) + 1)
+    }
+    const total = students.length
+    const audience = total
+      ? [...byCountry.entries()]
+          .map(([country, n]) => ({ country, pct: Math.round((n / total) * 100) }))
+          .sort((a, b) => b.pct - a.pct)
+          .slice(0, 6)
+      : []
 
     return {
       views,
