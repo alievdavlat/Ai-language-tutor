@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
-import { ProgressBar, SectionHeading, Tabs, type TabItem, Spinner } from '../../components/ui'
+import { ProgressBar, SectionHeading, Spinner } from '../../components/ui'
 import { IconBook, IconPlay, IconStar } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { useContentState } from '../../services/content/progress'
@@ -9,12 +9,36 @@ import { useTargetLanguageCode } from '../../lib/language'
 import { isImageCover } from '../../lib/cover'
 import type { Course } from '@shared/types'
 
-type Filter = 'all' | 'progress' | 'free'
-const FILTERS: TabItem<Filter>[] = [
-  { id: 'all', label: 'All courses' },
-  { id: 'progress', label: 'In progress' },
-  { id: 'free', label: 'Free' }
+type Skill = 'all' | 'grammar' | 'writing' | 'speaking' | 'listening' | 'exam' | 'business'
+const SKILLS: { id: Skill; label: string; emoji: string }[] = [
+  { id: 'all', label: 'All', emoji: '📚' },
+  { id: 'grammar', label: 'Grammar', emoji: '📐' },
+  { id: 'writing', label: 'Writing', emoji: '✍️' },
+  { id: 'speaking', label: 'Speaking', emoji: '🎤' },
+  { id: 'listening', label: 'Listening', emoji: '🎧' },
+  { id: 'exam', label: 'Exam prep', emoji: '🎓' },
+  { id: 'business', label: 'Business', emoji: '💼' }
 ]
+
+/** Map a course to its primary skill — explicit ids first, then title keywords. */
+const SKILL_BY_ID: Record<string, Exclude<Skill, 'all'>> = {
+  c_egiu: 'grammar',
+  c_everyday: 'speaking',
+  c_business: 'business',
+  c_pronun: 'speaking',
+  c_ielts7: 'exam'
+}
+function courseSkill(c: Course): Exclude<Skill, 'all'> {
+  if (SKILL_BY_ID[c.id]) return SKILL_BY_ID[c.id]
+  const t = c.title.toLowerCase()
+  if (/grammar/.test(t)) return 'grammar'
+  if (/writ/.test(t)) return 'writing'
+  if (/ielts|toefl|exam|\btest\b/.test(t)) return 'exam'
+  if (/listen|podcast|shadow/.test(t)) return 'listening'
+  if (/business/.test(t)) return 'business'
+  return 'speaking'
+}
+const LEVELS = ['All', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 
 function CourseCard({ course, progress, onOpen }: { course: Course; progress: number; onOpen: () => void }): JSX.Element {
   const isBook = course.title.toLowerCase().includes('coursebook') || course.id === 'c_egiu'
@@ -54,7 +78,8 @@ function CourseCard({ course, progress, onOpen }: { course: Course; progress: nu
 
 export default function CoursesPage(): JSX.Element {
   const navigate = useNavigate()
-  const [filter, setFilter] = useState<Filter>('all')
+  const [skill, setSkill] = useState<Skill>('all')
+  const [level, setLevel] = useState<string>('All')
   const lang = useTargetLanguageCode()
   const userId = backend.currentUserId()
   useContentState() // re-render when progress changes
@@ -68,52 +93,97 @@ export default function CoursesPage(): JSX.Element {
 
   const progressFor = (id: string): number => enrollments.find((e) => e.courseId === id)?.progress ?? 0
   const isEnrolled = (id: string): boolean => enrollments.some((e) => e.courseId === id)
+  const open = (id: string): void => navigate(`/course/${id}`)
+
+  // Only show skill chips that actually have a course (no empty filters).
+  const presentSkills = new Set(courses.map(courseSkill))
+  const skillChips = SKILLS.filter((s) => s.id === 'all' || presentSkills.has(s.id as Exclude<Skill, 'all'>))
 
   const filtered = courses.filter((c) => {
-    if (filter === 'progress') return isEnrolled(c.id) && progressFor(c.id) < 100
-    if (filter === 'free') return c.pricing.kind === 'free'
+    if (skill !== 'all' && courseSkill(c) !== skill) return false
+    if (level !== 'All' && c.level !== level) return false
     return true
   })
 
   const inProgress = courses.filter((c) => isEnrolled(c.id) && progressFor(c.id) > 0 && progressFor(c.id) < 100)
+  const cont = inProgress[0]
+  // One representative course per core skill, for the "Skill tracks" rail.
+  const trackOrder: Exclude<Skill, 'all'>[] = ['grammar', 'writing', 'speaking', 'listening', 'exam', 'business']
+  const tracks = trackOrder
+    .map((sk) => courses.find((c) => courseSkill(c) === sk))
+    .filter((c): c is Course => !!c)
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 w-full flex flex-col gap-7">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Courses</h1>
-          <p className="text-sm text-slate-400 mt-1">Video-led courses and coursebooks — follow each path in order, pass the final exam, earn a certificate.</p>
+      <div className="px-6 py-6 w-full max-w-5xl mx-auto flex flex-col gap-6">
+        {/* Header + level filter */}
+        <div className="flex items-end justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">Learn</p>
+            <h1 className="text-2xl font-black tracking-tight">Courses</h1>
+            <p className="text-sm text-slate-400 mt-1">One place to learn — grammar, writing, speaking, listening & exam prep, with mock tests and certificates.</p>
+          </div>
+          <div className="flex gap-1.5">
+            {LEVELS.map((l) => (
+              <button key={l} onClick={() => setLevel(l)} className={cn('rounded-lg px-2.5 py-1.5 text-xs font-bold transition', level === l ? 'bg-brand-500/20 text-brand-100 ring-1 ring-brand-400/40' : 'bg-white/[0.04] text-slate-400 hover:text-white')}>{l}</button>
+            ))}
+          </div>
         </div>
 
-        {/* Continue learning */}
-        {filter === 'all' && inProgress.length > 0 && (
-          <div>
-            <SectionHeading title="Continue learning" subtitle="Pick up where you left off" />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {inProgress.map((c) => (
-                <CourseCard key={c.id} course={c} progress={progressFor(c.id)} onOpen={() => navigate(`/course/${c.id}`)} />
-              ))}
+        {/* Skill chips */}
+        <div className="flex flex-wrap gap-2">
+          {skillChips.map((s) => (
+            <button key={s.id} onClick={() => setSkill(s.id)} className={cn('inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition', skill === s.id ? 'border-brand-400 bg-brand-500/15 text-white' : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]')}>
+              <span>{s.emoji}</span>{s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Continue learning hero */}
+        {skill === 'all' && level === 'All' && cont && (
+          <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-600/25 via-violet-600/12 to-slate-900/30 p-5 flex flex-col sm:flex-row items-center gap-5">
+            <div className="flex-1">
+              <p className="text-[11px] uppercase tracking-widest text-brand-200 font-bold">Continue learning</p>
+              <h2 className="text-xl font-black text-white mt-0.5">{cont.title}</h2>
+              <p className="text-sm text-slate-300/80 mt-1">{progressFor(cont.id)}% complete · {cont.level}</p>
+              <button onClick={() => open(cont.id)} className="mt-3 rounded-xl bg-white text-slate-900 px-5 py-2.5 text-sm font-black">Continue →</button>
             </div>
+            {isImageCover(cont.thumbnailUrl) && (
+              <img src={cont.thumbnailUrl} alt="" className="w-40 h-24 rounded-2xl object-cover ring-1 ring-white/15" />
+            )}
           </div>
         )}
 
-        <Tabs items={FILTERS} active={filter} onChange={setFilter} className="self-start" />
-
         {loading ? (
           <div className="py-16 flex justify-center"><Spinner /></div>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-card border border-white/10 bg-white/[0.025] p-8 text-center">
-            <p className="text-sm text-slate-400">No courses match this filter yet.</p>
-          </div>
         ) : (
-          <div>
-            <SectionHeading title={filter === 'free' ? 'Free courses' : filter === 'progress' ? 'In progress' : 'All courses'} subtitle={`${filtered.length} course${filtered.length === 1 ? '' : 's'}`} />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {filtered.map((c) => (
-                <CourseCard key={c.id} course={c} progress={progressFor(c.id)} onOpen={() => navigate(`/course/${c.id}`)} />
-              ))}
+          <>
+            {/* Skill tracks — built-in core courses */}
+            {skill === 'all' && level === 'All' && tracks.length > 0 && (
+              <div>
+                <SectionHeading title="Skill tracks" subtitle="Built-in courses — grammar, writing, speaking & exam prep" />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {tracks.map((c) => (
+                    <CourseCard key={c.id} course={c} progress={progressFor(c.id)} onOpen={() => open(c.id)} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* All / filtered courses */}
+            <div>
+              <SectionHeading title={skill === 'all' ? 'All courses' : SKILLS.find((s) => s.id === skill)?.label ?? 'Courses'} subtitle={`${filtered.length} course${filtered.length === 1 ? '' : 's'}`} />
+              {filtered.length === 0 ? (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-8 text-center text-sm text-slate-400">No courses match this filter yet.</div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {filtered.map((c) => (
+                    <CourseCard key={c.id} course={c} progress={progressFor(c.id)} onOpen={() => open(c.id)} />
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
