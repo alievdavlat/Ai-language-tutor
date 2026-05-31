@@ -110,6 +110,8 @@ export interface AchievementMeta {
 
 export interface VoiceMeta {
   durationSec: number
+  /** Recorded clip URL (Supabase Storage public URL, or a data: URL in local mode). */
+  audioUrl?: string
   /** Optional auto-transcript shown under the player. */
   transcript?: string
 }
@@ -120,8 +122,8 @@ export interface Post {
   kind: PostKind
   /** Text body. For polls and study-sessions, often the longer description. */
   text: string
-  /** Optional attached resource (youtube/pdf/audio). */
-  resource?: { kind: 'youtube' | 'pdf' | 'audio'; url: string; title?: string }
+  /** Optional attached resource (youtube/pdf/audio/image/video). */
+  resource?: { kind: 'youtube' | 'pdf' | 'audio' | 'image' | 'video'; url: string; title?: string }
   poll?: Poll
   studySession?: StudySessionMeta
   achievement?: AchievementMeta

@@ -13,6 +13,8 @@ import type {
   ActivityEvent,
   Challenge,
   ChallengeParticipant,
+  Comment,
+  CommentView,
   Course,
   DmMessage,
   DmThread,
@@ -27,6 +29,7 @@ import type {
   MediaAsset,
   Notif,
   PlatformUser,
+  Poll,
   Post,
   Review,
   Save,
@@ -595,6 +598,152 @@ export const supabaseBackend: Backend = {
   async listLikes(userId): Promise<Like[]> {
     const { data } = await sb.from('likes').select('*').eq('user_id', userId)
     return (data ?? []).map((r) => ({ userId: r.user_id as string, postId: r.post_id as string, createdAt: r.created_at as string }))
+  },
+
+  async reactToPost(userId, postId, emoji): Promise<{ reactions: Record<string, number>; myReaction: string | null }> {
+    const { data: rows } = await sb.from('post_reactions').select('emoji').eq('post_id', postId).eq('user_id', userId).limit(1)
+    const prev = rows && rows.length > 0 ? (rows[0].emoji as string) : null
+    let myReaction: string | null = emoji
+    if (prev === emoji) {
+      await sb.from('post_reactions').delete().eq('post_id', postId).eq('user_id', userId)
+      myReaction = null
+    } else if (prev) {
+      await sb.from('post_reactions').update({ emoji }).eq('post_id', postId).eq('user_id', userId)
+    } else {
+      await sb.from('post_reactions').insert({ post_id: postId, user_id: userId, emoji, created_at: now() })
+    }
+    const { data: all } = await sb.from('post_reactions').select('emoji').eq('post_id', postId)
+    const reactions: Record<string, number> = {}
+    for (const r of all ?? []) reactions[r.emoji as string] = (reactions[r.emoji as string] ?? 0) + 1
+    await sb.from('posts').update({ reactions }).eq('id', postId)
+    return { reactions, myReaction }
+  },
+
+  async myReaction(userId, postId): Promise<string | null> {
+    const { data } = await sb.from('post_reactions').select('emoji').eq('post_id', postId).eq('user_id', userId).limit(1)
+    return data && data.length > 0 ? (data[0].emoji as string) : null
+  },
+
+  async votePoll(userId, postId, optionId): Promise<{ poll: Poll; myVote: string | null }> {
+    const { data: post } = await sb.from('posts').select('poll').eq('id', postId).maybeSingle()
+    const basePoll = post?.poll as Poll | null
+    if (!basePoll) throw new Error('Post has no poll')
+    const { data: rows } = await sb.from('poll_votes').select('option_id').eq('post_id', postId).eq('user_id', userId).limit(1)
+    const prev = rows && rows.length > 0 ? (rows[0].option_id as string) : null
+    let myVote: string | null = optionId
+    if (prev === optionId) {
+      await sb.from('poll_votes').delete().eq('post_id', postId).eq('user_id', userId)
+      myVote = null
+    } else if (prev) {
+      await sb.from('poll_votes').update({ option_id: optionId }).eq('post_id', postId).eq('user_id', userId)
+    } else {
+      await sb.from('poll_votes').insert({ post_id: postId, user_id: userId, option_id: optionId, created_at: now() })
+    }
+    const { data: all } = await sb.from('poll_votes').select('option_id').eq('post_id', postId)
+    const tally: Record<string, number> = {}
+    for (const v of all ?? []) tally[v.option_id as string] = (tally[v.option_id as string] ?? 0) + 1
+    const poll: Poll = { ...basePoll, options: basePoll.options.map((o) => ({ ...o, votes: tally[o.id] ?? 0 })) }
+    await sb.from('posts').update({ poll }).eq('id', postId)
+    return { poll, myVote }
+  },
+
+  async myPollVote(userId, postId): Promise<string | null> {
+    const { data } = await sb.from('poll_votes').select('option_id').eq('post_id', postId).eq('user_id', userId).limit(1)
+    return data && data.length > 0 ? (data[0].option_id as string) : null
+  },
+
+  async joinStudySession(userId, postId): Promise<{ joined: boolean; joinedIds: ID[] }> {
+    const { data: post } = await sb.from('posts').select('study_session').eq('id', postId).maybeSingle()
+    const session = post?.study_session as Post['studySession'] | null
+    if (!session) throw new Error('Post has no study session')
+    const set = new Set(session.joinedIds)
+    let joined: boolean
+    if (set.has(userId)) { set.delete(userId); joined = false }
+    else { set.add(userId); joined = true }
+    const joinedIds = Array.from(set)
+    await sb.from('posts').update({ study_session: { ...session, joinedIds } }).eq('id', postId)
+    return { joined, joinedIds }
+  },
+
+  async listComments(targetKind, targetId, viewerId): Promise<CommentView[]> {
+    const { data } = await sb.from('comments').select('*')
+      .eq('target_kind', targetKind).eq('target_id', targetId)
+      .order('created_at', { ascending: false })
+    const list = data ?? []
+    const ids = list.map((c) => c.id as string)
+    const { data: likes } = ids.length
+      ? await sb.from('comment_likes').select('comment_id,user_id').in('comment_id', ids)
+      : { data: [] as { comment_id: string; user_id: string }[] }
+    const counts: Record<string, number> = {}
+    const mine = new Set<string>()
+    for (const l of likes ?? []) {
+      counts[l.comment_id as string] = (counts[l.comment_id as string] ?? 0) + 1
+      if (viewerId && l.user_id === viewerId) mine.add(l.comment_id as string)
+    }
+    return list.map((c) => ({
+      id: c.id as string,
+      targetKind: c.target_kind as CommentView['targetKind'],
+      targetId: c.target_id as string,
+      authorId: c.author_id as string,
+      text: c.text as string,
+      parentId: (c.parent_id as string | null) ?? undefined,
+      createdAt: c.created_at as string,
+      likeCount: counts[c.id as string] ?? 0,
+      likedByMe: mine.has(c.id as string)
+    }))
+  },
+
+  async addComment(input): Promise<Comment> {
+    const row = {
+      id: newId('cm'),
+      target_kind: input.targetKind,
+      target_id: input.targetId,
+      author_id: input.authorId,
+      text: input.text.trim(),
+      parent_id: input.parentId ?? null,
+      created_at: now()
+    }
+    const { data, error } = await sb.from('comments').insert(row).select().single()
+    if (error) throw error
+    if (input.targetKind === 'post') {
+      const { data: post } = await sb.from('posts').select('comment_count').eq('id', input.targetId).maybeSingle()
+      await sb.from('posts').update({ comment_count: ((post?.comment_count as number) ?? 0) + 1 }).eq('id', input.targetId)
+    }
+    return {
+      id: data.id as string,
+      targetKind: data.target_kind as Comment['targetKind'],
+      targetId: data.target_id as string,
+      authorId: data.author_id as string,
+      text: data.text as string,
+      parentId: (data.parent_id as string | null) ?? undefined,
+      createdAt: data.created_at as string
+    }
+  },
+
+  async removeComment(commentId): Promise<void> {
+    const { data: c } = await sb.from('comments').select('target_kind,target_id').eq('id', commentId).maybeSingle()
+    const { data: replies } = await sb.from('comments').select('id').eq('parent_id', commentId)
+    const ids = [commentId, ...(replies ?? []).map((r) => r.id as string)]
+    await sb.from('comment_likes').delete().in('comment_id', ids)
+    await sb.from('comments').delete().in('id', ids)
+    if (c?.target_kind === 'post') {
+      const { data: post } = await sb.from('posts').select('comment_count').eq('id', c.target_id).maybeSingle()
+      await sb.from('posts').update({ comment_count: Math.max(0, ((post?.comment_count as number) ?? ids.length) - ids.length) }).eq('id', c.target_id as string)
+    }
+  },
+
+  async toggleCommentLike(commentId, userId): Promise<{ liked: boolean; count: number }> {
+    const { data: existing } = await sb.from('comment_likes').select('user_id').eq('comment_id', commentId).eq('user_id', userId).limit(1)
+    let liked: boolean
+    if (existing && existing.length > 0) {
+      await sb.from('comment_likes').delete().eq('comment_id', commentId).eq('user_id', userId)
+      liked = false
+    } else {
+      await sb.from('comment_likes').insert({ comment_id: commentId, user_id: userId, created_at: now() })
+      liked = true
+    }
+    const { count } = await sb.from('comment_likes').select('*', { count: 'exact', head: true }).eq('comment_id', commentId)
+    return { liked, count: count ?? 0 }
   },
 
   async follow(followerId, followingId): Promise<{ following: boolean }> {
