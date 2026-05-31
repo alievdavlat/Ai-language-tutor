@@ -12,8 +12,10 @@ import type { TargetLanguage, VocabItem } from '@shared/types'
 import type { ReviewGrade } from '@shared/types/study.types'
 import { backend } from '../backend'
 import { createId } from '../../lib/ids'
+import { useAppStore } from '../../store/useAppStore'
+import { translate } from '../translate'
 import { newVocabItem, retrievability, schedule } from './fsrs'
-import { STARTER_VOCAB } from './seedVocab'
+import { STARTER_VOCAB, seedMeaning } from './seedVocab'
 
 const MS_PER_DAY = 86_400_000
 
@@ -85,6 +87,8 @@ interface UseVocabResult {
  */
 export function useVocab(language: TargetLanguage): UseVocabResult {
   const userId = currentUserId()
+  // The learner's own language — vocab meanings are stored/shown in it.
+  const native = useAppStore((s) => s.profile?.nativeLanguage) ?? 'en'
   const [cards, setCards] = useState<VocabItem[]>([])
   const [loading, setLoading] = useState(true)
   const [tick, setTick] = useState(0)
@@ -104,7 +108,7 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
             userId,
             language,
             term: s.term,
-            translation: s.translation,
+            translation: seedMeaning(s, native),
             example: s.example,
             deck: s.deck,
             // Stagger due times slightly so the queue has a natural order.
@@ -113,6 +117,23 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
         )
         for (const item of seeded) await backend.upsertVocab(item)
         list = seeded
+      } else if (native === 'uz' || native === 'ru') {
+        // Migrate legacy seed cards (stored with the English gloss) to the
+        // native meaning, so existing installs also show the learner's
+        // language instead of an English-to-English flashcard pair.
+        const byTerm = new Map(STARTER_VOCAB.map((w) => [w.term.toLowerCase(), w]))
+        const migrated: VocabItem[] = []
+        for (const c of list) {
+          const w = byTerm.get(c.term.toLowerCase())
+          if (w && c.translation === w.gloss) {
+            const updated = { ...c, translation: seedMeaning(w, native) }
+            await backend.upsertVocab(updated)
+            migrated.push(updated)
+          } else {
+            migrated.push(c)
+          }
+        }
+        list = migrated
       }
       if (!cancelled) {
         setCards(list)
@@ -122,17 +143,26 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
     return () => {
       cancelled = true
     }
-  }, [userId, language, tick])
+  }, [userId, language, native, tick])
 
   const add = useCallback<UseVocabResult['add']>(
     async (input) => {
+      // Store the meaning in the learner's native language. If the caller's
+      // translation is in another language (e.g. an English dictionary gloss),
+      // translate the term — best-effort, falling back to what was passed in.
+      const term = input.term.trim()
+      let meaning = input.translation.trim()
+      if (native !== language) {
+        const translated = await translate(term, language, native)
+        if (translated) meaning = translated
+      }
       const item = {
         ...newVocabItem({
           id: createId('vocab'),
           userId,
           language,
-          term: input.term.trim(),
-          translation: input.translation.trim(),
+          term,
+          translation: meaning,
           example: input.example?.trim() || undefined,
           deck: input.deck?.trim() || 'My words',
           nowMs: Date.now()
@@ -150,7 +180,7 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
       setCards((prev) => [saved, ...prev])
       return saved
     },
-    [userId, language]
+    [userId, language, native]
   )
 
   const review = useCallback<UseVocabResult['review']>(
