@@ -8,18 +8,16 @@ import {
   IconBook,
   IconBookmark,
   IconChart,
-  IconChat,
   IconChevronLeft,
   IconChevronRight,
   IconClipboard,
   IconGear,
   IconHeadphones,
-  IconHeart,
   IconHome,
   IconLibrary,
-  IconLive,
   IconMic,
   IconPencilEdit,
+  IconSearch,
   IconUsers,
   type IconProps
 } from '../icons'
@@ -46,10 +44,9 @@ const PRACTICE_NAV = [
 ] as const
 
 const COMMUNITY_NAV = [
-  // Explore + Community are merged into one Instagram-style hub ("Connect").
-  { to: '/community', label: 'Connect', Icon: IconUsers },
-  { to: '/buddy', label: 'Study buddy', Icon: IconHeart },
-  { to: '/live', label: 'Live', Icon: IconLive }
+  // Explore = one Instagram-style social hub: feed, groups, challenges, discover,
+  // plus live rooms + study-buddies surfaced via its "Now" bar.
+  { to: '/community', label: 'Explore', Icon: IconSearch }
 ] as const
 
 // Teacher-mode navigation — teachers also learn, so they keep a Learn group.
@@ -69,8 +66,7 @@ const TEACHER_LEARN = [
 ] as const
 
 const TEACHER_ENGAGE = [
-  { to: '/live', label: 'Live', Icon: IconLive },
-  { to: '/community', label: 'Connect', Icon: IconChat }
+  { to: '/community', label: 'Explore', Icon: IconSearch }
 ] as const
 
 const BOTTOM_NAV = [

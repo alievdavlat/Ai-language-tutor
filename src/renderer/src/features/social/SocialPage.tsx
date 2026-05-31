@@ -3,6 +3,7 @@ import { cn } from '../../lib/classnames'
 import { IconHome, IconUsers, IconTrophy, IconSearch, type IconProps } from '../../components/icons'
 import CommunityPage, { type CommunityView } from '../community/CommunityPage'
 import ExplorePage from '../explore/ExplorePage'
+import NowBar from './NowBar'
 
 type Tab = CommunityView | 'explore'
 
@@ -10,14 +11,15 @@ const NAV: { id: Tab; label: string; Icon: (p: IconProps) => JSX.Element }[] = [
   { id: 'feed', label: 'Feed', Icon: IconHome },
   { id: 'groups', label: 'Groups & Clubs', Icon: IconUsers },
   { id: 'challenges', label: 'Challenges', Icon: IconTrophy },
-  { id: 'explore', label: 'Explore', Icon: IconSearch }
+  { id: 'explore', label: 'Discover', Icon: IconSearch }
 ]
 
 /**
- * "Connect" — the unified social hub (merges the old Community + Explore pages),
- * laid out like Instagram: an icon nav switches between Feed, Groups & Clubs,
- * Challenges and Explore (tapping Explore = the search/discover surface).
- * Each tab reuses the real, existing page logic (no new mock data).
+ * "Explore" — the unified social hub (the old Community + Explore + Live +
+ * Study-Buddy surfaces), laid out like Instagram: a flush "Now" bar (live rooms
+ * + online buddies) on top, then an icon nav (Feed · Groups & Clubs · Challenges
+ * · Discover). Live is surfaced via the Now bar (not a tab); buddies too. Each
+ * tab reuses the real existing page logic — no new mock data. Full-width.
  */
 export default function SocialPage({ initialTab = 'feed' }: { initialTab?: Tab } = {}): JSX.Element {
   const [params, setParams] = useSearchParams()
@@ -26,35 +28,37 @@ export default function SocialPage({ initialTab = 'feed' }: { initialTab?: Tab }
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 w-full">
-        {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-black tracking-tight">Connect</h1>
-          <p className="text-sm text-slate-400 mt-1">Your feed, groups & clubs, challenges, and everything to discover — in one place.</p>
-        </div>
+      {/* Flush header */}
+      <div className="px-6 pt-5 pb-3">
+        <h1 className="text-2xl font-black tracking-tight">Explore</h1>
+      </div>
 
-        {/* Instagram-style icon nav */}
-        <div className="flex items-center gap-1 mb-6 border-b border-white/10 -mx-1 px-1 overflow-x-auto">
-          {NAV.map((n) => {
-            const active = tab === n.id
-            return (
-              <button
-                key={n.id}
-                onClick={() => setTab(n.id)}
-                className={cn(
-                  'relative flex items-center gap-2 px-4 py-2.5 text-sm font-bold whitespace-nowrap transition',
-                  active ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-                )}
-              >
-                <n.Icon className="w-[18px] h-[18px]" />
-                <span>{n.label}</span>
-                {active && <span className="absolute left-2 right-2 -bottom-px h-0.5 rounded-full bg-brand-400" />}
-              </button>
-            )
-          })}
-        </div>
+      {/* Instagram-style "Now" bar — live + online buddies (flush, not in a card) */}
+      <NowBar />
 
-        {/* Content — real existing pages, embedded */}
+      {/* Icon nav under the bar */}
+      <div className="px-6 flex items-center gap-1 border-b border-white/10 overflow-x-auto sticky top-0 bg-canvas/80 backdrop-blur z-10">
+        {NAV.map((n) => {
+          const active = tab === n.id
+          return (
+            <button
+              key={n.id}
+              onClick={() => setTab(n.id)}
+              className={cn(
+                'relative flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap transition',
+                active ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+              )}
+            >
+              <n.Icon className="w-[18px] h-[18px]" />
+              <span>{n.label}</span>
+              {active && <span className="absolute left-3 right-3 -bottom-px h-0.5 rounded-full bg-brand-400" />}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Content — real existing pages, embedded (full-width) */}
+      <div className="px-6 py-5 w-full">
         {tab === 'explore'
           ? <ExplorePage embedded />
           : <CommunityPage view={tab} onViewChange={(v) => setTab(v)} embedded />}
