@@ -1,9 +1,13 @@
 /**
- * Interface-language switcher (Task #38). Swaps the *UI* language (chrome),
- * not the learner's target language. Two layouts: a compact segmented control
- * (default) and a labelled card row for Settings.
+ * Interface-language switcher (Task #38 / #A24). Picks one of the languages we
+ * ship a full UI string table for (en/uz/ru). Selecting one now ALSO writes
+ * back `profile.nativeLanguage` (via `useSetNativeLanguage`) so the choice
+ * persists across sessions and re-migrates vocab meanings — not just the
+ * in-memory i18n store. Two layouts: a compact segmented control (default) and
+ * a labelled card row for Settings.
  */
 import { UI_LANGUAGES, useUILanguage } from '../../i18n'
+import { useSetNativeLanguage } from '../../lib/language'
 import { cn } from '../../lib/classnames'
 
 export default function UILanguageSwitch({
@@ -13,7 +17,8 @@ export default function UILanguageSwitch({
   variant?: 'segmented' | 'list'
   className?: string
 }): JSX.Element {
-  const [lang, setLang] = useUILanguage()
+  const [lang] = useUILanguage()
+  const setLang = useSetNativeLanguage()
 
   if (variant === 'list') {
     return (

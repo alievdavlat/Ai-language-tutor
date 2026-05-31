@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useAppStore } from '../../store/useAppStore'
 import { Tabs, type TabItem } from '../../components/ui'
+import { useT } from '../../i18n'
 import { useSettingsPatch } from './hooks/useSettingsPatch'
 import MicModeSection from './sections/MicModeSection'
 import CompanionWorkshop from './sections/CompanionWorkshop'
 import MicProcessingSection from './sections/MicProcessingSection'
 import LanguageSection from './sections/LanguageSection'
+import NativeLanguageSection from './sections/NativeLanguageSection'
 import AISection from './sections/AISection'
 import PrivacySection from './sections/PrivacySection'
 import AboutSection from './sections/AboutSection'
@@ -13,19 +14,20 @@ import ProductivitySection from './sections/ProductivitySection'
 
 type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone' | 'productivity' | 'privacy' | 'about'
 
-const TABS: readonly TabItem<SettingsTab>[] = [
-  { id: 'ai', label: 'AI' },
-  { id: 'language', label: 'Language' },
-  { id: 'companion', label: 'Companion' },
-  { id: 'microphone', label: 'Microphone' },
-  { id: 'productivity', label: 'Productivity' },
-  { id: 'privacy', label: 'Privacy' },
-  { id: 'about', label: 'About' }
-] as const
-
 export default function SettingsPage(): JSX.Element {
   const { profile, saving, patch, patchProfile } = useSettingsPatch()
+  const t = useT()
   const [tab, setTab] = useState<SettingsTab>('ai')
+
+  const TABS: readonly TabItem<SettingsTab>[] = [
+    { id: 'ai', label: t('settings.tab.ai') },
+    { id: 'language', label: t('settings.tab.language') },
+    { id: 'companion', label: t('settings.tab.companion') },
+    { id: 'microphone', label: t('settings.tab.microphone') },
+    { id: 'productivity', label: t('settings.tab.productivity') },
+    { id: 'privacy', label: t('settings.tab.privacy') },
+    { id: 'about', label: t('settings.tab.about') }
+  ]
 
   if (!profile) {
     return (
@@ -42,15 +44,15 @@ export default function SettingsPage(): JSX.Element {
       <div className="px-6 py-8 animate-fade-in">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="page-title">Settings</h1>
+            <h1 className="page-title">{t('settings.title')}</h1>
             <p className="text-sm text-slate-400 mt-1">
-              Personalise your AI conversation partner and speaking experience.
+              {t('settings.subtitle')}
             </p>
           </div>
           {saving && (
             <span className="flex items-center gap-1.5 text-xs text-brand-300">
               <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />
-              Saving…
+              {t('settings.saving')}
             </span>
           )}
         </header>
@@ -70,6 +72,7 @@ export default function SettingsPage(): JSX.Element {
         {/* ── Language ──────────────────────────────────────────────────── */}
         {tab === 'language' && (
           <div className="grid grid-cols-1 gap-4">
+            <NativeLanguageSection />
             <LanguageSection
               current={profile.targetLanguage}
               onChange={(targetLanguage) => void patchProfile({ targetLanguage })}

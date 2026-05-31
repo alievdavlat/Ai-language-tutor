@@ -2,6 +2,8 @@ import { NavLink } from 'react-router-dom'
 import type { UserProfile } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
+import { useT } from '../../i18n'
+import type { StringKey } from '../../i18n'
 import AvatarCircle from '../ui/AvatarCircle'
 import {
   IconBolt,
@@ -26,52 +28,60 @@ import {
 const NAV_ICON_CLS = 'w-[18px] h-[18px] shrink-0'
 
 // ─── Nav / item config ────────────────────────────────────────────────────────
-const LEARN_NAV = [
-  { to: '/home', label: 'Home', Icon: IconHome },
-  { to: '/courses', label: 'Courses', Icon: IconBook },
-  { to: '/library', label: 'Library', Icon: IconLibrary },
-  { to: '/vocabulary', label: 'Vocabulary', Icon: IconBookmark },
+// Labels are i18n keys, resolved at render via useT() so the sidebar localises
+// with the user's native language.
+interface NavConfig {
+  to: string
+  labelKey: StringKey
+  Icon: (p: IconProps) => JSX.Element
+}
+
+const LEARN_NAV: readonly NavConfig[] = [
+  { to: '/home', labelKey: 'nav.home', Icon: IconHome },
+  { to: '/courses', labelKey: 'nav.courses', Icon: IconBook },
+  { to: '/library', labelKey: 'nav.library', Icon: IconLibrary },
+  { to: '/vocabulary', labelKey: 'nav.vocabulary', Icon: IconBookmark },
   // Dictionary moved into Vocabulary (a tab) — no longer a separate sidebar item.
-  { to: '/progress', label: 'Progress', Icon: IconChart }
-] as const
+  { to: '/progress', labelKey: 'nav.progress', Icon: IconChart }
+]
 
-const PRACTICE_NAV = [
-  { to: '/speaking', label: 'Speaking', Icon: IconMic },
-  { to: '/clips', label: 'Clips', Icon: IconHeadphones },
-  { to: '/writing', label: 'Writing Coach', Icon: IconPencilEdit },
+const PRACTICE_NAV: readonly NavConfig[] = [
+  { to: '/speaking', labelKey: 'nav.speaking', Icon: IconMic },
+  { to: '/clips', labelKey: 'nav.clips', Icon: IconHeadphones },
+  { to: '/writing', labelKey: 'nav.writing', Icon: IconPencilEdit },
   // Speaking partner now lives inside the Speaking hub (not the sidebar).
-  { to: '/exams', label: 'Exams', Icon: IconClipboard }
-] as const
+  { to: '/exams', labelKey: 'nav.exams', Icon: IconClipboard }
+]
 
-const COMMUNITY_NAV = [
+const COMMUNITY_NAV: readonly NavConfig[] = [
   // Explore = one Instagram-style social hub: feed, groups, challenges, discover,
   // plus live rooms + study-buddies surfaced via its "Now" bar.
-  { to: '/community', label: 'Explore', Icon: IconSearch }
-] as const
+  { to: '/community', labelKey: 'nav.explore', Icon: IconSearch }
+]
 
 // Teacher-mode navigation — teachers also learn, so they keep a Learn group.
-const TEACHER_MANAGE = [
-  { to: '/teacher', label: 'Dashboard', Icon: IconHome },
-  { to: '/studio', label: 'Creator Studio', Icon: IconPencilEdit },
-  { to: '/channel', label: 'My channel', Icon: IconUsers }
-] as const
+const TEACHER_MANAGE: readonly NavConfig[] = [
+  { to: '/teacher', labelKey: 'nav.dashboard', Icon: IconHome },
+  { to: '/studio', labelKey: 'nav.studio', Icon: IconPencilEdit },
+  { to: '/channel', labelKey: 'nav.channel', Icon: IconUsers }
+]
 
-const TEACHER_LEARN = [
-  { to: '/courses', label: 'Courses', Icon: IconBook },
-  { to: '/library', label: 'Library', Icon: IconLibrary },
-  { to: '/speaking', label: 'Speaking', Icon: IconMic },
-  { to: '/clips', label: 'Clips', Icon: IconHeadphones },
-  { to: '/writing', label: 'Writing Coach', Icon: IconPencilEdit },
-  { to: '/exams', label: 'Exams', Icon: IconClipboard }
-] as const
+const TEACHER_LEARN: readonly NavConfig[] = [
+  { to: '/courses', labelKey: 'nav.courses', Icon: IconBook },
+  { to: '/library', labelKey: 'nav.library', Icon: IconLibrary },
+  { to: '/speaking', labelKey: 'nav.speaking', Icon: IconMic },
+  { to: '/clips', labelKey: 'nav.clips', Icon: IconHeadphones },
+  { to: '/writing', labelKey: 'nav.writing', Icon: IconPencilEdit },
+  { to: '/exams', labelKey: 'nav.exams', Icon: IconClipboard }
+]
 
-const TEACHER_ENGAGE = [
-  { to: '/community', label: 'Explore', Icon: IconSearch }
-] as const
+const TEACHER_ENGAGE: readonly NavConfig[] = [
+  { to: '/community', labelKey: 'nav.explore', Icon: IconSearch }
+]
 
-const BOTTOM_NAV = [
-  { to: '/settings', label: 'Settings', Icon: IconGear }
-] as const
+const BOTTOM_NAV: readonly NavConfig[] = [
+  { to: '/settings', labelKey: 'nav.settings', Icon: IconGear }
+]
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -118,12 +128,13 @@ interface CollapseToggleProps {
 }
 
 function CollapseToggle({ collapsed, onToggle }: CollapseToggleProps): JSX.Element {
+  const t = useT()
   const Icon = collapsed ? IconChevronRight : IconChevronLeft
 
   return (
     <button
       onClick={onToggle}
-      title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      title={collapsed ? t('nav.expand') : t('nav.collapse')}
       className={cn(
         'flex items-center gap-3 rounded-xl text-xs text-slate-500 hover:text-slate-300',
         'hover:bg-white/5 transition-all duration-150 w-full',
@@ -131,7 +142,7 @@ function CollapseToggle({ collapsed, onToggle }: CollapseToggleProps): JSX.Eleme
       )}
     >
       <Icon className="w-4 h-4 shrink-0" />
-      {!collapsed && <span>Collapse</span>}
+      {!collapsed && <span>{t('nav.collapse')}</span>}
     </button>
   )
 }
@@ -142,9 +153,10 @@ interface ProfileCardProps {
 }
 
 function ProfileCard({ profile, collapsed }: ProfileCardProps): JSX.Element {
+  const t = useT()
   if (collapsed) {
     return (
-      <NavLink to="/account" className="mx-auto mb-4" title="Account">
+      <NavLink to="/account" className="mx-auto mb-4" title={t('settings.account')}>
         <AvatarCircle name={profile.name ?? 'User'} size="sm" />
       </NavLink>
     )
@@ -157,8 +169,8 @@ function ProfileCard({ profile, collapsed }: ProfileCardProps): JSX.Element {
     >
       <AvatarCircle name={profile.name ?? 'User'} size="md" />
       <div className="min-w-0">
-        <p className="text-sm font-semibold truncate text-white">{profile.name ?? 'You'}</p>
-        <p className="text-[11px] text-slate-400 truncate">Level {profile.level}</p>
+        <p className="text-sm font-semibold truncate text-white">{profile.name ?? t('common.you')}</p>
+        <p className="text-[11px] text-slate-400 truncate">{t('common.level')} {profile.level}</p>
       </div>
     </NavLink>
   )
@@ -174,6 +186,7 @@ export interface SidebarProps {
 
 export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps): JSX.Element {
   const role = useAppStore((s) => s.role)
+  const t = useT()
   const isAdmin = role === 'admin'
   // Admin is a superset of teacher (matches RequireRole in AppRoutes): admins get
   // the full Manage/Learn/Engage nav plus an Admin link.
@@ -196,7 +209,7 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
             <LogoPill />
             <div className="leading-tight">
               <div className="font-bold text-sm tracking-tight text-white">SpeakAI</div>
-              <div className="text-[10px] uppercase tracking-wider text-slate-500">Your coach</div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500">{t('nav.tagline')}</div>
             </div>
           </div>
         )}
@@ -206,50 +219,50 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
       <nav className={cn('flex-1 py-1 overflow-y-auto', collapsed ? 'px-1' : 'px-3')}>
         {isTeacher ? (
           <>
-            {!collapsed && <p className="section-title px-3 mb-2">Manage</p>}
+            {!collapsed && <p className="section-title px-3 mb-2">{t('nav.section.manage')}</p>}
             <div className="space-y-0.5">
               {TEACHER_MANAGE.map((item) => (
-                <NavItem key={item.to} {...item} collapsed={collapsed} />
+                <NavItem key={item.to} to={item.to} label={t(item.labelKey)} Icon={item.Icon} collapsed={collapsed} />
               ))}
-              {isAdmin && <NavItem to="/admin" label="Admin" Icon={IconClipboard} collapsed={collapsed} />}
+              {isAdmin && <NavItem to="/admin" label={t('nav.admin')} Icon={IconClipboard} collapsed={collapsed} />}
             </div>
-            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Learn</p>}
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">{t('nav.section.learn')}</p>}
             {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
             <div className="space-y-0.5">
               {TEACHER_LEARN.map((item) => (
-                <NavItem key={item.to} {...item} collapsed={collapsed} />
+                <NavItem key={item.to} to={item.to} label={t(item.labelKey)} Icon={item.Icon} collapsed={collapsed} />
               ))}
             </div>
-            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Engage</p>}
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">{t('nav.section.engage')}</p>}
             {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
             <div className="space-y-0.5">
               {TEACHER_ENGAGE.map((item) => (
-                <NavItem key={item.to} {...item} collapsed={collapsed} />
+                <NavItem key={item.to} to={item.to} label={t(item.labelKey)} Icon={item.Icon} collapsed={collapsed} />
               ))}
             </div>
           </>
         ) : (
           <>
-            {!collapsed && <p className="section-title px-3 mb-2">Learn</p>}
+            {!collapsed && <p className="section-title px-3 mb-2">{t('nav.section.learn')}</p>}
             <div className="space-y-0.5">
               {LEARN_NAV.map((item) => (
-                <NavItem key={item.to} {...item} collapsed={collapsed} />
+                <NavItem key={item.to} to={item.to} label={t(item.labelKey)} Icon={item.Icon} collapsed={collapsed} />
               ))}
             </div>
 
-            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Practice</p>}
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">{t('nav.section.practice')}</p>}
             {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
             <div className="space-y-0.5">
               {PRACTICE_NAV.map((item) => (
-                <NavItem key={item.to} {...item} collapsed={collapsed} />
+                <NavItem key={item.to} to={item.to} label={t(item.labelKey)} Icon={item.Icon} collapsed={collapsed} />
               ))}
             </div>
 
-            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Social</p>}
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">{t('nav.section.social')}</p>}
             {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
             <div className="space-y-0.5">
               {COMMUNITY_NAV.map((item) => (
-                <NavItem key={item.to} {...item} collapsed={collapsed} />
+                <NavItem key={item.to} to={item.to} label={t(item.labelKey)} Icon={item.Icon} collapsed={collapsed} />
               ))}
             </div>
           </>
@@ -266,7 +279,7 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
               : 'bg-brand-500/10 border border-brand-400/20 text-brand-200'
           )}>
             <span className={cn('w-1.5 h-1.5 rounded-full', isTeacher ? 'bg-emerald-400' : 'bg-brand-400')} />
-            {isAdmin ? 'Admin' : isTeacher ? 'Teacher' : 'Student'} account
+            {isAdmin ? t('role.adminAccount') : isTeacher ? t('role.teacherAccount') : t('role.studentAccount')}
           </div>
         </div>
       )}
@@ -274,7 +287,7 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
       {/* Bottom: settings + collapse toggle */}
       <div className={cn('pb-2 space-y-0.5', collapsed ? 'px-1' : 'px-3')}>
         {BOTTOM_NAV.map((item) => (
-          <NavItem key={item.to} {...item} collapsed={collapsed} />
+          <NavItem key={item.to} to={item.to} label={t(item.labelKey)} Icon={item.Icon} collapsed={collapsed} />
         ))}
         <CollapseToggle collapsed={collapsed} onToggle={onToggle} />
       </div>
