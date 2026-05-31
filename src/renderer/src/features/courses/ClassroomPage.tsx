@@ -23,6 +23,7 @@ import {
 import { getCheckpointQuiz } from '../../services/content/exams'
 import { logActivity } from '../../services/activity'
 import YouTubeEmbed from '../../components/content/YouTubeEmbed'
+import { RichTextView } from '../../components/forms'
 import ExamRunner from './ExamRunner'
 import type { Lesson } from '@shared/types'
 
@@ -201,6 +202,13 @@ export default function ClassroomPage(): JSX.Element {
                   </div>
                   {done && <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-300 bg-emerald-500/15 rounded-full px-3 py-1"><IconCheck className="w-3.5 h-3.5" /> Completed</span>}
                 </div>
+
+                {/* Teacher-authored rich material */}
+                {lc.body && (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+                    <RichTextView text={lc.body} />
+                  </div>
+                )}
 
                 {/* Tabs */}
                 <div className="flex items-center gap-1 border-b border-white/10">

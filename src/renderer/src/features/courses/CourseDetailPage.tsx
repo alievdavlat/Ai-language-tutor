@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, Spinner } from '../../components/ui'
+import { RichTextView } from '../../components/forms'
 import {
   IconBookmark,
   IconCheck,
@@ -369,7 +370,9 @@ export default function CourseDetailPage(): JSX.Element {
           <div className="flex flex-col gap-7">
             <section>
               <h2 className="text-base font-bold mb-2">About this course</h2>
-              <p className="text-sm text-slate-300 leading-relaxed">{course.description}</p>
+              {course.about?.trim()
+                ? <RichTextView text={course.about} />
+                : <p className="text-sm text-slate-300 leading-relaxed">{course.description}</p>}
             </section>
 
             <section>

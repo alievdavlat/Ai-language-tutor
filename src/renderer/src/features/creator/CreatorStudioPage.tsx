@@ -12,8 +12,10 @@ import {
   IconStar,
   IconYouTube
 } from '../../components/icons'
-import { useBackendQuery } from '../../services/backend/useBackend'
+import { backend, useBackendQuery } from '../../services/backend/useBackend'
+import { isImageCover } from '../../lib/cover'
 import { useTargetLanguage } from '../../lib/language'
+import type { Course } from '@shared/types'
 import {
   EXAMPLE_PAYLOAD,
   alreadySeeded,
@@ -25,7 +27,7 @@ import {
 } from '../../services/creator'
 
 const CREATE_ACTIONS = [
-  { icon: IconBook, label: 'New course', desc: 'Units, lessons, drip schedule & pricing', to: '/teacher/course/new', tone: 'from-sky-500/20 to-blue-600/10 text-sky-300' },
+  { icon: IconBook, label: 'New course', desc: 'Units, lessons, rich material, drip & pricing — all in one flow', to: '/teacher/course/new', tone: 'from-sky-500/20 to-blue-600/10 text-sky-300' },
   { icon: IconYouTube, label: 'Interactive lesson', desc: 'Video + Think / Discuss blocks', to: '/teacher/new', tone: 'from-rose-500/20 to-pink-600/10 text-rose-300' },
   { icon: IconBolt, label: 'Short / clip', desc: 'Cut a 9:16 clip from a video or stream', to: '/teacher/clips', tone: 'from-amber-500/20 to-orange-600/10 text-amber-300' },
   { icon: IconStar, label: 'Vocab deck', desc: 'Add words — or bulk-import below', to: '/vocabulary', tone: 'from-violet-500/20 to-purple-600/10 text-violet-300' }
@@ -45,6 +47,8 @@ export default function CreatorStudioPage(): JSX.Element {
   const navigate = useNavigate()
   const lang = useTargetLanguage()
   const stats = useBackendQuery(() => overview(), [], { courses: 0, publishedCourses: 0, lessons: 0, vocab: 0, drafts: 0 })
+  const me = backend.currentUserId() ?? 'u_anon'
+  const myCourses = useBackendQuery(() => backend.myCourses(me), [me], [] as Course[])
 
   const [raw, setRaw] = useState('')
   const [busy, setBusy] = useState(false)
@@ -130,6 +134,30 @@ export default function CreatorStudioPage(): JSX.Element {
             })}
           </div>
         </div>
+
+        {/* Your courses — edit existing content */}
+        {myCourses.data.length > 0 && (
+          <div>
+            <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><IconBook className="w-4 h-4 text-brand-300" /> Your courses</h2>
+            <div className="flex flex-col gap-2">
+              {myCourses.data.map((c) => (
+                <div key={c.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 flex items-center gap-3">
+                  {isImageCover(c.thumbnailUrl) ? (
+                    <img src={c.thumbnailUrl} alt="" className="w-16 h-10 rounded-lg object-cover shrink-0" />
+                  ) : (
+                    <span className={cn('w-16 h-10 rounded-lg bg-gradient-to-br shrink-0', c.cover)} />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{c.title}</p>
+                    <p className="text-[11px] text-slate-400">{c.level} · {c.publishedAt ? 'Published' : 'Draft'} · {c.pricing.kind === 'free' ? 'Free' : c.pricing.kind === 'one-off' ? `$${c.pricing.usd}` : `$${c.pricing.usdPerMo}/mo`}</p>
+                  </div>
+                  <button onClick={() => navigate(`/teacher/course/new?id=${c.id}`)} className="btn-ghost text-xs px-3 py-1.5 shrink-0">Edit</button>
+                  <button onClick={() => navigate(`/course/${c.id}`)} className="text-xs font-semibold text-brand-300 hover:text-brand-200 shrink-0">View →</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Seed default content */}
         <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/[0.06] p-5 flex items-center gap-4">
