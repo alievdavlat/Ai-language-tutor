@@ -6,6 +6,7 @@ import { useAppStore } from '../../store/useAppStore'
 import { backend } from '../../services/backend/useBackend'
 import { isImageCover } from '../../lib/cover'
 import { uploadUrl } from '../../services/backend'
+import { checkDuplicate, contentKey } from '../../services/dedup'
 import LevelSelect from '../../components/ui/LevelSelect'
 import { Tabs, type TabItem } from '../../components/ui'
 import {
@@ -79,8 +80,30 @@ export default function CourseAuthoringPage(): JSX.Element {
       reviewCount: 0,
       enrollmentCount: 0,
       hours: Math.max(1, units.reduce((acc, u) => acc + u.lessons.length, 0)),
-      publishedAt: publish ? new Date().toISOString() : undefined
+      publishedAt: publish ? new Date().toISOString() : undefined,
+      contentHash: contentKey.titleOwner(title || 'Untitled course', me)
     }
+  }
+
+  /**
+   * Block saving a course whose title duplicates one this teacher already owns
+   * (#A65). Returns true when it's safe to proceed.
+   */
+  const ensureNotDuplicate = async (): Promise<boolean> => {
+    const me = backend.currentUserId() ?? 'u_anon'
+    const mine = await backend.myCourses(me)
+    const dup = checkDuplicate(
+      { contentHash: contentKey.titleOwner(title || 'Untitled course', me), title: title || 'Untitled course', excludeId: savedCourseId ?? undefined },
+      mine,
+      { getId: (c) => c.id, getKey: (c) => c.contentHash, getTitle: (c) => c.title }
+    )
+    const hit = dup.exact ?? dup.near[0]?.item
+    if (hit) {
+      setImgError(`You already have a course called “${hit.title}”. Rename this one or edit the original instead.`)
+      setStep('basics')
+      return false
+    }
+    return true
   }
 
   /** Persist the drafted units + lessons to the backend (so the course
@@ -106,6 +129,7 @@ export default function CourseAuthoringPage(): JSX.Element {
   }
 
   const saveDraft = async (): Promise<void> => {
+    if (!(await ensureNotDuplicate())) return
     setBusy('saving')
     const course = await backend.upsertCourse(buildCourse(false))
     await persistCurriculum(course.id)
@@ -118,6 +142,7 @@ export default function CourseAuthoringPage(): JSX.Element {
       setStep('basics')
       return
     }
+    if (!(await ensureNotDuplicate())) return
     setBusy('publishing')
     const course = await backend.upsertCourse(buildCourse(true))
     await persistCurriculum(course.id)

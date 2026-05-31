@@ -233,4 +233,6 @@ export interface MediaAsset {
   /** MIME type as reported by the browser File. */
   contentType?: string
   createdAt: string
+  /** Content fingerprint (#A65) — `file:<sha256>` of the bytes, for dedupe. */
+  contentHash?: string
 }

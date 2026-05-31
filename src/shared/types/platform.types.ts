@@ -58,6 +58,8 @@ export interface Course {
   /** ISO publish date. Drafts have no publishedAt. */
   publishedAt?: string
   capstone?: string
+  /** Duplicate-detection key (#A65) — `to:<title>|<ownerId>` via `services/dedup`. */
+  contentHash?: string
 }
 
 export interface Unit {

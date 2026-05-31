@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react'
-import type { LibraryKind, TargetLanguage } from '@shared/types'
+import { useNavigate } from 'react-router-dom'
+import type { LibraryItem, LibraryKind, TargetLanguage } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { isImageCover } from '../../lib/cover'
 import { uploadUrl } from '../../services/backend'
 import { library } from '../../services/library/store'
+import { contentKey, hashFile } from '../../services/dedup'
 import { Input } from '../../components/ui'
 import { IconBook, IconCheck, IconChevronRight, IconHeadphones, IconPlus, IconX, IconYouTube } from '../../components/icons'
 
@@ -62,6 +64,7 @@ function DropZone({ label, filled, accept, onPick, icon }: { label: string; fill
 }
 
 export default function LibraryUploadModal({ language, onClose, onSaved }: { language: TargetLanguage; onClose: () => void; onSaved: (item: import('@shared/types').LibraryItem) => void }): JSX.Element {
+  const navigate = useNavigate()
   const [kind, setKind] = useState<LibraryKind>('book')
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
@@ -72,23 +75,53 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
   const [fullVideo, setFullVideo] = useState('')
   const [videoLink, setVideoLink] = useState('')
   const [audio, setAudio] = useState('')
+  // File fingerprints for duplicate detection (#A65).
+  const [pdfHash, setPdfHash] = useState('')
+  const [videoHash, setVideoHash] = useState('')
+  const [audioHash, setAudioHash] = useState('')
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Dedup state: exact = block, near = soft warn (overridable).
+  const [exactDup, setExactDup] = useState<LibraryItem | null>(null)
+  const [nearDup, setNearDup] = useState<LibraryItem | null>(null)
+  const [allowNear, setAllowNear] = useState(false)
   const thumbRef = useRef<HTMLInputElement>(null)
 
-  const readFile = async (file: File | undefined, set: (v: string) => void, max = 8): Promise<void> => {
+  const readFile = async (
+    file: File | undefined,
+    set: (v: string) => void,
+    max = 8,
+    setHash?: (h: string) => void
+  ): Promise<void> => {
     setErr(null)
+    setExactDup(null); setNearDup(null); setAllowNear(false)
     if (!file) return
     if (file.size > max * 1024 * 1024) { setErr(`File must be under ${max} MB (offline storage limit).`); return }
+    if (setHash) setHash(await hashFile(file))
     set(await uploadUrl(file, 'library'))
   }
 
   const canSave = !!title.trim() && (kind === 'book' ? !!pdf : kind === 'video' ? !!(videoLink || fullVideo) : !!audio)
 
+  /** Canonical dedup key for this upload (file hash > youtubeId > title+author). */
+  const buildContentHash = (ytId: string | null): string | undefined => {
+    if (kind === 'book') return pdfHash ? contentKey.file(pdfHash) : contentKey.titleAuthor(title, author)
+    if (kind === 'video')
+      return ytId ? contentKey.youtube(ytId) : videoHash ? contentKey.file(videoHash) : contentKey.titleAuthor(title, author)
+    return audioHash ? contentKey.file(audioHash) : contentKey.titleAuthor(title, author)
+  }
+
   const save = async (): Promise<void> => {
     if (!canSave) { setErr('Fill the title and attach the required file.'); return }
     setBusy(true)
     const ytId = kind === 'video' ? parseYouTubeId(videoLink) : null
+    const contentHash = buildContentHash(ytId)
+
+    // Duplicate guard: block exact matches, warn (once) on near matches.
+    const dup = await library.findDuplicate({ contentHash, title: title.trim(), author: author.trim() || undefined, kind })
+    if (dup.exact) { setExactDup(dup.exact); setNearDup(null); setBusy(false); return }
+    if (dup.near.length && !allowNear) { setNearDup(dup.near[0].item); setBusy(false); return }
+
     const created = await library.upsert({
       kind, title: title.trim(), author: author.trim() || undefined, level, language,
       thumbnailUrl: thumb || (ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : undefined),
@@ -97,10 +130,22 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
       fullVideoUrl: kind === 'book' ? (fullVideo || undefined) : undefined,
       youtubeId: ytId ?? undefined,
       videoUrl: kind === 'video' ? (ytId ?? (fullVideo || undefined)) : undefined,
-      audioUrl: kind === 'audio' ? audio : undefined
+      audioUrl: kind === 'audio' ? audio : undefined,
+      contentHash
     })
     setBusy(false)
     onSaved(created)
+    onClose()
+  }
+
+  /** Open the existing item the upload duplicates. */
+  const openExisting = (item: LibraryItem): void => {
+    onClose()
+    navigate(item.kind === 'book' ? `/library/book/${item.id}` : '/library')
+  }
+  /** "Add to my library" — bookmark the original instead of re-uploading. */
+  const saveExisting = async (item: LibraryItem): Promise<void> => {
+    if (!library.isSaved(item.id)) await library.toggleSave(item.id)
     onClose()
   }
 
@@ -151,9 +196,9 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
               )}
             </div>
             <div className="flex-1 min-w-0 flex flex-col gap-3">
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title *" />
+              <Input value={title} onChange={(e) => { setTitle(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder="Title *" />
               <div className="grid grid-cols-[1fr_110px] gap-3">
-                <Input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Author / channel" />
+                <Input value={author} onChange={(e) => { setAuthor(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder="Author / channel" />
                 <LevelSelect value={level} onChange={setLevel} />
               </div>
             </div>
@@ -162,7 +207,7 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
           {/* Per-kind fields */}
           {kind === 'book' && (
             <div className="space-y-3">
-              <DropZone label="PDF file *" filled={!!pdf} accept="application/pdf" onPick={(f) => void readFile(f, setPdf, 8)} icon="📄" />
+              <DropZone label="PDF file *" filled={!!pdf} accept="application/pdf" onPick={(f) => void readFile(f, setPdf, 8, setPdfHash)} icon="📄" />
               <div>
                 <p className="text-[11px] text-slate-500 mb-2">Optional whole-book read-along (plays on pages without their own media — you can also attach media per page inside the reader):</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -174,13 +219,37 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
           )}
           {kind === 'video' && (
             <div className="space-y-3">
-              <Input value={videoLink} onChange={(e) => setVideoLink(e.target.value)} placeholder="YouTube link or ID" />
+              <Input value={videoLink} onChange={(e) => { setVideoLink(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder="YouTube link or ID" />
               <p className="text-[11px] text-slate-500">…or upload a video file:</p>
-              <DropZone label="Video file" filled={!!fullVideo} accept="video/*" onPick={(f) => void readFile(f, setFullVideo, 8)} icon="🎬" />
+              <DropZone label="Video file" filled={!!fullVideo} accept="video/*" onPick={(f) => void readFile(f, setFullVideo, 8, setVideoHash)} icon="🎬" />
             </div>
           )}
           {kind === 'audio' && (
-            <DropZone label="Audio file *" filled={!!audio} accept="audio/*" onPick={(f) => void readFile(f, setAudio, 8)} icon="🎧" />
+            <DropZone label="Audio file *" filled={!!audio} accept="audio/*" onPick={(f) => void readFile(f, setAudio, 8, setAudioHash)} icon="🎧" />
+          )}
+
+          {/* Exact duplicate — block + link to the original (#A65). */}
+          {exactDup && (
+            <div className="rounded-2xl border border-rose-400/30 bg-rose-500/[0.07] p-4">
+              <p className="text-sm font-bold text-rose-100 flex items-center gap-2"><IconX className="w-4 h-4" /> This already exists in the library</p>
+              <p className="text-[12px] text-rose-200/80 mt-1">“{exactDup.title}”{exactDup.author ? ` · ${exactDup.author}` : ''} is already here — no need to upload it again.</p>
+              <div className="flex gap-2 mt-3">
+                <button onClick={() => openExisting(exactDup)} className="rounded-xl bg-white/10 hover:bg-white/15 text-white px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1.5"><IconChevronRight className="w-3.5 h-3.5" /> Open the original</button>
+                <button onClick={() => void saveExisting(exactDup)} className="rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1.5"><IconCheck className="w-3.5 h-3.5" /> Add to my library</button>
+              </div>
+            </div>
+          )}
+
+          {/* Near duplicate — soft warning, overridable (#A65). */}
+          {nearDup && !exactDup && (
+            <div className="rounded-2xl border border-amber-400/30 bg-amber-500/[0.07] p-4">
+              <p className="text-sm font-bold text-amber-100">⚠ Looks similar to something you already have</p>
+              <p className="text-[12px] text-amber-200/80 mt-1">“{nearDup.title}”{nearDup.author ? ` · ${nearDup.author}` : ''} is already in the library. Add this anyway?</p>
+              <div className="flex gap-2 mt-3">
+                <button onClick={() => openExisting(nearDup)} className="rounded-xl bg-white/10 hover:bg-white/15 text-white px-3 py-1.5 text-xs font-bold">View existing</button>
+                <button onClick={() => { setAllowNear(true); setNearDup(null); void save() }} className="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-100 px-3 py-1.5 text-xs font-bold">Add anyway</button>
+              </div>
+            </div>
           )}
 
           {err && <p className="text-[12px] text-rose-400">⚠ {err}</p>}
@@ -188,7 +257,7 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
 
         <footer className="sticky bottom-0 bg-[#0c0f1a]/90 backdrop-blur px-6 py-4 border-t border-white/[0.07] flex justify-end gap-2">
           <button onClick={onClose} className="btn-ghost px-4 py-2 text-sm">Cancel</button>
-          <button onClick={() => void save()} disabled={!canSave || busy} className="btn-primary px-5 py-2 text-sm disabled:opacity-50">{busy ? 'Saving…' : 'Add to Library'}</button>
+          <button onClick={() => void save()} disabled={!canSave || busy || !!exactDup} className="btn-primary px-5 py-2 text-sm disabled:opacity-50">{busy ? 'Saving…' : 'Add to Library'}</button>
         </footer>
       </div>
     </div>

@@ -8,6 +8,7 @@
  */
 import type { ID, LibraryItem, LibraryKind } from '@shared/types'
 import { backend } from '../backend/useBackend'
+import { checkDuplicate, findClusters, type DupCluster, type DupResult } from '../dedup'
 
 const LS_KEY = 'speakai.library.v1'
 const newId = (p: string): ID => `${p}_${Math.random().toString(36).slice(2, 10)}`
@@ -116,6 +117,63 @@ export const library = {
   },
   async remove(id: ID): Promise<void> {
     db().items = db().items.filter((i) => i.id !== id)
+    persist()
+  },
+
+  // ── Duplicate detection (#A65) ──────────────────────────────────────────
+  /**
+   * Check a candidate upload against the library. `exact` = same content key
+   * (block + offer the original); `near` = similar title/author (soft warn).
+   */
+  async findDuplicate(c: {
+    contentHash?: string
+    title: string
+    author?: string
+    kind?: LibraryKind
+    excludeId?: ID
+  }): Promise<DupResult<LibraryItem>> {
+    const pool = db().items.filter((i) => (c.kind ? i.kind === c.kind : true))
+    return checkDuplicate(
+      { contentHash: c.contentHash, title: c.title, author: c.author, excludeId: c.excludeId },
+      pool,
+      {
+        getId: (i) => i.id,
+        getKey: (i) => i.contentHash,
+        getTitle: (i) => i.title,
+        getAuthor: (i) => i.author
+      }
+    )
+  },
+  /** All duplicate clusters across the library (for the admin merge tool). */
+  findDuplicateClusters(): DupCluster<LibraryItem>[] {
+    return findClusters(db().items, {
+      getId: (i) => i.id,
+      getKey: (i) => i.contentHash,
+      getTitle: (i) => i.title
+    })
+  },
+  /**
+   * Merge duplicates: keep `keepId`, delete `dropIds`, and re-point their
+   * save/like references onto the survivor so nobody loses a bookmark.
+   */
+  async mergeInto(keepId: ID, dropIds: ID[]): Promise<void> {
+    const drop = new Set(dropIds.filter((id) => id !== keepId))
+    if (drop.size === 0) return
+    const repoint = <T extends { refId: ID }>(rows: T[]): T[] => {
+      const seen = new Set<string>()
+      const out: T[] = []
+      for (const r of rows) {
+        const refId = drop.has(r.refId) ? keepId : r.refId
+        const key = `${(r as { userId: ID }).userId}|${refId}`
+        if (seen.has(key)) continue // collapse dup bookmarks after repoint
+        seen.add(key)
+        out.push({ ...r, refId })
+      }
+      return out
+    }
+    db().saves = repoint(db().saves)
+    db().likes = repoint(db().likes)
+    db().items = db().items.filter((i) => !drop.has(i.id))
     persist()
   },
 
