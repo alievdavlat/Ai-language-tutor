@@ -99,7 +99,9 @@ function RequireRole({ role: required, children }: { role: UserRole; children: R
   const role = useAppStore((s) => s.role)
   const roleSelected = useAppStore((s) => s.roleSelected)
   if (!roleSelected) return <Navigate to="/role" replace />
-  if (role !== required) return <Navigate to={role === 'teacher' ? '/teacher' : '/home'} replace />
+  // Admin/owner is a superset — can reach teacher authoring routes too (so the
+  // admin CMS can create courses/lessons/clips/announcements). #A36/#A37.
+  if (role !== required && role !== 'admin') return <Navigate to={role === 'teacher' ? '/teacher' : '/home'} replace />
   return <>{children}</>
 }
 

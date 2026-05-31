@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { Course, PlatformUser } from '@shared/types'
 import type { Report } from '@shared/types/studio.types'
 import { AvatarCircle, PageHeader, SectionHeading, StatCard, Tabs, type TabItem } from '../../components/ui'
@@ -35,7 +36,15 @@ const REASON_TINT: Record<Report['reason'], string> = {
   other: 'bg-slate-500/15 text-slate-200'
 }
 
+const CREATE_LINKS: { label: string; desc: string; to: string; emoji: string }[] = [
+  { label: 'New course', desc: 'Curriculum + cover + pricing', to: '/teacher/course/new', emoji: '🎓' },
+  { label: 'New lesson', desc: 'Interactive TED-Ed lesson', to: '/teacher/new', emoji: '📖' },
+  { label: 'New clip', desc: 'Short fill-in-the-blank clip', to: '/teacher/clips', emoji: '🎬' },
+  { label: 'Creator Studio', desc: 'Bulk import + seed content', to: '/studio', emoji: '🧰' }
+]
+
 export default function AdminPage(): JSX.Element {
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('overview')
   const me = backend.currentUserId() ?? 'admin'
 
@@ -92,6 +101,20 @@ export default function AdminPage(): JSX.Element {
           <StatCard value={allCourses.data.length} label="Courses live" tone="emerald" icon={<IconBook />} />
           <StatCard value={pending.data.length} label="Pending review" tone="amber" icon={<IconStar />} />
           <StatCard value={reports.data.length} label="Open reports" tone="rose" icon={<IconChart />} />
+        </div>
+
+        {/* Create content — admin can author any content type (#A36). */}
+        <div>
+          <SectionHeading title="Create content" subtitle="Add real courses, lessons, clips & more to the platform" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {CREATE_LINKS.map((c) => (
+              <button key={c.to} onClick={() => navigate(c.to)} className="rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:-translate-y-0.5 transition p-4 text-left">
+                <span className="text-2xl">{c.emoji}</span>
+                <p className="text-sm font-bold text-white mt-2">{c.label}</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">{c.desc}</p>
+              </button>
+            ))}
+          </div>
         </div>
 
         <Tabs items={TABS} active={tab} onChange={setTab} className="self-start flex-wrap" />
