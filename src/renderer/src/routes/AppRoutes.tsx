@@ -22,7 +22,7 @@ import BookReaderPage from '../features/courses/BookReaderPage'
 import LibraryPage from '../features/library/LibraryPage'
 import LibraryBookPage from '../features/library/LibraryBookPage'
 import TeacherChannelPage from '../features/channel/TeacherChannelPage'
-import CommunityPage from '../features/community/CommunityPage'
+import SocialPage from '../features/social/SocialPage'
 import LivePage from '../features/live/LivePage'
 import LiveRoomPage from '../features/live/LiveRoomPage'
 import MeetPage from '../features/meet/MeetPage'
@@ -61,7 +61,6 @@ import GrammarChallengePage from '../features/grammar/GrammarChallengePage'
 import RoleSelectPage from '../features/auth/RoleSelectPage'
 import LeaderboardPage from '../features/gamification/LeaderboardPage'
 import AdminPage from '../features/admin/AdminPage'
-import ExplorePage from '../features/explore/ExplorePage'
 import IeltsSpeakingSimPage from '../features/ieltssim/IeltsSpeakingSimPage'
 import CompanionGalleryPage from '../features/companions/CompanionGalleryPage'
 import AvatarStudioPage from '../features/avatar/AvatarStudioPage'
@@ -296,7 +295,7 @@ export default function AppRoutes(): JSX.Element {
         path="/community"
         element={
           <AppShell>
-            <CommunityPage />
+            <SocialPage />
           </AppShell>
         }
       />
@@ -530,7 +529,7 @@ export default function AppRoutes(): JSX.Element {
       <Route
         path="/explore"
         element={
-          <AppShell><ExplorePage /></AppShell>
+          <AppShell><SocialPage initialTab="explore" /></AppShell>
         }
       />
       <Route

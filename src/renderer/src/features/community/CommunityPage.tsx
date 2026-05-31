@@ -914,16 +914,28 @@ function RightRail({ onSeeGroups, onSeeChallenges }: { onSeeGroups: () => void; 
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-type View = 'feed' | 'groups' | 'challenges'
-const VIEWS: TabItem<View>[] = [
+export type CommunityView = 'feed' | 'groups' | 'challenges'
+type View = CommunityView
+export const COMMUNITY_VIEWS: TabItem<View>[] = [
   { id: 'feed', label: 'Feed' },
   { id: 'groups', label: 'Groups & Clubs' },
   { id: 'challenges', label: 'Challenges & Events' }
 ]
+const VIEWS = COMMUNITY_VIEWS
 
-export default function CommunityPage(): JSX.Element {
+interface CommunityPageProps {
+  /** Controlled view — when set, the parent owns the section nav (embedded). */
+  view?: CommunityView
+  onViewChange?: (v: CommunityView) => void
+  /** Embedded inside the merged Connect page: drop own header/tabs/scroll. */
+  embedded?: boolean
+}
+
+export default function CommunityPage({ view: viewProp, onViewChange, embedded }: CommunityPageProps = {}): JSX.Element {
   const navigate = useNavigate()
-  const [view, setView] = useState<View>('feed')
+  const [viewState, setViewState] = useState<View>('feed')
+  const view = viewProp ?? viewState
+  const setView = (v: View): void => { onViewChange ? onViewChange(v) : setViewState(v) }
   const [filter, setFilter] = useState<Filter>('recent')
   const feed = useBackendQuery(() => backend.listFeed(), [], [])
   const me = backend.currentUserId()
@@ -955,18 +967,19 @@ export default function CommunityPage(): JSX.Element {
     return feed.data
   })()
 
-  return (
-    <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 w-full">
-        <div className="mb-5 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Community</h1>
-            <p className="text-sm text-slate-400 mt-1">Share resources, join groups, compete in challenges, search everything.</p>
+  const body = (
+    <>
+        {!embedded && (
+          <div className="mb-5 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Community</h1>
+              <p className="text-sm text-slate-400 mt-1">Share resources, join groups, compete in challenges, search everything.</p>
+            </div>
+            <MegaSearch />
           </div>
-          <MegaSearch />
-        </div>
+        )}
 
-        <Tabs items={VIEWS} active={view} onChange={setView} className="self-start mb-5" />
+        {!embedded && <Tabs items={VIEWS} active={view} onChange={setView} className="self-start mb-5" />}
 
         {view === 'feed' && (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6">
@@ -993,7 +1006,13 @@ export default function CommunityPage(): JSX.Element {
 
         {view === 'groups' && <GroupsView />}
         {view === 'challenges' && <ChallengesView />}
-      </div>
+    </>
+  )
+
+  if (embedded) return <div className="flex flex-col gap-1">{body}</div>
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="px-6 py-6 w-full">{body}</div>
     </div>
   )
 }

@@ -109,7 +109,7 @@ function StudyBuddyCard({ u }: { u: PlatformUser }): JSX.Element {
   )
 }
 
-export default function ExplorePage(): JSX.Element {
+export default function ExplorePage({ embedded }: { embedded?: boolean } = {}): JSX.Element {
   const navigate = useNavigate()
   const lang = useTargetLanguage()
   const [params] = useSearchParams()
@@ -184,8 +184,8 @@ export default function ExplorePage(): JSX.Element {
   }, [creators.data, buddies.data, q])
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 w-full flex flex-col gap-5">
+    <div className={embedded ? '' : 'h-full overflow-y-auto'}>
+      <div className={cn('w-full flex flex-col gap-5', !embedded && 'px-6 py-6')}>
         {/* Hero */}
         <div className="rounded-card bg-gradient-to-br from-brand-500/20 via-violet-500/15 to-pink-500/15 border border-white/10 p-6">
           <p className="text-[11px] uppercase tracking-widest text-brand-200 font-bold">Discover · {lang.flag} {lang.name}</p>

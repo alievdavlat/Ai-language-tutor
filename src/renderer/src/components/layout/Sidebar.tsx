@@ -20,7 +20,6 @@ import {
   IconLive,
   IconMic,
   IconPencilEdit,
-  IconSearch,
   IconUsers,
   type IconProps
 } from '../icons'
@@ -47,8 +46,8 @@ const PRACTICE_NAV = [
 ] as const
 
 const COMMUNITY_NAV = [
-  { to: '/explore', label: 'Explore', Icon: IconSearch },
-  { to: '/community', label: 'Community', Icon: IconChat },
+  // Explore + Community are merged into one Instagram-style hub ("Connect").
+  { to: '/community', label: 'Connect', Icon: IconUsers },
   { to: '/buddy', label: 'Study buddy', Icon: IconHeart },
   { to: '/live', label: 'Live', Icon: IconLive }
 ] as const
@@ -71,7 +70,7 @@ const TEACHER_LEARN = [
 
 const TEACHER_ENGAGE = [
   { to: '/live', label: 'Live', Icon: IconLive },
-  { to: '/community', label: 'Community', Icon: IconChat }
+  { to: '/community', label: 'Connect', Icon: IconChat }
 ] as const
 
 const BOTTOM_NAV = [
@@ -246,7 +245,7 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
               ))}
             </div>
 
-            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Community</p>}
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Social</p>}
             {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
             <div className="space-y-0.5">
               {COMMUNITY_NAV.map((item) => (
