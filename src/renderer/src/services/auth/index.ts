@@ -11,12 +11,12 @@
  * both the `users` row and the local store, which writes localStorage), and the
  * role-gated routing in AppRoutes keeps working unchanged.
  */
-import type { PlatformUser } from '@shared/types'
+import type { PlatformUser, Role } from '@shared/types'
 import { backend } from '../backend'
 import { getSupabaseClient, hasSupabaseEnv } from '../backend/client'
 import { useAppStore } from '../../store/useAppStore'
 
-export type Role = 'student' | 'teacher'
+export type { Role }
 
 /** Real Supabase email/password auth — opt-in, off by default. */
 export const useSupabaseAuth =
@@ -31,9 +31,11 @@ function emailToName(email: string): string {
 function applySession(user: PlatformUser, adoptRole: boolean): void {
   const store = useAppStore.getState()
   store.setAuthenticated(true)
-  // Returning users adopt their stored role and skip the /role step; brand-new
-  // sign-ups leave roleSelected=false so the funnel routes them through /role.
-  if (adoptRole && (user.role === 'teacher' || user.role === 'student')) {
+  // Returning users adopt the role the SERVER holds (student/teacher/admin) and
+  // skip the /role step; brand-new sign-ups leave roleSelected=false so the
+  // funnel routes them through /role. The server row is the source of truth, so
+  // a tampered local `speakai.role` is corrected here on every sign-in.
+  if (adoptRole && user.role) {
     store.setRole(user.role)
   }
 }
@@ -81,7 +83,8 @@ export async function signOut(): Promise<void> {
   if (useSupabaseAuth) {
     await getSupabaseClient().auth.signOut().then(() => undefined, () => undefined)
   }
-  await backend.signOut().catch(() => undefined)
+  // store.signOut() clears local flags + the backend session, and also ends the
+  // Clerk session (window.Clerk) so every sign-out path is uniform.
   useAppStore.getState().signOut()
 }
 

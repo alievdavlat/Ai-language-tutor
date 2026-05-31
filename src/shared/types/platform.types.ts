@@ -9,7 +9,10 @@ import type { TargetLanguage } from './user.types'
 
 export type ID = string
 
-export type Role = 'student' | 'teacher'
+// 'admin' is a real, server-persisted role (the Supabase users.role CHECK already
+// allows it). The fuller Owner > Admin > Teacher > Student hierarchy lands in #A55;
+// #A54 only needs admin to be a first-class, persistable role.
+export type Role = 'student' | 'teacher' | 'admin'
 
 // ─── Identity ──────────────────────────────────────────────────────────────
 

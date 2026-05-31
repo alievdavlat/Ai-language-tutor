@@ -25,6 +25,7 @@ import type {
   PlatformUser,
   Post,
   Review,
+  Role,
   Save,
   TargetLanguage,
   Unit,
@@ -49,13 +50,13 @@ export interface Backend {
   currentUserId(): ID | null
 
   // Users / auth
-  signUp(input: { name: string; email: string; role: 'student' | 'teacher' }): Promise<PlatformUser>
+  signUp(input: { name: string; email: string; role: Role }): Promise<PlatformUser>
   signIn(email: string): Promise<PlatformUser | null>
   signOut(): Promise<void>
   getUser(id: ID): Promise<PlatformUser | null>
   updateUser(id: ID, patch: Partial<PlatformUser>): Promise<PlatformUser>
   /** List users (for search / DM start / admin). */
-  listUsers(filter?: { role?: 'student' | 'teacher'; q?: string; limit?: number }): Promise<PlatformUser[]>
+  listUsers(filter?: { role?: Role; q?: string; limit?: number }): Promise<PlatformUser[]>
 
   // Courses
   listCourses(filter?: CourseFilter): Promise<Course[]>

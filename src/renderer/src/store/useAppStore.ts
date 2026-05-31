@@ -3,6 +3,7 @@ import type {
   HardwareProfile,
   ModelRecommendation,
   OllamaStatus,
+  PlatformUser,
   UserProfile
 } from '@shared/types'
 import { backend } from '../services/backend'
@@ -156,6 +157,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   setRole: (role) => {
     if (typeof window !== 'undefined') window.localStorage?.setItem(LS_ROLE, role)
     set({ role, roleSelected: true })
+    // Persist the role onto the backend user so it is the SERVER's source of
+    // truth — it then survives reloads / new devices and is what RequireRole
+    // enforces on next boot (local `speakai.role` is only a cache). Best-effort:
+    // before a backend user exists (mid first-launch funnel) this no-ops and the
+    // role is persisted later by the auth flow / sync-to-backend effect.
+    const id = backend.currentUserId()
+    if (id) void backend.updateUser(id, { role }).catch(() => undefined)
   },
   setAuthenticated: (authenticated) => {
     writeBool(LS_AUTH, authenticated)
@@ -171,6 +179,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (typeof window !== 'undefined') window.localStorage?.removeItem(LS_ROLE)
     // Clear the backend session too (best-effort — supabase.auth or local current user).
     void backend.signOut().catch(() => undefined)
+    // End the Clerk session as well (it attaches `window.Clerk` when on). Without
+    // this a VITE_USE_CLERK=1 build would re-authenticate on the next render.
+    const clerk = (typeof window !== 'undefined'
+      ? (window as unknown as { Clerk?: { signOut?: () => Promise<void> } }).Clerk
+      : undefined)
+    void clerk?.signOut?.().catch(() => undefined)
     set({ authenticated: false, onboardingComplete: false, profile: null, role: 'student', roleSelected: false })
   },
 
@@ -226,21 +240,24 @@ export const useAppStore = create<AppState>((set, get) => ({
       roleSelected: hasCompleteProfile ? true : state.roleSelected
     })
 
-    // Make sure the local backend has a current user so pages can read/write
-    // likes, saves, enrollments, follows etc. without showing "sign in first".
-    // If we already have a Supabase-style session we'd use that; for the mock
-    // backend we sign in the canonical student account (or create it).
-    if (hasCompleteProfile && !backend.currentUserId()) {
+    // Make sure the backend has a current user so pages can read/write likes,
+    // saves, enrollments, follows etc. without showing "sign in first", and
+    // RECONCILE the role from that server row (the server is the source of
+    // truth — a tampered local `speakai.role` gets corrected here).
+    if (hasCompleteProfile) {
       const email = `${(migrated?.name ?? 'aziz').toLowerCase().replace(/\s+/g, '.')}@speakai.app`
-      const existing = await backend.signIn(email).catch(() => null)
-      if (!existing) {
-        const r = get().role
-        await backend.signUp({
-          name: migrated?.name ?? 'You',
-          email,
-          // Backend distinguishes only student vs teacher; admin still has a backend user as 'teacher' for content authoring.
-          role: r === 'teacher' ? 'teacher' : 'student'
-        }).catch(() => null)
+      let user: PlatformUser | null = null
+      const currentId = backend.currentUserId()
+      if (currentId) user = await backend.getUser(currentId).catch(() => null)
+      if (!user) user = await backend.signIn(email).catch(() => null)
+      if (!user) {
+        user = await backend
+          .signUp({ name: migrated?.name ?? 'You', email, role: get().role })
+          .catch(() => null)
+      }
+      if (user?.role && user.role !== get().role) {
+        if (typeof window !== 'undefined') window.localStorage?.setItem(LS_ROLE, user.role)
+        set({ role: user.role, roleSelected: true })
       }
     }
 

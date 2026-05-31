@@ -16,11 +16,9 @@ const useClerk = import.meta.env.VITE_USE_CLERK === '1' && !!import.meta.env.VIT
 export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mode } = {}): JSX.Element {
   const navigate = useNavigate()
   const setAuthenticated = useAppStore((s) => s.setAuthenticated)
+  const setRole = useAppStore((s) => s.setRole)
   const setProfile = useAppStore((s) => s.setProfile)
   const profile = useAppStore((s) => s.profile)
-  const roleSelected = useAppStore((s) => s.roleSelected)
-  const onboardingComplete = useAppStore((s) => s.onboardingComplete)
-  const role = useAppStore((s) => s.role)
   const [mode, setMode] = useState<Mode>(defaultMode)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -38,10 +36,14 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
       const email = clerk.user!.primaryEmailAddress?.emailAddress || `${clerk.user!.id}@clerk.local`
       const name = [clerk.user!.firstName, clerk.user!.lastName].filter(Boolean).join(' ') || clerk.user!.username || 'Learner'
       let bUser = await backend.signIn(email).catch(() => null)
+      const returning = !!bUser
       if (!bUser) {
         bUser = await backend.signUp({ name, email, role: 'student' }).catch(() => null)
       }
       setAuthenticated(true)
+      // Returning users adopt the role the SERVER holds (a teacher/admin who
+      // signs in via Clerk lands in their own UI, not the default student view).
+      if (returning && bUser?.role) setRole(bUser.role)
       // Patch our app-level profile name + photo from Clerk if missing.
       if (profile && bUser && (!profile.name || (!profile.avatarUrl && clerk.user!.imageUrl))) {
         setProfile({
@@ -58,9 +60,12 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
   }, [clerk?.isSignedIn])
 
   const route = (): void => {
-    if (!roleSelected) navigate('/role', { replace: true })
-    else if (!onboardingComplete) navigate('/onboarding', { replace: true })
-    else navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
+    // Read fresh store state — sign-in may have just adopted a server role via
+    // setRole(), and the subscribed closure values above would still be stale.
+    const s = useAppStore.getState()
+    if (!s.roleSelected) navigate('/role', { replace: true })
+    else if (!s.onboardingComplete) navigate('/onboarding', { replace: true })
+    else navigate(s.role === 'teacher' ? '/teacher' : '/home', { replace: true })
   }
 
   // Real local/Supabase-row auth (Clerk is unreachable in this region).
