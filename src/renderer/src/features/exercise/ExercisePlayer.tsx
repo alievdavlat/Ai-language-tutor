@@ -4,12 +4,15 @@ import { cn } from '../../lib/classnames'
 import { ProgressBar } from '../../components/ui'
 import { IconBolt, IconCheck, IconHeart, IconX } from '../../components/icons'
 import {
+  UNITS,
   buildChallenge,
   checkAnswer,
   getLesson,
   type Exercise,
+  type ExerciseKind,
   type GrammarLesson
 } from '../grammar/curriculum'
+import { CEFR_ORDER, type CEFRLevel } from '@shared/types'
 import { backend } from '../../services/backend'
 import { currentUserId } from '../../services/study/useStudy'
 import { completeChallengeDay, completeLesson } from '../../services/study/grammarProgress'
@@ -102,6 +105,44 @@ export default function ExercisePlayer(): JSX.Element {
               meta: { challenge: challengeId, day, score }
             })
           }
+        }
+      }
+    }
+
+    // Level / skill practice launched from the CEFR hub. Grammar is the only
+    // exercise pool we have, so a `level` filters the units by CEFR level and a
+    // `skill` maps to the exercise kinds that grammar can genuinely drill
+    // (writing → the `write`/`fill` production exercises).
+    const levelParam = params.get('level')
+    const skillParam = params.get('skill')
+    if (levelParam || skillParam) {
+      const wantLevel = levelParam && (CEFR_ORDER as readonly string[]).includes(levelParam)
+        ? (levelParam as CEFRLevel)
+        : null
+      const skillKinds: Record<string, ExerciseKind[]> = { writing: ['write', 'fill'] }
+      const wantKinds = skillParam ? skillKinds[skillParam] : undefined
+
+      let pool = UNITS
+        .filter((u) => !wantLevel || u.level === wantLevel)
+        .flatMap((u) => u.lessons.flatMap((l) => l.exercises))
+      if (wantKinds) pool = pool.filter((e) => wantKinds.includes(e.kind))
+
+      const label = skillParam
+        ? skillParam.charAt(0).toUpperCase() + skillParam.slice(1)
+        : wantLevel
+      return {
+        title: `${label} practice`,
+        subtitle: wantLevel ? `Targeted grammar · ${wantLevel}` : 'Grammar drills',
+        // Cap the session so a level set stays a few-minute drill, not a marathon.
+        exercises: pool.length > 0 ? pool.slice(0, 12) : FALLBACK,
+        back: '/exams/cefr',
+        onComplete: (score) => {
+          void backend.recordActivity({
+            userId: currentUserId(),
+            kind: 'practice_session',
+            xp: 10,
+            meta: { level: wantLevel ?? null, skill: skillParam ?? null, score }
+          })
         }
       }
     }

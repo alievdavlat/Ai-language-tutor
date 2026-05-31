@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { SectionResult } from '@shared/types/study.types'
 import { cn } from '../../lib/classnames'
 import { ProgressBar } from '../../components/ui'
@@ -45,7 +45,19 @@ function getRecognition(lang: string): SpeechRec | null {
 
 export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element {
   const navigate = useNavigate()
-  const bank: ExamBank | undefined = BANKS[bankId]
+  const [params] = useSearchParams()
+  const rawBank = BANKS[bankId]
+  // `?section=<id>` runs just that section as focused skill practice (launched
+  // from the practice hub). A focused run is graded and reported like normal,
+  // but is NOT persisted as a full exam attempt — that would skew best-score
+  // stats, which should only reflect complete mocks.
+  const focusId = params.get('section')
+  const focused = !!(focusId && rawBank?.sections.some((s) => s.id === focusId))
+  const bank: ExamBank | undefined = useMemo(() => {
+    if (!rawBank) return undefined
+    if (focused) return { ...rawBank, sections: rawBank.sections.filter((s) => s.id === focusId) }
+    return rawBank
+  }, [rawBank, focused, focusId])
   const profile = useAppStore((s) => s.profile)
   const lang = useTargetLanguage()
   const { send } = useChatStream(profile?.settings.llmModel ?? '')
@@ -142,29 +154,42 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
     setFeedback(fb)
     setPhase('report')
 
-    // Persist the attempt + an activity event through the Foundation backend.
+    // Persist through the Foundation backend. A focused single-section run is
+    // logged as practice (XP only) — only a complete mock is recorded as an
+    // exam attempt so best-score / tests-taken stats stay honest.
     const durationMin = Math.max(1, Math.round((Date.now() - startedAt.current) / 60000))
     const sectionsMap: Record<string, number> = {}
     scored.sections.forEach((s) => { sectionsMap[s.id] = s.numeric })
     try {
-      await backend.recordExamAttempt({
-        userId: currentUserId(),
-        kind: bank.kind,
-        language: lang.code,
-        overall: scored.overallNumeric,
-        sections: sectionsMap,
-        cefr: bank.kind === 'cefr' ? (scored.overall as never) : undefined,
-        feedback: fb.join(' • '),
-        durationMin
-      })
-      await backend.recordActivity({
-        userId: currentUserId(),
-        kind: 'exam_attempt',
-        language: lang.code,
-        minutes: durationMin,
-        xp: 20,
-        meta: { exam: bank.kind, overall: scored.overall }
-      })
+      if (focused) {
+        await backend.recordActivity({
+          userId: currentUserId(),
+          kind: 'practice_session',
+          language: lang.code,
+          minutes: durationMin,
+          xp: 10,
+          meta: { exam: bank.kind, section: bank.sections[0]?.id }
+        })
+      } else {
+        await backend.recordExamAttempt({
+          userId: currentUserId(),
+          kind: bank.kind,
+          language: lang.code,
+          overall: scored.overallNumeric,
+          sections: sectionsMap,
+          cefr: bank.kind === 'cefr' ? (scored.overall as never) : undefined,
+          feedback: fb.join(' • '),
+          durationMin
+        })
+        await backend.recordActivity({
+          userId: currentUserId(),
+          kind: 'exam_attempt',
+          language: lang.code,
+          minutes: durationMin,
+          xp: 20,
+          meta: { exam: bank.kind, overall: scored.overall }
+        })
+      }
     } catch {
       /* persistence is best-effort in preview */
     }
@@ -182,7 +207,11 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
     return (
       <div className="h-full flex flex-col items-center justify-center px-6 text-center max-w-md mx-auto">
         <h1 className="text-3xl font-bold tracking-tight">{bank.title}</h1>
-        <p className="text-slate-400 mt-2">Full mock · {bank.sections.length} sections · timed. Complete each section in order.</p>
+        <p className="text-slate-400 mt-2">
+          {focused
+            ? `Section practice · ${bank.sections[0]?.label} · timed.`
+            : `Full mock · ${bank.sections.length} sections · timed. Complete each section in order.`}
+        </p>
         <div className="w-full mt-6 flex flex-col gap-2">
           {bank.sections.map((s) => (
             <div key={s.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
