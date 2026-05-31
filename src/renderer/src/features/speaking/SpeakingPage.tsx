@@ -11,7 +11,7 @@ import {
   IconPlus,
   IconUsers
 } from '../../components/icons'
-import { useRoleplays, ROLEPLAY_SECTIONS, type Roleplay, type RoleplayDifficulty } from '../../services/roleplay'
+import { roleplays, useRoleplays, ROLEPLAY_SECTIONS, type Roleplay, type RoleplayDifficulty } from '../../services/roleplay'
 import ConversationMode from './modes/ConversationMode'
 import PronunciationPage from '../pronunciation/PronunciationPage'
 import RoleplayEditor from './sections/RoleplayEditor'
@@ -88,15 +88,26 @@ export default function SpeakingPage(): JSX.Element {
     return map
   }, [list])
 
-  // "Based on your activity" = scenarios near the learner's level, else a slice.
+  // "Trending now" = the most-started scenarios on this device (real play counts).
+  // Empty until there's real activity — the rail simply hides rather than faking it.
+  const trending = useMemo(
+    () => [...list].filter((r) => (r.playCount ?? 0) > 0).sort((a, b) => (b.playCount ?? 0) - (a.playCount ?? 0)).slice(0, 8),
+    [list]
+  )
+
+  // "Based on your activity" = the sections you've actually practised, most recent
+  // first; brand-new users fall back to level-matched starter scenarios.
   const forYou = useMemo(() => {
+    const played = list.filter((r) => r.lastPlayedAt).sort((a, b) => (b.lastPlayedAt! < a.lastPlayedAt! ? -1 : 1))
+    if (played.length > 0) {
+      const sections = new Set(played.map((r) => r.section))
+      const more = list.filter((r) => !r.lastPlayedAt && sections.has(r.section))
+      return [...played, ...more].slice(0, 6)
+    }
     const lvl = profile?.level
     const matched = lvl ? list.filter((r) => r.level === lvl) : []
     return (matched.length >= 3 ? matched : list).slice(0, 6)
   }, [list, profile?.level])
-
-  // "Trending now" = a rotating curated slice (no scenario is tagged 'trending').
-  const trending = useMemo(() => list.slice(3, 9), [list])
 
   if (!profile) {
     return <div className="h-full flex items-center justify-center text-slate-400">Loading…</div>
@@ -104,6 +115,8 @@ export default function SpeakingPage(): JSX.Element {
 
   const startScenario = (rp: Roleplay): void => {
     if (!aiReady) { navigate('/settings'); return }
+    roleplays.recordPlay(rp.id, new Date().toISOString())
+    refresh()
     setTopic(rp.prompt)
     setView('chat')
   }
@@ -118,8 +131,7 @@ export default function SpeakingPage(): JSX.Element {
     if (!aiReady) { navigate('/settings'); return }
     if (list.length === 0) return
     const pick = list[Math.floor(Math.random() * list.length)] ?? list[0]
-    setTopic(pick.prompt)
-    setView('chat')
+    startScenario(pick)
   }
 
   // ── Chat / pronunciation sub-views keep a Back button to the hub. ──

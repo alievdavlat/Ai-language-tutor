@@ -46,6 +46,10 @@ export interface Roleplay {
   authorId?: string
   visibility?: 'public' | 'private'
   createdAt?: string
+  /** How many times the viewer has started this scenario (drives Trending). */
+  playCount?: number
+  /** ISO of the last time it was started (drives "Based on your activity"). */
+  lastPlayedAt?: string
 }
 
 const LS_KEY = 'speakai.roleplays.v2'
@@ -164,6 +168,14 @@ export const roleplays = {
   },
   remove(id: string): void {
     save(db().filter((r) => r.id !== id))
+  },
+  /** Record that the viewer started this scenario — feeds Trending + activity. */
+  recordPlay(id: string, nowIso: string): void {
+    const list = db()
+    const idx = list.findIndex((r) => r.id === id)
+    if (idx < 0) return
+    list[idx] = { ...list[idx], playCount: (list[idx].playCount ?? 0) + 1, lastPlayedAt: nowIso }
+    save(list)
   }
 }
 
