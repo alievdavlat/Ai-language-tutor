@@ -42,7 +42,7 @@ const PRACTICE_NAV = [
   { to: '/speaking', label: 'Speaking', Icon: IconMic },
   { to: '/clips', label: 'Clips', Icon: IconHeadphones },
   { to: '/writing', label: 'Writing Coach', Icon: IconPencilEdit },
-  { to: '/meet', label: 'Speaking partner', Icon: IconUsers },
+  // Speaking partner now lives inside the Speaking hub (not the sidebar).
   { to: '/exams', label: 'Exams', Icon: IconClipboard }
 ] as const
 
