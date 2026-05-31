@@ -22,6 +22,8 @@ import type {
   ExamAttempt,
   Follow,
   Group,
+  GroupMember,
+  GroupMessage,
   Lesson,
   Like,
   LiveAnnouncement,
@@ -118,6 +120,7 @@ const p2p = (r: Record<string, unknown>): Post => ({
   studySession: r.study_session as Post['studySession'],
   achievement: r.achievement as Post['achievement'],
   voice: r.voice as Post['voice'],
+  groupId: (r.group_id as string | null) ?? undefined,
   reactions: (r.reactions as Record<string, number>) ?? {},
   likeCount: r.like_count as number,
   commentCount: r.comment_count as number,
@@ -530,7 +533,8 @@ export const supabaseBackend: Backend = {
   },
 
   async listFeed(opts): Promise<Post[]> {
-    let q = sb.from('posts').select('*').order('created_at', { ascending: false })
+    // Group-scoped posts live in their group's feed, not the global one.
+    let q = sb.from('posts').select('*').is('group_id', null).order('created_at', { ascending: false })
     q = withRange(q, opts)
     const { data } = await q
     let posts = (data ?? []).map(p2p)
@@ -553,6 +557,7 @@ export const supabaseBackend: Backend = {
       study_session: input.studySession ?? null,
       achievement: input.achievement ?? null,
       voice: input.voice ?? null,
+      group_id: input.groupId ?? null,
       reactions: input.reactions ?? {},
       share_count: input.shareCount ?? 0,
       created_at: now()
@@ -904,6 +909,41 @@ export const supabaseBackend: Backend = {
     if (ids.length === 0) return []
     const { data } = await sb.from('users').select('*').in('id', ids)
     return (data ?? []).map(u2u)
+  },
+  async groupMembership(groupId): Promise<GroupMember[]> {
+    const { data: mems } = await sb.from('group_members').select('user_id, role, joined_at').eq('group_id', groupId)
+    const rows = mems ?? []
+    const ids = rows.map((m) => m.user_id as string)
+    if (ids.length === 0) return []
+    const { data: users } = await sb.from('users').select('*').in('id', ids)
+    const byId = new Map((users ?? []).map((u) => [u.id as string, u2u(u)]))
+    const roleRank: Record<GroupMember['role'], number> = { owner: 0, moderator: 1, member: 2 }
+    return rows
+      .map((m) => ({ user: byId.get(m.user_id as string), role: (m.role as GroupMember['role']) ?? 'member', joinedAt: (m.joined_at as string) ?? now() }))
+      .filter((m): m is GroupMember => Boolean(m.user))
+      .sort((a, b) => roleRank[a.role] - roleRank[b.role] || a.joinedAt.localeCompare(b.joinedAt))
+  },
+  async listGroupFeed(groupId, opts): Promise<Post[]> {
+    let q = sb.from('posts').select('*').eq('group_id', groupId).order('created_at', { ascending: false })
+    if (opts?.limit) q = q.limit(opts.limit)
+    const { data } = await q
+    return (data ?? []).map(p2p)
+  },
+  async listGroupMessages(groupId): Promise<GroupMessage[]> {
+    const { data } = await sb.from('group_messages').select('*').eq('group_id', groupId).order('created_at', { ascending: true })
+    return (data ?? []).map((r) => ({
+      id: r.id as string,
+      groupId: r.group_id as string,
+      senderId: r.sender_id as string,
+      text: r.text as string,
+      createdAt: r.created_at as string
+    }))
+  },
+  async sendGroupMessage(input): Promise<GroupMessage> {
+    const row = { id: newId('gm'), group_id: input.groupId, sender_id: input.senderId, text: input.text, created_at: now() }
+    const { data, error } = await sb.from('group_messages').insert(row).select().single()
+    if (error) throw error
+    return { id: data.id as string, groupId: data.group_id as string, senderId: data.sender_id as string, text: data.text as string, createdAt: data.created_at as string }
   },
 
   // ─── Challenges ────────────────────────────────────────────────────────────

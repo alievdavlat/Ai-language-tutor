@@ -75,9 +75,23 @@ export const SEED_GROUPS: Group[] = [
   { id: 'g_business', name: 'Business English Pros', description: 'Meetings, emails, negotiations, interviews. Level up your work English together.', language: 'en', ownerId: 'u_emma', cover: 'from-amber-500 to-orange-700', imageUrl: SEED_IMG.group, visibility: 'public', memberCount: 2, createdAt: t(60 * 24 * 20) }
 ]
 
-/** Who is a member of which seed group (owner is added on seed). */
+/** Who is a member of which seed group (owner auto-joins on upsert; real member
+ *  count = these rows + the owner, never a vanity number). */
 export const SEED_GROUP_MEMBERS: { groupId: string; userId: string }[] = [
   { groupId: 'g_business', userId: 'u_priya' }
+]
+
+/** A couple of opening posts per group so a fresh group feed isn't empty.
+ *  Authored by real seed members; `kind`/`text` only (no rich payload). */
+export const SEED_GROUP_POSTS: { groupId: string; authorId: string; kind: 'text' | 'question'; text: string }[] = [
+  { groupId: 'g_business', authorId: 'u_emma', kind: 'text', text: 'Welcome to Business English Pros! Introduce yourself and share one work situation you want to get more confident in — meetings, emails or interviews.' },
+  { groupId: 'g_business', authorId: 'u_priya', kind: 'question', text: 'What is a polite way to disagree with your manager in a meeting without sounding rude?' }
+]
+
+/** Seed chat so the group room has a little life on first open. */
+export const SEED_GROUP_MESSAGES: { groupId: string; senderId: string; text: string }[] = [
+  { groupId: 'g_business', senderId: 'u_priya', text: 'Anyone free for a mock client call this weekend?' },
+  { groupId: 'g_business', senderId: 'u_emma', text: 'Great idea — I can host one Saturday evening. 👍' }
 ]
 
 const days = (n: number): string => new Date(Date.now() + n * 24 * 60 * 60_000).toISOString()

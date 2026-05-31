@@ -910,7 +910,7 @@ function MegaSearch(): JSX.Element {
               </SearchGroup>
               <SearchGroup title="Groups" show={results.groups.length > 0}>
                 {results.groups.map((g) => (
-                  <button key={g.id} onMouseDown={() => go('/community')} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
+                  <button key={g.id} onMouseDown={() => go(`/group/${g.id}`)} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
                     <span className="w-7 h-7 rounded-lg bg-grad-brand flex items-center justify-center text-white text-[11px] font-bold shrink-0">{g.name[0]}</span>
                     <span className="text-sm text-white truncate">{g.name}</span>
                   </button>
@@ -946,6 +946,7 @@ function SearchGroup({ title, show, children }: { title: string; show: boolean; 
 
 function GroupsView(): JSX.Element {
   const me = meId()
+  const navigate = useNavigate()
   const profile = useAppStore((s) => s.profile)
   const [groups, setGroups] = useState<Group[]>([])
   const [myIds, setMyIds] = useState<Set<string>>(new Set())
@@ -986,19 +987,23 @@ function GroupsView(): JSX.Element {
         {filtered.map((g) => {
           const joined = myIds.has(g.id)
           return (
-            <article key={g.id} className="rounded-card border border-white/10 bg-white/[0.025] overflow-hidden">
+            <article
+              key={g.id}
+              onClick={() => navigate(`/group/${g.id}`)}
+              className="rounded-card border border-white/10 bg-white/[0.025] overflow-hidden cursor-pointer hover:border-white/20 hover:bg-white/[0.04] transition group/card"
+            >
               <div className={cn('h-20 bg-gradient-to-br relative', g.cover)}>
                 {g.imageUrl && <img src={g.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />}
               </div>
               <div className="p-4">
-                <p className="text-sm font-bold text-white">{g.name}</p>
+                <p className="text-sm font-bold text-white group-hover/card:text-brand-200 transition">{g.name}</p>
                 <p className="text-xs text-slate-400 line-clamp-2 mt-1 min-h-[2.4em]">{g.description}</p>
                 <div className="flex items-center justify-between mt-3">
                   <span className="text-[11px] text-slate-500 inline-flex items-center gap-1">
-                    <IconUsers className="w-3.5 h-3.5" /> {g.memberCount.toLocaleString()} members
+                    <IconUsers className="w-3.5 h-3.5" /> {g.memberCount.toLocaleString()} {g.memberCount === 1 ? 'member' : 'members'}
                   </span>
                   <button
-                    onClick={() => void toggle(g)}
+                    onClick={(e) => { e.stopPropagation(); void toggle(g) }}
                     className={cn(
                       'text-xs font-semibold rounded-lg px-3 py-1.5 transition',
                       joined ? 'bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]' : 'bg-grad-brand text-white hover:brightness-110'
@@ -1270,7 +1275,7 @@ function RightRail({ onSeeGroups, onSeeChallenges }: { onSeeGroups: () => void; 
         </div>
         <div className="flex flex-col gap-2">
           {groups.data.slice(0, 3).map((g) => (
-            <button key={g.id} onClick={onSeeGroups} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5 text-left hover:bg-white/[0.05]">
+            <button key={g.id} onClick={() => navigate(`/group/${g.id}`)} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5 text-left hover:bg-white/[0.05]">
               <span className="w-9 h-9 rounded-xl bg-grad-brand flex items-center justify-center text-white text-xs font-bold overflow-hidden relative">
                 {g.imageUrl ? <img src={g.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" /> : g.name[0]}
               </span>
