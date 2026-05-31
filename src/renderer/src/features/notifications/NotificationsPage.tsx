@@ -4,6 +4,7 @@ import { cn } from '../../lib/classnames'
 import { PageHeader, Tabs, type TabItem } from '../../components/ui'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { useAppStore } from '../../store/useAppStore'
+import { canAuthorContent } from '@shared/constants'
 import { IconBolt, IconPlus, IconStar, IconUsers, type IconProps } from '../../components/icons'
 import NotificationComposer from './NotificationComposer'
 
@@ -37,7 +38,8 @@ export default function NotificationsPage(): JSX.Element {
   const navigate = useNavigate()
   const me = backend.currentUserId()
   const role = useAppStore((s) => s.role)
-  const canSend = role === 'admin' || role === 'teacher'
+  // Teachers broadcast to their students; admins/owners broadcast platform-wide.
+  const canSend = canAuthorContent(role)
   const [composing, setComposing] = useState(false)
 
   // Real notifications only — no hardcoded fallback (#A34).

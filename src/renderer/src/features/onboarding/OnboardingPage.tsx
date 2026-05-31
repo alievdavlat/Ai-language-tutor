@@ -11,6 +11,7 @@ import type {
   UserProfile
 } from '@shared/types'
 import { useAppStore } from '../../store/useAppStore'
+import { homeForRole } from '@shared/constants'
 import { Card, ProgressBar } from '../../components/ui'
 import { useOnboardingFlow } from './hooks/useOnboardingFlow'
 import { buildEmptyProfile } from './constants/defaultProfile'
@@ -97,7 +98,7 @@ export default function OnboardingPage(): JSX.Element {
     setProfile(profile)
     setUILang(toUILang(nativeLanguage))
     setOnboardingComplete(true)
-    navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
+    navigate(homeForRole(role), { replace: true })
   }
 
   return (

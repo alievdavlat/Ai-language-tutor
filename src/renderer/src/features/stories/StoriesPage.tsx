@@ -6,6 +6,7 @@ import { IconBolt, IconPlus } from '../../components/icons'
 import { type Story } from '../../services/content/stories'
 import { useStories } from '../../services/stories/store'
 import { useAppStore } from '../../store/useAppStore'
+import { canAuthorContent } from '@shared/constants'
 import StoryEditor from './StoryEditor'
 import { useContentState, getStoryProgress } from '../../services/content/progress'
 
@@ -54,7 +55,7 @@ export default function StoriesPage(): JSX.Element {
   const [tab, setTab] = useState<Tab>('mixed')
   const [level, setLevel] = useState('All')
   const role = useAppStore((s) => s.role)
-  const canAuthor = role === 'teacher' || role === 'admin'
+  const canAuthor = canAuthorContent(role)
   const [editing, setEditing] = useState(false)
   const { list: allStories, refresh } = useStories()
   useContentState()

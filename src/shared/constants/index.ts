@@ -1,3 +1,4 @@
+export * from './roles'
 export * from './accents'
 export * from './whisper-models'
 export * from './llm-models'

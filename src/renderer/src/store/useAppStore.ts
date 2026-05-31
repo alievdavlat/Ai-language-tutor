@@ -3,6 +3,7 @@ import type {
   HardwareProfile,
   ModelRecommendation,
   OllamaStatus,
+  Role,
   UserProfile
 } from '@shared/types'
 import { backend } from '../services/backend'
@@ -14,8 +15,11 @@ export interface AutoSetupState {
   pullPct: number
 }
 
-/** UI-level role until real auth (Clerk) lands in a later phase. */
-export type UserRole = 'student' | 'teacher' | 'admin'
+/**
+ * UI-level role until real auth (Clerk) lands in a later phase. Unified with the
+ * platform role hierarchy (#A55): student < teacher < admin < owner.
+ */
+export type UserRole = Role
 
 interface AppState {
   booted: boolean
@@ -127,8 +131,7 @@ function readBool(key: string, fallback: boolean): boolean {
 function readRole(): UserRole {
   if (typeof window === 'undefined') return 'student'
   const v = window.localStorage?.getItem(LS_ROLE)
-  if (v === 'teacher') return 'teacher'
-  if (v === 'admin') return 'admin'
+  if (v === 'teacher' || v === 'admin' || v === 'owner') return v
   return 'student'
 }
 function readRoleSelected(): boolean {
@@ -234,12 +237,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       const email = `${(migrated?.name ?? 'aziz').toLowerCase().replace(/\s+/g, '.')}@speakai.app`
       const existing = await backend.signIn(email).catch(() => null)
       if (!existing) {
-        const r = get().role
+        // Persist the real role (student/teacher/admin/owner) onto the backend
+        // user so the admin console / CRM see the true hierarchy (#A55).
         await backend.signUp({
           name: migrated?.name ?? 'You',
           email,
-          // Backend distinguishes only student vs teacher; admin still has a backend user as 'teacher' for content authoring.
-          role: r === 'teacher' ? 'teacher' : 'student'
+          role: get().role
         }).catch(() => null)
       }
     }
