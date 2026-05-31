@@ -21,6 +21,7 @@ import {
   useContentState, isLessonComplete, markLessonComplete, recordCheckpoint
 } from '../../services/content/progress'
 import { getCheckpointQuiz } from '../../services/content/exams'
+import { logActivity } from '../../services/activity'
 import YouTubeEmbed from '../../components/content/YouTubeEmbed'
 import ExamRunner from './ExamRunner'
 import type { Lesson } from '@shared/types'
@@ -121,7 +122,7 @@ export default function ClassroomPage(): JSX.Element {
   function complete(): void {
     if (!lesson) return
     markLessonComplete(lesson.id)
-    if (userId) backend.recordActivity({ userId, kind: 'lesson_complete', xp: 20, minutes: lesson.durationMin, meta: { courseId, lessonId: lesson.id } }).catch(() => {})
+    if (userId) logActivity({ userId, kind: 'lesson_complete', xp: 20, minutes: lesson.durationMin, meta: { courseId, lessonId: lesson.id } }).catch(() => {})
     syncProgress()
     goNext()
   }
@@ -129,7 +130,7 @@ export default function ClassroomPage(): JSX.Element {
   function onCheckpoint(score: number, passed: boolean): void {
     if (!lesson) return
     recordCheckpoint(lesson.id, score) // marks complete when passed
-    if (userId) backend.recordActivity({ userId, kind: 'exam_attempt', xp: passed ? 40 : 10, meta: { courseId, lessonId: lesson.id, score } }).catch(() => {})
+    if (userId) logActivity({ userId, kind: 'exam_attempt', xp: passed ? 40 : 10, meta: { courseId, lessonId: lesson.id, score } }).catch(() => {})
     syncProgress()
   }
 

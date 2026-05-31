@@ -13,6 +13,7 @@ import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { buildCourseView } from '../../services/content/courseModel'
 import { getLessonContent, type BookBlock } from '../../services/content/lessonContent'
 import { useContentState, isLessonComplete, markLessonComplete } from '../../services/content/progress'
+import { logActivity } from '../../services/activity'
 import type { Lesson } from '@shared/types'
 
 function Block({ block }: { block: BookBlock }): JSX.Element {
@@ -84,7 +85,7 @@ export default function BookReaderPage(): JSX.Element {
   function finish(): void {
     markLessonComplete(lesson!.id)
     if (userId) {
-      backend.recordActivity({ userId, kind: 'lesson_complete', xp: 20, minutes: lesson!.durationMin, meta: { courseId, lessonId } }).catch(() => {})
+      logActivity({ userId, kind: 'lesson_complete', xp: 20, minutes: lesson!.durationMin, meta: { courseId, lessonId } }).catch(() => {})
       const fresh = buildCourseView(courseId, units, lessons)
       backend.setEnrollmentProgress(userId, courseId, fresh.progress).catch(() => {})
     }

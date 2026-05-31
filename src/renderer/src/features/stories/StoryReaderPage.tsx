@@ -6,6 +6,7 @@ import { IconBook, IconChevronLeft, IconChevronRight, IconHeadphones, IconVolume
 import { getStory } from '../../services/stories/store'
 import { useContentState, setStoryProgress, getStoryProgress } from '../../services/content/progress'
 import { backend } from '../../services/backend/useBackend'
+import { logActivity } from '../../services/activity'
 import { useAppStore } from '../../store/useAppStore'
 import WordText, { type WordPick } from '../../components/content/WordText'
 import DictionaryPopover from '../../components/content/DictionaryPopover'
@@ -63,7 +64,7 @@ export default function StoryReaderPage(): JSX.Element {
 
   function onQuizComplete(score: number): void {
     setStoryProgress(storyId, story!.parts.length - 1, true)
-    if (userId) backend.recordActivity({ userId, kind: 'practice_session', xp: story!.xp, meta: { storyId, score } }).catch(() => {})
+    if (userId) logActivity({ userId, kind: 'practice_session', xp: story!.xp, meta: { storyId, score } }).catch(() => {})
   }
 
   return (

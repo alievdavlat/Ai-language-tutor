@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { TargetLanguage, VocabItem } from '@shared/types'
 import type { ReviewGrade } from '@shared/types/study.types'
 import { backend } from '../backend'
+import { logActivity } from '../activity'
 import { createId } from '../../lib/ids'
 import { useAppStore } from '../../store/useAppStore'
 import { translate } from '../translate'
@@ -194,7 +195,7 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
         source: 'created' as const
       }
       const saved = await backend.upsertVocab(item)
-      await backend.recordActivity({
+      await logActivity({
         userId,
         kind: 'word_learned',
         language,
@@ -211,7 +212,7 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
     async (card, grade) => {
       const { card: updated } = schedule(card, grade, Date.now())
       const saved = await backend.upsertVocab(updated)
-      await backend.recordActivity({
+      await logActivity({
         userId,
         kind: 'practice_session',
         language,

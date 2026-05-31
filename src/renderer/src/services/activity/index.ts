@@ -14,6 +14,46 @@ import type { ActivityEvent, UserStats } from '@shared/types'
 import { backend } from '../backend'
 import { emitLocalChange, subscribeTable } from '../backend/realtime'
 import { isIncognito } from '../privacy'
+import { useProgressStore } from '../progress/store'
+import type { RecordOpts as ProgressOpts } from '../progress/store'
+import type { ActivityKind as ProgressKind } from '../progress/types'
+
+/**
+ * Bridge backend activity → the gamification progress store so the Progress
+ * page (XP / streak / mastery / achievements), which reads the progress store,
+ * reflects ALL learning — including course lessons, exams, stories and books
+ * that record straight to the backend. Without this, completing a course lesson
+ * updated Home's backend stats but left Progress showing 0 XP.
+ *
+ * NOTE: surfaces that ALREADY write to the progress store directly (grammar
+ * exercises, flashcards, level test, speaking) must NOT route through
+ * logActivity, or they would double-count here.
+ */
+const BACKEND_TO_PROGRESS_KIND: Record<string, ProgressKind> = {
+  lesson_complete: 'lesson_complete',
+  word_learned: 'word_learned',
+  practice_session: 'session',
+  exam_attempt: 'session',
+  speaking_session: 'speaking_exchange',
+  course_enroll: 'session',
+  streak_day: 'session',
+  achievement: 'session',
+  custom: 'session'
+}
+
+function mirrorToProgressStore(event: ActivityEvent): void {
+  const mapped = BACKEND_TO_PROGRESS_KIND[event.kind]
+  if (!mapped) return
+  const opts: ProgressOpts = { xp: event.xp ?? 0 }
+  const skill = (event.meta?.skill as ProgressOpts['skill']) ?? undefined
+  if (skill) opts.skill = skill
+  if (event.meta) opts.meta = event.meta
+  try {
+    useProgressStore.getState().record(mapped, opts)
+  } catch {
+    /* progress store is a best-effort local mirror */
+  }
+}
 
 /** XP awarded per event kind when the caller doesn't specify its own. */
 const DEFAULT_XP: Record<ActivityEvent['kind'], number> = {
@@ -39,6 +79,7 @@ export async function logActivity(
   }
   const xp = input.xp ?? DEFAULT_XP[input.kind] ?? 0
   const res = await backend.recordActivity({ ...input, xp })
+  mirrorToProgressStore(res.event)
   emitLocalChange({ event: 'INSERT', table: 'activity_events', new: res.event as unknown as Record<string, unknown>, old: null })
   emitLocalChange({ event: 'UPDATE', table: 'user_stats', new: res.stats as unknown as Record<string, unknown>, old: null })
   return res

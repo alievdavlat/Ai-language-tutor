@@ -8,6 +8,7 @@ import { useAppStore } from '../../store/useAppStore'
 import { useChatStream } from '../../hooks/useChatStream'
 import { useTargetLanguage } from '../../lib/language'
 import { backend } from '../../services/backend'
+import { logActivity } from '../../services/activity'
 import { currentUserId } from '../../services/study/useStudy'
 import {
   BANKS,
@@ -165,7 +166,7 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
     scored.sections.forEach((s) => { sectionsMap[s.id] = s.numeric })
     try {
       if (focused) {
-        await backend.recordActivity({
+        await logActivity({
           userId: currentUserId(),
           kind: 'practice_session',
           language: lang.code,
@@ -184,7 +185,7 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
           feedback: fb.join(' • '),
           durationMin
         })
-        await backend.recordActivity({
+        await logActivity({
           userId: currentUserId(),
           kind: 'exam_attempt',
           language: lang.code,

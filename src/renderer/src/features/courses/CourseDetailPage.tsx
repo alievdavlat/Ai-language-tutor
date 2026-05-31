@@ -19,6 +19,7 @@ import { isImageCover } from '../../lib/cover'
 import { buildCourseView } from '../../services/content/courseModel'
 import { useContentState, recordFinalExam, issueCertificate, getCertificate } from '../../services/content/progress'
 import { getFinalExam } from '../../services/content/exams'
+import { logActivity } from '../../services/activity'
 import { downloadCertificate } from '../../lib/certificate'
 import type { Lesson } from '@shared/types'
 import ExamRunner from './ExamRunner'
@@ -124,7 +125,7 @@ export default function CourseDetailPage(): JSX.Element {
     } else {
       await backend.enroll(userId, courseId).catch(() => {})
     }
-    await backend.recordActivity({ userId, kind: 'course_enroll', meta: { courseId } }).catch(() => {})
+    await logActivity({ userId, kind: 'course_enroll', meta: { courseId } }).catch(() => {})
     refreshEnroll()
     if (view.next) openLesson(view.next)
   }
@@ -141,7 +142,7 @@ export default function CourseDetailPage(): JSX.Element {
         userId, kind: 'custom', language: (course?.targetLanguage ?? 'en'),
         overall: score, sections: { final: score }, feedback: passed ? 'Course final exam passed.' : 'Course final exam — keep practising.'
       }).catch(() => {})
-      await backend.recordActivity({ userId, kind: 'exam_attempt', xp: passed ? 100 : 20, meta: { courseId, score } }).catch(() => {})
+      await logActivity({ userId, kind: 'exam_attempt', xp: passed ? 100 : 20, meta: { courseId, score } }).catch(() => {})
     }
     if (passed) {
       issueCertificate({ courseId, courseTitle: course?.title ?? 'Course', learnerName: profile?.name ?? 'Learner', score })
