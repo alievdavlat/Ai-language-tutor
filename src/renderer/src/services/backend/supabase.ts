@@ -171,6 +171,7 @@ const n2n = (r: Record<string, unknown>): Notif => ({
   id: r.id as string,
   userId: r.user_id as string,
   type: r.type as Notif['type'],
+  kind: (r.kind as Notif['kind']) ?? undefined,
   title: r.title as string,
   body: r.body as string,
   link: r.link as string | undefined,
@@ -825,12 +826,15 @@ export const supabaseBackend: Backend = {
   },
   async createNotif(input): Promise<Notif> {
     const row = {
-      id: newId('n'), user_id: input.userId, type: input.type, title: input.title,
+      id: newId('n'), user_id: input.userId, type: input.type, kind: input.kind ?? null, title: input.title,
       body: input.body, link: input.link ?? null, read: false, created_at: now()
     }
     const { data, error } = await sb.from('notifications').insert(row).select().single()
     if (error) throw error
     return n2n(data)
+  },
+  async markNotif(id, read = true): Promise<void> {
+    await sb.from('notifications').update({ read }).eq('id', id)
   },
   async markAllRead(userId): Promise<void> {
     await sb.from('notifications').update({ read: true }).eq('user_id', userId)

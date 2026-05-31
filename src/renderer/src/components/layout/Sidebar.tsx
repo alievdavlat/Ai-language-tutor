@@ -4,6 +4,7 @@ import { isAdminRole, ROLE_META } from '@shared/constants'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import AvatarCircle from '../ui/AvatarCircle'
+import NotificationBell from './NotificationBell'
 import {
   IconBook,
   IconBookmark,
@@ -293,8 +294,9 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
         </div>
       )}
 
-      {/* Bottom: settings + collapse toggle */}
+      {/* Bottom: notifications + settings + collapse toggle */}
       <div className={cn('pb-2 space-y-0.5', collapsed ? 'px-1' : 'px-3')}>
+        <NotificationBell collapsed={collapsed} />
         {BOTTOM_NAV.map((item) => (
           <NavItem key={item.to} {...item} collapsed={collapsed} />
         ))}

@@ -553,6 +553,7 @@ const socialLocal: LocalSocial = {
         .createNotif({
           userId: sub.authorId,
           type: 'social',
+          kind: 'peer-review',
           title: 'New feedback on your work',
           body: `Someone reviewed "${sub.topic}"`,
           link: '/feedback'

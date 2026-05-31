@@ -186,6 +186,8 @@ export interface Backend {
   // Notifications
   listNotifs(userId: ID): Promise<Notif[]>
   createNotif(input: Omit<Notif, 'id' | 'createdAt' | 'read'>): Promise<Notif>
+  /** Mark a single notification read (or unread). Powers per-item read-on-click. */
+  markNotif(id: ID, read?: boolean): Promise<void>
   markAllRead(userId: ID): Promise<void>
 
   // Stats & activity (foundation for Progress #6 / Gamification #18)

@@ -12,14 +12,16 @@ import PrivacySection from './sections/PrivacySection'
 import AboutSection from './sections/AboutSection'
 import ProductivitySection from './sections/ProductivitySection'
 import DesktopSection from './sections/DesktopSection'
+import NotificationsSection from './sections/NotificationsSection'
 
-type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone' | 'productivity' | 'desktop' | 'privacy' | 'about'
+type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone' | 'notifications' | 'productivity' | 'desktop' | 'privacy' | 'about'
 
 const TABS: readonly TabItem<SettingsTab>[] = [
   { id: 'ai', label: 'AI' },
   { id: 'language', label: 'Language' },
   { id: 'companion', label: 'Companion' },
   { id: 'microphone', label: 'Microphone' },
+  { id: 'notifications', label: 'Notifications' },
   { id: 'productivity', label: 'Productivity' },
   { id: 'desktop', label: 'Desktop' },
   { id: 'privacy', label: 'Privacy' },
@@ -117,7 +119,10 @@ export default function SettingsPage(): JSX.Element {
           </div>
         )}
 
-        {/* ── Privacy ───────────────────────────────────────────────────── */}
+        {/* ── Notifications (task #17) ──────────────────────────────────── */}
+        {tab === 'notifications' && <NotificationsSection />}
+
+        {/* ── Productivity ──────────────────────────────────────────────── */}
         {tab === 'productivity' && <ProductivitySection />}
 
         {/* ── Desktop integration (#16) ─────────────────────────────────── */}

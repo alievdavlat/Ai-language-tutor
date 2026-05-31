@@ -77,5 +77,5 @@ export const SEED_ANNOUNCEMENTS: LiveAnnouncement[] = [
 ]
 
 export const SEED_NOTIFS: Notif[] = [
-  { id: 'n_1', userId: 'u_priya', type: 'learning', title: 'Welcome to SpeakAI', body: 'Start your first lesson in Business English 101.', createdAt: t(20), read: false, link: '/courses' }
+  { id: 'n_1', userId: 'u_priya', type: 'learning', kind: 'announcement', title: 'Welcome to SpeakAI', body: 'Start your first lesson in Business English 101.', createdAt: t(20), read: false, link: '/courses' }
 ]
