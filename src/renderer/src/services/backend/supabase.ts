@@ -530,8 +530,8 @@ export const supabaseBackend: Backend = {
   },
 
   async like(userId, postId): Promise<{ liked: boolean; likeCount: number }> {
-    const { data: existing } = await sb.from('likes').select('user_id').eq('user_id', userId).eq('post_id', postId).maybeSingle()
-    if (existing) {
+    const { data: existing } = await sb.from('likes').select('user_id').eq('user_id', userId).eq('post_id', postId).limit(1)
+    if (existing && existing.length > 0) {
       await sb.from('likes').delete().eq('user_id', userId).eq('post_id', postId)
       const { data: post } = await sb.from('posts').select('like_count').eq('id', postId).maybeSingle()
       const newCount = Math.max(0, ((post?.like_count as number) ?? 1) - 1)
@@ -548,8 +548,8 @@ export const supabaseBackend: Backend = {
   async save(userId, target): Promise<{ saved: boolean }> {
     const { data: existing } = await sb
       .from('saves').select('user_id')
-      .eq('user_id', userId).eq('target_kind', target.kind).eq('target_id', target.id).maybeSingle()
-    if (existing) {
+      .eq('user_id', userId).eq('target_kind', target.kind).eq('target_id', target.id).limit(1)
+    if (existing && existing.length > 0) {
       await sb.from('saves').delete().eq('user_id', userId).eq('target_kind', target.kind).eq('target_id', target.id)
       return { saved: false }
     }
@@ -580,9 +580,13 @@ export const supabaseBackend: Backend = {
 
   async follow(followerId, followingId): Promise<{ following: boolean }> {
     if (followerId === followingId) return { following: false }
+    // Use an array check (not maybeSingle): if duplicate follow rows ever
+    // accumulated (no unique constraint), maybeSingle() returns null and the
+    // toggle would re-insert forever — making unfollow impossible. Delete ALL
+    // matching rows on toggle so it always flips + cleans duplicates.
     const { data: existing } = await sb.from('follows').select('follower_id')
-      .eq('follower_id', followerId).eq('following_id', followingId).maybeSingle()
-    if (existing) {
+      .eq('follower_id', followerId).eq('following_id', followingId).limit(1)
+    if (existing && existing.length > 0) {
       await sb.from('follows').delete().eq('follower_id', followerId).eq('following_id', followingId)
       return { following: false }
     }
