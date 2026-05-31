@@ -47,19 +47,19 @@ export default function AdminPage(): JSX.Element {
   const reports = useBackendQuery(() => studio.listReports('open'), [], [])
   const log = useBackendQuery(() => studio.listModerationLog(), [], [])
   const featured = useBackendQuery(() => studio.listFeatured(), [], [])
-  const teachers = useBackendQuery(async () => {
-    const r = await Promise.all(['u_emma', 'u_james', 'u_marco'].map((id) => backend.getUser(id)))
-    return r.filter((u): u is PlatformUser => u !== null)
-  }, [], [])
-  const students = useBackendQuery(async () => {
-    const r = await Promise.all(['u_priya', 'u_wei', 'u_yui'].map((id) => backend.getUser(id)))
-    return r.filter((u): u is PlatformUser => u !== null)
-  }, [], [])
+  // Real user lists from the backend (was a hardcoded set of 6 ids).
+  const teachers = useBackendQuery(() => backend.listUsers({ role: 'teacher' }), [], [])
+  const students = useBackendQuery(() => backend.listUsers({ role: 'student' }), [], [])
   const banned = useBackendQuery(async () => {
-    const ids = ['u_emma', 'u_james', 'u_marco', 'u_priya', 'u_wei', 'u_yui']
+    const ids = [...teachers.data, ...students.data].map((u) => u.id)
     const states = await Promise.all(ids.map((id) => studio.getUserModeration(id)))
     return new Set(states.filter((s) => s.banned).map((s) => s.userId))
-  }, [], new Set<string>())
+  }, [teachers.data, students.data], new Set<string>())
+
+  // New signups in the last 7 days, derived from real user createdAt timestamps.
+  const newThisWeek = [...teachers.data, ...students.data].filter(
+    (u) => Date.now() - Date.parse(u.createdAt) < 7 * 86_400_000
+  ).length
 
   const approve = async (c: Course): Promise<void> => {
     await backend.publishCourse(c.id)
@@ -101,7 +101,7 @@ export default function AdminPage(): JSX.Element {
             <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
               <SectionHeading title="This week" subtitle="Platform pulse" />
               <ul className="text-sm text-slate-300 flex flex-col gap-2">
-                <li className="flex items-center justify-between"><span>New signups</span><b className="text-white">+218</b></li>
+                <li className="flex items-center justify-between"><span>New signups (7d)</span><b className="text-white">{newThisWeek}</b></li>
                 <li className="flex items-center justify-between"><span>Courses awaiting review</span><b className="text-white">{pending.data.length}</b></li>
                 <li className="flex items-center justify-between"><span>Open reports</span><b className="text-white">{reports.data.length}</b></li>
                 <li className="flex items-center justify-between"><span>Actions taken (log)</span><b className="text-white">{log.data.length}</b></li>
