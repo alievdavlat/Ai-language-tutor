@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import type { UserRole } from '../store/useAppStore'
 import { useAppStore } from '../store/useAppStore'
 import { useBootstrap } from '../hooks/useBootstrap'
@@ -103,6 +103,12 @@ function RequireRole({ role: required, children }: { role: UserRole; children: R
   // admin CMS can create courses/lessons/clips/announcements). #A36/#A37.
   if (role !== required && role !== 'admin') return <Navigate to={role === 'teacher' ? '/teacher' : '/home'} replace />
   return <>{children}</>
+}
+
+/** Runs an authored/custom exam by id (from the exams store). */
+function RunExam(): JSX.Element {
+  const { examId } = useParams()
+  return <ExamEngine bankId={examId ?? ''} />
 }
 
 function usePostBootRedirect(): void {
@@ -250,6 +256,8 @@ export default function AppRoutes(): JSX.Element {
       <Route path="/exams/ielts/speaking" element={<IeltsSpeakingSimPage />} />
       <Route path="/exams/toefl/mock" element={<ExamEngine bankId="toefl" />} />
       <Route path="/exams/cefr/mock" element={<ExamEngine bankId="cefr" />} />
+      {/* Generic runner for authored / custom exams (#A30). */}
+      <Route path="/exams/run/:examId" element={<RunExam />} />
       <Route path="/exams/sat/mock" element={<ExamEngine bankId="sat" />} />
       <Route path="/exams/gmat/mock" element={<ExamEngine bankId="gmat" />} />
       <Route path="/exams/cefr" element={<AppShell><CefrHubPage /></AppShell>} />

@@ -21,6 +21,7 @@ import {
 } from './banks'
 import { scoreWriting } from './writingScore'
 import { scoreSpeaking } from './speakingScore'
+import { exams } from '../../services/exams/store'
 
 type Phase = 'intro' | 'running' | 'grading' | 'report'
 
@@ -46,7 +47,9 @@ function getRecognition(lang: string): SpeechRec | null {
 export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const rawBank = BANKS[bankId]
+  // Resolve from the editable store first (authored edits + custom exams),
+  // falling back to the built-in bank.
+  const rawBank = exams.get(bankId) ?? BANKS[bankId]
   // `?section=<id>` runs just that section as focused skill practice (launched
   // from the practice hub). A focused run is graded and reported like normal,
   // but is NOT persisted as a full exam attempt — that would skew best-score

@@ -1,6 +1,10 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { SectionHeading } from '../../components/ui'
+import { useAppStore } from '../../store/useAppStore'
+import { useExams } from '../../services/exams/store'
+import ExamEditor from './ExamEditor'
 import { useTargetLanguage } from '../../lib/language'
 import { getExamsForLanguage } from '../../lib/contentByLanguage'
 import { backend } from '../../services/backend'
@@ -11,6 +15,7 @@ import {
   IconHeadphones,
   IconMic,
   IconPencilEdit,
+  IconPlus,
   IconTarget,
   type IconProps
 } from '../../components/icons'
@@ -147,6 +152,11 @@ function fmtDate(iso: string): string {
 export default function ExamsHubPage(): JSX.Element {
   const navigate = useNavigate()
   const lang = useTargetLanguage()
+  const role = useAppStore((s) => s.role)
+  const canAuthor = role === 'teacher' || role === 'admin'
+  const [editing, setEditing] = useState(false)
+  const { list: allExams, refresh } = useExams()
+  const customExams = allExams.filter((e) => !e.builtIn)
   const langExams = getExamsForLanguage(lang.code)
   // Real recent attempts, persisted via the Foundation backend.
   const { data: attempts } = useBackendQuery(
@@ -160,13 +170,37 @@ export default function ExamsHubPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full w-full flex flex-col gap-7">
-        <div>
-          <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{lang.flag} Learning {lang.name}</p>
-          <h1 className="text-2xl font-bold tracking-tight mt-0.5">Exams &amp; tests</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Full-length mock exams with an AI examiner and band-score feedback — filtered to {lang.name}.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{lang.flag} Learning {lang.name}</p>
+            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Exams &amp; tests</h1>
+            <p className="text-sm text-slate-400 mt-1">
+              Full-length mock exams with an AI examiner and band-score feedback — filtered to {lang.name}.
+            </p>
+          </div>
+          {canAuthor && (
+            <button onClick={() => setEditing(true)} className="btn-primary px-4 py-2 text-sm inline-flex items-center gap-1.5 shrink-0"><IconPlus className="w-4 h-4" /> Create exam</button>
+          )}
         </div>
+
+        {/* Authored / community exams */}
+        {customExams.length > 0 && (
+          <div>
+            <SectionHeading title="Created exams" subtitle={`${customExams.length} custom exam${customExams.length === 1 ? '' : 's'}`} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {customExams.map((e) => (
+                <div key={e.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex flex-col gap-2">
+                  <p className="text-sm font-bold text-white">{e.title}</p>
+                  <p className="text-[11px] text-slate-400">{e.sections.length} section{e.sections.length === 1 ? '' : 's'} · {e.scaleLabel}</p>
+                  <div className="flex items-center gap-2 mt-auto pt-1">
+                    <button onClick={() => navigate(`/exams/run/${e.id}`)} className="btn-primary px-3 py-1.5 text-xs flex-1">Start →</button>
+                    {canAuthor && <button onClick={() => { setEditing(true) }} className="btn-ghost px-2 py-1.5 text-xs">Edit</button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Language-specific exam shortcuts */}
         <div>
@@ -290,6 +324,14 @@ export default function ExamsHubPage(): JSX.Element {
           </div>
         </div>
       </div>
+
+      {editing && (
+        <ExamEditor
+          authorId={backend.currentUserId() ?? 'me'}
+          onClose={() => setEditing(false)}
+          onSaved={(e) => { setEditing(false); refresh(); navigate(`/exams/run/${e.id}`) }}
+        />
+      )}
     </div>
   )
 }
