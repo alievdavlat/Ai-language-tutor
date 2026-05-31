@@ -14,6 +14,8 @@ import type {
   DmMessage,
   DmThread,
   Enrollment,
+  GroupMember,
+  GroupMessage,
   Follow,
   Group,
   Lesson,
@@ -85,6 +87,8 @@ export interface Backend {
   myReview(userId: ID, courseId: ID): Promise<Review | null>
 
   // Community
+  /** The GLOBAL feed. Group-scoped posts (those with a `groupId`) are excluded —
+   *  they live in `listGroupFeed`. */
   listFeed(opts?: { authorRole?: 'teacher' | 'student'; limit?: number }): Promise<Post[]>
   createPost(input: Omit<Post, 'id' | 'createdAt' | 'likeCount' | 'commentCount'>): Promise<Post>
   like(userId: ID, postId: ID): Promise<{ liked: boolean; likeCount: number }>
@@ -109,6 +113,13 @@ export interface Backend {
   leaveGroup(userId: ID, groupId: ID): Promise<void>
   myGroups(userId: ID): Promise<Group[]>
   groupMembers(groupId: ID): Promise<PlatformUser[]>
+  /** Members joined with their role + join date, for the group detail members list. */
+  groupMembership(groupId: ID): Promise<GroupMember[]>
+  /** Posts scoped to one group (the group's own feed). Newest first. */
+  listGroupFeed(groupId: ID, opts?: { limit?: number }): Promise<Post[]>
+  /** Group chat history, oldest first. */
+  listGroupMessages(groupId: ID): Promise<GroupMessage[]>
+  sendGroupMessage(input: { groupId: ID; senderId: ID; text: string }): Promise<GroupMessage>
 
   // Challenges
   listChallenges(filter?: { language?: TargetLanguage; active?: boolean }): Promise<Challenge[]>

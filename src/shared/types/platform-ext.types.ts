@@ -78,6 +78,24 @@ export interface GroupMembership {
   joinedAt: string
 }
 
+/** A group member joined with their public profile + role — what the members
+ *  list on the group detail page renders. */
+export interface GroupMember {
+  user: import('./platform.types').PlatformUser
+  role: GroupMembership['role']
+  joinedAt: string
+}
+
+/** One message in a group's chat room. Lighter than a DM (no per-thread plumbing
+ *  — a group *is* the thread). */
+export interface GroupMessage {
+  id: ID
+  groupId: ID
+  senderId: ID
+  text: string
+  createdAt: string
+}
+
 // ─── Challenges (30-day, word-count, minutes…) ───────────────────────────────
 
 export type ChallengeKind = 'streak' | 'words' | 'minutes' | 'lessons' | 'custom'

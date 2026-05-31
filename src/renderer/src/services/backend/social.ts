@@ -49,6 +49,8 @@ import {
   SEED_PEER_REVIEWS,
   SEED_GROUPS,
   SEED_GROUP_MEMBERS,
+  SEED_GROUP_POSTS,
+  SEED_GROUP_MESSAGES,
   SEED_CHALLENGES,
   SEED_CHALLENGE_PROGRESS
 } from './social-seed'
@@ -840,6 +842,13 @@ export function ensureCommunitySeed(): Promise<void> {
       if (groups.length === 0) {
         for (const g of SEED_GROUPS) await backend.upsertGroup(g)
         for (const m of SEED_GROUP_MEMBERS) await backend.joinGroup(m.userId, m.groupId).catch(() => undefined)
+        // Seed a few opening posts + chat messages so group rooms aren't empty.
+        for (const p of SEED_GROUP_POSTS) {
+          await backend.createPost({ authorId: p.authorId, kind: p.kind, text: p.text, groupId: p.groupId }).catch(() => undefined)
+        }
+        for (const msg of SEED_GROUP_MESSAGES) {
+          await backend.sendGroupMessage({ groupId: msg.groupId, senderId: msg.senderId, text: msg.text }).catch(() => undefined)
+        }
       }
       const challenges = await backend.listChallenges()
       if (challenges.length === 0) {

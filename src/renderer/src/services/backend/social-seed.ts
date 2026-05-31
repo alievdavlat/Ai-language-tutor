@@ -255,21 +255,47 @@ export const SEED_PEER_REVIEWS: PeerReview[] = [
 //     ensureCommunitySeed() — the local Db ships these empty). ─────────────────
 
 export const SEED_GROUPS: Group[] = [
-  { id: 'g_ielts', name: 'IELTS Warriors', description: 'Daily band-7 grind — share essays, swap mock partners, post your scores.', language: 'en', ownerId: 'u_james', cover: 'from-rose-500 to-pink-700', imageUrl: 'https://picsum.photos/seed/grp-ielts/480/270', visibility: 'public', memberCount: 3214, createdAt: t(60 * 24 * 90) },
-  { id: 'g_speak', name: 'Daily Speaking Club', description: 'A safe room to speak out loud every day. Voice notes welcome, zero judgement.', language: 'en', ownerId: 'u_emma', cover: 'from-sky-500 to-blue-700', imageUrl: 'https://picsum.photos/seed/grp-speak/480/270', visibility: 'public', memberCount: 5102, createdAt: t(60 * 24 * 120) },
-  { id: 'g_grammar', name: 'Grammar Nerds', description: 'For people who actually enjoy the subjunctive. Ask anything.', language: 'en', ownerId: 'u_marco', cover: 'from-violet-500 to-purple-700', imageUrl: 'https://picsum.photos/seed/grp-grammar/480/270', visibility: 'public', memberCount: 1840, createdAt: t(60 * 24 * 60) },
-  { id: 'g_business', name: 'Business English Pros', description: 'Meetings, emails, negotiations, interviews. Level up your work English.', language: 'en', ownerId: 'u_emma', cover: 'from-amber-500 to-orange-700', imageUrl: 'https://picsum.photos/seed/grp-biz/480/270', visibility: 'public', memberCount: 980, createdAt: t(60 * 24 * 30) },
-  { id: 'g_jp', name: 'Japan ↔ English Exchange', description: 'Language exchange between English and Japanese learners. Tandem partners inside.', language: 'en', ownerId: 'u_yui', cover: 'from-emerald-500 to-teal-700', imageUrl: 'https://picsum.photos/seed/grp-jp/480/270', visibility: 'public', memberCount: 1260, createdAt: t(60 * 24 * 45) }
+  { id: 'g_ielts', name: 'IELTS Warriors', description: 'Daily band-7 grind — share essays, swap mock partners, post your scores.', language: 'en', ownerId: 'u_james', cover: 'from-rose-500 to-pink-700', imageUrl: 'https://picsum.photos/seed/grp-ielts/480/270', visibility: 'public', memberCount: 0, createdAt: t(60 * 24 * 90) },
+  { id: 'g_speak', name: 'Daily Speaking Club', description: 'A safe room to speak out loud every day. Voice notes welcome, zero judgement.', language: 'en', ownerId: 'u_emma', cover: 'from-sky-500 to-blue-700', imageUrl: 'https://picsum.photos/seed/grp-speak/480/270', visibility: 'public', memberCount: 0, createdAt: t(60 * 24 * 120) },
+  { id: 'g_grammar', name: 'Grammar Nerds', description: 'For people who actually enjoy the subjunctive. Ask anything.', language: 'en', ownerId: 'u_marco', cover: 'from-violet-500 to-purple-700', imageUrl: 'https://picsum.photos/seed/grp-grammar/480/270', visibility: 'public', memberCount: 0, createdAt: t(60 * 24 * 60) },
+  { id: 'g_business', name: 'Business English Pros', description: 'Meetings, emails, negotiations, interviews. Level up your work English.', language: 'en', ownerId: 'u_emma', cover: 'from-amber-500 to-orange-700', imageUrl: 'https://picsum.photos/seed/grp-biz/480/270', visibility: 'public', memberCount: 0, createdAt: t(60 * 24 * 30) },
+  { id: 'g_jp', name: 'Japan ↔ English Exchange', description: 'Language exchange between English and Japanese learners. Tandem partners inside.', language: 'en', ownerId: 'u_yui', cover: 'from-emerald-500 to-teal-700', imageUrl: 'https://picsum.photos/seed/grp-jp/480/270', visibility: 'public', memberCount: 0, createdAt: t(60 * 24 * 45) }
 ]
 
-/** Who is a member of which seed group (gives myGroups / members real data). */
+/** Who is a member of which seed group (gives myGroups / members real data).
+ *  The group owner auto-joins on upsert, so these are the *other* members. The
+ *  real member count = these rows + the owner (never the old vanity number). */
 export const SEED_GROUP_MEMBERS: { groupId: string; userId: string }[] = [
   { groupId: 'g_ielts', userId: 'u_wei' },
   { groupId: 'g_ielts', userId: 'u_priya' },
+  { groupId: 'g_ielts', userId: 'u_yui' },
   { groupId: 'g_speak', userId: 'u_priya' },
   { groupId: 'g_speak', userId: 'u_yui' },
+  { groupId: 'g_speak', userId: 'u_marco' },
+  { groupId: 'g_grammar', userId: 'u_priya' },
+  { groupId: 'g_grammar', userId: 'u_james' },
+  { groupId: 'g_business', userId: 'u_wei' },
+  { groupId: 'g_business', userId: 'u_james' },
   { groupId: 'g_jp', userId: 'u_yui' },
   { groupId: 'g_jp', userId: 'u_wei' }
+]
+
+/** A couple of opening posts per group so a fresh group feed isn't empty.
+ *  Authored by real seed members; `kind`/`text` only (no rich payload). */
+export const SEED_GROUP_POSTS: { groupId: string; authorId: string; kind: 'text' | 'question'; text: string }[] = [
+  { groupId: 'g_ielts', authorId: 'u_james', kind: 'text', text: 'Welcome to IELTS Warriors! Drop your target band below and one thing you struggle with. Mine: Writing Task 2 coherence.' },
+  { groupId: 'g_ielts', authorId: 'u_wei', kind: 'question', text: 'For Speaking Part 2, how long do you spend on the 1-minute prep? I keep running out of points.' },
+  { groupId: 'g_speak', authorId: 'u_emma', kind: 'text', text: 'Reminder: post one 30-second voice note today. No editing, no shame — just speak. 🎙️' },
+  { groupId: 'g_grammar', authorId: 'u_marco', kind: 'question', text: 'Quick poll in your head: "If I were you" vs "If I was you" — which do you use, and do you know why?' }
+]
+
+/** Seed chat so each group room has a little life on first open. */
+export const SEED_GROUP_MESSAGES: { groupId: string; senderId: string; text: string }[] = [
+  { groupId: 'g_ielts', senderId: 'u_priya', text: 'Anyone up for a mock speaking session this weekend?' },
+  { groupId: 'g_ielts', senderId: 'u_wei', text: 'I am! Saturday morning works for me.' },
+  { groupId: 'g_ielts', senderId: 'u_james', text: 'Count me in as the examiner 👍' },
+  { groupId: 'g_speak', senderId: 'u_yui', text: 'Just posted my voice note — be gentle 😅' },
+  { groupId: 'g_speak', senderId: 'u_marco', text: 'Sounded great! Your intonation is improving a lot.' }
 ]
 
 const days = (n: number): string => new Date(Date.now() + n * 24 * 60 * 60_000).toISOString()

@@ -121,6 +121,8 @@ export interface Post {
   studySession?: StudySessionMeta
   achievement?: AchievementMeta
   voice?: VoiceMeta
+  /** When set, this post belongs to a group's scoped feed (not the global feed). */
+  groupId?: ID
   createdAt: string
   likeCount: number
   commentCount: number

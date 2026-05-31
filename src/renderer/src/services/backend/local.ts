@@ -15,7 +15,9 @@ import type {
   ExamKind,
   Follow,
   Group,
+  GroupMember,
   GroupMembership,
+  GroupMessage,
   Lesson,
   Like,
   LiveAnnouncement,
@@ -54,6 +56,7 @@ interface Db {
   follows: Follow[]
   groups: Group[]
   groupMembers: GroupMembership[]
+  groupMessages: GroupMessage[]
   challenges: Challenge[]
   challengeParticipants: ChallengeParticipant[]
   examAttempts: ExamAttempt[]
@@ -83,6 +86,7 @@ function emptyDb(): Db {
     follows: [],
     groups: [],
     groupMembers: [],
+    groupMessages: [],
     challenges: [],
     challengeParticipants: [],
     examAttempts: [],
@@ -138,6 +142,8 @@ function hydrateContent(stored: Db): Db {
   if (missingCourses.length) next.courses = [...next.courses, ...missingCourses]
   if (!next.units || next.units.length === 0) next.units = [...SEED_UNITS]
   if (!next.lessons || next.lessons.length === 0) next.lessons = [...SEED_LESSONS]
+  // Group chat shipped after some stores were created — guarantee the array.
+  if (!next.groupMessages) next.groupMessages = []
   // Refresh seed announcements (adds hero images to pre-existing stores).
   const annById = new Map(SEED_ANNOUNCEMENTS.map((a) => [a.id, a]))
   if (next.announcements?.length) {
@@ -167,6 +173,16 @@ function newId(prefix: string): ID {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`
 }
 const now = (): string => new Date().toISOString()
+
+/** Real member count for a group = number of membership rows (owner included). */
+function groupMemberCount(groupId: ID): number {
+  return db().groupMembers.filter((m) => m.groupId === groupId).length
+}
+/** Return a copy of the group whose `memberCount` is the true membership-row
+ *  count, never the seed's invented vanity number. */
+function withRealCount(g: Group): Group {
+  return { ...g, memberCount: groupMemberCount(g.id) }
+}
 
 // ─── Implementation ────────────────────────────────────────────────────────
 
@@ -359,7 +375,8 @@ export const localBackend: Backend = {
   },
 
   async listFeed(opts): Promise<Post[]> {
-    let list = [...db().posts]
+    // Group-scoped posts live in their group's feed, not the global one.
+    let list = db().posts.filter((p) => !p.groupId)
     if (opts?.authorRole) {
       const ids = new Set(db().users.filter((u) => u.role === opts.authorRole).map((u) => u.id))
       list = list.filter((p) => ids.has(p.authorId))
@@ -514,6 +531,11 @@ export const localBackend: Backend = {
 
   // ─── Groups / clubs ──────────────────────────────────────────────────────────
 
+  // `memberCount` is NEVER a stored vanity number — it is always recomputed from
+  // the real `groupMembers` rows so the count on every card / header reflects
+  // actual membership (owner + everyone who joined). #A53.
+  // (`groupMemberCount` + `withRealCount` are module helpers defined below.)
+
   async listGroups(filter): Promise<Group[]> {
     let list = db().groups.filter((g) => g.visibility === 'public')
     if (filter?.language) list = list.filter((g) => g.language === filter.language)
@@ -521,11 +543,12 @@ export const localBackend: Backend = {
       const q = filter.q.toLowerCase()
       list = list.filter((g) => g.name.toLowerCase().includes(q) || g.description.toLowerCase().includes(q))
     }
-    return [...list].sort((a, b) => b.memberCount - a.memberCount)
+    return list.map(withRealCount).sort((a, b) => b.memberCount - a.memberCount)
   },
 
   async getGroup(id): Promise<Group | null> {
-    return db().groups.find((g) => g.id === id) ?? null
+    const g = db().groups.find((x) => x.id === id)
+    return g ? withRealCount(g) : null
   },
 
   async upsertGroup(group): Promise<Group> {
@@ -538,37 +561,62 @@ export const localBackend: Backend = {
       }
     } else db().groups[i] = group
     persist()
-    return group
+    return withRealCount(group)
   },
 
   async joinGroup(userId, groupId): Promise<{ joined: boolean; memberCount: number }> {
-    const gi = db().groups.findIndex((g) => g.id === groupId)
     const already = db().groupMembers.some((m) => m.groupId === groupId && m.userId === userId)
-    if (already) return { joined: true, memberCount: gi >= 0 ? db().groups[gi].memberCount : 0 }
-    db().groupMembers.push({ groupId, userId, role: 'member', joinedAt: now() })
-    if (gi >= 0) db().groups[gi] = { ...db().groups[gi], memberCount: db().groups[gi].memberCount + 1 }
+    if (!already) db().groupMembers.push({ groupId, userId, role: 'member', joinedAt: now() })
     persist()
-    return { joined: true, memberCount: gi >= 0 ? db().groups[gi].memberCount : 1 }
+    return { joined: true, memberCount: groupMemberCount(groupId) }
   },
 
   async leaveGroup(userId, groupId): Promise<void> {
-    const before = db().groupMembers.length
-    db().groupMembers = db().groupMembers.filter((m) => !(m.groupId === groupId && m.userId === userId))
-    if (db().groupMembers.length < before) {
-      const gi = db().groups.findIndex((g) => g.id === groupId)
-      if (gi >= 0) db().groups[gi] = { ...db().groups[gi], memberCount: Math.max(0, db().groups[gi].memberCount - 1) }
-    }
+    // The owner can't leave their own group (would orphan it).
+    const m = db().groupMembers.find((x) => x.groupId === groupId && x.userId === userId)
+    if (m?.role === 'owner') return
+    db().groupMembers = db().groupMembers.filter((x) => !(x.groupId === groupId && x.userId === userId))
     persist()
   },
 
   async myGroups(userId): Promise<Group[]> {
     const ids = new Set(db().groupMembers.filter((m) => m.userId === userId).map((m) => m.groupId))
-    return db().groups.filter((g) => ids.has(g.id))
+    return db().groups.filter((g) => ids.has(g.id)).map(withRealCount)
   },
 
   async groupMembers(groupId): Promise<PlatformUser[]> {
     const ids = db().groupMembers.filter((m) => m.groupId === groupId).map((m) => m.userId)
     return db().users.filter((u) => ids.includes(u.id))
+  },
+
+  async groupMembership(groupId): Promise<GroupMember[]> {
+    const roleRank: Record<GroupMembership['role'], number> = { owner: 0, moderator: 1, member: 2 }
+    const byId = new Map(db().users.map((u) => [u.id, u]))
+    return db().groupMembers
+      .filter((m) => m.groupId === groupId)
+      .map((m) => ({ user: byId.get(m.userId), role: m.role, joinedAt: m.joinedAt }))
+      .filter((m): m is GroupMember => Boolean(m.user))
+      .sort((a, b) => roleRank[a.role] - roleRank[b.role] || a.joinedAt.localeCompare(b.joinedAt))
+  },
+
+  async listGroupFeed(groupId, opts): Promise<Post[]> {
+    let list = db().posts.filter((p) => p.groupId === groupId)
+    list.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    if (opts?.limit) list = list.slice(0, opts.limit)
+    return list
+  },
+
+  async listGroupMessages(groupId): Promise<GroupMessage[]> {
+    return db().groupMessages
+      .filter((m) => m.groupId === groupId)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  },
+
+  async sendGroupMessage(input): Promise<GroupMessage> {
+    const msg: GroupMessage = { ...input, id: newId('gm'), createdAt: now() }
+    db().groupMessages.push(msg)
+    persist()
+    return msg
   },
 
   // ─── Challenges ────────────────────────────────────────────────────────────
@@ -828,6 +876,7 @@ export const localBackend: Backend = {
     d.saves = d.saves.filter((s) => s.userId !== userId)
     d.follows = d.follows.filter((f) => f.followerId !== userId && f.followingId !== userId)
     d.groupMembers = d.groupMembers.filter((m) => m.userId !== userId)
+    d.groupMessages = d.groupMessages.filter((m) => m.senderId !== userId)
     d.challengeParticipants = d.challengeParticipants.filter((p) => p.userId !== userId)
     d.examAttempts = d.examAttempts.filter((a) => a.userId !== userId)
     d.vocab = d.vocab.filter((v) => v.userId !== userId)
