@@ -1,7 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { PageHeader, SectionHeading } from '../../components/ui'
-import { IconPencilEdit, IconBolt, IconRefresh } from '../../components/icons'
+import { IconPencilEdit, IconBolt, IconRefresh, IconUsers } from '../../components/icons'
 import { analyze, SAMPLE_TEXT, type WordIssue, type SentenceLevel } from './analyze'
 import { useChatStream } from '../../hooks/useChatStream'
 import { useIsAIReady } from '../../lib/ai'
@@ -39,6 +40,7 @@ const GUIDE: { color: string; label: string; tip: string }[] = [
 ]
 
 export default function WritingCoachPage(): JSX.Element {
+  const navigate = useNavigate()
   const [text, setText] = useState(SAMPLE_TEXT)
   const [mode, setMode] = useState<Mode>('edit')
   const [showHelp, setShowHelp] = useState(true)
@@ -125,6 +127,19 @@ export default function WritingCoachPage(): JSX.Element {
             ) : undefined
           }
         />
+
+        {/* Peer feedback exchange — get a human to review your writing */}
+        <button
+          onClick={() => navigate('/feedback')}
+          className="rounded-2xl border border-white/10 bg-gradient-to-r from-violet-600/15 via-fuchsia-600/10 to-transparent px-5 py-3.5 flex items-center gap-3 text-left hover:border-white/20 transition"
+        >
+          <span className="w-10 h-10 rounded-xl bg-violet-500/15 text-violet-300 flex items-center justify-center shrink-0"><IconUsers className="w-5 h-5" /></span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-white">Peer feedback exchange</span>
+            <span className="block text-xs text-slate-400">Review others' writing and get yours reviewed — earn karma.</span>
+          </span>
+          <span className="text-violet-300 text-sm font-semibold shrink-0">Open →</span>
+        </button>
 
         {/* How-it-works instructions */}
         {showHelp && (

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { ProgressBar, SectionHeading, Spinner } from '../../components/ui'
-import { IconBook, IconPlay, IconStar } from '../../components/icons'
+import { IconBook, IconPlay, IconStar, IconTarget } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { useContentState } from '../../services/content/progress'
 import { useTargetLanguageCode } from '../../lib/language'
@@ -138,6 +138,19 @@ export default function CoursesPage(): JSX.Element {
             </button>
           ))}
         </div>
+
+        {/* Learning paths — guided multi-course journeys */}
+        <button
+          onClick={() => navigate('/paths')}
+          className="rounded-2xl border border-white/10 bg-gradient-to-r from-emerald-600/15 via-teal-600/10 to-transparent px-5 py-4 flex items-center gap-4 text-left hover:border-white/20 transition"
+        >
+          <span className="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center shrink-0"><IconTarget className="w-5 h-5" /></span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-white">Learning paths</span>
+            <span className="block text-xs text-slate-400">Follow a guided, step-by-step journey across several courses.</span>
+          </span>
+          <span className="text-emerald-300 text-sm font-semibold shrink-0">Explore →</span>
+        </button>
 
         {/* Continue learning hero */}
         {skill === 'all' && level === 'All' && cont && (

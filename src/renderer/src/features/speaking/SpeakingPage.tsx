@@ -5,8 +5,10 @@ import { useIsAIReady } from '../../lib/ai'
 import { cn } from '../../lib/classnames'
 import {
   IconArrowRight,
+  IconChat,
   IconChevronLeft,
   IconLock,
+  IconMasks,
   IconMic,
   IconPlus,
   IconUsers
@@ -219,6 +221,32 @@ export default function SpeakingPage(): JSX.Element {
               <span className="text-3xl">🎤</span>
               <span className="text-lg font-black text-white inline-flex items-center gap-2">Pronunciation <IconMic className="w-4 h-4 text-slate-300" /></span>
             </button>
+          </div>
+        </section>
+
+        {/* More ways to practice — companions, video AI tutor, human tutors */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-black uppercase tracking-widest text-slate-400">More ways to practice</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { to: '/companions', label: 'Companions', sub: 'Pick a conversation partner', Icon: IconMasks, tint: 'bg-fuchsia-500/15 text-fuchsia-300' },
+              { to: '/ai-tutor', label: 'Video call tutor', sub: 'Live voice call with Lily', Icon: IconChat, tint: 'bg-indigo-500/15 text-indigo-300' },
+              { to: '/tutors', label: 'Find a tutor', sub: 'Book a human teacher', Icon: IconUsers, tint: 'bg-emerald-500/15 text-emerald-300' }
+            ].map((q) => (
+              <button
+                key={q.to}
+                onClick={() => navigate(q.to)}
+                className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex items-center gap-3"
+              >
+                <span className={cn('w-11 h-11 rounded-xl flex items-center justify-center shrink-0', q.tint)}>
+                  <q.Icon className="w-5 h-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-white">{q.label}</span>
+                  <span className="block text-[11px] text-slate-400 leading-tight">{q.sub}</span>
+                </span>
+              </button>
+            ))}
           </div>
         </section>
 

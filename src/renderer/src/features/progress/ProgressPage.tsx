@@ -24,7 +24,7 @@ import {
 } from '../../services/progress'
 import { useProgressStore } from '../../services/progress'
 import { CEFR_ORDER } from '../leveltest/questions'
-import { IconFlame, IconHeart, IconStar, IconTarget, IconTrophy } from '../../components/icons'
+import { IconBolt, IconFlame, IconHeart, IconStar, IconTarget, IconTrophy, IconUsers } from '../../components/icons'
 
 const SKILL_META: { key: SkillKey; label: string; color: 'brand' | 'green' | 'amber' }[] = [
   { key: 'speaking', label: 'Speaking', color: 'brand' },
@@ -133,6 +133,29 @@ export default function ProgressPage(): JSX.Element {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {STATS.map((s) => (
             <StatCard key={s.label} value={s.value} label={s.label} tone={s.tone} icon={s.icon} />
+          ))}
+        </div>
+
+        {/* Compete & connect — leaderboard, quests, study buddy */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { to: '/leaderboard', label: 'Leaderboard', sub: 'Weekly XP league', Icon: IconTrophy, tint: 'bg-amber-500/15 text-amber-300' },
+            { to: '/quests', label: 'Quests', sub: 'Daily & weekly goals', Icon: IconBolt, tint: 'bg-brand-500/15 text-brand-300' },
+            { to: '/buddy', label: 'Study buddy', sub: 'Practice with a partner', Icon: IconUsers, tint: 'bg-emerald-500/15 text-emerald-300' }
+          ].map((q) => (
+            <button
+              key={q.to}
+              onClick={() => navigate(q.to)}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex items-center gap-3"
+            >
+              <span className={cn('w-11 h-11 rounded-xl flex items-center justify-center shrink-0', q.tint)}>
+                <q.Icon className="w-5 h-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-white">{q.label}</span>
+                <span className="block text-[11px] text-slate-400 leading-tight">{q.sub}</span>
+              </span>
+            </button>
           ))}
         </div>
 

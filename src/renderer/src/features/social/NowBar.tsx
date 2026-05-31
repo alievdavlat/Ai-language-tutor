@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
-import { IconPlus } from '../../components/icons'
+import { IconPlus, IconTrophy, IconUsers } from '../../components/icons'
 
 /** Initials from a name, for the avatar rings (no emoji — Instagram-style). */
 function initials(name: string): string {
@@ -71,6 +71,24 @@ export default function NowBar(): JSX.Element {
           onClick={() => navigate('/live/room?host=1')}
         >
           <div className="w-full h-full bg-canvas-soft flex items-center justify-center"><IconPlus className="w-6 h-6 text-brand-300" /></div>
+        </Ring>
+
+        {/* Live quiz */}
+        <Ring
+          ringCls="bg-gradient-to-tr from-amber-500 to-orange-500"
+          label="Live quiz"
+          onClick={() => navigate('/quiz/live')}
+        >
+          <div className="w-full h-full bg-canvas-soft flex items-center justify-center"><IconTrophy className="w-6 h-6 text-amber-300" /></div>
+        </Ring>
+
+        {/* Find a study buddy */}
+        <Ring
+          ringCls="bg-gradient-to-tr from-emerald-500 to-teal-500"
+          label="Find buddy"
+          onClick={() => navigate('/buddy')}
+        >
+          <div className="w-full h-full bg-canvas-soft flex items-center justify-center"><IconUsers className="w-6 h-6 text-emerald-300" /></div>
         </Ring>
 
         {/* Live rooms now */}

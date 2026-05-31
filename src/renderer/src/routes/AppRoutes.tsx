@@ -71,7 +71,6 @@ import AchievementsPage from '../features/gamification/AchievementsPage'
 import ProfilePage from '../features/profile/ProfilePage'
 import NotificationsPage from '../features/notifications/NotificationsPage'
 import InboxPage from '../features/inbox/InboxPage'
-import RetentionPage from '../features/retention/RetentionPage'
 import BuddyPage from '../features/buddy/BuddyPage'
 import CreatorStudioPage from '../features/creator/CreatorStudioPage'
 // [8/8] Teacher / monetization / admin / productivity slice
@@ -80,7 +79,6 @@ import LessonPlayerPage from '../features/teacher/lesson/LessonPlayerPage'
 import ClipsComposerPage from '../features/teacher/clips/ClipsComposerPage'
 import YouTubeConnectPage from '../features/teacher/youtube/YouTubeConnectPage'
 import DownloadsPage from '../features/downloads/DownloadsPage'
-import ProductivityPage from '../features/productivity/ProductivityPage'
 import WidgetPage from '../features/widget/WidgetPage'
 import QuickLookup from '../components/QuickLookup'
 import UpdateToast from '../components/UpdateToast'
@@ -562,10 +560,10 @@ export default function AppRoutes(): JSX.Element {
       />
       {/* Shareable interactive lesson player (#3). */}
       <Route path="/lesson" element={<AppShell><LessonPlayerPage /></AppShell>} />
-      {/* Offline downloads + cross-device sync (#35). */}
+      {/* Offline downloads + cross-device sync (#35). Homed in Account quick-links. */}
       <Route path="/downloads" element={<AppShell><DownloadsPage /></AppShell>} />
-      {/* Productivity hub: hotkey + widget + extension (#37). */}
-      <Route path="/productivity" element={<AppShell><ProductivityPage /></AppShell>} />
+      {/* Productivity is a Settings tab — the old standalone route was a duplicate (#A50). */}
+      <Route path="/productivity" element={<Navigate to="/settings?tab=productivity" replace />} />
       {/* Frameless desktop widget window (#37) — no shell. */}
       <Route path="/widget" element={<WidgetPage />} />
       <Route
@@ -649,14 +647,8 @@ export default function AppRoutes(): JSX.Element {
           </AppShell>
         }
       />
-      <Route
-        path="/retention"
-        element={
-          <AppShell>
-            <RetentionPage />
-          </AppShell>
-        }
-      />
+      {/* Retention/Goals&Streak is the Progress "Goals & Streak" tab — the standalone route was a duplicate (#A50). */}
+      <Route path="/retention" element={<Navigate to="/progress" replace />} />
       <Route
         path="/buddy"
         element={

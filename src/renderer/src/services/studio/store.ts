@@ -381,6 +381,74 @@ export const studio = {
     return this.checkout({ buyerId: me(), teacherId: toTeacherId, kind: 'tip', amountUsd, provider, note: message })
   },
 
+  // ── #26 Paywall: entitlements + subscription lifecycle ───────────────────
+  /**
+   * Advance the subscription clock. Any active subscription past its renewal
+   * date — with no captured renewal — drops to `past_due`, which re-locks the
+   * course. This is the mock stand-in for the provider's recurring-charge
+   * webhook (see docs/PAYMENTS.md); real renewals would flip it back to active.
+   * Idempotent — safe to call on every read.
+   */
+  runSubscriptionLifecycle(): void {
+    const nowMs = Date.now()
+    let changed = false
+    db().subscriptions = db().subscriptions.map((s) => {
+      if (s.status === 'active' && new Date(s.renewsAt).getTime() <= nowMs) {
+        changed = true
+        return { ...s, status: 'past_due' as const }
+      }
+      return s
+    })
+    if (changed) persist()
+  },
+  /** All orders placed by a buyer (purchase history). */
+  async myOrders(buyerId?: ID): Promise<Order[]> {
+    const bid = buyerId ?? me()
+    return db().orders.filter((o) => o.buyerId === bid).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  },
+  /** The paid one-off purchase for a course, if the buyer owns it (lifetime access). */
+  async coursePurchase(buyerId: ID, courseId: ID): Promise<Order | null> {
+    return db().orders.find((o) => o.buyerId === buyerId && o.courseId === courseId && o.kind === 'course' && o.status === 'paid') ?? null
+  },
+  /** The most-recent subscription row for a (subscriber, course), after running the lifecycle clock. */
+  async courseSubscription(subscriberId: ID, courseId: ID): Promise<Subscription | null> {
+    this.runSubscriptionLifecycle()
+    const subs = db().subscriptions.filter((s) => s.subscriberId === subscriberId && s.courseId === courseId)
+    if (!subs.length) return null
+    return [...subs].sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0]
+  },
+  /** Cancel — access continues until the end of the paid period (renewsAt), then re-locks. */
+  async cancelSubscription(id: ID): Promise<Subscription | null> {
+    const i = db().subscriptions.findIndex((s) => s.id === id)
+    if (i < 0) return null
+    db().subscriptions[i] = { ...db().subscriptions[i], status: 'canceled' }
+    persist()
+    return db().subscriptions[i]
+  },
+  /** Renew / resume — captures another period and pushes renewsAt out 30 days. */
+  async renewSubscription(id: ID): Promise<Subscription | null> {
+    const i = db().subscriptions.findIndex((s) => s.id === id)
+    if (i < 0) return null
+    db().subscriptions[i] = {
+      ...db().subscriptions[i],
+      status: 'active',
+      renewsAt: new Date(Date.now() + 30 * 24 * 60 * 60_000).toISOString()
+    }
+    persist()
+    return db().subscriptions[i]
+  },
+  /**
+   * Test/dev hook: force a subscription to expire immediately so the re-lock
+   * path can be exercised without waiting 30 days. Not used in production UI.
+   */
+  async __expireSubscriptionForTesting(id: ID): Promise<void> {
+    const i = db().subscriptions.findIndex((s) => s.id === id)
+    if (i < 0) return
+    db().subscriptions[i] = { ...db().subscriptions[i], status: 'active', renewsAt: new Date(Date.now() - 1000).toISOString() }
+    persist()
+    this.runSubscriptionLifecycle()
+  },
+
   // ── #33 Admin + moderation ──────────────────────────────────────────────
   async listReports(status?: ReportStatus): Promise<Report[]> {
     let r = [...db().reports]

@@ -15,8 +15,12 @@ import DangerZoneSection from '../settings/sections/DangerZoneSection'
 const LEVELS: readonly CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 import {
   IconBook,
+  IconBolt,
+  IconChat,
+  IconDownload,
   IconPlay,
   IconPlus,
+  IconUsers,
   IconVolume,
   IconYouTube
 } from '../../components/icons'
@@ -238,6 +242,28 @@ export default function AccountPage(): JSX.Element {
             </div>
           </div>
           <button onClick={() => setEditing(true)} className="btn-ghost px-4 py-2 text-sm shrink-0">Edit profile</button>
+        </div>
+
+        {/* Quick links — the personal surfaces that don't sit in the main sidebar. */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { to: '/profile', label: 'My profile', sub: 'Stats, badges & certificates', Icon: IconUsers, tint: 'bg-brand-500/15 text-brand-300' },
+            { to: '/notifications', label: 'Notifications', sub: 'Reminders & updates', Icon: IconBolt, tint: 'bg-amber-500/15 text-amber-300' },
+            { to: '/inbox', label: 'Messages', sub: 'Your conversations', Icon: IconChat, tint: 'bg-emerald-500/15 text-emerald-300' },
+            { to: '/downloads', label: 'Downloads', sub: 'Offline & sync', Icon: IconDownload, tint: 'bg-violet-500/15 text-violet-300' }
+          ].map((q) => (
+            <button
+              key={q.to}
+              onClick={() => navigate(q.to)}
+              className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex flex-col gap-2"
+            >
+              <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center', q.tint)}>
+                <q.Icon className="w-5 h-5" />
+              </span>
+              <span className="block text-sm font-semibold text-white">{q.label}</span>
+              <span className="block text-[11px] text-slate-400 leading-tight">{q.sub}</span>
+            </button>
+          ))}
         </div>
 
         {/* Age-band nudge (editing happens in Edit profile). */}

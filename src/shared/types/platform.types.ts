@@ -74,6 +74,11 @@ export interface Lesson {
   videoUrl?: string
   durationMin?: number
   dripDays?: number
+  /**
+   * Free preview lesson — playable before purchase on a paid course (a taster).
+   * Ignored for free courses (those unlock entirely on enrolment).
+   */
+  preview?: boolean
 }
 
 // ─── Social / community ───────────────────────────────────────────────────

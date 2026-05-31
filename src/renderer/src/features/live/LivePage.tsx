@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
 import RealtimeStatus from '../../components/realtime/RealtimeStatus'
-import { IconLive, IconPlus, IconUsers } from '../../components/icons'
+import { IconLive, IconPlus, IconTrophy, IconUsers } from '../../components/icons'
 
 /** Stable room slug from a title so a viewer joins the same room each time. */
 const slug = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -108,6 +108,9 @@ export default function LivePage(): JSX.Element {
             <p className="text-sm text-slate-400 mt-1">Watch live lessons, join group streams, or go live.</p>
           </div>
           <div className="flex gap-2">
+            <button onClick={() => navigate('/quiz/live')} className="btn-ghost px-4 py-2.5 inline-flex items-center gap-2 text-sm">
+              <IconTrophy className="w-4 h-4" /> Live quiz
+            </button>
             <button onClick={() => navigate('/live/group?host=1&id=my-room')} className="btn-ghost px-4 py-2.5 inline-flex items-center gap-2 text-sm">
               <IconUsers className="w-4 h-4" /> Group live
             </button>

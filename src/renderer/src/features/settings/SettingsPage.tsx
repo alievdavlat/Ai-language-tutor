@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAppStore } from '../../store/useAppStore'
 import { Tabs, type TabItem } from '../../components/ui'
 import { useSettingsPatch } from './hooks/useSettingsPatch'
@@ -23,9 +24,15 @@ const TABS: readonly TabItem<SettingsTab>[] = [
   { id: 'about', label: 'About' }
 ] as const
 
+const TAB_IDS: readonly SettingsTab[] = ['ai', 'language', 'companion', 'microphone', 'productivity', 'privacy', 'about']
+
 export default function SettingsPage(): JSX.Element {
   const { profile, saving, patch, patchProfile } = useSettingsPatch()
-  const [tab, setTab] = useState<SettingsTab>('ai')
+  // Honor a deep-link like /settings?tab=productivity (e.g. the old /productivity
+  // route now redirects here). Falls back to AI for unknown/missing values.
+  const [params] = useSearchParams()
+  const initialTab = TAB_IDS.find((t) => t === params.get('tab')) ?? 'ai'
+  const [tab, setTab] = useState<SettingsTab>(initialTab)
 
   if (!profile) {
     return (

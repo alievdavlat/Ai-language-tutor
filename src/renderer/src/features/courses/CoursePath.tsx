@@ -28,30 +28,36 @@ function kindIcon(kind: LessonView['kind']): (p: { className?: string }) => JSX.
   return IconStar
 }
 
-function Node({ lesson, offset, locked, tone, onOpen }: {
+function Node({ lesson, offset, locked, previewable, tone, onOpen }: {
   lesson: LessonView
   offset: number
   locked: boolean
+  /** Free taster on a paid course the learner hasn't bought yet. */
+  previewable: boolean
   tone: (typeof UNIT_TONES)[number]
   onOpen: () => void
 }): JSX.Element {
   const done = lesson.state === 'done'
-  const current = !locked && lesson.state === 'current'
+  const current = !locked && !previewable && lesson.state === 'current'
   const Icon = done ? IconCheck : locked ? IconLock : kindIcon(lesson.kind)
   return (
     <div className="relative flex flex-col items-center" style={{ transform: `translateX(${offset}px)` }}>
       {current && (
         <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-widest text-brand-200 bg-brand-500/20 border border-brand-400/40 rounded-full px-2 py-0.5 animate-bounce">Start</span>
       )}
+      {previewable && (
+        <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-widest text-emerald-200 bg-emerald-500/20 border border-emerald-400/40 rounded-full px-2 py-0.5 whitespace-nowrap">Free preview</span>
+      )}
+      {/* Locked nodes stay clickable — tapping opens the "buy to unlock" prompt. */}
       <button
-        onClick={() => !locked && onOpen()}
-        disabled={locked}
-        title={lesson.title}
+        onClick={onOpen}
+        title={locked ? `${lesson.title} · buy to unlock` : lesson.title}
         className={cn(
           'w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition ring-4',
           done && 'bg-gradient-to-b from-emerald-400 to-emerald-600 ring-emerald-400/30 text-white',
           current && cn('bg-gradient-to-b text-white ring-offset-2 ring-offset-canvas hover:scale-105 active:scale-95', tone.node, tone.ring),
-          locked && 'bg-white/[0.06] ring-white/[0.04] text-slate-600 cursor-not-allowed'
+          previewable && 'bg-gradient-to-b from-emerald-400 to-teal-600 ring-emerald-400/30 text-white hover:scale-105 active:scale-95',
+          locked && 'bg-white/[0.06] ring-white/[0.04] text-slate-600 hover:bg-white/[0.1] hover:text-slate-400'
         )}
       >
         <Icon className="w-7 h-7" />
@@ -61,11 +67,14 @@ function Node({ lesson, offset, locked, tone, onOpen }: {
   )
 }
 
-export default function CoursePath({ view, enrolled, onOpenLesson, onOpenFinal }: {
+export default function CoursePath({ view, unlocked, onOpenLesson, onOpenFinal, onLocked }: {
   view: CourseView
-  enrolled: boolean
+  /** Full access — learner may open every (non-preview) lesson. */
+  unlocked: boolean
   onOpenLesson: (l: LessonView) => void
   onOpenFinal: () => void
+  /** Tapped a locked node / the final while not unlocked — open the paywall. */
+  onLocked: () => void
 }): JSX.Element {
   let nodeIdx = 0
   return (
@@ -82,7 +91,19 @@ export default function CoursePath({ view, enrolled, onOpenLesson, onOpenFinal }
             {lessons.map((l) => {
               const off = OFFSETS[nodeIdx % OFFSETS.length]
               nodeIdx += 1
-              return <Node key={l.id} lesson={l} offset={off} locked={!enrolled || l.state === 'locked'} tone={tone} onOpen={() => onOpenLesson(l)} />
+              const previewable = !unlocked && !!l.preview
+              const locked = unlocked ? l.state === 'locked' : !l.preview
+              return (
+                <Node
+                  key={l.id}
+                  lesson={l}
+                  offset={off}
+                  locked={locked}
+                  previewable={previewable}
+                  tone={tone}
+                  onOpen={() => (locked ? onLocked() : onOpenLesson(l))}
+                />
+              )
             })}
           </div>
         )
@@ -92,25 +113,26 @@ export default function CoursePath({ view, enrolled, onOpenLesson, onOpenFinal }
       {view.hasFinal && (
         <div className="flex flex-col items-center gap-2 mt-2">
           <button
-            onClick={() => view.finalUnlocked && enrolled && onOpenFinal()}
-            disabled={!view.finalUnlocked || !enrolled}
+            onClick={() => (!unlocked ? onLocked() : view.finalUnlocked && onOpenFinal())}
             title="Final exam"
             className={cn(
               'w-20 h-20 rounded-full flex items-center justify-center shadow-xl ring-4 transition',
               view.finalPassed ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 ring-emerald-400/30 text-white'
-                : view.finalUnlocked && enrolled ? 'bg-gradient-to-b from-amber-300 to-amber-500 ring-amber-300/40 text-black hover:scale-105'
-                  : 'bg-white/[0.06] ring-white/[0.04] text-slate-600 cursor-not-allowed'
+                : view.finalUnlocked && unlocked ? 'bg-gradient-to-b from-amber-300 to-amber-500 ring-amber-300/40 text-black hover:scale-105'
+                  : 'bg-white/[0.06] ring-white/[0.04] text-slate-600 hover:bg-white/[0.1]'
             )}
           >
-            {view.finalPassed ? <IconCheck className="w-9 h-9" /> : view.finalUnlocked && enrolled ? <IconTrophy className="w-9 h-9" /> : <IconLock className="w-8 h-8" />}
+            {view.finalPassed ? <IconCheck className="w-9 h-9" /> : view.finalUnlocked && unlocked ? <IconTrophy className="w-9 h-9" /> : <IconLock className="w-8 h-8" />}
           </button>
           <p className="text-xs font-bold text-white">Final exam{view.finalPassed ? ' · passed' : ''}</p>
           <p className="text-[11px] text-slate-500">Pass to earn your certificate 🏆</p>
         </div>
       )}
 
-      {!enrolled && (
-        <p className="text-xs text-slate-400 mt-4 inline-flex items-center gap-1.5"><IconLock className="w-3.5 h-3.5" /> Enrol to unlock the path.</p>
+      {!unlocked && (
+        <button onClick={onLocked} className="text-xs text-brand-300 hover:text-brand-200 mt-4 inline-flex items-center gap-1.5 font-semibold">
+          <IconLock className="w-3.5 h-3.5" /> Buy to unlock the full path →
+        </button>
       )}
     </div>
   )

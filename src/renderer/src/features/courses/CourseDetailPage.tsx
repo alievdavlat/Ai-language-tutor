@@ -10,6 +10,7 @@ import {
   IconHeart,
   IconLock,
   IconPlay,
+  IconRefresh,
   IconStar,
   IconTrophy
 } from '../../components/icons'
@@ -24,8 +25,10 @@ import { downloadCertificate } from '../../lib/certificate'
 import type { Lesson } from '@shared/types'
 import ExamRunner from './ExamRunner'
 import CoursePath from './CoursePath'
+import PaywallOverlay from './PaywallOverlay'
 import CommentsSection from '../../components/CommentsSection'
 import { studio } from '../../services/studio/store'
+import { courseAccess } from '../../services/access/entitlement'
 
 const FALLBACK_COURSE = 'c_everyday'
 const FINAL_PASS = 65
@@ -74,6 +77,16 @@ export default function CourseDetailPage(): JSX.Element {
   const enrollment = enrollments.find((e) => e.courseId === courseId)
   const enrolled = !!enrollment
 
+  // Entitlement: paid courses unlock via orders/subscriptions (re-locks on
+  // expiry); free courses unlock via enrolment. See services/access.
+  const { data: access, refresh: refreshAccess } = useBackendQuery(
+    () => (course ? courseAccess(userId, course, enrolled) : Promise.resolve(null)),
+    [userId, courseId, enrolled, course?.pricing.kind],
+    null
+  )
+  const unlocked = access?.unlocked ?? (course?.pricing.kind === 'free' ? enrolled : false)
+  const [showPaywall, setShowPaywall] = useState(false)
+
   const view = useMemo(
     () => buildCourseView(courseId, units, lessonsByUnit),
     // content is a dep so the view recomputes after a lesson/exam completes
@@ -106,28 +119,42 @@ export default function CourseDetailPage(): JSX.Element {
   }
 
   const [buying, setBuying] = useState(false)
+  const [managing, setManaging] = useState(false)
 
-  async function handleEnroll(): Promise<void> {
+  /** Free courses enrol immediately; paid courses go through the paywall. */
+  async function handleEnrollFree(): Promise<void> {
     if (!userId || !course) return
-    // Paid courses go through checkout first (records an order + enrolls).
-    if (course.pricing.kind !== 'free') {
-      setBuying(true)
-      const amountUsd = course.pricing.kind === 'one-off' ? course.pricing.usd : course.pricing.usdPerMo
-      await studio.checkout({
-        buyerId: userId,
-        teacherId: course.teacherId,
-        courseId,
-        kind: course.pricing.kind === 'sub' ? 'subscription' : 'course',
-        amountUsd,
-        provider: 'payme'
-      }).catch(() => {})
-      setBuying(false)
-    } else {
-      await backend.enroll(userId, courseId).catch(() => {})
-    }
+    setBuying(true)
+    await backend.enroll(userId, courseId).catch(() => {})
     await logActivity({ userId, kind: 'course_enroll', meta: { courseId } }).catch(() => {})
+    setBuying(false)
     refreshEnroll()
+    refreshAccess()
     if (view.next) openLesson(view.next)
+  }
+
+  /** Called after the paywall grants access — refresh + drop into the course. */
+  function handleUnlocked(): void {
+    setShowPaywall(false)
+    refreshEnroll()
+    refreshAccess()
+    if (view.next) openLesson(view.next)
+  }
+
+  /** Cancel keeps access to the period end; renew (from expired) reopens it. */
+  async function handleCancelSub(): Promise<void> {
+    if (!access?.subscription) return
+    setManaging(true)
+    await studio.cancelSubscription(access.subscription.id).catch(() => {})
+    setManaging(false)
+    refreshAccess()
+  }
+  async function handleResumeSub(): Promise<void> {
+    if (!access?.subscription) return
+    setManaging(true)
+    await studio.renewSubscription(access.subscription.id).catch(() => {})
+    setManaging(false)
+    refreshAccess()
   }
 
   function handleContinue(): void {
@@ -226,10 +253,20 @@ export default function CourseDetailPage(): JSX.Element {
       <div className="px-6 py-6 w-full">
         {/* Action row */}
         <div className="flex items-center gap-3 mb-3">
-          {!enrolled ? (
-            <button onClick={handleEnroll} disabled={buying} className="btn-primary px-8 py-3 disabled:opacity-60">
-              {buying ? 'Processing…' : course.pricing.kind === 'free' ? 'Enroll free →' : course.pricing.kind === 'one-off' ? `Buy · $${course.pricing.usd} →` : `Subscribe · $${course.pricing.usdPerMo}/mo →`}
-            </button>
+          {!unlocked ? (
+            course.pricing.kind === 'free' ? (
+              <button onClick={handleEnrollFree} disabled={buying} className="btn-primary px-8 py-3 disabled:opacity-60">
+                {buying ? 'Enrolling…' : 'Enroll free →'}
+              </button>
+            ) : (
+              <button onClick={() => setShowPaywall(true)} className="btn-primary px-8 py-3">
+                {access?.status === 'expired'
+                  ? `Renew · $${course.pricing.kind === 'sub' ? `${course.pricing.usdPerMo}/mo` : ''} →`
+                  : course.pricing.kind === 'one-off'
+                    ? `Buy · $${course.pricing.usd} →`
+                    : `Subscribe · $${course.pricing.usdPerMo}/mo →`}
+              </button>
+            )
           ) : view.next ? (
             <button onClick={handleContinue} className="btn-primary px-8 py-3">Continue learning →</button>
           ) : view.hasFinal && !view.finalPassed ? (
@@ -259,6 +296,44 @@ export default function CourseDetailPage(): JSX.Element {
             <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
               <div className="h-full bg-grad-brand rounded-full transition-all" style={{ width: `${view.progress}%` }} />
             </div>
+          </div>
+        )}
+
+        {/* Subscription lifecycle panel */}
+        {course.pricing.kind === 'sub' && (access?.status === 'subscribed' || access?.status === 'expired') && (
+          <div className={cn(
+            'mb-6 max-w-md rounded-2xl border p-4 flex items-center gap-3',
+            access.status === 'expired' ? 'border-amber-400/30 bg-amber-500/10' : 'border-white/10 bg-white/[0.03]'
+          )}>
+            <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
+              access.status === 'expired' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/15 text-emerald-300')}>
+              {access.status === 'expired' ? <IconLock className="w-5 h-5" /> : <IconRefresh className="w-5 h-5" />}
+            </span>
+            <div className="flex-1 min-w-0">
+              {access.status === 'expired' ? (
+                <>
+                  <p className="text-sm font-bold text-white">Subscription expired</p>
+                  <p className="text-xs text-slate-300">Access ended{access.expiresAt ? ` ${new Date(access.expiresAt).toLocaleDateString()}` : ''}. Renew to continue.</p>
+                </>
+              ) : access.canceling ? (
+                <>
+                  <p className="text-sm font-bold text-white">Subscription ending</p>
+                  <p className="text-xs text-slate-300">You keep access until {access.expiresAt ? new Date(access.expiresAt).toLocaleDateString() : 'the period ends'}.</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-bold text-white">Subscription active</p>
+                  <p className="text-xs text-slate-300">Renews {access.expiresAt ? new Date(access.expiresAt).toLocaleDateString() : 'monthly'} · ${course.pricing.usdPerMo}/mo</p>
+                </>
+              )}
+            </div>
+            {access.status === 'expired' ? (
+              <button onClick={() => setShowPaywall(true)} className="btn-primary px-4 py-2 text-sm shrink-0">Renew</button>
+            ) : access.canceling ? (
+              <button onClick={handleResumeSub} disabled={managing} className="btn-primary px-4 py-2 text-sm shrink-0 disabled:opacity-50">{managing ? '…' : 'Resume'}</button>
+            ) : (
+              <button onClick={handleCancelSub} disabled={managing} className="btn-ghost px-4 py-2 text-sm shrink-0 disabled:opacity-50">{managing ? '…' : 'Cancel'}</button>
+            )}
           </div>
         )}
 
@@ -311,16 +386,24 @@ export default function CourseDetailPage(): JSX.Element {
             {/* Curriculum */}
             <section>
               <h2 className="text-base font-bold mb-1">Curriculum</h2>
-              {!enrolled && (
+              {!unlocked && (
                 <p className="text-xs text-slate-400 mb-3 inline-flex items-center gap-1.5">
-                  <IconLock className="w-3.5 h-3.5" /> {course.pricing.kind === 'free' ? 'Enroll free to unlock all lessons.' : 'Buy this course to unlock all lessons.'}
+                  <IconLock className="w-3.5 h-3.5" />
+                  {course.pricing.kind === 'free'
+                    ? 'Enroll free to unlock all lessons.'
+                    : access?.status === 'expired'
+                      ? 'Your access expired — renew to unlock all lessons again.'
+                      : view.ordered.some((l) => l.preview)
+                        ? 'Try the free preview, then buy to unlock every lesson.'
+                        : 'Buy this course to unlock all lessons.'}
                 </p>
               )}
               <CoursePath
                 view={view}
-                enrolled={enrolled}
+                unlocked={unlocked}
                 onOpenLesson={(l) => openLesson(l)}
                 onOpenFinal={() => setShowFinal(true)}
+                onLocked={() => course.pricing.kind === 'free' ? handleEnrollFree() : setShowPaywall(true)}
               />
             </section>
 
@@ -378,6 +461,18 @@ export default function CourseDetailPage(): JSX.Element {
           </aside>
         </div>
       </div>
+
+      {showPaywall && access && (
+        <PaywallOverlay
+          course={course}
+          teacherName={teacher?.name}
+          access={access}
+          lessonCount={view.totalCount}
+          hasFinal={view.hasFinal}
+          onUnlocked={handleUnlocked}
+          onClose={() => setShowPaywall(false)}
+        />
+      )}
     </div>
   )
 }
