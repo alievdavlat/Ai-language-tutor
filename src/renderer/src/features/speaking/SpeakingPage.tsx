@@ -31,8 +31,11 @@ function RoleplayCard({ rp, locked, onOpen }: { rp: Roleplay; locked: boolean; o
       onClick={onOpen}
       className="group relative w-64 shrink-0 text-left rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] transition hover:-translate-y-0.5 hover:border-white/20"
     >
-      <div className="relative h-36 bg-gradient-to-br from-slate-700/40 to-slate-900/40 overflow-hidden">
-        <img src={rp.thumbnailUrl} alt="" loading="lazy" className={cn('w-full h-full object-cover transition group-hover:scale-[1.03]', locked && 'opacity-50')} />
+      <div className={cn('relative h-36 overflow-hidden bg-gradient-to-br', rp.cover, locked && 'opacity-60')}>
+        {rp.thumbnailUrl
+          ? <img src={rp.thumbnailUrl} alt="" loading="lazy" className="w-full h-full object-cover transition group-hover:scale-[1.03]" />
+          : <div className="w-full h-full flex items-center justify-center text-5xl select-none drop-shadow-lg transition group-hover:scale-[1.08]">{rp.emoji}</div>}
+        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition" />
         <span className={cn('absolute top-2 left-2 text-[10px] font-black uppercase tracking-wider rounded-md px-2 py-1', DIFF_BADGE[rp.difficulty])}>
           {rp.difficulty}
         </span>

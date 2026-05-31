@@ -5,7 +5,7 @@ import { fileToDataUrl, isImageCover } from '../../../lib/cover'
 import { IconPlus, IconX } from '../../../components/icons'
 import {
   roleplays,
-  roleplayThumb,
+  coverFor,
   ROLEPLAY_SECTIONS,
   type Roleplay,
   type RoleplayDifficulty,
@@ -40,6 +40,7 @@ export default function RoleplayEditor({ initial, authorId, onClose, onSaved }: 
   const [duration, setDuration] = useState(initial?.duration ?? '3-5 minutes')
   const [level, setLevel] = useState(initial?.level ?? 'A2')
   const [thumb, setThumb] = useState(initial?.thumbnailUrl ?? '')
+  const [emoji, setEmoji] = useState(initial?.emoji ?? '💬')
   const [busy, setBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -53,7 +54,6 @@ export default function RoleplayEditor({ initial, authorId, onClose, onSaved }: 
   const save = async (): Promise<void> => {
     if (!canSave) return
     setBusy(true)
-    const thumbnailUrl = isImageCover(thumb) ? thumb : roleplayThumb(`${title}, illustration`, Math.floor(title.length * 7 + 11))
     const saved = roleplays.upsert({
       id: initial?.id,
       title: title.trim(),
@@ -63,7 +63,9 @@ export default function RoleplayEditor({ initial, authorId, onClose, onSaved }: 
       section,
       duration: duration.trim() || '3-5 minutes',
       level: level.trim() || undefined,
-      thumbnailUrl,
+      thumbnailUrl: isImageCover(thumb) ? thumb : undefined,
+      cover: initial?.cover ?? coverFor(title || 'role'),
+      emoji: emoji.trim() || '💬',
       visibility: 'public',
       authorId: initial?.authorId ?? authorId ?? 'me'
     })
@@ -71,7 +73,8 @@ export default function RoleplayEditor({ initial, authorId, onClose, onSaved }: 
     onSaved(saved)
   }
 
-  const previewSrc = isImageCover(thumb) ? thumb : (title.trim() ? roleplayThumb(`${title}, illustration`, Math.floor(title.length * 7 + 11)) : '')
+  const cover = initial?.cover ?? coverFor(title || 'role')
+  const hasImage = isImageCover(thumb)
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
@@ -91,14 +94,17 @@ export default function RoleplayEditor({ initial, authorId, onClose, onSaved }: 
         <div className="px-6 py-5 space-y-4">
           {/* Thumbnail */}
           <div className="flex items-center gap-4">
-            <div className="w-28 h-20 rounded-xl overflow-hidden bg-white/[0.04] border border-white/10 shrink-0 flex items-center justify-center">
-              {previewSrc
-                ? <img src={previewSrc} alt="" className="w-full h-full object-cover" />
-                : <span className="text-[11px] text-slate-500 px-2 text-center">Cover preview</span>}
+            <div className={cn('w-28 h-20 rounded-xl overflow-hidden border border-white/10 shrink-0 flex items-center justify-center bg-gradient-to-br', !hasImage && cover)}>
+              {hasImage
+                ? <img src={thumb} alt="" className="w-full h-full object-cover" />
+                : <span className="text-4xl select-none">{emoji || '💬'}</span>}
             </div>
             <div className="flex-1">
-              <button onClick={() => fileRef.current?.click()} className="btn-ghost px-3 py-2 text-sm inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> Upload thumbnail</button>
-              <p className="text-[11px] text-slate-500 mt-1.5">Optional — a themed cover is generated from the title if you skip it.</p>
+              <div className="flex items-center gap-2">
+                <button onClick={() => fileRef.current?.click()} className="btn-ghost px-3 py-2 text-sm inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> Upload image</button>
+                <input value={emoji} onChange={(e) => setEmoji(e.target.value)} maxLength={4} placeholder="🙂" className="w-14 text-center rounded-lg bg-white/[0.04] border border-white/10 px-2 py-2 text-lg" title="Cover emoji" />
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1.5">Upload a cover, or just pick an emoji — a themed gradient is used either way.</p>
               <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => void onPickFile(e.target.files?.[0])} />
             </div>
           </div>

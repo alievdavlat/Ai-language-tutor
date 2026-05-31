@@ -6,14 +6,12 @@ import { ProgressRing, StatCard, Tabs, type TabItem, Input } from '../../compone
 import { useTargetLanguage } from '../../lib/language'
 import { useVocab } from '../../services/study/useStudy'
 import { formatInterval } from '../../services/study/fsrs'
-import { IconBolt, IconBook, IconBookmark, IconPlus, IconStar, IconVolume, IconX } from '../../components/icons'
-import DictionaryPanel from '../dictionary/DictionaryPanel'
+import { IconBolt, IconBook, IconBookmark, IconPlus, IconSearch, IconStar, IconVolume, IconX } from '../../components/icons'
 
-type Tab = 'mine' | 'saved' | 'dictionary'
+type Tab = 'mine' | 'saved'
 const TABS: TabItem<Tab>[] = [
   { id: 'mine', label: 'My words' },
-  { id: 'saved', label: 'Saved' },
-  { id: 'dictionary', label: 'Dictionary' }
+  { id: 'saved', label: 'Saved' }
 ]
 
 function speak(text: string, lang: string): void {
@@ -140,6 +138,7 @@ export default function VocabularyPage(): JSX.Element {
             <p className="text-sm text-slate-400 mt-1">Save words, group them by category, and review with spaced repetition.</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => navigate('/dictionary')} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5" title="Dictionary & phrasebook"><IconSearch className="w-4 h-4" /> Dictionary</button>
             <button onClick={() => navigate('/flashcards')} disabled={cards.length === 0} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5 disabled:opacity-40" title={cards.length === 0 ? 'Add words to practice' : 'Practice with flashcards'}><IconBook className="w-4 h-4" /> Flashcards</button>
             <button onClick={() => setAdding(true)} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> Add word</button>
             <button onClick={() => navigate('/vocabulary/review')} disabled={due.length === 0} className="btn-primary text-sm px-4 py-2 disabled:opacity-40">
@@ -149,7 +148,6 @@ export default function VocabularyPage(): JSX.Element {
         </div>
 
         {/* Stats + retention */}
-        {tab !== 'dictionary' && (
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-center">
           <StatCard value={stats.due} label="To review" tone="rose" icon={<IconBolt />} />
           <StatCard value={stats.learning + stats.new} label="Learning" tone="amber" icon={<IconStar />} />
@@ -160,14 +158,11 @@ export default function VocabularyPage(): JSX.Element {
             </ProgressRing>
           </div>
         </div>
-        )}
 
         <Tabs items={TABS} active={tab} onChange={(t) => { setTab(t); setCategory(null) }} className="self-start" />
 
-        {tab === 'dictionary' && <DictionaryPanel />}
-
         {/* Category filter */}
-        {tab !== 'dictionary' && categories.length > 0 && (
+        {categories.length > 0 && (
           <div className="flex flex-wrap gap-2">
             <button onClick={() => setCategory(null)} className={cn('rounded-pill border px-3 py-1.5 text-xs font-bold transition', category === null ? 'border-brand-400 bg-brand-500/15 text-white' : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]')}>
               All ({tabCards.length})
@@ -181,7 +176,7 @@ export default function VocabularyPage(): JSX.Element {
         )}
 
         {/* Cards */}
-        {tab !== 'dictionary' && (loading ? (
+        {loading ? (
           <p className="text-sm text-slate-400 text-center py-10">Loading…</p>
         ) : visible.length === 0 ? (
           <div className="rounded-card border border-dashed border-white/12 bg-white/[0.02] p-10 text-center">
@@ -194,7 +189,7 @@ export default function VocabularyPage(): JSX.Element {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {visible.map((w) => <WordCard key={w.id} w={w} lang={lang.code} onRemove={() => void remove(w.id)} />)}
           </div>
-        ))}
+        )}
       </div>
 
       {adding && <AddWordModal onClose={() => setAdding(false)} onSave={async (v) => { await add(v); setTab('mine'); setCategory(null) }} />}
