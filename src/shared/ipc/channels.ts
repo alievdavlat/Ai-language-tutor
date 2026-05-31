@@ -68,6 +68,21 @@ export const UPDATE_CHANNELS = {
   CHANGED: 'update:changed'
 } as const
 
+// Desktop integration (#16): tray icon, minimize/close-to-tray, launch-on-login,
+// taskbar jump-list, single-instance focus. Settings are owned by the main
+// process and mirrored to Settings → Desktop.
+export const DESKTOP_CHANNELS = {
+  /** Renderer → main: read the current DesktopSettings snapshot. */
+  GET_SETTINGS: 'desktop:get-settings',
+  /** Renderer → main: patch DesktopSettings; resolves to the merged result. */
+  SET_SETTINGS: 'desktop:set-settings',
+  /**
+   * Main → renderer: navigate to a route. Fired by tray menu items, taskbar
+   * jump-list tasks, and second-instance launches so the OS can deep-link.
+   */
+  NAVIGATE: 'desktop:navigate'
+} as const
+
 export const IPC = {
   hardware: HARDWARE_CHANNELS,
   ollama: OLLAMA_CHANNELS,
@@ -77,5 +92,6 @@ export const IPC = {
   stt: STT_CHANNELS,
   sidecar: SIDECAR_CHANNELS,
   productivity: PRODUCTIVITY_CHANNELS,
-  update: UPDATE_CHANNELS
+  update: UPDATE_CHANNELS,
+  desktop: DESKTOP_CHANNELS
 } as const

@@ -190,6 +190,20 @@ function useSyncUserToBackend(): void {
   }, [profile, role])
 }
 
+/**
+ * Desktop integration (#16): the tray menu, taskbar jump-list, and second-instance
+ * launches deep-link the app by pushing a route over IPC. Subscribe once and
+ * navigate. No-op in the browser preview (no `window.api`).
+ */
+function useDesktopDeepLink(): void {
+  const navigate = useNavigate()
+  useEffect(() => {
+    const desktop = (window as unknown as { api?: { desktop?: { onNavigate?: (cb: (route: string) => void) => () => void } } }).api?.desktop
+    if (!desktop?.onNavigate) return
+    return desktop.onNavigate((route) => navigate(route))
+  }, [navigate])
+}
+
 export default function AppRoutes(): JSX.Element {
   const navigate = useNavigate()
   const setRole = useAppStore((s) => s.setRole)
@@ -197,6 +211,7 @@ export default function AppRoutes(): JSX.Element {
   usePostBootRedirect()
   useSyncUILanguage()
   useSyncUserToBackend()
+  useDesktopDeepLink()
   // Ctrl+Shift+A → elevate to Owner/Admin and open the admin panel.
   useAdminShortcut(() => { setRole('admin'); navigate('/admin') })
 
