@@ -73,6 +73,8 @@ const u2u = (r: Record<string, unknown>): PlatformUser => ({
   targetLanguage: r.target_language as PlatformUser['targetLanguage'],
   level: r.level as PlatformUser['level'],
   country: r.country as string | undefined,
+  avatarUrl: r.avatar_url as string | undefined,
+  bannerUrl: r.banner_url as string | undefined,
   createdAt: r.created_at as string
 })
 
@@ -396,6 +398,8 @@ export const supabaseBackend: Backend = {
     if (patch.targetLanguage != null) row.target_language = patch.targetLanguage
     if (patch.level != null) row.level = patch.level
     if (patch.country != null) row.country = patch.country
+    if (patch.avatarUrl != null) row.avatar_url = patch.avatarUrl
+    if (patch.bannerUrl != null) row.banner_url = patch.bannerUrl
     const { data, error } = await sb.from('users').update(row).eq('id', id).select().single()
     if (error) throw error
     return u2u(data)
