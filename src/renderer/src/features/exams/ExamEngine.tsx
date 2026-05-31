@@ -23,6 +23,7 @@ import {
 import { scoreWriting } from './writingScore'
 import { scoreSpeaking } from './speakingScore'
 import { exams } from '../../services/exams/store'
+import ListeningAudio from './ListeningAudio'
 
 type Phase = 'intro' | 'running' | 'grading' | 'report'
 
@@ -80,15 +81,28 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
   const [feedback, setFeedback] = useState<string[]>([])
   const startedAt = useRef<number>(0)
   const [recording, setRecording] = useState(false)
+  const [showReview, setShowReview] = useState(false)
   const recRef = useRef<SpeechRec | null>(null)
+  // Always points at the latest `nextSection` so the timer can auto-submit.
+  const nextSectionRef = useRef<() => void>(() => undefined)
 
   const section = bank?.sections[secIdx]
 
-  // Per-section countdown timer.
+  // Per-section countdown timer with auto-submit. When the clock reaches zero
+  // the current section is submitted automatically and the engine advances
+  // (or grades, if it was the last section) — a real timed-exam behaviour.
   useEffect(() => {
     if (phase !== 'running' || !section) return
-    setSecs(section.minutes * 60)
-    const iv = setInterval(() => setSecs((s) => (s > 0 ? s - 1 : 0)), 1000)
+    let remaining = section.minutes * 60
+    setSecs(remaining)
+    const iv = setInterval(() => {
+      remaining -= 1
+      setSecs(remaining > 0 ? remaining : 0)
+      if (remaining <= 0) {
+        clearInterval(iv)
+        nextSectionRef.current()
+      }
+    }, 1000)
     return () => clearInterval(iv)
   }, [phase, secIdx, section])
 
@@ -205,6 +219,7 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
     if (secIdx + 1 >= bank.sections.length) void gradeAll()
     else { setSecIdx((i) => i + 1); setItemIdx(0) }
   }
+  nextSectionRef.current = nextSection
 
   // ── Intro ──
   if (phase === 'intro') {
@@ -276,9 +291,24 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
             </ul>
           </div>
 
+          <div className="w-full mt-4">
+            <button
+              onClick={() => setShowReview((v) => !v)}
+              className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-white/[0.06] transition flex items-center justify-between"
+            >
+              <span>Review answers & transcripts</span>
+              <span className="text-slate-500">{showReview ? '−' : '+'}</span>
+            </button>
+            {showReview && (
+              <div className="mt-3 text-left">
+                <ReviewPanel bank={bank} mcqAnswers={mcqAnswers} essays={essays} transcripts={transcripts} />
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center gap-3 mt-7 w-full">
             <button onClick={() => navigate('/exams')} className="btn-ghost flex-1 py-3">Back to exams</button>
-            <button onClick={() => { setPhase('intro'); setSecIdx(0); setItemIdx(0); setMcqAnswers({}); setEssays({}); setTranscripts({}); setResults([]) }} className="btn-primary flex-1 py-3">Retake</button>
+            <button onClick={() => { setPhase('intro'); setSecIdx(0); setItemIdx(0); setMcqAnswers({}); setEssays({}); setTranscripts({}); setResults([]); setShowReview(false) }} className="btn-primary flex-1 py-3">Retake</button>
           </div>
         </div>
       </div>
@@ -368,11 +398,8 @@ function McqBody({
           {section.passage}
         </div>
       )}
-      {section.audioTranscript && (
-        <div className="rounded-2xl border border-brand-400/20 bg-brand-500/10 p-4 text-sm text-slate-200 leading-relaxed">
-          <p className="text-[11px] uppercase tracking-widest text-brand-200 font-bold mb-2 flex items-center gap-2"><IconHeadphones className="w-4 h-4" /> Audio transcript</p>
-          {section.audioTranscript}
-        </div>
+      {(section.audioUrl || section.audioTranscript) && (
+        <ListeningAudio audioUrl={section.audioUrl} transcript={section.audioTranscript} />
       )}
 
       {/* Item navigation dots */}
@@ -464,6 +491,86 @@ function SpeakingBody({
         placeholder="Your spoken answer appears here — or type it. The AI examiner grades this transcript."
         className="w-full min-h-[140px] rounded-2xl bg-white/[0.04] border border-white/10 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/70 focus:outline-none resize-none"
       />
+    </div>
+  )
+}
+
+// ─── Post-test review ──────────────────────────────────────────────────────────
+
+/**
+ * Shown only after grading. Reveals each section's stimulus — including the
+ * listening transcript that was hidden during the attempt — alongside the
+ * learner's answer vs. the correct one, so a listening section can be checked
+ * against the script after the fact (Listening ≠ Reading during the attempt).
+ */
+function ReviewPanel({
+  bank,
+  mcqAnswers,
+  essays,
+  transcripts
+}: {
+  bank: ExamBank
+  mcqAnswers: Record<string, number>
+  essays: Record<string, string>
+  transcripts: Record<string, string>
+}): JSX.Element {
+  return (
+    <div className="flex flex-col gap-4">
+      {bank.sections.map((sec) => (
+        <div key={sec.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-sm font-bold text-white mb-2">{sec.label}</p>
+
+          {sec.kind === 'mcq' && (
+            <>
+              {sec.passage && (
+                <p className="text-[13px] text-slate-300 leading-relaxed mb-3 rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">{sec.passage}</p>
+              )}
+              {sec.audioTranscript && (
+                <div className="text-[13px] text-slate-300 leading-relaxed mb-3 rounded-xl bg-brand-500/[0.06] border border-brand-400/20 p-3">
+                  <p className="text-[10px] uppercase tracking-widest text-brand-200 font-bold mb-1.5 flex items-center gap-2"><IconHeadphones className="w-3.5 h-3.5" /> Audio transcript</p>
+                  {sec.audioTranscript}
+                </div>
+              )}
+              <ul className="flex flex-col gap-3">
+                {sec.items.map((it, i) => {
+                  const chosen = mcqAnswers[it.id]
+                  const ok = chosen === it.correct
+                  return (
+                    <li key={it.id}>
+                      <p className="text-[13px] font-semibold text-slate-200">
+                        <span className={cn('mr-1.5', ok ? 'text-emerald-400' : 'text-rose-400')}>{ok ? '✓' : '✕'}</span>
+                        Q{i + 1}. {it.prompt}
+                      </p>
+                      <div className="pl-5 mt-1 text-[12px] leading-relaxed">
+                        <p className={ok ? 'text-emerald-300' : 'text-rose-300'}>
+                          Your answer: {chosen === undefined ? '— (skipped)' : it.options[chosen]}
+                        </p>
+                        {!ok && <p className="text-emerald-300">Correct: {it.options[it.correct]}</p>}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
+
+          {sec.kind === 'writing' && (
+            <>
+              <p className="text-[12px] text-slate-400 mb-1.5">{sec.prompt}</p>
+              <p className="text-[13px] text-slate-200 whitespace-pre-wrap rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">{essays[sec.id]?.trim() || '— (no response)'}</p>
+            </>
+          )}
+
+          {sec.kind === 'speaking' && (
+            <>
+              {sec.prompts.map((p) => (
+                <p key={p.id} className="text-[12px] text-slate-400 mb-1"><span className="text-brand-300 font-semibold">{p.part}:</span> {p.prompt}</p>
+              ))}
+              <p className="text-[13px] text-slate-200 whitespace-pre-wrap rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 mt-1.5">{transcripts[sec.id]?.trim() || '— (no response)'}</p>
+            </>
+          )}
+        </div>
+      ))}
     </div>
   )
 }

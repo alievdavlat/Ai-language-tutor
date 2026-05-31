@@ -3,8 +3,9 @@ import type { ExamKind } from '@shared/types'
 import { Input } from '../../components/ui'
 import { cn } from '../../lib/classnames'
 import { createId } from '../../lib/ids'
-import { IconPlus, IconX } from '../../components/icons'
+import { IconPlus, IconX, IconHeadphones } from '../../components/icons'
 import { exams, type StoredExam } from '../../services/exams/store'
+import { uploadUrl } from '../../services/backend/storage'
 import type { ExamSection, MCQSection, WritingSection } from './banks'
 
 const KINDS: { id: ExamKind; label: string; scale: string }[] = [
@@ -39,6 +40,7 @@ export default function ExamEditor({ initial, authorId, onClose, onSaved }: Exam
   const [kind, setKind] = useState<ExamKind>(initial?.kind ?? 'custom')
   const [sections, setSections] = useState<ExamSection[]>(initial?.sections ?? [newMcq()])
   const [busy, setBusy] = useState(false)
+  const [uploadingId, setUploadingId] = useState<string | null>(null)
 
   const canSave = !!title.trim() && sections.length > 0 &&
     sections.every((s) => s.kind !== 'mcq' || s.items.every((i) => i.prompt.trim() && i.options.filter((o) => o.trim()).length >= 2))
@@ -96,6 +98,59 @@ export default function ExamEditor({ initial, authorId, onClose, onSaved }: Exam
 
                 {s.kind === 'mcq' && (
                   <div className="space-y-3">
+                    {/* Reading stimulus (optional) */}
+                    <textarea
+                      value={(s as MCQSection).passage ?? ''}
+                      onChange={(e) => patch(s.id, (x) => ({ ...x, passage: e.target.value || undefined }) as ExamSection)}
+                      placeholder="Reading passage / stimulus (optional — shown above the questions)"
+                      rows={2}
+                      className="w-full rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 text-sm text-white resize-none"
+                    />
+
+                    {/* Listening audio (optional) — upload a recording, or a script read aloud by neural TTS */}
+                    <div className="rounded-xl bg-brand-500/[0.06] border border-brand-400/20 p-3 space-y-2">
+                      <p className="text-[10px] uppercase tracking-widest text-brand-200 font-bold flex items-center gap-1.5"><IconHeadphones className="w-3.5 h-3.5" /> Listening audio (optional)</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <label className={cn('inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold cursor-pointer hover:bg-white/[0.08]', uploadingId === s.id && 'opacity-60 pointer-events-none')}>
+                          {uploadingId === s.id ? 'Uploading…' : (s as MCQSection).audioUrl ? 'Replace recording' : 'Upload recording'}
+                          <input
+                            type="file"
+                            accept="audio/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const input = e.target
+                              const file = input.files?.[0]
+                              if (!file) return
+                              setUploadingId(s.id)
+                              void (async () => {
+                                try {
+                                  const url = await uploadUrl(file, 'exam-audio')
+                                  patch(s.id, (x) => ({ ...x, audioUrl: url }) as ExamSection)
+                                } catch (err) {
+                                  alert(err instanceof Error ? err.message : 'Upload failed')
+                                } finally {
+                                  setUploadingId(null)
+                                  input.value = ''
+                                }
+                              })()
+                            }}
+                          />
+                        </label>
+                        {(s as MCQSection).audioUrl && (
+                          <button onClick={() => patch(s.id, (x) => ({ ...x, audioUrl: undefined }) as ExamSection)} className="text-rose-300 hover:text-rose-200 text-xs font-bold">Remove recording</button>
+                        )}
+                        {(s as MCQSection).audioUrl && <span className="text-[11px] text-emerald-300">✓ recording attached</span>}
+                      </div>
+                      <textarea
+                        value={(s as MCQSection).audioTranscript ?? ''}
+                        onChange={(e) => patch(s.id, (x) => ({ ...x, audioTranscript: e.target.value || undefined }) as ExamSection)}
+                        placeholder="Listening script / transcript — read aloud by neural TTS when no recording is uploaded, and revealed in the learner's review."
+                        rows={2}
+                        className="w-full rounded-lg bg-white/[0.04] border border-white/10 px-3 py-2 text-xs text-white resize-none"
+                      />
+                      <p className="text-[10px] text-slate-500">A section with audio or a script becomes a Listening section — the script stays hidden during the test and is shown only in review.</p>
+                    </div>
+
                     {s.items.map((it, ii) => (
                       <div key={it.id} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
                         <div className="flex items-start gap-2">
