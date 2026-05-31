@@ -54,7 +54,10 @@ export default function LibraryPage(): JSX.Element {
             <h1 className="text-2xl font-bold tracking-tight mt-0.5">Library</h1>
             <p className="text-sm text-slate-400 mt-1">Watch, read and listen — upload your own or open anything to start.</p>
           </div>
-          <button onClick={() => setAdding(true)} className="btn-primary px-4 py-2 text-sm inline-flex items-center gap-1.5 shrink-0"><IconPlus className="w-4 h-4" /> Add</button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => navigate('/stories')} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5">📖 Stories</button>
+            <button onClick={() => setAdding(true)} className="btn-primary px-4 py-2 text-sm inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> Add</button>
+          </div>
         </div>
 
         <Tabs items={TABS} active={tab} onChange={setTab} className="self-start" />
