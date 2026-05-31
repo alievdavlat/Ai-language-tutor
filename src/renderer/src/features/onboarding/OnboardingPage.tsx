@@ -14,8 +14,10 @@ import { useAppStore } from '../../store/useAppStore'
 import { Card, ProgressBar } from '../../components/ui'
 import { useOnboardingFlow } from './hooks/useOnboardingFlow'
 import { buildEmptyProfile } from './constants/defaultProfile'
+import { useUILanguage, type UILanguage } from '../../i18n'
 import WelcomeStep from './sections/WelcomeStep'
 import LanguageStep from './sections/LanguageStep'
+import NativeLanguageStep from './sections/NativeLanguageStep'
 import ModelCheckStep from './sections/ModelCheckStep'
 import GoalsStep from './sections/GoalsStep'
 import InterestsStep from './sections/InterestsStep'
@@ -35,11 +37,17 @@ export default function OnboardingPage(): JSX.Element {
   const setOnboardingComplete = useAppStore((s) => s.setOnboardingComplete)
   const role = useAppStore((s) => s.role)
   const flow = useOnboardingFlow('welcome')
+  const [uiLang, setUILang] = useUILanguage()
 
   // Seed from existing profile so a returning user (e.g. coming back via
   // DangerZone reset → re-onboarding) doesn't have to re-pick everything.
   const [name, setName] = useState(profile?.name ?? '')
   const [targetLanguage, setTargetLanguage] = useState<TargetLanguage>(profile?.targetLanguage ?? 'en')
+  const [nativeLanguage, setNativeLanguage] = useState<UILanguage>(
+    (['en', 'uz', 'ru'] as const).includes(profile?.nativeLanguage as UILanguage)
+      ? (profile?.nativeLanguage as UILanguage)
+      : uiLang
+  )
   const [goals, setGoals] = useState<LearningGoal[]>([])
   const [interests, setInterests] = useState<Interest[]>([])
   const [placementQuestions, setPlacementQuestions] = useState<PlacementQuestion[] | null>(null)
@@ -75,6 +83,7 @@ export default function OnboardingPage(): JSX.Element {
       ...base,
       name: name.trim() || undefined,
       targetLanguage,
+      nativeLanguage,
       goals,
       interests,
       level: finalLevel,
@@ -87,6 +96,7 @@ export default function OnboardingPage(): JSX.Element {
     }
     await window.api.profile.save(profile)
     setProfile(profile)
+    setUILang(nativeLanguage)
     setOnboardingComplete(true)
     navigate(role === 'teacher' ? '/teacher' : '/home', { replace: true })
   }
@@ -105,6 +115,14 @@ export default function OnboardingPage(): JSX.Element {
           <LanguageStep
             value={targetLanguage}
             onChange={setTargetLanguage}
+            onNext={flow.next}
+            onBack={flow.back}
+          />
+        )}
+        {flow.step === 'nativeLanguage' && (
+          <NativeLanguageStep
+            value={nativeLanguage}
+            onChange={(l) => { setNativeLanguage(l); setUILang(l) }}
             onNext={flow.next}
             onBack={flow.back}
           />

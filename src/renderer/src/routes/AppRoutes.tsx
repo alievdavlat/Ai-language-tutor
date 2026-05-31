@@ -1,9 +1,10 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import type { UserRole } from '../store/useAppStore'
 import { useAppStore } from '../store/useAppStore'
 import { useBootstrap } from '../hooks/useBootstrap'
 import { useAdminShortcut } from '../hooks/useAdminShortcut'
+import { useI18n, type UILanguage } from '../i18n'
 import AppShell from '../components/layout/AppShell'
 import BootPage from '../features/boot/BootPage'
 import OnboardingPage from '../features/onboarding/OnboardingPage'
@@ -132,11 +133,31 @@ function usePostBootRedirect(): void {
   }, [booted, authenticated, roleSelected, onboardingComplete, role, location.pathname, navigate])
 }
 
+/**
+ * Mirror the saved native language into the i18n UI-language store once, when
+ * the profile first loads. The native language picked at onboarding is the
+ * source of truth for the whole-app UI text; later manual switches (Settings)
+ * write back to the profile, so this one-shot sync never fights them.
+ */
+function useSyncUILanguage(): void {
+  const nativeLanguage = useAppStore((s) => s.profile?.nativeLanguage)
+  const setLang = useI18n((s) => s.setLang)
+  const synced = useRef(false)
+  useEffect(() => {
+    if (synced.current || !nativeLanguage) return
+    if (nativeLanguage === 'en' || nativeLanguage === 'uz' || nativeLanguage === 'ru') {
+      setLang(nativeLanguage as UILanguage)
+    }
+    synced.current = true
+  }, [nativeLanguage, setLang])
+}
+
 export default function AppRoutes(): JSX.Element {
   const navigate = useNavigate()
   const setRole = useAppStore((s) => s.setRole)
   useBootstrap()
   usePostBootRedirect()
+  useSyncUILanguage()
   // Ctrl+Shift+A → elevate to Owner/Admin and open the admin panel.
   useAdminShortcut(() => { setRole('admin'); navigate('/admin') })
 

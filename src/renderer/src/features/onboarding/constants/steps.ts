@@ -1,6 +1,7 @@
 export type OnboardingStep =
   | 'welcome'
   | 'language'
+  | 'nativeLanguage'
   | 'modelCheck'
   | 'goals'
   | 'interests'
@@ -10,6 +11,7 @@ export type OnboardingStep =
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   'welcome',
   'language',
+  'nativeLanguage',
   'modelCheck',
   'goals',
   'interests',
