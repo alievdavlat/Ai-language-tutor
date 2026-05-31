@@ -8,6 +8,7 @@ import { backend, useBackendQuery } from '../../../services/backend/useBackend'
 import { studio } from '../../../services/studio/store'
 import { fetchVideoMeta, thumbnailFor } from '../../../services/studio/youtube'
 import { PageHeader, Tabs, type TabItem } from '../../../components/ui'
+import LevelSelect from '../../../components/ui/LevelSelect'
 import {
   IconCheck,
   IconChevronLeft,
@@ -19,7 +20,6 @@ import {
   IconYouTube
 } from '../../../components/icons'
 
-const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1']
 const MAX_THINK = 15
 
 type Section = 'video' | 'begin' | 'think' | 'deeper' | 'discuss' | 'finally' | 'details' | 'publish'
@@ -341,10 +341,8 @@ export default function LessonBuilderPage(): JSX.Element {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Level</label>
-                <div className="flex gap-1.5 mt-1.5 flex-wrap">
-                  {LEVELS.map((l) => (
-                    <button key={l} onClick={() => patch({ level: l })} className={cn('rounded-lg px-3 py-1.5 text-sm font-bold transition', l === lesson.level ? 'bg-grad-brand text-white' : 'bg-white/[0.05] text-slate-400 hover:bg-white/10')}>{l}</button>
-                  ))}
+                <div className="mt-1.5">
+                  <LevelSelect value={lesson.level} onChange={(l) => patch({ level: l })} />
                 </div>
               </div>
               <div>

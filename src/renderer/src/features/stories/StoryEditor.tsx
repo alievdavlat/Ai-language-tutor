@@ -3,10 +3,10 @@ import { Input } from '../../components/ui'
 import { cn } from '../../lib/classnames'
 import { createId } from '../../lib/ids'
 import { IconPlus, IconX } from '../../components/icons'
+import LevelSelect from '../../components/ui/LevelSelect'
 import { stories, type StoredStory } from '../../services/stories/store'
 import type { StoryPart, StoryQuestion } from '../../services/content/stories'
 
-const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 const KINDS: StoredStory['kind'][] = ['reading', 'listening', 'mixed']
 const COVERS = ['from-rose-500 to-orange-500', 'from-sky-500 to-blue-700', 'from-violet-500 to-purple-700', 'from-emerald-500 to-teal-700', 'from-amber-500 to-orange-700']
 
@@ -71,9 +71,10 @@ export default function StoryEditor({ initial, authorId, onClose, onSaved }: Sto
           </div>
           <Input value={blurb} onChange={(e) => setBlurb(e.target.value)} placeholder="Short blurb" />
 
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex gap-1.5">{LEVELS.map((l) => <button key={l} onClick={() => setLevel(l)} className={cn('rounded-lg px-2.5 py-1.5 text-xs font-bold', level === l ? 'bg-brand-500/20 text-brand-100 ring-1 ring-brand-400/40' : 'bg-white/[0.04] text-slate-400')}>{l}</button>)}</div>
-            <div className="flex gap-1.5">{KINDS.map((k) => <button key={k} onClick={() => setKind(k)} className={cn('rounded-pill px-3 py-1.5 text-xs font-bold capitalize border', kind === k ? 'border-brand-400 bg-brand-500/15 text-white' : 'border-white/10 bg-white/[0.03] text-slate-300')}>{k}</button>)}</div>
+          <div className="space-y-2">
+            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Level</p>
+            <LevelSelect value={level} onChange={setLevel} />
+            <div className="flex gap-1.5 pt-1">{KINDS.map((k) => <button key={k} onClick={() => setKind(k)} className={cn('rounded-pill px-3 py-1.5 text-xs font-bold capitalize border', kind === k ? 'border-brand-400 bg-brand-500/15 text-white' : 'border-white/10 bg-white/[0.03] text-slate-300')}>{k}</button>)}</div>
           </div>
           <div className="flex gap-2">{COVERS.map((c) => <button key={c} onClick={() => setCover(c)} className={cn('h-8 w-12 rounded-lg bg-gradient-to-br ring-2', c, cover === c ? 'ring-white' : 'ring-transparent')} title="cover" />)}</div>
 

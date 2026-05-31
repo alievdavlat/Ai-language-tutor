@@ -6,6 +6,7 @@ import { useAppStore } from '../../store/useAppStore'
 import { backend } from '../../services/backend/useBackend'
 import { isImageCover } from '../../lib/cover'
 import { uploadUrl } from '../../services/backend'
+import LevelSelect from '../../components/ui/LevelSelect'
 import { Tabs, type TabItem } from '../../components/ui'
 import {
   IconBook,
@@ -17,7 +18,6 @@ import {
   IconYouTube
 } from '../../components/icons'
 
-const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1']
 
 type Step = 'basics' | 'curriculum' | 'pricing' | 'publish'
 const STEPS: TabItem<Step>[] = [
@@ -176,10 +176,8 @@ export default function CourseAuthoringPage(): JSX.Element {
             </div>
             <div>
               <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">Level</label>
-              <div className="flex gap-2 mt-1.5">
-                {LEVELS.map((l) => (
-                  <button key={l} onClick={() => setLevel(l)} className={cn('rounded-lg px-3.5 py-1.5 text-sm font-bold transition', l === level ? 'bg-grad-brand text-white' : 'bg-white/[0.05] text-slate-400 hover:bg-white/10')}>{l}</button>
-                ))}
+              <div className="mt-1.5">
+                <LevelSelect value={level} onChange={setLevel} />
               </div>
             </div>
             <div>
