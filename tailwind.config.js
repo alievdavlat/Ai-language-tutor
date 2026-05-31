@@ -62,6 +62,10 @@ export default {
           to: { opacity: 1, transform: 'translateY(0)' }
         },
         shimmer: { '100%': { transform: 'translateX(100%)' } },
+        'slide-in-right': {
+          from: { transform: 'translateX(24px)', opacity: 0 },
+          to: { transform: 'translateX(0)', opacity: 1 }
+        },
         float: {
           '0%,100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-4px)' }
@@ -69,6 +73,7 @@ export default {
       },
       animation: {
         'fade-in': 'fade-in 0.3s ease-out both',
+        'slide-in-right': 'slide-in-right 0.25s ease-out both',
         shimmer: 'shimmer 2.2s infinite',
         float: 'float 6s ease-in-out infinite'
       }

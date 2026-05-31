@@ -67,7 +67,7 @@ import GrammarGuidePage from '../features/grammar/GrammarGuidePage'
 import GrammarChallengePage from '../features/grammar/GrammarChallengePage'
 import RoleSelectPage from '../features/auth/RoleSelectPage'
 import LeaderboardPage from '../features/gamification/LeaderboardPage'
-import AdminPage from '../features/admin/AdminPage'
+import AdminConsole from '../features/admin/AdminConsole'
 import IeltsSpeakingSimPage from '../features/ieltssim/IeltsSpeakingSimPage'
 import CompanionGalleryPage from '../features/companions/CompanionGalleryPage'
 import AvatarStudioPage from '../features/avatar/AvatarStudioPage'
@@ -605,11 +605,12 @@ export default function AppRoutes(): JSX.Element {
           </RequireRole>
         }
       />
+      {/* Admin = its OWN console shell (CMS+CRM), NOT the learner AppShell (#A56). */}
       <Route
         path="/admin"
         element={
           <RequireRole role="admin">
-            <AppShell><AdminPage /></AppShell>
+            <AdminConsole />
           </RequireRole>
         }
       />

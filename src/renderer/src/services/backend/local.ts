@@ -325,6 +325,16 @@ export const localBackend: Backend = {
     return db().courses[i]
   },
 
+  async deleteCourse(id): Promise<void> {
+    const unitIds = new Set(db().units.filter((u) => u.courseId === id).map((u) => u.id))
+    db().courses = db().courses.filter((c) => c.id !== id)
+    db().units = db().units.filter((u) => u.courseId !== id)
+    db().lessons = db().lessons.filter((l) => !unitIds.has(l.unitId))
+    db().enrollments = db().enrollments.filter((e) => e.courseId !== id)
+    db().reviews = db().reviews.filter((r) => r.courseId !== id)
+    persist()
+  },
+
   async myCourses(teacherId): Promise<Course[]> {
     return db().courses.filter((c) => c.teacherId === teacherId)
   },
@@ -799,6 +809,12 @@ export const localBackend: Backend = {
     return msg
   },
 
+  async deleteGroup(id): Promise<void> {
+    db().groups = db().groups.filter((g) => g.id !== id)
+    db().groupMembers = db().groupMembers.filter((m) => m.groupId !== id)
+    persist()
+  },
+
   // ─── Challenges ────────────────────────────────────────────────────────────
 
   async listChallenges(filter): Promise<Challenge[]> {
@@ -868,6 +884,12 @@ export const localBackend: Backend = {
       .filter((p) => p.userId === userId)
       .map((participant) => ({ challenge: db().challenges.find((c) => c.id === participant.challengeId)!, participant }))
       .filter((x) => !!x.challenge)
+  },
+
+  async deleteChallenge(id): Promise<void> {
+    db().challenges = db().challenges.filter((c) => c.id !== id)
+    db().challengeParticipants = db().challengeParticipants.filter((p) => p.challengeId !== id)
+    persist()
   },
 
   // ─── Exam attempts ───────────────────────────────────────────────────────────

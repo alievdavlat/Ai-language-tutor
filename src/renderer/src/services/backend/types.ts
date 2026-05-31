@@ -81,6 +81,8 @@ export interface Backend {
   getCourse(id: ID): Promise<Course | null>
   upsertCourse(course: Course): Promise<Course>
   publishCourse(id: ID): Promise<Course>
+  /** Hard-delete a course (admin CMS). Cleans up units/lessons/enrollments. */
+  deleteCourse(id: ID): Promise<void>
   myCourses(teacherId: ID): Promise<Course[]>
 
   // Curriculum
@@ -156,6 +158,8 @@ export interface Backend {
   /** Group chat history, oldest first. */
   listGroupMessages(groupId: ID): Promise<GroupMessage[]>
   sendGroupMessage(input: { groupId: ID; senderId: ID; text: string }): Promise<GroupMessage>
+  /** Hard-delete a group (admin CMS). */
+  deleteGroup(id: ID): Promise<void>
 
   // Challenges
   listChallenges(filter?: { language?: TargetLanguage; active?: boolean }): Promise<Challenge[]>
@@ -165,6 +169,8 @@ export interface Backend {
   leaveChallenge(userId: ID, challengeId: ID): Promise<void>
   updateChallengeProgress(userId: ID, challengeId: ID, progress: number): Promise<ChallengeParticipant>
   myChallenges(userId: ID): Promise<{ challenge: Challenge; participant: ChallengeParticipant }[]>
+  /** Hard-delete a challenge (admin CMS). */
+  deleteChallenge(id: ID): Promise<void>
 
   // Exam attempts
   recordExamAttempt(input: Omit<ExamAttempt, 'id' | 'takenAt'> & { takenAt?: string }): Promise<ExamAttempt>

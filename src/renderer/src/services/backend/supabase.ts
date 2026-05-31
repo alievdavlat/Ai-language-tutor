@@ -461,6 +461,10 @@ export const supabaseBackend: Backend = {
     return c2c(data)
   },
 
+  async deleteCourse(id): Promise<void> {
+    await sb.from('courses').delete().eq('id', id)
+  },
+
   async myCourses(teacherId): Promise<Course[]> {
     const { data, error } = await sb.from('courses').select('*').eq('teacher_id', teacherId)
     if (error) throw error
@@ -945,6 +949,10 @@ export const supabaseBackend: Backend = {
     if (error) throw error
     return { id: data.id as string, groupId: data.group_id as string, senderId: data.sender_id as string, text: data.text as string, createdAt: data.created_at as string }
   },
+  async deleteGroup(id): Promise<void> {
+    await sb.from('group_members').delete().eq('group_id', id)
+    await sb.from('groups').delete().eq('id', id)
+  },
 
   // ─── Challenges ────────────────────────────────────────────────────────────
   async listChallenges(filter): Promise<Challenge[]> {
@@ -977,6 +985,10 @@ export const supabaseBackend: Backend = {
     const { count } = await sb.from('challenge_participants').select('*', { count: 'exact', head: true }).eq('challenge_id', challengeId)
     await sb.from('challenges').update({ participant_count: count ?? 0 }).eq('id', challengeId)
     return cp2cp(data)
+  },
+  async deleteChallenge(id): Promise<void> {
+    await sb.from('challenge_participants').delete().eq('challenge_id', id)
+    await sb.from('challenges').delete().eq('id', id)
   },
   async leaveChallenge(userId, challengeId): Promise<void> {
     await sb.from('challenge_participants').delete().eq('challenge_id', challengeId).eq('user_id', userId)
