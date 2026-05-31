@@ -13,6 +13,7 @@
  */
 import { getSupabaseClient, hasSupabaseEnv } from './client'
 import { backend } from './index'
+import { contentKey, hashFile } from '../dedup'
 import type { MediaAsset, MediaKind } from '@shared/types'
 
 const BUCKET = 'uploads'
@@ -24,6 +25,40 @@ export interface UploadResult {
   path: string
   sizeBytes: number
   contentType: string
+  /** SHA-256 of the file bytes — the content fingerprint. */
+  hash: string
+  /** True when an identical file was already stored and got reused (#A65). */
+  deduped: boolean
+}
+
+// ─── content-addressed storage registry (#A65 bonus) ───────────────────────────
+// Maps a file's SHA-256 → the stored object, with a ref-count. Uploading the
+// same bytes twice reuses one object; deleting only purges the bytes once the
+// last reference is gone. Saves storage + bandwidth (ties into #A64).
+interface CasEntry {
+  url: string
+  path: string
+  sizeBytes: number
+  contentType: string
+  refs: number
+}
+const CAS_KEY = 'speakai.cas.v1'
+
+function casLoad(): Record<string, CasEntry> {
+  if (typeof window === 'undefined' || !window.localStorage) return {}
+  try {
+    return JSON.parse(window.localStorage.getItem(CAS_KEY) ?? '{}') as Record<string, CasEntry>
+  } catch {
+    return {}
+  }
+}
+function casSave(map: Record<string, CasEntry>): void {
+  if (typeof window === 'undefined' || !window.localStorage) return
+  try {
+    window.localStorage.setItem(CAS_KEY, JSON.stringify(map))
+  } catch {
+    /* quota — best effort */
+  }
 }
 
 /** Infer a coarse MediaKind from a File's MIME type / name. */
@@ -65,6 +100,30 @@ export async function uploadFile(
   const contentType = file.type || 'application/octet-stream'
   const path = `${opts.prefix ? `${slugify(opts.prefix)}/` : ''}${randomToken()}-${slugify(file.name || 'file')}`
 
+  // Content-addressed dedupe: if these exact bytes were uploaded before, reuse
+  // the stored object and just bump its ref-count instead of uploading again.
+  const hash = await hashFile(file)
+  const cas = casLoad()
+  const existing = cas[hash]
+  if (existing) {
+    existing.refs += 1
+    casSave(cas)
+    return {
+      url: existing.url,
+      path: existing.path,
+      sizeBytes: existing.sizeBytes,
+      contentType: existing.contentType,
+      hash,
+      deduped: true
+    }
+  }
+
+  const register = (url: string): UploadResult => {
+    cas[hash] = { url, path, sizeBytes: file.size, contentType, refs: 1 }
+    casSave(cas)
+    return { url, path, sizeBytes: file.size, contentType, hash, deduped: false }
+  }
+
   if (hasSupabaseEnv) {
     const sb = getSupabaseClient()
     const { error } = await sb.storage.from(BUCKET).upload(path, file, {
@@ -74,7 +133,7 @@ export async function uploadFile(
     })
     if (error) throw error
     const { data } = sb.storage.from(BUCKET).getPublicUrl(path)
-    return { url: data.publicUrl, path, sizeBytes: file.size, contentType }
+    return register(data.publicUrl)
   }
 
   // Local fallback — inline data URL.
@@ -84,8 +143,7 @@ export async function uploadFile(
         'Configure Supabase Storage (VITE_USE_SUPABASE=1) to upload large files.'
     )
   }
-  const url = await readAsDataUrl(file)
-  return { url, path, sizeBytes: file.size, contentType }
+  return register(await readAsDataUrl(file))
 }
 
 /**
@@ -107,12 +165,27 @@ export async function uploadAndRecord(file: File, ownerId: string): Promise<Medi
     url: result.url,
     name: file.name || result.path,
     sizeBytes: result.sizeBytes,
-    contentType: result.contentType
+    contentType: result.contentType,
+    contentHash: contentKey.file(result.hash)
   })
 }
 
-/** Best-effort delete of an uploaded object (no-op in local mode). */
+/**
+ * Best-effort delete of an uploaded object. Honors the content-addressed
+ * ref-count: only purges the bytes once the last reference is released.
+ */
 export async function deleteUpload(path: string): Promise<void> {
+  const cas = casLoad()
+  const hash = Object.keys(cas).find((h) => cas[h].path === path)
+  if (hash) {
+    cas[hash].refs -= 1
+    if (cas[hash].refs > 0) {
+      casSave(cas)
+      return // still referenced elsewhere — keep the bytes
+    }
+    delete cas[hash]
+    casSave(cas)
+  }
   if (!hasSupabaseEnv) return
   await getSupabaseClient().storage.from(BUCKET).remove([path]).then(() => undefined, () => undefined)
 }

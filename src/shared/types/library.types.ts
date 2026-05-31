@@ -32,6 +32,12 @@ export interface LibraryItem {
   /** Square card image (data: or remote URL). Falls back to a default icon. */
   thumbnailUrl?: string
   createdAt: string
+  /**
+   * Canonical duplicate-detection key (#A65) — `file:<sha256>` for uploaded
+   * PDFs/audio, `yt:<id>` for YouTube videos, or `ta:<title>|<author>` /
+   * `isbn:<digits>` for books with no file. Built via `services/dedup`.
+   */
+  contentHash?: string
 
   // ── book ──────────────────────────────────────────────────────────────
   /** PDF as a data: URL (offline) or remote URL. */

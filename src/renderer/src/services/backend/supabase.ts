@@ -87,7 +87,8 @@ const c2c = (r: Record<string, unknown>): Course => ({
   enrollmentCount: r.enrollment_count as number,
   hours: r.hours as number,
   publishedAt: r.published_at as string | undefined,
-  capstone: r.capstone as string | undefined
+  capstone: r.capstone as string | undefined,
+  contentHash: r.content_hash as string | undefined
 })
 
 const e2e = (r: Record<string, unknown>): Enrollment => ({
@@ -269,7 +270,8 @@ const md2md = (r: Record<string, unknown>): MediaAsset => ({
   name: r.name as string,
   sizeBytes: r.size_bytes as number,
   contentType: r.content_type as string | undefined,
-  createdAt: r.created_at as string
+  createdAt: r.created_at as string,
+  contentHash: r.content_hash as string | undefined
 })
 
 const ac2ac = (r: Record<string, unknown>): ActivityEvent => ({
@@ -412,7 +414,8 @@ export const supabaseBackend: Backend = {
       enrollment_count: course.enrollmentCount,
       hours: course.hours,
       published_at: course.publishedAt ?? null,
-      capstone: course.capstone ?? null
+      capstone: course.capstone ?? null,
+      content_hash: course.contentHash ?? null
     }
     const { data, error } = await sb.from('courses').upsert(row).select().single()
     if (error) throw error
@@ -875,7 +878,8 @@ export const supabaseBackend: Backend = {
   async createMedia(input): Promise<MediaAsset> {
     const row = {
       id: newId('md'), owner_id: input.ownerId, kind: input.kind, url: input.url, name: input.name,
-      size_bytes: input.sizeBytes, content_type: input.contentType ?? null, created_at: now()
+      size_bytes: input.sizeBytes, content_type: input.contentType ?? null,
+      content_hash: input.contentHash ?? null, created_at: now()
     }
     const { data, error } = await sb.from('media_assets').insert(row).select().single()
     if (error) throw error
