@@ -211,6 +211,6 @@ export const SEED_ANNOUNCEMENTS: LiveAnnouncement[] = [
 ]
 
 export const SEED_NOTIFS: Notif[] = [
-  { id: 'n_1', userId: 'u_priya', type: 'social', title: 'Emma liked your post', body: '"How I memorize 20 words/day"', createdAt: t(5), read: false, link: '/community' },
-  { id: 'n_2', userId: 'u_priya', type: 'learning', title: 'New badge unlocked!', body: 'You earned the 7-day streak badge.', createdAt: t(60), read: false, link: '/achievements' }
+  { id: 'n_1', userId: 'u_priya', type: 'social', kind: 'comment-reply', title: 'Emma liked your post', body: '"How I memorize 20 words/day"', createdAt: t(5), read: false, link: '/community' },
+  { id: 'n_2', userId: 'u_priya', type: 'learning', kind: 'badge', title: 'New badge unlocked!', body: 'You earned the 7-day streak badge.', createdAt: t(60), read: false, link: '/achievements' }
 ]

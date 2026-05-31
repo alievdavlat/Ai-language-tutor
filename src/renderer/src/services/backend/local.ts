@@ -480,6 +480,11 @@ export const localBackend: Backend = {
     return n
   },
 
+  async markNotif(id, read = true): Promise<void> {
+    db().notifs = db().notifs.map((n) => (n.id === id ? { ...n, read } : n))
+    persist()
+  },
+
   async markAllRead(userId): Promise<void> {
     db().notifs = db().notifs.map((n) => n.userId === userId ? { ...n, read: true } : n)
     persist()

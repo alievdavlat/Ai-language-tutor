@@ -293,3 +293,19 @@ export function IconYouTube({ className }: IconProps): JSX.Element {
     </svg>
   )
 }
+
+export function IconBell({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M10 2a6 6 0 00-6 6v2.586l-.707.707A1 1 0 004 13h12a1 1 0 00.707-1.707L16 10.586V8a6 6 0 00-6-6zM8.05 16a2 2 0 003.9 0H8.05z" />
+    </svg>
+  )
+}
+
+export function IconMoon({ className }: IconProps): JSX.Element {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+    </svg>
+  )
+}

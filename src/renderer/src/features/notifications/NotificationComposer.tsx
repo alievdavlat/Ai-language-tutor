@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Input } from '../../components/ui'
 import { cn } from '../../lib/classnames'
 import { backend } from '../../services/backend'
+import { NOTIF_EVENT } from '../../services/notifications'
 import { IconX } from '../../components/icons'
 
 type Audience = 'all' | 'students' | 'teachers'
@@ -46,13 +47,15 @@ export default function NotificationComposer({ teacherOnly, onClose, onSent }: C
     let n = 0
     for (const u of users) {
       try {
-        await backend.createNotif({ userId: u.id, type, title: title.trim(), body: body.trim(), link: link.trim() || undefined })
+        await backend.createNotif({ userId: u.id, type, kind: 'announcement', title: title.trim(), body: body.trim(), link: link.trim() || undefined })
         n++
       } catch { /* skip */ }
     }
     setBusy(false)
     setSent(n)
     onSent(n)
+    // Refresh the sender's own bell if they were in the audience.
+    window.dispatchEvent(new CustomEvent(NOTIF_EVENT))
   }
 
   return (

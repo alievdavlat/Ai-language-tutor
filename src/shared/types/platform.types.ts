@@ -189,10 +189,37 @@ export interface LiveAnnouncement {
 
 // ─── Notifications ─────────────────────────────────────────────────────────
 
+/** Broad bucket used by the filter tabs, the DB `type` column and the tint. */
+export type NotifCategory = 'social' | 'learning' | 'system'
+
+/**
+ * Fine-grained notification catalog. Each kind maps to one {@link NotifCategory}
+ * (see `services/notifications/catalog`), drives its icon + default deep-link,
+ * and is individually toggleable in Settings → Notifications.
+ */
+export type NotifKind =
+  | 'reminder'
+  | 'streak-at-risk'
+  | 'goal'
+  | 'badge'
+  | 'milestone'
+  | 'quest'
+  | 'vocab-due'
+  | 'announcement'
+  | 'new-course'
+  | 'live'
+  | 'dm'
+  | 'comment-reply'
+  | 'peer-review'
+  | 'certificate'
+
 export interface Notif {
   id: ID
   userId: ID
-  type: 'social' | 'learning' | 'system'
+  /** Broad bucket (drives filter tabs + DB check constraint). */
+  type: NotifCategory
+  /** Fine-grained catalog entry. Optional for legacy rows (inferred from `type`). */
+  kind?: NotifKind
   title: string
   body: string
   createdAt: string

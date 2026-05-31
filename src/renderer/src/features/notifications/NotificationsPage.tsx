@@ -4,7 +4,8 @@ import { cn } from '../../lib/classnames'
 import { PageHeader, Tabs, type TabItem } from '../../components/ui'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { useAppStore } from '../../store/useAppStore'
-import { IconBolt, IconPlus, IconStar, IconUsers, type IconProps } from '../../components/icons'
+import { IconPlus } from '../../components/icons'
+import { notifMeta, NOTIF_EVENT } from '../../services/notifications'
 import NotificationComposer from './NotificationComposer'
 
 type Filter = 'all' | 'social' | 'learning' | 'system'
@@ -14,13 +15,6 @@ const FILTERS: TabItem<Filter>[] = [
   { id: 'learning', label: 'Learning' },
   { id: 'system', label: 'System' }
 ]
-
-/** Icon + tint per notification type (real notifs carry only a `type`). */
-const META: Record<'social' | 'learning' | 'system', { Icon: (p: IconProps) => JSX.Element; tint: string }> = {
-  social: { Icon: IconUsers, tint: 'bg-sky-500/15 text-sky-300' },
-  learning: { Icon: IconBolt, tint: 'bg-brand-500/15 text-brand-300' },
-  system: { Icon: IconStar, tint: 'bg-amber-500/15 text-amber-300' }
-}
 
 function relTime(iso: string): string {
   const diff = Math.max(0, Date.now() - new Date(iso).getTime())
@@ -40,19 +34,23 @@ export default function NotificationsPage(): JSX.Element {
   const canSend = role === 'admin' || role === 'teacher'
   const [composing, setComposing] = useState(false)
 
-  // Real notifications only — no hardcoded fallback (#A34).
+  // Real notifications only — no hardcoded fallback (#A34). Icon/tint come from
+  // the typed catalog (kind), inferred from the broad type for legacy rows.
   const live = useBackendQuery(() => (me ? backend.listNotifs(me) : Promise.resolve([])), [me], [])
-  const rows = live.data.map((n) => ({
-    id: n.id,
-    type: n.type,
-    Icon: META[n.type].Icon,
-    tint: META[n.type].tint,
-    title: n.title,
-    body: n.body,
-    when: relTime(n.createdAt),
-    unread: !n.read,
-    to: n.link
-  }))
+  const rows = live.data.map((n) => {
+    const meta = notifMeta(n)
+    return {
+      id: n.id,
+      type: n.type,
+      Icon: meta.Icon,
+      tint: meta.tint,
+      title: n.title,
+      body: n.body,
+      when: relTime(n.createdAt),
+      unread: !n.read,
+      to: n.link
+    }
+  })
   const list = filter === 'all' ? rows : rows.filter((n) => n.type === filter)
   const unread = rows.filter((n) => n.unread).length
 
@@ -60,6 +58,15 @@ export default function NotificationsPage(): JSX.Element {
     if (!me) return
     await backend.markAllRead(me)
     live.refresh()
+    window.dispatchEvent(new CustomEvent(NOTIF_EVENT))
+  }
+
+  // Per-item read-on-click: mark this one read, then follow its deep link.
+  const open = async (id: string, to?: string): Promise<void> => {
+    await backend.markNotif(id, true)
+    live.refresh()
+    window.dispatchEvent(new CustomEvent(NOTIF_EVENT))
+    if (to) navigate(to)
   }
 
   return (
@@ -91,7 +98,7 @@ export default function NotificationsPage(): JSX.Element {
             {list.map((n) => (
               <button
                 key={n.id}
-                onClick={() => n.to && navigate(n.to)}
+                onClick={() => void open(n.id, n.to)}
                 className={cn(
                   'w-full flex items-start gap-3 px-4 py-3 text-left transition relative',
                   n.unread ? 'bg-brand-500/[0.04] hover:bg-brand-500/[0.08]' : 'hover:bg-white/[0.04]'
