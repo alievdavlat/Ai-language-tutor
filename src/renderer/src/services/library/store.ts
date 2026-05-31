@@ -32,12 +32,12 @@ function seed(): LibraryItem[] {
     },
     {
       id: 'lib_vid_grit', ownerId: 'u_emma', kind: 'video', title: 'Grit: The Power of Passion and Perseverance',
-      author: 'TED · Angela Lee Duckworth', level: 'B2', language: 'en', youtubeId: 'H14bBuluwB8',
+      author: 'Angela Lee Duckworth', level: 'B2', language: 'en', youtubeId: 'H14bBuluwB8',
       thumbnailUrl: 'https://i.ytimg.com/vi/H14bBuluwB8/hqdefault.jpg', createdAt: t
     },
     {
       id: 'lib_vid_vuln', ownerId: 'u_emma', kind: 'video', title: 'The Power of Vulnerability',
-      author: 'TED · Brené Brown', level: 'C1', language: 'en', youtubeId: 'iCvmsMzlF7o',
+      author: 'Brené Brown', level: 'C1', language: 'en', youtubeId: 'iCvmsMzlF7o',
       thumbnailUrl: 'https://i.ytimg.com/vi/iCvmsMzlF7o/hqdefault.jpg', createdAt: t
     },
     {

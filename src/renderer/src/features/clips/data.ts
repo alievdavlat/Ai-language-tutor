@@ -118,7 +118,7 @@ export const CLIPS: Clip[] = [
   { id: 'billie', title: 'Billie Jean', artist: 'Michael Jackson', kind: 'song', cover: 'from-indigo-500 to-violet-700', youtubeId: '', plays: '234K', ago: '14 years ago', accent: '🇺🇸', level: 'B2', duration: '4:54', genre: 'Pop' },
   { id: 'devil', title: 'The Devil Wears Prada — clip', artist: 'Movie scene', kind: 'movie', cover: 'from-slate-500 to-slate-800', youtubeId: '', plays: '92K', ago: '1 month ago', accent: '🇺🇸', level: 'B2', duration: '2:10' },
   { id: 'friends', title: 'Friends — intro scene', artist: 'TV scene', kind: 'tv', cover: 'from-orange-500 to-red-700', youtubeId: '', plays: '120K', ago: '3 weeks ago', accent: '🇺🇸', level: 'B1', duration: '1:45' },
-  { id: 'talk-grit', title: 'The power of grit', artist: 'TED Talk', kind: 'talk', cover: 'from-red-500 to-rose-800', youtubeId: '', plays: '3M', ago: '5 years ago', accent: '🇺🇸', level: 'C1', duration: '6:12' }
+  { id: 'talk-grit', title: 'The power of grit', artist: 'Inspirational talk', kind: 'talk', cover: 'from-red-500 to-rose-800', youtubeId: '', plays: '3M', ago: '5 years ago', accent: '🇺🇸', level: 'C1', duration: '6:12' }
 ]
 
 export function findClip(id: string | null): Clip {

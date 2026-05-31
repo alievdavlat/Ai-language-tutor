@@ -29,7 +29,7 @@ export const WATCH_VIDEOS: WatchVideo[] = [
     id: 'w_grit',
     youtubeId: 'H14bBuluwB8',
     title: 'Grit: The Power of Passion and Perseverance',
-    channel: 'TED · Angela Lee Duckworth',
+    channel: 'Angela Lee Duckworth',
     level: 'B2',
     views: '28M views',
     segments: [
@@ -51,7 +51,7 @@ export const WATCH_VIDEOS: WatchVideo[] = [
     id: 'w_vulnerability',
     youtubeId: 'iCvmsMzlF7o',
     title: 'The Power of Vulnerability',
-    channel: 'TED · Brené Brown',
+    channel: 'Brené Brown',
     level: 'C1',
     views: '20M views',
     segments: [
@@ -72,7 +72,7 @@ export const WATCH_VIDEOS: WatchVideo[] = [
     id: 'w_procrastinator',
     youtubeId: 'arj7oStGLkU',
     title: 'Inside the Mind of a Master Procrastinator',
-    channel: 'TED · Tim Urban',
+    channel: 'Tim Urban',
     level: 'B2',
     views: '70M views',
     segments: [
