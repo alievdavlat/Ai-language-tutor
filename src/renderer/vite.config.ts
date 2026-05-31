@@ -6,6 +6,10 @@ import react from '@vitejs/plugin-react'
 // Runs from src/renderer/ — tailwind.config.js and postcss.config.js are in project root (../../)
 export default defineConfig({
   root: resolve(__dirname),
+  // NOTE: this standalone preview intentionally runs on the LOCAL mock backend
+  // (no root .env.local loaded here) because it has no signed-in Supabase user —
+  // forcing Supabase here would leave currentUserId null and blank every "my"
+  // view. The real Electron app (root electron.vite.config + auth) uses Supabase.
   resolve: {
     alias: {
       '@renderer': resolve(__dirname, 'src'),
