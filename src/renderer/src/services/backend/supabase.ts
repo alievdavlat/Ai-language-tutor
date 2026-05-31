@@ -311,6 +311,17 @@ const writeCurrent = (id: ID | null): void => {
 const newId = (prefix: string): ID => `${prefix}_${Math.random().toString(36).slice(2, 10)}`
 const now = (): string => new Date().toISOString()
 
+/**
+ * Apply an optional `{ limit, offset }` window to a Postgrest query via `.range`
+ * (server-side LIMIT/OFFSET). No `limit` ⇒ query returned untouched, so existing
+ * callers keep their full result set. Scaling — #A64.
+ */
+function withRange<Q>(q: Q, page?: { limit?: number; offset?: number }): Q {
+  if (page?.limit == null) return q
+  const from = page.offset && page.offset > 0 ? page.offset : 0
+  return (q as unknown as { range: (a: number, b: number) => Q }).range(from, from + page.limit - 1)
+}
+
 // ─── Implementation ────────────────────────────────────────────────────────
 
 export const supabaseBackend: Backend = {
@@ -360,7 +371,7 @@ export const supabaseBackend: Backend = {
     let q = sb.from('users').select('*')
     if (filter?.role) q = q.eq('role', filter.role)
     if (filter?.q) q = q.or(`name.ilike.%${filter.q}%,email.ilike.%${filter.q}%`)
-    if (filter?.limit) q = q.limit(filter.limit)
+    q = withRange(q, filter)
     const { data } = await q
     return (data ?? []).map(u2u)
   },
@@ -387,7 +398,7 @@ export const supabaseBackend: Backend = {
     if (filter?.level) q = q.eq('level', filter.level)
     if (filter?.teacherId) q = q.eq('teacher_id', filter.teacherId)
     if (filter?.q) q = q.or(`title.ilike.%${filter.q}%,description.ilike.%${filter.q}%`)
-    const { data, error } = await q.order('enrollment_count', { ascending: false })
+    const { data, error } = await withRange(q.order('enrollment_count', { ascending: false }), filter)
     if (error) throw error
     return (data ?? []).map(c2c)
   },
@@ -498,7 +509,7 @@ export const supabaseBackend: Backend = {
 
   async listFeed(opts): Promise<Post[]> {
     let q = sb.from('posts').select('*').order('created_at', { ascending: false })
-    if (opts?.limit) q = q.limit(opts.limit)
+    q = withRange(q, opts)
     const { data } = await q
     let posts = (data ?? []).map(p2p)
     if (opts?.authorRole) {
@@ -915,7 +926,7 @@ export const supabaseBackend: Backend = {
     let q = sb.from('activity_events').select('*').eq('user_id', userId)
     if (opts?.since) q = q.gte('created_at', opts.since)
     q = q.order('created_at', { ascending: false })
-    if (opts?.limit) q = q.limit(opts.limit)
+    q = withRange(q, opts)
     const { data } = await q
     return (data ?? []).map(ac2ac)
   },

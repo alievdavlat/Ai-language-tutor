@@ -82,11 +82,19 @@ function persist(): void {
 }
 
 export const library = {
-  async list(kind?: LibraryKind, language?: string): Promise<LibraryItem[]> {
+  async list(
+    kind?: LibraryKind,
+    language?: string,
+    page?: { limit?: number; offset?: number }
+  ): Promise<LibraryItem[]> {
     let items = [...db().items]
     if (kind) items = items.filter((i) => i.kind === kind)
     if (language) items = items.filter((i) => i.language === language)
-    return items.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    items.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    // Pagination (scaling — #A64). No window ⇒ full list (backward-compatible).
+    const offset = page?.offset && page.offset > 0 ? page.offset : 0
+    if (offset === 0 && page?.limit == null) return items
+    return page?.limit != null ? items.slice(offset, offset + page.limit) : items.slice(offset)
   },
   async get(id: ID): Promise<LibraryItem | null> {
     return db().items.find((i) => i.id === id) ?? null

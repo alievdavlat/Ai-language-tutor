@@ -168,6 +168,16 @@ function newId(prefix: string): ID {
 }
 const now = (): string => new Date().toISOString()
 
+/**
+ * Apply an optional `{ limit, offset }` window to an already-sorted list.
+ * No window ⇒ returns the list untouched (backward-compatible default).
+ */
+function paginate<T>(list: T[], page?: { limit?: number; offset?: number }): T[] {
+  const offset = page?.offset && page.offset > 0 ? page.offset : 0
+  if (offset === 0 && page?.limit == null) return list
+  return page?.limit != null ? list.slice(offset, offset + page.limit) : list.slice(offset)
+}
+
 // ─── Implementation ────────────────────────────────────────────────────────
 
 export const localBackend: Backend = {
@@ -222,8 +232,7 @@ export const localBackend: Backend = {
       const q = filter.q.toLowerCase()
       list = list.filter((u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
     }
-    if (filter?.limit) list = list.slice(0, filter.limit)
-    return list
+    return paginate(list, filter)
   },
 
   async updateUser(id, patch): Promise<PlatformUser> {
@@ -244,7 +253,8 @@ export const localBackend: Backend = {
       list = list.filter((c) => c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q))
     }
     // Most enrollments first by default
-    return [...list].sort((a, b) => b.enrollmentCount - a.enrollmentCount)
+    const sorted = [...list].sort((a, b) => b.enrollmentCount - a.enrollmentCount)
+    return paginate(sorted, filter)
   },
 
   async getCourse(id): Promise<Course | null> {
@@ -365,8 +375,7 @@ export const localBackend: Backend = {
       list = list.filter((p) => ids.has(p.authorId))
     }
     list.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    if (opts?.limit) list = list.slice(0, opts.limit)
-    return list
+    return paginate(list, opts)
   },
 
   async createPost(input): Promise<Post> {
@@ -780,8 +789,7 @@ export const localBackend: Backend = {
     let list = db().activity.filter((e) => e.userId === userId)
     if (opts?.since) list = list.filter((e) => e.createdAt >= opts.since!)
     list.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    if (opts?.limit) list = list.slice(0, opts.limit)
-    return list
+    return paginate(list, opts)
   },
 
   async setDailyGoal(userId, minutes): Promise<UserStats> {
