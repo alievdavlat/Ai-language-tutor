@@ -1,3 +1,4 @@
+import { desktopBridge, type DesktopBridge } from './desktop.bridge.js'
 import { grammarBridge, type GrammarBridge } from './grammar.bridge.js'
 import { hardwareBridge, type HardwareBridge } from './hardware.bridge.js'
 import { ollamaBridge, type OllamaBridge } from './ollama.bridge.js'
@@ -18,6 +19,7 @@ export interface AppApi {
   sidecars: SidecarsBridge
   productivity: ProductivityBridge
   update: UpdateBridge
+  desktop: DesktopBridge
 }
 
 export const api: AppApi = {
@@ -29,5 +31,6 @@ export const api: AppApi = {
   stt: sttBridge,
   sidecars: sidecarsBridge,
   productivity: productivityBridge,
-  update: updateBridge
+  update: updateBridge,
+  desktop: desktopBridge
 }

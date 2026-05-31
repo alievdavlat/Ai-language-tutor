@@ -16,7 +16,12 @@ const WINDOW_DEFAULTS = {
   backgroundColor: '#0b1020'
 } as const
 
-export function createAppWindow(): BrowserWindow {
+interface CreateWindowOptions {
+  /** Start hidden in the tray (launch-on-login + "start minimized"). */
+  startHidden?: boolean
+}
+
+export function createAppWindow(options: CreateWindowOptions = {}): BrowserWindow {
   const win = new BrowserWindow({
     ...WINDOW_DEFAULTS,
     show: false,
@@ -29,7 +34,11 @@ export function createAppWindow(): BrowserWindow {
     }
   })
 
-  win.on('ready-to-show', () => win.show())
+  // When launched hidden at login the window stays in the tray; otherwise show
+  // it as soon as the renderer is painted.
+  if (!options.startHidden) {
+    win.on('ready-to-show', () => win.show())
+  }
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)

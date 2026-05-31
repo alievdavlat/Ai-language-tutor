@@ -1,3 +1,4 @@
+import { registerDesktopIpc } from './desktop.ipc.js'
 import { registerGrammarIpc } from './grammar.ipc.js'
 import { registerHardwareIpc } from './hardware.ipc.js'
 import { registerOllamaIpc } from './ollama.ipc.js'
@@ -19,6 +20,7 @@ export function registerAllIpcHandlers(ctx: IpcContext): void {
   registerSidecarIpc(ctx)
   registerProductivityIpc(ctx)
   registerUpdateIpc(ctx)
+  registerDesktopIpc(ctx)
 }
 
 export type { IpcContext } from './types.js'

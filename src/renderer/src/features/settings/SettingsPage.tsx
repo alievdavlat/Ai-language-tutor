@@ -11,8 +11,9 @@ import AISection from './sections/AISection'
 import PrivacySection from './sections/PrivacySection'
 import AboutSection from './sections/AboutSection'
 import ProductivitySection from './sections/ProductivitySection'
+import DesktopSection from './sections/DesktopSection'
 
-type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone' | 'productivity' | 'privacy' | 'about'
+type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone' | 'productivity' | 'desktop' | 'privacy' | 'about'
 
 const TABS: readonly TabItem<SettingsTab>[] = [
   { id: 'ai', label: 'AI' },
@@ -20,6 +21,7 @@ const TABS: readonly TabItem<SettingsTab>[] = [
   { id: 'companion', label: 'Companion' },
   { id: 'microphone', label: 'Microphone' },
   { id: 'productivity', label: 'Productivity' },
+  { id: 'desktop', label: 'Desktop' },
   { id: 'privacy', label: 'Privacy' },
   { id: 'about', label: 'About' }
 ] as const
@@ -117,6 +119,9 @@ export default function SettingsPage(): JSX.Element {
 
         {/* ── Privacy ───────────────────────────────────────────────────── */}
         {tab === 'productivity' && <ProductivitySection />}
+
+        {/* ── Desktop integration (#16) ─────────────────────────────────── */}
+        {tab === 'desktop' && <DesktopSection />}
 
         {tab === 'privacy' && (
           <PrivacySection
