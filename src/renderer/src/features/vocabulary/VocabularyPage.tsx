@@ -4,6 +4,7 @@ import type { VocabItem } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { ProgressRing, StatCard, Tabs, type TabItem, Input } from '../../components/ui'
 import { useTargetLanguage } from '../../lib/language'
+import { useT } from '../../i18n'
 import { useVocab } from '../../services/study/useStudy'
 import { formatInterval } from '../../services/study/fsrs'
 import { IconBolt, IconBook, IconBookmark, IconPlus, IconSearch, IconStar, IconVolume, IconX } from '../../components/icons'
@@ -101,6 +102,7 @@ function WordCard({ w, lang, onRemove }: { w: VocabItem; lang: string; onRemove:
 export default function VocabularyPage(): JSX.Element {
   const navigate = useNavigate()
   const lang = useTargetLanguage()
+  const t = useT()
   const { cards, due, stats, add, remove, loading } = useVocab(lang.code)
 
   const [tab, setTab] = useState<Tab>('mine')
@@ -134,13 +136,13 @@ export default function VocabularyPage(): JSX.Element {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{lang.flag} {lang.name} vocabulary</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Vocabulary</h1>
-            <p className="text-sm text-slate-400 mt-1">Save words, group them by category, and review with spaced repetition.</p>
+            <h1 className="text-2xl font-bold tracking-tight mt-0.5">{t('vocab.title')}</h1>
+            <p className="text-sm text-slate-400 mt-1">{t('vocab.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => navigate('/dictionary')} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5" title="Dictionary & phrasebook"><IconSearch className="w-4 h-4" /> Dictionary</button>
-            <button onClick={() => navigate('/flashcards')} disabled={cards.length === 0} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5 disabled:opacity-40" title={cards.length === 0 ? 'Add words to practice' : 'Practice with flashcards'}><IconBook className="w-4 h-4" /> Flashcards</button>
-            <button onClick={() => setAdding(true)} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> Add word</button>
+            <button onClick={() => navigate('/dictionary')} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5" title="Dictionary & phrasebook"><IconSearch className="w-4 h-4" /> {t('vocab.dictionary')}</button>
+            <button onClick={() => navigate('/flashcards')} disabled={cards.length === 0} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5 disabled:opacity-40" title={cards.length === 0 ? 'Add words to practice' : 'Practice with flashcards'}><IconBook className="w-4 h-4" /> {t('vocab.flashcards')}</button>
+            <button onClick={() => setAdding(true)} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> {t('vocab.addWord')}</button>
             <button onClick={() => navigate('/vocabulary/review')} disabled={due.length === 0} className="btn-primary text-sm px-4 py-2 disabled:opacity-40">
               {due.length > 0 ? `Review ${due.length} →` : 'Nothing due'}
             </button>

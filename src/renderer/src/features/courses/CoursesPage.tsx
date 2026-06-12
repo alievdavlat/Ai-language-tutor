@@ -6,6 +6,7 @@ import { IconBook, IconPlay, IconStar, IconTarget } from '../../components/icons
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { useContentState } from '../../services/content/progress'
 import { useTargetLanguageCode } from '../../lib/language'
+import { useT } from '../../i18n'
 import { isImageCover } from '../../lib/cover'
 import type { Course } from '@shared/types'
 
@@ -81,6 +82,7 @@ export default function CoursesPage(): JSX.Element {
   const [skill, setSkill] = useState<Skill>('all')
   const [level, setLevel] = useState<string>('All')
   const lang = useTargetLanguageCode()
+  const t = useT()
   const userId = backend.currentUserId()
   useContentState() // re-render when progress changes
 
@@ -119,9 +121,9 @@ export default function CoursesPage(): JSX.Element {
         {/* Header + level filter */}
         <div className="flex items-end justify-between gap-3 flex-wrap">
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">Learn</p>
-            <h1 className="text-2xl font-black tracking-tight">Courses</h1>
-            <p className="text-sm text-slate-400 mt-1">One place to learn — grammar, writing, speaking, listening & exam prep, with mock tests and certificates.</p>
+            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{t('nav.section.learn')}</p>
+            <h1 className="text-2xl font-black tracking-tight">{t('courses.title')}</h1>
+            <p className="text-sm text-slate-400 mt-1">{t('courses.subtitle')}</p>
           </div>
           <div className="flex gap-1.5">
             {LEVELS.map((l) => (
