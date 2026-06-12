@@ -22,39 +22,47 @@ if (!root) throw new Error('Root element not found')
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
 const useClerk = import.meta.env.VITE_USE_CLERK === '1' && !!clerkPubKey
 
-function Root(): JSX.Element {
+function AppTree(): JSX.Element {
   return (
-    <React.StrictMode>
-      <ErrorBoundary>
-        <HashRouter>
-          <App />
-        </HashRouter>
-      </ErrorBoundary>
-    </React.StrictMode>
+    <HashRouter>
+      <App />
+    </HashRouter>
   )
 }
 
+/**
+ * Clerk is optional and its hosted instance can be unreachable in some regions.
+ * Mounting ClerkProvider OUTSIDE an error boundary means any init failure blanks
+ * the whole app (the bug that forced VITE_USE_CLERK=0). So the ErrorBoundary is
+ * now the OUTERMOST wrapper — a Clerk failure surfaces a recoverable error screen
+ * instead of a silent white page. Enable with VITE_USE_CLERK=1 once the Clerk
+ * instance is confirmed reachable.
+ */
 ReactDOM.createRoot(root).render(
-  useClerk ? (
-    <ClerkProvider
-      publishableKey={clerkPubKey!}
-      // Electron loads via file:// — we use HashRouter so all redirects can stay relative.
-      signInFallbackRedirectUrl="/#/"
-      signUpFallbackRedirectUrl="/#/"
-      appearance={{
-        baseTheme: undefined,
-        variables: {
-          colorPrimary: '#2563EB',
-          colorBackground: '#0a0e1f',
-          colorText: '#e2e8f0',
-          colorInputBackground: 'rgba(255,255,255,0.05)',
-          colorInputText: '#e2e8f0'
-        }
-      }}
-    >
-      <Root />
-    </ClerkProvider>
-  ) : (
-    <Root />
-  )
+  <React.StrictMode>
+    <ErrorBoundary>
+      {useClerk ? (
+        <ClerkProvider
+          publishableKey={clerkPubKey!}
+          // Electron loads via file:// — we use HashRouter so all redirects can stay relative.
+          signInFallbackRedirectUrl="/#/"
+          signUpFallbackRedirectUrl="/#/"
+          appearance={{
+            baseTheme: undefined,
+            variables: {
+              colorPrimary: '#2563EB',
+              colorBackground: '#0a0e1f',
+              colorText: '#e2e8f0',
+              colorInputBackground: 'rgba(255,255,255,0.05)',
+              colorInputText: '#e2e8f0'
+            }
+          }}
+        >
+          <AppTree />
+        </ClerkProvider>
+      ) : (
+        <AppTree />
+      )}
+    </ErrorBoundary>
+  </React.StrictMode>
 )
