@@ -25,9 +25,11 @@ import type { ActivityKind as ProgressKind } from '../progress/types'
  * that record straight to the backend. Without this, completing a course lesson
  * updated Home's backend stats but left Progress showing 0 XP.
  *
- * NOTE: surfaces that ALREADY write to the progress store directly (grammar
- * exercises, flashcards, level test, speaking) must NOT route through
- * logActivity, or they would double-count here.
+ * Callers that need a SPECIFIC progress kind (flashcard_round, level_test,
+ * speaking_exchange, correction — they drive quests/achievements) pass it as
+ * `meta.progressKind`; the generic map below is the fallback. (#A49 routed the
+ * last progress-only surfaces through here, so backend + progress now both see
+ * every kind of learning exactly once.)
  */
 const BACKEND_TO_PROGRESS_KIND: Record<string, ProgressKind> = {
   lesson_complete: 'lesson_complete',
@@ -42,11 +44,14 @@ const BACKEND_TO_PROGRESS_KIND: Record<string, ProgressKind> = {
 }
 
 function mirrorToProgressStore(event: ActivityEvent): void {
-  const mapped = BACKEND_TO_PROGRESS_KIND[event.kind]
+  const override = event.meta?.progressKind as ProgressKind | undefined
+  const mapped = override ?? BACKEND_TO_PROGRESS_KIND[event.kind]
   if (!mapped) return
   const opts: ProgressOpts = { xp: event.xp ?? 0 }
   const skill = (event.meta?.skill as ProgressOpts['skill']) ?? undefined
   if (skill) opts.skill = skill
+  if (typeof event.meta?.count === 'number') opts.count = event.meta.count
+  if (typeof event.meta?.accuracy === 'number') opts.accuracy = event.meta.accuracy
   if (event.meta) opts.meta = event.meta
   try {
     useProgressStore.getState().record(mapped, opts)

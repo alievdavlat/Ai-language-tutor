@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import type { CEFRLevel, UserProfile } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
-import { recordActivity } from '../../services/progress'
+import { logActivity } from '../../services/activity'
+import { backend } from '../../services/backend/useBackend'
 import { ProgressBar } from '../../components/ui'
 import { IconCheck, IconTarget, IconX } from '../../components/icons'
 import { CEFR_ORDER, QUESTIONS, scoreToResult, type LevelResult } from './questions'
@@ -32,10 +33,19 @@ export default function LevelTestPage(): JSX.Element {
   }, [answers])
   const result: LevelResult = useMemo(() => scoreToResult(correctCount, total), [correctCount, total])
 
-  // Gamification — finishing the test logs an activity (and a "certificate").
+  // Gamification — finishing the test logs to the backend activity log AND the
+  // progress store via the mirror (#A49), so Home + Progress both update.
   useEffect(() => {
     if (phase === 'result') {
-      recordActivity('level_test', { xp: 20, meta: { level: result.level, score: correctCount } })
+      const userId = backend.currentUserId()
+      if (userId) {
+        void logActivity({
+          userId,
+          kind: 'exam_attempt',
+          xp: 20,
+          meta: { progressKind: 'level_test', level: result.level, score: correctCount }
+        }).catch(() => {})
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])

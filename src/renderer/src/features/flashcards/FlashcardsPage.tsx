@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { VocabItem } from '@shared/types'
 import { cn } from '../../lib/classnames'
-import { recordActivity } from '../../services/progress'
+import { logActivity } from '../../services/activity'
+import { backend } from '../../services/backend/useBackend'
 import { useTargetLanguage } from '../../lib/language'
 import { useVocab } from '../../services/study/useStudy'
 import { ProgressBar, SectionHeading } from '../../components/ui'
@@ -168,14 +169,25 @@ export default function FlashcardsPage(): JSX.Element {
 
   const accuracy = results.total > 0 ? Math.round((results.correct / results.total) * 100) : 0
 
-  // Gamification — a finished round logs words learned + XP into the progress store.
+  // Gamification — a finished round logs to the backend activity log AND (via
+  // the mirror) the progress store, so Home stats and Progress both update (#A49).
   useEffect(() => {
     if (mode === 'done') {
-      recordActivity('flashcard_round', {
-        skill: 'vocabulary',
-        accuracy,
-        meta: { learned: results.correct, deck: activeDeck ?? 'All words' }
-      })
+      const userId = backend.currentUserId()
+      if (userId) {
+        void logActivity({
+          userId,
+          kind: 'practice_session',
+          xp: 15,
+          meta: {
+            progressKind: 'flashcard_round',
+            skill: 'vocabulary',
+            accuracy,
+            learned: results.correct,
+            deck: activeDeck ?? 'All words'
+          }
+        }).catch(() => {})
+      }
     }
     // Fire once per completion; results/accuracy are settled before mode flips.
     // eslint-disable-next-line react-hooks/exhaustive-deps

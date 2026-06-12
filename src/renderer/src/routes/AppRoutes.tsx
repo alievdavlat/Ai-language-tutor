@@ -28,6 +28,7 @@ import LibraryBookPage from '../features/library/LibraryBookPage'
 import TeacherChannelPage from '../features/channel/TeacherChannelPage'
 import SocialPage from '../features/social/SocialPage'
 import GroupDetailPage from '../features/group/GroupDetailPage'
+import AnnouncementDetailPage from '../features/announcements/AnnouncementDetailPage'
 import LivePage from '../features/live/LivePage'
 import LiveRoomPage from '../features/live/LiveRoomPage'
 import MeetPage from '../features/meet/MeetPage'
@@ -391,6 +392,14 @@ export default function AppRoutes(): JSX.Element {
         element={
           <AppShell>
             <GroupDetailPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/announcement/:id"
+        element={
+          <AppShell>
+            <AnnouncementDetailPage />
           </AppShell>
         }
       />

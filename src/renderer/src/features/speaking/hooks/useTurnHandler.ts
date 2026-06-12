@@ -4,7 +4,8 @@ import { resolveCharacter } from '@shared/constants'
 import { buildCorrectionFeedback, buildSystemPrompt, naturalGrammarMatches } from '../../../services/prompts'
 import { createId } from '../../../lib/ids'
 import { useStreamingSpeaker } from '../../../hooks/useStreamingSpeaker'
-import { recordActivity } from '../../../services/progress'
+import { logActivity } from '../../../services/activity'
+import { backend } from '../../../services/backend/useBackend'
 import type { ChatTurn } from '../types'
 
 const HISTORY_WINDOW = 20
@@ -147,8 +148,19 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
       // Phase 8 — a real exchange happened; let the caller grow the bond.
       optsRef.current.onExchangeComplete?.()
 
-      // Progress — log the speaking exchange so XP / streak / mastery update.
-      recordActivity('speaking_exchange', { skill: 'speaking', meta: { topic } })
+      // Progress — backend activity log + progress store via the mirror (#A49),
+      // so Home/Profile speaking stats and Progress XP both move.
+      {
+        const meId = backend.currentUserId()
+        if (meId) {
+          void logActivity({
+            userId: meId,
+            kind: 'speaking_session',
+            xp: 5,
+            meta: { progressKind: 'speaking_exchange', skill: 'speaking', topic }
+          }).catch(() => {})
+        }
+      }
 
       // Wait for the streamed main reply to finish speaking before the
       // correction follow-up.
@@ -171,8 +183,18 @@ export function useTurnHandler(opts: UseTurnHandlerOptions): TurnHandler {
           }
         })
 
-        // Progress — a correction the learner received strengthens grammar.
-        recordActivity('correction', { skill: 'grammar', count: matches.length })
+        // Progress — a correction the learner received strengthens grammar (#A49).
+        {
+          const meId = backend.currentUserId()
+          if (meId) {
+            void logActivity({
+              userId: meId,
+              kind: 'custom',
+              xp: 2 * matches.length,
+              meta: { progressKind: 'correction', skill: 'grammar', count: matches.length }
+            }).catch(() => {})
+          }
+        }
 
         const feedback = buildCorrectionFeedback(userText, matches)
         const character = resolveCharacter(profile, profile.settings.characterId)

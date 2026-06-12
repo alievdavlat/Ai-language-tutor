@@ -54,9 +54,7 @@ export default function HeroCarousel(): JSX.Element {
         cta: 'View details',
         cover: `bg-gradient-to-br ${a.cover ?? 'from-rose-600 via-red-700 to-slate-950'}`,
         image: a.imageUrl,
-        // Interim: open the announcing teacher's channel (more relevant than the
-        // generic feed). Full event/announcement detail view = Task #21.
-        to: `/channel?id=${a.teacherId}`
+        to: `/announcement/${a.id}`
       })
     }
     const topCourse = courses.data[0]

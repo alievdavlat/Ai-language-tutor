@@ -13,10 +13,9 @@ import {
   type GrammarLesson
 } from '../grammar/curriculum'
 import { CEFR_ORDER, type CEFRLevel } from '@shared/types'
-import { backend } from '../../services/backend'
 import { currentUserId } from '../../services/study/useStudy'
 import { completeChallengeDay, completeLesson } from '../../services/study/grammarProgress'
-import { recordActivity } from '../../services/progress'
+import { logActivity } from '../../services/activity'
 
 // Legacy fallback drills — used when the player is opened without a lesson.
 const FALLBACK: Exercise[] = [
@@ -75,12 +74,12 @@ export default function ExercisePlayer(): JSX.Element {
           back: '/grammar',
           onComplete: (score) => {
             completeLesson(unit.id, lesson.id, score)
-            void backend.recordActivity({
+            void logActivity({
               userId: currentUserId(),
               kind: 'lesson_complete',
               xp: Math.round(score / 10) + 5,
-              meta: { unit: unit.id, lesson: lesson.id, score }
-            })
+              meta: { progressKind: 'lesson_complete', skill: 'grammar', accuracy: score, unit: unit.id, lesson: lesson.id, score }
+            }).catch(() => {})
           }
         }
       }
@@ -98,12 +97,12 @@ export default function ExercisePlayer(): JSX.Element {
           back: `/grammar/challenge/${challengeId}`,
           onComplete: (score) => {
             completeChallengeDay(challengeId, day)
-            void backend.recordActivity({
+            void logActivity({
               userId: currentUserId(),
               kind: 'practice_session',
               xp: 10,
-              meta: { challenge: challengeId, day, score }
-            })
+              meta: { progressKind: 'lesson_complete', skill: 'grammar', accuracy: score, challenge: challengeId, day, score }
+            }).catch(() => {})
           }
         }
       }
@@ -137,12 +136,12 @@ export default function ExercisePlayer(): JSX.Element {
         exercises: pool.length > 0 ? pool.slice(0, 12) : FALLBACK,
         back: '/exams/cefr',
         onComplete: (score) => {
-          void backend.recordActivity({
+          void logActivity({
             userId: currentUserId(),
             kind: 'practice_session',
             xp: 10,
-            meta: { level: wantLevel ?? null, skill: skillParam ?? null, score }
-          })
+            meta: { progressKind: 'lesson_complete', skill: 'grammar', accuracy: score, level: wantLevel ?? null, skillParam: skillParam ?? null, score }
+          }).catch(() => {})
         }
       }
     }
@@ -152,7 +151,14 @@ export default function ExercisePlayer(): JSX.Element {
       subtitle: 'Grammar drills',
       exercises: FALLBACK,
       back: '/grammar',
-      onComplete: () => {}
+      onComplete: (score) => {
+        void logActivity({
+          userId: currentUserId(),
+          kind: 'practice_session',
+          xp: 10,
+          meta: { progressKind: 'lesson_complete', skill: 'grammar', accuracy: score }
+        }).catch(() => {})
+      }
     }
   }, [params])
 
@@ -187,9 +193,9 @@ export default function ExercisePlayer(): JSX.Element {
   const onContinue = (): void => {
     if (index + 1 >= exercises.length) {
       const score = Math.round((correctCount / exercises.length) * 100)
+      // Every session's onComplete logs once via logActivity — backend activity
+      // log + progress store through the mirror (#A49), no double counting.
       session.onComplete(score)
-      // Gamification — feed the progress store so XP / streak / mastery update.
-      recordActivity('lesson_complete', { skill: 'grammar', accuracy: score, xp: correctCount * 10 + 5 })
       setDone(true)
       return
     }
