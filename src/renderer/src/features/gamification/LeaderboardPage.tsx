@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, PageHeader, Tabs, type TabItem } from '../../components/ui'
 import { IconBolt, IconFlame, IconTrophy } from '../../components/icons'
 import { useAppStore } from '../../store/useAppStore'
-import { LEAGUES, buildLeaderboard, leagueForXp, useStats } from '../../services/progress'
+import { LEAGUES, buildLeaderboardReal, leagueForXp, useStats, type LeaderRow } from '../../services/progress'
 
 type Scope = 'global' | 'friends'
 
@@ -46,7 +46,23 @@ export default function LeaderboardPage(): JSX.Element {
 
   const meName = profile?.name?.trim() || 'You'
   const currentLeague = leagueForXp(stats.totalXp)
-  const rows = buildLeaderboard(meName, stats.weekXp, stats.streak, scope)
+  const [rows, setRows] = useState<LeaderRow[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    void buildLeaderboardReal(meName, stats.weekXp, stats.streak, scope).then((r) => {
+      if (!cancelled) {
+        setRows(r)
+        setLoading(false)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [meName, stats.weekXp, stats.streak, scope])
+
   const myRank = rows.find((r) => r.me)?.rank ?? rows.length
 
   return (
@@ -109,6 +125,14 @@ export default function LeaderboardPage(): JSX.Element {
 
         {/* Ranking */}
         <div className="rounded-card border border-white/10 bg-white/[0.025] divide-y divide-white/[0.06]">
+          {loading && rows.length === 0 && (
+            <p className="px-4 py-6 text-sm text-slate-500 text-center">Loading rankings…</p>
+          )}
+          {!loading && rows.length <= 1 && scope === 'friends' && (
+            <p className="px-4 py-6 text-sm text-slate-500 text-center">
+              Follow other learners to race them here — find people in Explore.
+            </p>
+          )}
           {rows.map((r) => (
             <div
               key={`${r.rank}-${r.name}`}

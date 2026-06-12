@@ -1,9 +1,40 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, PageHeader, ProgressBar, SectionHeading } from '../../components/ui'
 import { IconBolt, IconChat, IconCheck, IconFlame, IconHeart, IconUsers, IconX } from '../../components/icons'
 import { useAppStore } from '../../store/useAppStore'
-import { findBuddy, matchBuddies, useStats, useProgressStore, type BuddyCandidate } from '../../services/progress'
+import { backend } from '../../services/backend/useBackend'
+import { timeAgo } from '../../lib/time'
+import {
+  findBuddyReal,
+  matchBuddiesReal,
+  useStats,
+  useProgressStore,
+  type BuddyCandidate
+} from '../../services/progress'
+import type { ActivityEvent } from '@shared/types'
+
+// One poke per buddy per day — remembered across sessions.
+const POKE_KEY = 'speakai.buddy.poke.v1'
+
+function pokedToday(buddyId: string): boolean {
+  try {
+    const map = JSON.parse(localStorage.getItem(POKE_KEY) ?? '{}') as Record<string, string>
+    return map[buddyId] === new Date().toDateString()
+  } catch {
+    return false
+  }
+}
+
+function rememberPoke(buddyId: string): void {
+  try {
+    const map = JSON.parse(localStorage.getItem(POKE_KEY) ?? '{}') as Record<string, string>
+    map[buddyId] = new Date().toDateString()
+    localStorage.setItem(POKE_KEY, JSON.stringify(map))
+  } catch {
+    // best-effort
+  }
+}
 
 function MatchBar({ pct }: { pct: number }): JSX.Element {
   const tone = pct >= 70 ? 'text-emerald-300' : pct >= 45 ? 'text-amber-300' : 'text-slate-400'
@@ -55,6 +86,17 @@ function CandidateCard({ c, onPair }: { c: BuddyCandidate; onPair: () => void })
   )
 }
 
+const ACTIVITY_LABEL: Record<string, string> = {
+  lesson_complete: 'completed a lesson',
+  word_learned: 'learned new words',
+  practice_session: 'finished a practice session',
+  speaking_session: 'completed a speaking session',
+  exam_attempt: 'took an exam',
+  streak_day: 'kept the streak alive',
+  achievement: 'unlocked an achievement',
+  course_enroll: 'enrolled in a course'
+}
+
 export default function BuddyPage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
   const stats = useStats()
@@ -62,13 +104,91 @@ export default function BuddyPage(): JSX.Element {
   const buddySince = useProgressStore((s) => s.buddySince)
   const pairBuddy = useProgressStore((s) => s.pairBuddy)
   const unpairBuddy = useProgressStore((s) => s.unpairBuddy)
-  const [poked, setPoked] = useState(false)
 
-  const buddy = buddyId ? findBuddy(buddyId) : null
+  const [candidates, setCandidates] = useState<BuddyCandidate[]>([])
+  const [buddy, setBuddy] = useState<BuddyCandidate | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [poked, setPoked] = useState(false)
+  const [activity, setActivity] = useState<{ who: string; text: string; when: string }[]>([])
+
+  // Load real candidates / the paired buddy from the backend user list.
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    ;(async () => {
+      if (buddyId) {
+        const b = await findBuddyReal(buddyId)
+        if (!cancelled) {
+          setBuddy(b)
+          setPoked(pokedToday(buddyId))
+        }
+      } else {
+        const list = await matchBuddiesReal(profile, 8)
+        if (!cancelled) {
+          setBuddy(null)
+          setCandidates(list)
+        }
+      }
+      if (!cancelled) setLoading(false)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [buddyId, profile])
+
+  // Real shared activity — my events + the buddy's, merged by time.
+  useEffect(() => {
+    let cancelled = false
+    if (!buddyId || !buddy) {
+      setActivity([])
+      return
+    }
+    const me = backend.currentUserId()
+    ;(async () => {
+      const mine: ActivityEvent[] = me ? await backend.listActivity(me, { limit: 10 }).catch(() => []) : []
+      const theirs: ActivityEvent[] = await backend.listActivity(buddyId, { limit: 10 }).catch(() => [])
+      const rows = [
+        ...mine.map((e) => ({ who: 'You', e })),
+        ...theirs.map((e) => ({ who: buddy.name, e }))
+      ]
+        .sort((a, b) => new Date(b.e.createdAt).getTime() - new Date(a.e.createdAt).getTime())
+        .slice(0, 8)
+        .map(({ who, e }) => ({
+          who,
+          text: `${ACTIVITY_LABEL[e.kind] ?? 'was active'}${e.xp ? ` · +${e.xp} XP` : ''}`,
+          when: timeAgo(e.createdAt)
+        }))
+      if (!cancelled) setActivity(rows)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [buddyId, buddy])
+
+  // Poke = a real DM + a notification for the buddy, not just local state.
+  const sendPoke = useCallback(async (): Promise<void> => {
+    if (!buddy || poked) return
+    setPoked(true)
+    rememberPoke(buddy.id)
+    const me = backend.currentUserId()
+    if (!me) return
+    try {
+      const thread = await backend.getOrCreateThread(me, buddy.id)
+      await backend.sendMessage({ threadId: thread.id, senderId: me, text: '👋 Poke! Keep the streak going — let’s practice today!' })
+      await backend.createNotif({
+        userId: buddy.id,
+        type: 'social',
+        title: 'Your study buddy poked you',
+        body: `${profile?.name ?? 'Your buddy'} wants to practice together today.`,
+        link: '/inbox'
+      })
+    } catch {
+      // backend hiccup — the poke stays recorded locally
+    }
+  }, [buddy, poked, profile?.name])
 
   // ── No buddy yet → matcher ────────────────────────────────────────────────
-  if (!buddy) {
-    const candidates = matchBuddies(profile, 8)
+  if (!buddyId || (!buddy && !loading)) {
     return (
       <div className="h-full overflow-y-auto">
         <div className="px-6 py-6 w-full flex flex-col gap-6">
@@ -91,7 +211,10 @@ export default function BuddyPage(): JSX.Element {
             </div>
           </div>
 
-          <SectionHeading title="Suggested buddies" subtitle={`${candidates.length} matches for level ${profile?.level ?? 'B1'}`} />
+          <SectionHeading
+            title="Suggested buddies"
+            subtitle={loading ? 'Finding matches…' : `${candidates.length} matches for level ${profile?.level ?? 'B1'}`}
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {candidates.map((c) => (
               <CandidateCard key={c.id} c={c} onPair={() => pairBuddy(c.id)} />
@@ -102,18 +225,17 @@ export default function BuddyPage(): JSX.Element {
     )
   }
 
+  if (!buddy) {
+    return (
+      <div className="h-full flex items-center justify-center text-sm text-slate-400">Loading your buddy…</div>
+    )
+  }
+
   // ── Paired → shared dashboard ─────────────────────────────────────────────
   const combinedWeekly = stats.weekXp + buddy.weeklyXp
   const sharedTarget = 1000
   const sharedPct = Math.min(100, Math.round((combinedWeekly / sharedTarget) * 100))
   const sinceDays = buddySince ? Math.max(1, Math.floor((Date.now() - new Date(buddySince).getTime()) / 86400000)) : 1
-
-  const activity = [
-    { who: buddy.name, text: `completed a speaking session`, icon: <IconChat className="w-3.5 h-3.5" />, when: '2h ago' },
-    { who: 'You', text: `earned ${stats.todayXp} XP today`, icon: <IconBolt className="w-3.5 h-3.5" />, when: 'today' },
-    { who: buddy.name, text: `hit a ${buddy.streak}-day streak`, icon: <IconFlame className="w-3.5 h-3.5" />, when: 'yesterday' },
-    { who: 'You', text: `reached ${stats.streak}-day streak`, icon: <IconFlame className="w-3.5 h-3.5" />, when: 'today' }
-  ]
 
   return (
     <div className="h-full overflow-y-auto">
@@ -154,7 +276,7 @@ export default function BuddyPage(): JSX.Element {
             </div>
           </div>
           <button
-            onClick={() => setPoked(true)}
+            onClick={() => void sendPoke()}
             disabled={poked}
             className={cn(
               'rounded-pill text-xs font-bold px-4 py-2 inline-flex items-center gap-1.5 transition shrink-0',
@@ -180,22 +302,28 @@ export default function BuddyPage(): JSX.Element {
           </div>
         </div>
 
-        {/* Shared activity */}
+        {/* Shared activity — real events from both learners */}
         <div>
           <SectionHeading title="Recent activity" subtitle="What you've both been up to" />
           <div className="rounded-card border border-white/10 bg-white/[0.025] divide-y divide-white/[0.06]">
-            {activity.map((a, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3">
-                <AvatarCircle name={a.who} size="sm" />
-                <span className="w-7 h-7 rounded-full bg-white/[0.06] text-slate-300 flex items-center justify-center shrink-0">
-                  {a.icon}
-                </span>
-                <p className="flex-1 text-sm text-slate-200">
-                  <span className="font-semibold text-white">{a.who}</span> {a.text}
-                </p>
-                <span className="text-[11px] text-slate-500 shrink-0">{a.when}</span>
-              </div>
-            ))}
+            {activity.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-slate-500 text-center">
+                No activity yet — complete a lesson or a speaking session and it will show up here.
+              </p>
+            ) : (
+              activity.map((a, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-3">
+                  <AvatarCircle name={a.who} size="sm" />
+                  <span className="w-7 h-7 rounded-full bg-white/[0.06] text-slate-300 flex items-center justify-center shrink-0">
+                    <IconChat className="w-3.5 h-3.5" />
+                  </span>
+                  <p className="flex-1 text-sm text-slate-200">
+                    <span className="font-semibold text-white">{a.who}</span> {a.text}
+                  </p>
+                  <span className="text-[11px] text-slate-500 shrink-0">{a.when}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

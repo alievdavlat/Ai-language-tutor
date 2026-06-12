@@ -1,10 +1,11 @@
 /**
  * Study-buddy matching. Pairs the learner with others by target language,
- * level proximity and shared goals. The candidate pool blends the backend's
- * seed users with a deterministic extra roster so matching always has options
- * even on a fresh install. Swap `extraPool` for a real query later.
+ * level proximity and shared goals. Candidates come from the REAL backend
+ * user list (any registered learner), with their real streak/weekly XP; the
+ * deterministic roster below is only the empty-install fallback.
  */
 import type { UserProfile } from '@shared/types'
+import { backend } from '../backend/useBackend'
 import { SEED_USERS } from '../backend/seed'
 import type { BuddyCandidate } from './types'
 
@@ -55,27 +56,7 @@ function scoreOf(profile: UserProfile, c: RawLearner): number {
   return Math.min(100, score)
 }
 
-export function matchBuddies(profile: UserProfile | null, limit = 6): BuddyCandidate[] {
-  const fallback: UserProfile = {
-    level: 'B1',
-    targetLanguage: 'en',
-    goals: [] as never[]
-  } as unknown as UserProfile
-  const me = profile ?? fallback
-
-  const seedLearners: RawLearner[] = SEED_USERS.filter((u) => u.role === 'student').map((u) => ({
-    id: u.id,
-    name: u.name,
-    avatarEmoji: u.avatarEmoji ?? '📖',
-    country: u.country ? `🌍` : undefined,
-    level: u.level ?? 'B1',
-    targetLanguage: u.targetLanguage,
-    goals: ['conversation', 'exams'],
-    streak: 7 + (u.name.length % 20),
-    weeklyXp: 400 + (u.name.length % 9) * 90
-  }))
-
-  const pool = [...extraPool, ...seedLearners]
+function rank(me: UserProfile, pool: RawLearner[], limit: number): BuddyCandidate[] {
   return pool
     .map<BuddyCandidate>((c) => {
       const match = scoreOf(me, c)
@@ -104,6 +85,84 @@ export function matchBuddies(profile: UserProfile | null, limit = 6): BuddyCandi
     .slice(0, limit)
 }
 
+function fallbackProfile(): UserProfile {
+  return { level: 'B1', targetLanguage: 'en', goals: [] as never[] } as unknown as UserProfile
+}
+
+function seedLearners(): RawLearner[] {
+  return SEED_USERS.filter((u) => u.role === 'student').map((u) => ({
+    id: u.id,
+    name: u.name,
+    avatarEmoji: u.avatarEmoji ?? '📖',
+    country: u.country ? `🌍` : undefined,
+    level: u.level ?? 'B1',
+    targetLanguage: u.targetLanguage,
+    goals: ['conversation', 'exams'],
+    streak: 7 + (u.name.length % 20),
+    weeklyXp: 400 + (u.name.length % 9) * 90
+  }))
+}
+
+/** Sync fallback ranking over the static roster (kept for empty installs). */
+export function matchBuddies(profile: UserProfile | null, limit = 6): BuddyCandidate[] {
+  const me = profile ?? fallbackProfile()
+  return rank(me, [...extraPool, ...seedLearners()], limit)
+}
+
 export function findBuddy(id: string): BuddyCandidate | null {
   return matchBuddies(null, 50).find((b) => b.id === id) ?? null
+}
+
+/**
+ * Real candidate pool: every registered learner from the backend with their
+ * REAL streak + XP earned in the last 7 days. Falls back to the static roster
+ * when the backend has no other learners (fresh install).
+ */
+async function realPool(): Promise<RawLearner[]> {
+  const meId = backend.currentUserId()
+  let users: Awaited<ReturnType<typeof backend.listUsers>> = []
+  try {
+    users = await backend.listUsers({ role: 'student', limit: 30 })
+  } catch {
+    return []
+  }
+  const weekAgo = Date.now() - 7 * 86_400_000
+  const out: RawLearner[] = []
+  for (const u of users.filter((x) => x.id !== meId).slice(0, 16)) {
+    let streak = 0
+    let weeklyXp = 0
+    try {
+      const s = await backend.getStats(u.id)
+      streak = s?.streak ?? 0
+      const acts = await backend.listActivity(u.id, { limit: 100 })
+      weeklyXp = acts
+        .filter((a) => new Date(a.createdAt).getTime() >= weekAgo)
+        .reduce((sum, e) => sum + (e.xp ?? 0), 0)
+    } catch {
+      // stats are best-effort — a user with no activity simply shows zeros
+    }
+    out.push({
+      id: u.id,
+      name: u.name,
+      avatarEmoji: u.avatarEmoji ?? '📖',
+      country: u.country,
+      level: u.level ?? 'B1',
+      targetLanguage: u.targetLanguage,
+      goals: ['conversation'],
+      streak,
+      weeklyXp
+    })
+  }
+  return out
+}
+
+export async function matchBuddiesReal(profile: UserProfile | null, limit = 8): Promise<BuddyCandidate[]> {
+  const me = profile ?? fallbackProfile()
+  const pool = await realPool()
+  return rank(me, pool.length > 0 ? pool : [...extraPool, ...seedLearners()], limit)
+}
+
+export async function findBuddyReal(id: string): Promise<BuddyCandidate | null> {
+  const all = await matchBuddiesReal(null, 100)
+  return all.find((b) => b.id === id) ?? findBuddy(id)
 }

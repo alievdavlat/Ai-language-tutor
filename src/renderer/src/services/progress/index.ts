@@ -26,4 +26,5 @@ export {
 } from './compute'
 export { useProgressStore, recordActivity, type RecordOpts } from './store'
 export { useStats, useQuests, useAchievements, useMilestones } from './useProgress'
-export { matchBuddies, findBuddy } from './buddy'
+export { matchBuddies, findBuddy, matchBuddiesReal, findBuddyReal } from './buddy'
+export { buildLeaderboardReal } from './leaderboard'
