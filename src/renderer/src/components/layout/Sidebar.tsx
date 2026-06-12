@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom'
 import type { UserProfile } from '@shared/types'
-import { isAdminRole, ROLE_META } from '@shared/constants'
+import { isAdminRole } from '@shared/constants'
 import { cn } from '../../lib/classnames'
+import { useT, type StringKey } from '../../i18n'
 import { useAppStore } from '../../store/useAppStore'
 import AvatarCircle from '../ui/AvatarCircle'
 import NotificationBell from './NotificationBell'
@@ -28,47 +29,47 @@ const NAV_ICON_CLS = 'w-[18px] h-[18px] shrink-0'
 
 // ─── Nav / item config ────────────────────────────────────────────────────────
 const LEARN_NAV = [
-  { to: '/home', label: 'Home', Icon: IconHome },
-  { to: '/courses', label: 'Courses', Icon: IconBook },
-  { to: '/library', label: 'Library', Icon: IconLibrary },
-  { to: '/vocabulary', label: 'Vocabulary', Icon: IconBookmark },
+  { to: '/home', labelKey: 'nav.home', Icon: IconHome },
+  { to: '/courses', labelKey: 'nav.courses', Icon: IconBook },
+  { to: '/library', labelKey: 'nav.library', Icon: IconLibrary },
+  { to: '/vocabulary', labelKey: 'nav.vocabulary', Icon: IconBookmark },
   // Dictionary moved into Vocabulary (a tab) — no longer a separate sidebar item.
-  { to: '/progress', label: 'Progress', Icon: IconChart }
-] as const
+  { to: '/progress', labelKey: 'nav.progress', Icon: IconChart }
+] as const satisfies readonly NavConfig[]
 
 const PRACTICE_NAV = [
-  { to: '/speaking', label: 'Speaking', Icon: IconMic },
-  { to: '/clips', label: 'Clips', Icon: IconHeadphones },
-  { to: '/writing', label: 'Writing Coach', Icon: IconPencilEdit },
+  { to: '/speaking', labelKey: 'nav.speaking', Icon: IconMic },
+  { to: '/clips', labelKey: 'nav.clips', Icon: IconHeadphones },
+  { to: '/writing', labelKey: 'nav.writing', Icon: IconPencilEdit },
   // Speaking partner now lives inside the Speaking hub (not the sidebar).
-  { to: '/exams', label: 'Exams', Icon: IconClipboard }
-] as const
+  { to: '/exams', labelKey: 'nav.exams', Icon: IconClipboard }
+] as const satisfies readonly NavConfig[]
 
 const COMMUNITY_NAV = [
   // Explore = one Instagram-style social hub: feed, groups, challenges, discover,
   // plus live rooms + study-buddies surfaced via its "Now" bar.
-  { to: '/community', label: 'Explore', Icon: IconSearch }
-] as const
+  { to: '/community', labelKey: 'nav.explore', Icon: IconSearch }
+] as const satisfies readonly NavConfig[]
 
 // Teacher-mode navigation — teachers also learn, so they keep a Learn group.
 const TEACHER_MANAGE = [
-  { to: '/teacher', label: 'Dashboard', Icon: IconHome },
-  { to: '/studio', label: 'Creator Studio', Icon: IconPencilEdit },
-  { to: '/channel', label: 'My channel', Icon: IconUsers }
-] as const
+  { to: '/teacher', labelKey: 'nav.dashboard', Icon: IconHome },
+  { to: '/studio', labelKey: 'nav.studio', Icon: IconPencilEdit },
+  { to: '/channel', labelKey: 'nav.channel', Icon: IconUsers }
+] as const satisfies readonly NavConfig[]
 
 const TEACHER_LEARN = [
-  { to: '/courses', label: 'Courses', Icon: IconBook },
-  { to: '/library', label: 'Library', Icon: IconLibrary },
-  { to: '/speaking', label: 'Speaking', Icon: IconMic },
-  { to: '/clips', label: 'Clips', Icon: IconHeadphones },
-  { to: '/writing', label: 'Writing Coach', Icon: IconPencilEdit },
-  { to: '/exams', label: 'Exams', Icon: IconClipboard }
-] as const
+  { to: '/courses', labelKey: 'nav.courses', Icon: IconBook },
+  { to: '/library', labelKey: 'nav.library', Icon: IconLibrary },
+  { to: '/speaking', labelKey: 'nav.speaking', Icon: IconMic },
+  { to: '/clips', labelKey: 'nav.clips', Icon: IconHeadphones },
+  { to: '/writing', labelKey: 'nav.writing', Icon: IconPencilEdit },
+  { to: '/exams', labelKey: 'nav.exams', Icon: IconClipboard }
+] as const satisfies readonly NavConfig[]
 
 const TEACHER_ENGAGE = [
-  { to: '/community', label: 'Explore', Icon: IconSearch }
-] as const
+  { to: '/community', labelKey: 'nav.explore', Icon: IconSearch }
+] as const satisfies readonly NavConfig[]
 
 /**
  * Admin / owner shell navigation (#A55 / #A57). Admins are operators, NOT
@@ -79,23 +80,28 @@ const TEACHER_ENGAGE = [
  * shell. See docs/ADMIN-SHELL.md for the interface contract.
  */
 export const ADMIN_NAV = [
-  { to: '/admin', label: 'Console', Icon: IconClipboard }
-] as const
+  { to: '/admin', labelKey: 'nav.admin', Icon: IconClipboard }
+] as const satisfies readonly NavConfig[]
 
 const BOTTOM_NAV = [
-  { to: '/settings', label: 'Settings', Icon: IconGear }
-] as const
+  { to: '/settings', labelKey: 'nav.settings', Icon: IconGear }
+] as const satisfies readonly NavConfig[]
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-interface NavItemProps {
+interface NavConfig {
   to: string
-  label: string
+  labelKey: StringKey
   Icon: (p: IconProps) => JSX.Element
+}
+
+interface NavItemProps extends NavConfig {
   collapsed: boolean
 }
 
-function NavItem({ to, label, Icon, collapsed }: NavItemProps): JSX.Element {
+function NavItem({ to, labelKey, Icon, collapsed }: NavItemProps): JSX.Element {
+  const t = useT()
+  const label = t(labelKey)
   return (
     <NavLink
       to={to}
@@ -132,11 +138,12 @@ interface CollapseToggleProps {
 
 function CollapseToggle({ collapsed, onToggle }: CollapseToggleProps): JSX.Element {
   const Icon = collapsed ? IconChevronRight : IconChevronLeft
+  const t = useT()
 
   return (
     <button
       onClick={onToggle}
-      title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      title={collapsed ? t('nav.expand') : t('nav.collapse')}
       className={cn(
         'flex items-center gap-3 rounded-xl text-xs text-slate-500 hover:text-slate-300',
         'hover:bg-white/5 transition-all duration-150 w-full',
@@ -144,7 +151,7 @@ function CollapseToggle({ collapsed, onToggle }: CollapseToggleProps): JSX.Eleme
       )}
     >
       <Icon className="w-4 h-4 shrink-0" />
-      {!collapsed && <span>Collapse</span>}
+      {!collapsed && <span>{t('nav.collapse')}</span>}
     </button>
   )
 }
@@ -155,6 +162,7 @@ interface ProfileCardProps {
 }
 
 function ProfileCard({ profile, collapsed }: ProfileCardProps): JSX.Element {
+  const t = useT()
   if (collapsed) {
     return (
       <NavLink to="/account" className="mx-auto mb-4" title="Account">
@@ -170,8 +178,8 @@ function ProfileCard({ profile, collapsed }: ProfileCardProps): JSX.Element {
     >
       <AvatarCircle name={profile.name ?? 'User'} size="md" />
       <div className="min-w-0">
-        <p className="text-sm font-semibold truncate text-white">{profile.name ?? 'You'}</p>
-        <p className="text-[11px] text-slate-400 truncate">Level {profile.level}</p>
+        <p className="text-sm font-semibold truncate text-white">{profile.name ?? t('common.you')}</p>
+        <p className="text-[11px] text-slate-400 truncate">{t('common.level')} {profile.level}</p>
       </div>
     </NavLink>
   )
@@ -185,7 +193,15 @@ export interface SidebarProps {
   onToggle: () => void
 }
 
+const ROLE_ACCOUNT_KEY: Record<string, StringKey> = {
+  student: 'role.studentAccount',
+  teacher: 'role.teacherAccount',
+  admin: 'role.adminAccount',
+  owner: 'role.adminAccount'
+}
+
 export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps): JSX.Element {
+  const t = useT()
   const role = useAppStore((s) => s.role)
   // Admin/owner operate the platform from a dedicated operator shell — they are
   // NOT learners, so they do NOT get the learner Learn/Practice/Social nav (#A55).
@@ -209,7 +225,7 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
             <LogoPill />
             <div className="leading-tight">
               <div className="font-bold text-sm tracking-tight text-white">SpeakAI</div>
-              <div className="text-[10px] uppercase tracking-wider text-slate-500">Your coach</div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500">{t('nav.tagline')}</div>
             </div>
           </div>
         )}
@@ -228,20 +244,20 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
           </>
         ) : isTeacher ? (
           <>
-            {!collapsed && <p className="section-title px-3 mb-2">Manage</p>}
+            {!collapsed && <p className="section-title px-3 mb-2">{t('nav.section.manage')}</p>}
             <div className="space-y-0.5">
               {TEACHER_MANAGE.map((item) => (
                 <NavItem key={item.to} {...item} collapsed={collapsed} />
               ))}
             </div>
-            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Learn</p>}
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">{t('nav.section.learn')}</p>}
             {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
             <div className="space-y-0.5">
               {TEACHER_LEARN.map((item) => (
                 <NavItem key={item.to} {...item} collapsed={collapsed} />
               ))}
             </div>
-            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Engage</p>}
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">{t('nav.section.engage')}</p>}
             {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
             <div className="space-y-0.5">
               {TEACHER_ENGAGE.map((item) => (
@@ -251,14 +267,14 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
           </>
         ) : (
           <>
-            {!collapsed && <p className="section-title px-3 mb-2">Learn</p>}
+            {!collapsed && <p className="section-title px-3 mb-2">{t('nav.section.learn')}</p>}
             <div className="space-y-0.5">
               {LEARN_NAV.map((item) => (
                 <NavItem key={item.to} {...item} collapsed={collapsed} />
               ))}
             </div>
 
-            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Practice</p>}
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">{t('nav.section.practice')}</p>}
             {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
             <div className="space-y-0.5">
               {PRACTICE_NAV.map((item) => (
@@ -266,7 +282,7 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
               ))}
             </div>
 
-            {!collapsed && <p className="section-title px-3 mb-2 mt-5">Social</p>}
+            {!collapsed && <p className="section-title px-3 mb-2 mt-5">{t('nav.section.social')}</p>}
             {collapsed && <div className="my-2 border-t border-white/[0.06]" />}
             <div className="space-y-0.5">
               {COMMUNITY_NAV.map((item) => (
@@ -289,7 +305,7 @@ export default function Sidebar({ profile, collapsed, onToggle }: SidebarProps):
                 : 'bg-brand-500/10 border border-brand-400/20 text-brand-200'
           )}>
             <span className={cn('w-1.5 h-1.5 rounded-full', isAdmin ? 'bg-amber-400' : isTeacher ? 'bg-emerald-400' : 'bg-brand-400')} />
-            {ROLE_META[role].label} account
+            {t(ROLE_ACCOUNT_KEY[role] ?? 'role.studentAccount')}
           </div>
         </div>
       )}

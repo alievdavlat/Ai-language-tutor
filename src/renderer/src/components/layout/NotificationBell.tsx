@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Notif } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { IconBell } from '../icons'
+import { useT } from '../../i18n'
 import { notifMeta, useNotifications } from '../../services/notifications'
 
 function relTime(iso: string): string {
@@ -28,6 +29,7 @@ interface BellProps {
  */
 export default function NotificationBell({ collapsed }: BellProps): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const { items, unread, markRead, markAllRead } = useNotifications()
   const [open, setOpen] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -68,7 +70,7 @@ export default function NotificationBell({ collapsed }: BellProps): JSX.Element 
       <button
         ref={btnRef}
         onClick={() => setOpen((v) => !v)}
-        title="Notifications"
+        title={t('nav.notifications')}
         className={cn(
           'relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-150 w-full',
           collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5',
@@ -87,7 +89,7 @@ export default function NotificationBell({ collapsed }: BellProps): JSX.Element 
             </span>
           )}
         </span>
-        {!collapsed && <span>Notifications</span>}
+        {!collapsed && <span>{t('nav.notifications')}</span>}
         {!collapsed && unread > 0 && (
           <span className="ml-auto text-[10px] font-bold text-rose-300">{unread > 99 ? '99+' : unread}</span>
         )}
@@ -102,7 +104,7 @@ export default function NotificationBell({ collapsed }: BellProps): JSX.Element 
           <div style={{ background: 'linear-gradient(to bottom, #161a2c, #0c0f1a)' }}>
             <header className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black tracking-tight text-white">Notifications</h3>
+                <h3 className="text-sm font-black tracking-tight text-white">{t('nav.notifications')}</h3>
                 {unread > 0 && <span className="text-[10px] font-bold text-rose-300 bg-rose-500/15 rounded-full px-1.5 py-0.5">{unread} new</span>}
               </div>
               {unread > 0 && (

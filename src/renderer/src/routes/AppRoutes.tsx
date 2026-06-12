@@ -4,7 +4,7 @@ import type { UserRole } from '../store/useAppStore'
 import { useAppStore } from '../store/useAppStore'
 import { useBootstrap } from '../hooks/useBootstrap'
 import { useAdminShortcut } from '../hooks/useAdminShortcut'
-import { useI18n, type UILanguage } from '../i18n'
+import { useI18n, coerceUILanguage, type UILanguage } from '../i18n'
 import { backend } from '../services/backend'
 import { startPresence } from '../services/social/presence'
 import type { PlatformUser } from '@shared/types'
@@ -163,9 +163,9 @@ function useSyncUILanguage(): void {
   const synced = useRef(false)
   useEffect(() => {
     if (synced.current || !nativeLanguage) return
-    if (nativeLanguage === 'en' || nativeLanguage === 'uz' || nativeLanguage === 'ru') {
-      setLang(nativeLanguage as UILanguage)
-    }
+    // Follow the native language for ANY of the supported UI languages (#A24.1).
+    const ui = coerceUILanguage(nativeLanguage)
+    if (ui) setLang(ui)
     synced.current = true
   }, [nativeLanguage, setLang])
 }
