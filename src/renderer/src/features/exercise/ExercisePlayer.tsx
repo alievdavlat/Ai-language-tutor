@@ -4,7 +4,7 @@ import { cn } from '../../lib/classnames'
 import { ProgressBar } from '../../components/ui'
 import { IconBolt, IconCheck, IconHeart, IconX } from '../../components/icons'
 import {
-  UNITS,
+  allUnits,
   buildChallenge,
   checkAnswer,
   getLesson,
@@ -121,7 +121,7 @@ export default function ExercisePlayer(): JSX.Element {
       const skillKinds: Record<string, ExerciseKind[]> = { writing: ['write', 'fill'] }
       const wantKinds = skillParam ? skillKinds[skillParam] : undefined
 
-      let pool = UNITS
+      let pool = allUnits()
         .filter((u) => !wantLevel || u.level === wantLevel)
         .flatMap((u) => u.lessons.flatMap((l) => l.exercises))
       if (wantKinds) pool = pool.filter((e) => wantKinds.includes(e.kind))

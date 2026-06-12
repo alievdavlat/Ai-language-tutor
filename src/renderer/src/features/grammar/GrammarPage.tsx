@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { PageHeader, ProgressBar, SectionHeading, StatCard } from '../../components/ui'
@@ -8,13 +9,17 @@ import {
   IconCheck,
   IconDownload,
   IconLock,
+  IconPlus,
   IconStar,
   IconTrophy,
   type IconProps
 } from '../../components/icons'
-import { GUIDES, UNITS, type GrammarLesson, type GuideId } from './curriculum'
+import { GUIDES, allUnits, type GrammarLesson, type GrammarUnit, type GuideId } from './curriculum'
+import GrammarUnitEditor from './GrammarUnitEditor'
 import { downloadCheatsheet } from './cheatsheet'
 import { isLessonDone, unitDoneCount } from '../../services/study/grammarProgress'
+import { useAppStore } from '../../store/useAppStore'
+import { canAuthorContent } from '@shared/constants'
 
 const KIND_ICON: Record<GrammarLesson['kind'], (p: IconProps) => JSX.Element> = {
   rule: IconBook,
@@ -37,13 +42,19 @@ const GUIDE_TINT: Record<GuideId, string> = {
 
 export default function GrammarPage(): JSX.Element {
   const navigate = useNavigate()
+  const role = useAppStore((s) => s.role)
+  const canAuthor = canAuthorContent(role)
+  const [rev, setRev] = useState(0)
+  const [editing, setEditing] = useState<{ unit: GrammarUnit | null } | null>(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const units = useMemo(() => allUnits(), [rev])
 
   // Live progress from the local grammar store.
-  const unitProgress = UNITS.map((u) => {
+  const unitProgress = units.map((u) => {
     const done = unitDoneCount(u.id)
     return { unit: u, done, total: u.lessons.length, pct: Math.round((done / u.lessons.length) * 100) }
   })
-  const totalLessons = UNITS.reduce((n, u) => n + u.lessons.length, 0)
+  const totalLessons = units.reduce((n, u) => n + u.lessons.length, 0)
   const totalDone = unitProgress.reduce((n, p) => n + p.done, 0)
   const inProgress = unitProgress.filter((p) => p.done > 0 && p.done < p.total).length
 
@@ -67,10 +78,19 @@ export default function GrammarPage(): JSX.Element {
         <PageHeader
           eyebrow="Skill tree"
           title="Grammar"
-          subtitle={`${UNITS.length} units · CEFR A1 → B2 · ${totalDone}/${totalLessons} lessons`}
+          subtitle={`${units.length} units · CEFR A1 → B2 · ${totalDone}/${totalLessons} lessons`}
           back="/courses"
           crumbs={[{ label: 'Courses', to: '/courses' }, { label: 'Grammar' }]}
-          action={<button onClick={() => navigate('/courses')} className="btn-ghost text-xs px-3 py-2">All courses</button>}
+          action={
+            <div className="flex items-center gap-2">
+              {canAuthor && (
+                <button onClick={() => setEditing({ unit: null })} className="btn-primary text-xs px-3 py-2 inline-flex items-center gap-1.5">
+                  <IconPlus className="w-3.5 h-3.5" /> New unit
+                </button>
+              )}
+              <button onClick={() => navigate('/courses')} className="btn-ghost text-xs px-3 py-2">All courses</button>
+            </div>
+          }
         />
 
         <div className="grid grid-cols-3 gap-3">
@@ -150,7 +170,7 @@ export default function GrammarPage(): JSX.Element {
         <div>
           <SectionHeading title="30-day challenges" subtitle="One short drill set per day — build a streak per topic" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {UNITS.slice(0, 4).map((u) => (
+            {units.slice(0, 4).map((u) => (
               <button
                 key={u.id}
                 onClick={() => navigate(`/grammar/challenge/${u.id}`)}
@@ -171,22 +191,42 @@ export default function GrammarPage(): JSX.Element {
           <SectionHeading title="All units" subtitle="Tap a unit to open it" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {unitProgress.map((p) => (
-              <button
+              <div
                 key={p.unit.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => navigate(`/learn/exercise?unit=${p.unit.id}&lesson=${p.unit.lessons[0].id}`)}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.05]"
+                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.05] cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Unit {p.unit.number} · {p.unit.level}</span>
-                  <span className="text-[11px] font-bold text-brand-200">{p.pct}%</span>
+                  <span className="flex items-center gap-2">
+                    {canAuthor && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditing({ unit: p.unit }) }}
+                        className="text-[10px] font-bold text-slate-400 hover:text-brand-300 uppercase tracking-wider"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    <span className="text-[11px] font-bold text-brand-200">{p.pct}%</span>
+                  </span>
                 </div>
                 <p className="text-sm font-bold text-white mt-1">{p.unit.title}</p>
                 <ProgressBar value={p.pct} color={p.pct === 100 ? 'green' : 'brand'} className="mt-2" />
-              </button>
+              </div>
             ))}
           </div>
         </div>
       </div>
+
+      {editing && (
+        <GrammarUnitEditor
+          unit={editing.unit}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); setRev((r) => r + 1) }}
+        />
+      )}
 
       {/* Sticky Continue CTA */}
       <div className="fixed bottom-0 left-56 right-0 bg-slate-950/90 backdrop-blur border-t border-white/[0.06] px-6 py-3">

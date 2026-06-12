@@ -322,8 +322,59 @@ export function checkAnswer(exercise: Exercise, typed: string): boolean {
   return want.includes(normalize(typed))
 }
 
+// ─── Authorable units (#A31) ─────────────────────────────────────────────────
+// Teachers/admins can create new units or override seed ones; custom rows live
+// in localStorage and are merged over the bundled curriculum at read time.
+
+const CUSTOM_KEY = 'speakai.grammar.v1'
+
+function readCustomUnits(): GrammarUnit[] {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(CUSTOM_KEY) : null
+    return raw ? (JSON.parse(raw) as GrammarUnit[]) : []
+  } catch {
+    return []
+  }
+}
+
+function writeCustomUnits(list: GrammarUnit[]): void {
+  try {
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify(list))
+  } catch {
+    /* quota — ignore */
+  }
+}
+
+/** Seed units overlaid with custom/overridden ones — the single read path. */
+export function allUnits(): GrammarUnit[] {
+  const map = new Map(UNITS.map((u) => [u.id, u]))
+  for (const c of readCustomUnits()) map.set(c.id, c)
+  return [...map.values()].sort((a, b) => a.number - b.number)
+}
+
+export function saveUnit(unit: GrammarUnit): void {
+  const custom = readCustomUnits()
+  const next = custom.some((u) => u.id === unit.id)
+    ? custom.map((u) => (u.id === unit.id ? unit : u))
+    : [...custom, unit]
+  writeCustomUnits(next)
+}
+
+/** Removes a custom unit (or a seed override — the seed version reappears). */
+export function removeCustomUnit(unitId: string): void {
+  writeCustomUnits(readCustomUnits().filter((u) => u.id !== unitId))
+}
+
+export function isSeedUnit(unitId: string): boolean {
+  return UNITS.some((u) => u.id === unitId)
+}
+
+export function isCustomized(unitId: string): boolean {
+  return readCustomUnits().some((u) => u.id === unitId)
+}
+
 export function getUnit(unitId: string): GrammarUnit | undefined {
-  return UNITS.find((u) => u.id === unitId)
+  return allUnits().find((u) => u.id === unitId)
 }
 
 export function getLesson(unitId: string, lessonId: string): { unit: GrammarUnit; lesson: GrammarLesson } | undefined {
