@@ -1,17 +1,19 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { PageHeader } from '../../components/ui'
-import { IconPlay, IconHeart, IconBookmark, IconTrophy } from '../../components/icons'
+import { IconPlay, IconHeart, IconBookmark, IconCheck, IconTrophy, IconX } from '../../components/icons'
 import {
   GAME_MODES,
   DIFFICULTIES,
   KIND_LABEL,
+  countBlankableWords,
   type GameMode,
   type Difficulty,
   type DifficultyDef
 } from './data'
-import { findClip } from '../../services/clips/store'
+import { findClip, playlists, useFavorites } from '../../services/clips/store'
+import { getLeaderboard } from './leaderboard'
 
 const TONE_RING: Record<string, string> = {
   emerald: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200',
@@ -20,17 +22,50 @@ const TONE_RING: Record<string, string> = {
   rose: 'border-rose-400/40 bg-rose-500/10 text-rose-200'
 }
 
-function diffWords(def: DifficultyDef, total = 378): number {
+function diffWords(def: DifficultyDef, total: number): number {
   return Math.max(1, Math.round(total * def.fraction))
+}
+
+/** Rough word count for clips whose lyrics load at play time (LRCLIB). */
+function estimateWords(duration: string): number {
+  const [m = '3', s = '0'] = duration.split(':')
+  const secs = parseInt(m, 10) * 60 + parseInt(s, 10)
+  return Math.max(40, Math.round(secs * 1.8))
 }
 
 export default function ClipSetupPage(): JSX.Element {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const clip = findClip(params.get('id'))
+  const favs = useFavorites()
+  const [savedTick, setSavedTick] = useState(0)
+  const [showBoard, setShowBoard] = useState(false)
 
   const [mode, setMode] = useState<GameMode>('choice')
   const [difficulty, setDifficulty] = useState<Difficulty>('beginner')
+
+  // Real fillable-word count from the authored lyrics; estimated from the
+  // clip length when lyrics are fetched at play time.
+  const authored = countBlankableWords(clip.lines)
+  const totalWords = authored > 0 ? authored : estimateWords(clip.duration)
+  const wordsLabel = authored > 0 ? `${totalWords}` : `~${totalWords}`
+
+  const inSaved = useMemo(() => {
+    const p = playlists.list().find((x) => x.id === 'saved')
+    return p ? p.clipIds.includes(clip.id) : false
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clip.id, savedTick])
+
+  const toggleSaved = (): void => {
+    const p = playlists.ensureSaved()
+    const next = p.clipIds.includes(clip.id)
+      ? p.clipIds.filter((id) => id !== clip.id)
+      : [...p.clipIds, clip.id]
+    playlists.upsert({ ...p, clipIds: next })
+    setSavedTick((t) => t + 1)
+  }
+
+  const board = useMemo(() => getLeaderboard(clip.id), [clip.id, showBoard])
 
   const start = (): void =>
     navigate(`/clips/play?id=${clip.id}&mode=${mode}&difficulty=${difficulty}`)
@@ -49,11 +84,25 @@ export default function ClipSetupPage(): JSX.Element {
             back="/clips"
             action={
               <div className="flex items-center gap-2">
-                <button className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition" title="Favorite">
+                <button
+                  onClick={() => favs.toggle(clip.id)}
+                  className={cn(
+                    'w-10 h-10 rounded-full flex items-center justify-center transition',
+                    favs.has(clip.id) ? 'bg-rose-500/80 text-white ring-2 ring-rose-300/60' : 'bg-white/15 hover:bg-white/25 text-white'
+                  )}
+                  title={favs.has(clip.id) ? 'Unfavorite' : 'Favorite'}
+                >
                   <IconHeart className="w-4 h-4" />
                 </button>
-                <button className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition" title="Save to playlist">
-                  <IconBookmark className="w-4 h-4" />
+                <button
+                  onClick={toggleSaved}
+                  className={cn(
+                    'w-10 h-10 rounded-full flex items-center justify-center transition',
+                    inSaved ? 'bg-emerald-500/80 text-white ring-2 ring-emerald-300/60' : 'bg-white/15 hover:bg-white/25 text-white'
+                  )}
+                  title={inSaved ? 'Remove from Saved clips' : 'Save to playlist'}
+                >
+                  {inSaved ? <IconCheck className="w-4 h-4" /> : <IconBookmark className="w-4 h-4" />}
                 </button>
               </div>
             }
@@ -111,7 +160,7 @@ export default function ClipSetupPage(): JSX.Element {
                   <span className="text-2xl">{d.emoji}</span>
                   <div className="flex-1 text-left">
                     <p className="font-bold uppercase tracking-wide text-sm">{d.label}</p>
-                    <p className="text-xs opacity-80">Fill {diffWords(d)} words of 378</p>
+                    <p className="text-xs opacity-80">Fill {diffWords(d, totalWords)} of {wordsLabel} words</p>
                   </div>
                 </button>
               ))}
@@ -121,7 +170,10 @@ export default function ClipSetupPage(): JSX.Element {
 
         {/* Start */}
         <div className="flex items-center justify-between gap-3">
-          <button className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition">
+          <button
+            onClick={() => setShowBoard(true)}
+            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition"
+          >
             <IconTrophy className="w-4 h-4" /> Leaderboard
           </button>
           <button
@@ -132,6 +184,44 @@ export default function ClipSetupPage(): JSX.Element {
           </button>
         </div>
       </div>
+
+      {/* Per-clip leaderboard — real saved runs */}
+      {showBoard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6" onClick={() => setShowBoard(false)}>
+          <div
+            className="w-full max-w-md rounded-card border border-white/10 bg-[#0f1424] p-5 flex flex-col gap-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white inline-flex items-center gap-2">
+                <IconTrophy className="w-4 h-4 text-amber-300" /> Leaderboard · {clip.title}
+              </h3>
+              <button onClick={() => setShowBoard(false)} className="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 flex items-center justify-center">
+                <IconX className="w-4 h-4" />
+              </button>
+            </div>
+            {board.length === 0 ? (
+              <p className="text-sm text-slate-400 py-6 text-center">No runs yet — play this clip to set the first score.</p>
+            ) : (
+              <div className="divide-y divide-white/[0.06]">
+                {board.map((r, i) => (
+                  <div key={`${r.name}-${r.at}`} className="flex items-center gap-3 py-2.5">
+                    <span className={cn('w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold',
+                      i === 0 ? 'bg-amber-500/20 text-amber-300' : i === 1 ? 'bg-slate-300/15 text-slate-200' : i === 2 ? 'bg-orange-500/20 text-orange-300' : 'bg-white/5 text-slate-400')}>
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{r.name}</p>
+                      <p className="text-[11px] text-slate-500">{r.mode} · {r.difficulty} · {r.accuracy}% accuracy</p>
+                    </div>
+                    <span className="text-sm font-bold text-brand-200 tabular-nums">{r.score.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
