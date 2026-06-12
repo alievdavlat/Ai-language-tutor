@@ -223,7 +223,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     // a pre-PR install (no LS_AUTH/LS_ONBOARDING/LS_ROLE keys yet). Without this
     // they'd be forced through the funnel again, overwriting their existing
     // profile with empty defaults at the end of onboarding.
-    const hasCompleteProfile = !!migrated && migrated.goals.length > 0
+    const hasCompleteProfile = !!migrated && (migrated.goals?.length ?? 0) > 0
     const state = get()
     if (hasCompleteProfile && !state.authenticated && !state.onboardingComplete && !state.roleSelected) {
       writeBool(LS_AUTH, true)

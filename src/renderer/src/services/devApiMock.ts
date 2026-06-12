@@ -115,13 +115,20 @@ export function installDevApiMock(): void {
   // matching how the real Electron app persists to disk.
   const LS_PROFILE = 'speakai.devProfile'
   const loadStored = (): UserProfile => {
+    const base = buildMockProfile()
     try {
       const raw = localStorage.getItem(LS_PROFILE)
-      if (raw) return JSON.parse(raw) as UserProfile
+      if (raw) {
+        const stored = JSON.parse(raw) as Partial<UserProfile>
+        // Merge over the full mock defaults so a PARTIAL stored profile (e.g. a
+        // test that wrote only `{role}`) can never strip required fields like
+        // `settings` and crash pages that read profile.settings.*
+        return { ...base, ...stored, settings: { ...base.settings, ...(stored.settings ?? {}) } }
+      }
     } catch {
       /* ignore corrupt cache */
     }
-    return buildMockProfile()
+    return base
   }
   let storedProfile = loadStored()
   const persist = (p: UserProfile): void => {
