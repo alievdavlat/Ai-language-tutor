@@ -10,6 +10,7 @@ import { useTargetLanguage } from '../../lib/language'
 import { getExamsForLanguage } from '../../lib/contentByLanguage'
 import { backend } from '../../services/backend'
 import { useBackendQuery } from '../../services/backend/useBackend'
+import { useT } from '../../i18n'
 import {
   IconArrowRight,
   IconBook,
@@ -112,6 +113,7 @@ const RECENT = [
 
 function ExamCard({ exam }: { exam: ExamDef }): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   return (
     <div className="rounded-card border border-white/10 bg-white/[0.03] overflow-hidden flex flex-col">
       <div className={cn('bg-gradient-to-br p-5', exam.cover)}>
@@ -136,11 +138,11 @@ function ExamCard({ exam }: { exam: ExamDef }): JSX.Element {
         </div>
         {exam.soon ? (
           <button disabled className="btn-ghost w-full py-2.5 mt-auto opacity-60 cursor-not-allowed">
-            Coming soon
+            {t('common.comingSoon')}
           </button>
         ) : (
           <button onClick={() => navigate(exam.to)} className="btn-primary w-full py-2.5 mt-auto">
-            Start mock test →
+            {t('exams.startMock')} →
           </button>
         )}
       </div>
@@ -158,6 +160,7 @@ function fmtDate(iso: string): string {
 
 export default function ExamsHubPage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const lang = useTargetLanguage()
   const role = useAppStore((s) => s.role)
   const canAuthor = canAuthorContent(role)
@@ -180,14 +183,14 @@ export default function ExamsHubPage(): JSX.Element {
       <div className="px-6 py-6 w-full w-full flex flex-col gap-7">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{lang.flag} Learning {lang.name}</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Exams &amp; tests</h1>
+            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{lang.flag} {t('exams.learning', { language: lang.name })}</p>
+            <h1 className="text-2xl font-bold tracking-tight mt-0.5">{t('exams.examsAndTests')}</h1>
             <p className="text-sm text-slate-400 mt-1">
-              Full-length mock exams with an AI examiner and band-score feedback — filtered to {lang.name}.
+              {t('exams.hubSubtitle', { language: lang.name })}
             </p>
           </div>
           {canAuthor && (
-            <button onClick={() => setEditing(true)} className="btn-primary px-4 py-2 text-sm inline-flex items-center gap-1.5 shrink-0"><IconPlus className="w-4 h-4" /> Create exam</button>
+            <button onClick={() => setEditing(true)} className="btn-primary px-4 py-2 text-sm inline-flex items-center gap-1.5 shrink-0"><IconPlus className="w-4 h-4" /> {t('exams.createExam')}</button>
           )}
         </div>
 
@@ -196,49 +199,49 @@ export default function ExamsHubPage(): JSX.Element {
           <button onClick={() => navigate('/exams/dashboard')} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex flex-col gap-2">
             <span className="w-10 h-10 rounded-xl bg-brand-500/15 text-brand-300 flex items-center justify-center"><IconChart className="w-5 h-5" /></span>
             <div>
-              <p className="text-sm font-bold text-white">My progress</p>
-              <p className="text-[11px] text-slate-400">Scores & weak areas</p>
+              <p className="text-sm font-bold text-white">{t('exams.myProgress')}</p>
+              <p className="text-[11px] text-slate-400">{t('exams.myProgressSub')}</p>
             </div>
           </button>
           <button onClick={() => navigate('/exams/leaderboard')} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex flex-col gap-2">
             <span className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><IconTrophy className="w-5 h-5" /></span>
             <div>
-              <p className="text-sm font-bold text-white">Leaderboard</p>
-              <p className="text-[11px] text-slate-400">Top scores by test</p>
+              <p className="text-sm font-bold text-white">{t('progress.leaderboard')}</p>
+              <p className="text-[11px] text-slate-400">{t('exams.leaderboardSub')}</p>
             </div>
           </button>
           <button onClick={() => navigate('/exams/ielts?skill=writing')} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex flex-col gap-2">
             <span className="w-10 h-10 rounded-xl bg-violet-500/15 text-violet-300 flex items-center justify-center"><IconPencilEdit className="w-5 h-5" /></span>
             <div>
-              <p className="text-sm font-bold text-white">AI examiner</p>
-              <p className="text-[11px] text-slate-400">Writing & speaking grading</p>
+              <p className="text-sm font-bold text-white">{t('exams.aiExaminer')}</p>
+              <p className="text-[11px] text-slate-400">{t('exams.aiExaminerSub')}</p>
             </div>
           </button>
           <button onClick={() => navigate('/speaking')} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex flex-col gap-2">
             <span className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center"><IconChat className="w-5 h-5" /></span>
             <div>
-              <p className="text-sm font-bold text-white">Speaking partner</p>
-              <p className="text-[11px] text-slate-400">Practise out loud</p>
+              <p className="text-sm font-bold text-white">{t('speaking.partner')}</p>
+              <p className="text-[11px] text-slate-400">{t('exams.speakingPartnerSub')}</p>
             </div>
           </button>
         </div>
 
         {/* Featured tests rail */}
         {featured.length > 0 && (
-          <Rail title="Featured tests">
-            {featured.map((t) => (
+          <Rail title={t('exams.featuredTests')}>
+            {featured.map((ft) => (
               <button
-                key={t.id}
-                onClick={() => navigate(testRunRoute(t.id, t.kind))}
+                key={ft.id}
+                onClick={() => navigate(testRunRoute(ft.id, ft.kind))}
                 className="shrink-0 w-60 snap-start rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex flex-col gap-2"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center shrink-0"><IconStar className="w-4 h-4" /></span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-amber-300">Featured</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-amber-300">{t('exams.featured')}</span>
                 </div>
-                <p className="text-sm font-bold text-white leading-snug">{t.title}</p>
-                {t.blurb && <p className="text-[11px] text-slate-400 line-clamp-2">{t.blurb}</p>}
-                <p className="text-[11px] text-slate-500 mt-auto">{t.sections.length} sections{t.band ? ` · ${t.band}` : ''}</p>
+                <p className="text-sm font-bold text-white leading-snug">{ft.title}</p>
+                {ft.blurb && <p className="text-[11px] text-slate-400 line-clamp-2">{ft.blurb}</p>}
+                <p className="text-[11px] text-slate-500 mt-auto">{ft.sections.length} sections{ft.band ? ` · ${ft.band}` : ''}</p>
               </button>
             ))}
           </Rail>
@@ -246,7 +249,7 @@ export default function ExamsHubPage(): JSX.Element {
 
         {/* Recent results rail — quick resume of your latest attempts */}
         {attempts.length > 0 && (
-          <Rail title="Continue / recent">
+          <Rail title={t('exams.continueRecent')}>
             {[...attempts].sort((a, b) => b.takenAt.localeCompare(a.takenAt)).slice(0, 8).map((a) => (
               <button
                 key={a.id}
@@ -264,15 +267,15 @@ export default function ExamsHubPage(): JSX.Element {
         {/* Authored / community exams */}
         {customExams.length > 0 && (
           <div>
-            <SectionHeading title="Created exams" subtitle={`${customExams.length} custom exam${customExams.length === 1 ? '' : 's'}`} />
+            <SectionHeading title={t('exams.createdExams')} subtitle={`${customExams.length} custom exam${customExams.length === 1 ? '' : 's'}`} />
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {customExams.map((e) => (
                 <div key={e.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex flex-col gap-2">
                   <p className="text-sm font-bold text-white">{e.title}</p>
                   <p className="text-[11px] text-slate-400">{e.sections.length} section{e.sections.length === 1 ? '' : 's'} · {e.scaleLabel}</p>
                   <div className="flex items-center gap-2 mt-auto pt-1">
-                    <button onClick={() => navigate(`/exams/run/${e.id}`)} className="btn-primary px-3 py-1.5 text-xs flex-1">Start →</button>
-                    {canAuthor && <button onClick={() => { setEditing(true) }} className="btn-ghost px-2 py-1.5 text-xs">Edit</button>}
+                    <button onClick={() => navigate(`/exams/run/${e.id}`)} className="btn-primary px-3 py-1.5 text-xs flex-1">{t('common.start')} →</button>
+                    {canAuthor && <button onClick={() => { setEditing(true) }} className="btn-ghost px-2 py-1.5 text-xs">{t('common.edit')}</button>}
                   </div>
                 </div>
               ))}
@@ -282,7 +285,7 @@ export default function ExamsHubPage(): JSX.Element {
 
         {/* Language-specific exam shortcuts */}
         <div>
-          <SectionHeading title={`Official ${lang.name} certifications`} subtitle={`${langExams.length} exam types for ${lang.name}`} />
+          <SectionHeading title={t('exams.officialCerts', { language: lang.name })} subtitle={t('exams.examTypesFor', { n: langExams.length, language: lang.name })} />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {langExams.map((e) => {
               const supported = e.id === 'cefr' || e.id === 'ielts' || e.id === 'toefl'
@@ -306,7 +309,7 @@ export default function ExamsHubPage(): JSX.Element {
                     <p className="text-[10px] text-white/80 mt-0.5">{e.description}</p>
                     {!supported && (
                       <span className="absolute top-2 right-2 inline-flex items-center rounded-full bg-black/40 backdrop-blur text-white/90 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5">
-                        Soon
+                        {t('common.soon')}
                       </span>
                     )}
                   </div>
@@ -333,19 +336,19 @@ export default function ExamsHubPage(): JSX.Element {
             <IconTarget className="w-6 h-6 text-white" />
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-bold text-white">CEFR English test</p>
-            <p className="text-sm text-slate-400">Find your A1–C2 level, then practise by level or skill</p>
+            <p className="text-base font-bold text-white">{t('exams.cefrTest')}</p>
+            <p className="text-sm text-slate-400">{t('exams.cefrSub')}</p>
           </div>
           <IconArrowRight className="w-5 h-5 text-brand-300 shrink-0" />
         </button>
 
         {/* Community mocks — real teacher/learner-authored exams from the store */}
         <div>
-          <SectionHeading title="Community mock tests" subtitle="Created by teachers and learners" />
+          <SectionHeading title={t('exams.communityMocks')} subtitle={t('exams.communityMocksSub')} />
           <div className="flex flex-col gap-2">
             {customExams.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-6 text-center text-sm text-slate-400">
-                No community mock tests yet. Teachers and admins can create one with “New exam”.
+                {t('exams.noCommunity')}
               </div>
             ) : (
               customExams.map((m) => (
@@ -365,11 +368,11 @@ export default function ExamsHubPage(): JSX.Element {
 
         {/* Recent results — real persisted attempts */}
         <div>
-          <SectionHeading title="Recent results" subtitle={attempts.length ? `${attempts.length} attempt${attempts.length === 1 ? '' : 's'}` : undefined} />
+          <SectionHeading title={t('exams.recentResults')} subtitle={attempts.length ? `${attempts.length} attempt${attempts.length === 1 ? '' : 's'}` : undefined} />
           <div className="flex flex-col gap-2">
             {attempts.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-6 text-center text-sm text-slate-400">
-                No attempts yet. Take a mock test above and your score appears here.
+                {t('exams.noAttempts')}
               </div>
             ) : (
               [...attempts]

@@ -3,8 +3,10 @@ import { PageHeader, ProgressBar, SectionHeading } from '../../components/ui'
 import { IconBolt, IconCheck } from '../../components/icons'
 import { iconByName } from '../../lib/iconByName'
 import { useQuests, useStats, type QuestView } from '../../services/progress'
+import { useT } from '../../i18n'
 
 function QuestRow({ q, onClaim }: { q: QuestView; onClaim: () => void }): JSX.Element {
+  const t = useT()
   const pct = Math.min(100, Math.round((q.progress / q.target) * 100))
   const Icon = iconByName(q.icon)
   const claimable = q.done && !q.claimed
@@ -35,14 +37,14 @@ function QuestRow({ q, onClaim }: { q: QuestView; onClaim: () => void }): JSX.El
           </div>
           {q.claimed ? (
             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300 shrink-0">
-              <IconCheck className="w-3.5 h-3.5" /> Claimed
+              <IconCheck className="w-3.5 h-3.5" /> {t('gamification.claimed')}
             </span>
           ) : claimable ? (
             <button
               onClick={onClaim}
               className="rounded-pill bg-amber-500/90 hover:bg-amber-400 text-black text-[11px] font-bold px-3 py-1 shrink-0 transition"
             >
-              Claim +{q.reward}
+              {t('gamification.claim')} +{q.reward}
             </button>
           ) : (
             <span className="text-[11px] font-semibold text-slate-400 shrink-0">
@@ -56,6 +58,7 @@ function QuestRow({ q, onClaim }: { q: QuestView; onClaim: () => void }): JSX.El
 }
 
 export default function QuestsPage(): JSX.Element {
+  const t = useT()
   const { quests, claim } = useQuests()
   const stats = useStats()
 
@@ -70,10 +73,10 @@ export default function QuestsPage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-6">
         <PageHeader
-          title="Quests"
-          subtitle="Daily, weekly and monthly challenges for bonus XP."
+          title={t('progress.quests')}
+          subtitle={t('gamification.questsSubtitle')}
           back="/home"
-          crumbs={[{ label: 'Home', to: '/home' }, { label: 'Quests' }]}
+          crumbs={[{ label: t('nav.home'), to: '/home' }, { label: t('progress.quests') }]}
           action={
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 text-amber-200 text-xs font-bold px-3 py-1.5">
               <IconBolt className="w-3.5 h-3.5" /> {stats.totalXp.toLocaleString()} XP
@@ -87,9 +90,9 @@ export default function QuestsPage(): JSX.Element {
             {chestPct >= 100 ? '🎁' : '📦'}
           </div>
           <div className="flex-1">
-            <p className="text-[11px] uppercase tracking-widest text-amber-200/80 font-bold">Weekly chest</p>
+            <p className="text-[11px] uppercase tracking-widest text-amber-200/80 font-bold">{t('gamification.weeklyChest')}</p>
             <h3 className="text-base font-bold text-white">
-              Complete {weekly.length} of {weekly.length} weekly quests
+              {t('gamification.completeWeekly', { n: weekly.length, total: weekly.length })}
             </h3>
             <ProgressBar value={chestPct} color="amber" className="mt-2" />
           </div>
@@ -99,7 +102,7 @@ export default function QuestsPage(): JSX.Element {
         </div>
 
         <div>
-          <SectionHeading title="Today" subtitle="Resets at midnight" />
+          <SectionHeading title={t('gamification.today')} subtitle={t('gamification.resetsMidnight')} />
           <div className="flex flex-col gap-2.5">
             {daily.map((q) => (
               <QuestRow key={q.id} q={q} onClaim={() => claim(q.claimKey, q.reward)} />
@@ -108,7 +111,7 @@ export default function QuestsPage(): JSX.Element {
         </div>
 
         <div>
-          <SectionHeading title="This week" subtitle="Resets Sunday" />
+          <SectionHeading title={t('progress.thisWeek')} subtitle={t('gamification.resetsSunday')} />
           <div className="flex flex-col gap-2.5">
             {weekly.map((q) => (
               <QuestRow key={q.id} q={q} onClaim={() => claim(q.claimKey, q.reward)} />
@@ -117,7 +120,7 @@ export default function QuestsPage(): JSX.Element {
         </div>
 
         <div>
-          <SectionHeading title="Long-term" subtitle="Big rewards · monthly" />
+          <SectionHeading title={t('gamification.longTerm')} subtitle={t('gamification.bigRewards')} />
           <div className="flex flex-col gap-2.5">
             {monthly.map((q) => (
               <QuestRow key={q.id} q={q} onClaim={() => claim(q.claimKey, q.reward)} />

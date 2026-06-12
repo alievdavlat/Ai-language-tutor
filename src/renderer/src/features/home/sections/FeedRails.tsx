@@ -8,9 +8,11 @@ import { library } from '../../../services/library/store'
 import { rankCourses, rankByFollowers } from '../../../services/ranking'
 import { isImageCover } from '../../../lib/cover'
 import { useTargetLanguageCode } from '../../../lib/language'
+import { useT } from '../../../i18n'
 
 function SeeAll({ onClick }: { onClick: () => void }): JSX.Element {
-  return <button onClick={onClick} className="text-xs font-semibold text-brand-300 hover:text-brand-200">See all</button>
+  const t = useT()
+  return <button onClick={onClick} className="text-xs font-semibold text-brand-300 hover:text-brand-200">{t('common.seeAll')}</button>
 }
 
 function CourseCard({ c, progress, onClick }: { c: Course; progress?: number; onClick: () => void }): JSX.Element {
@@ -65,6 +67,7 @@ interface TeacherCardData { id: string; name: string; avatarUrl?: string; follow
 
 function TeacherCard({ t, onToggleFollow }: { t: TeacherCardData; onToggleFollow: () => void }): JSX.Element {
   const navigate = useNavigate()
+  const tr = useT()
   return (
     <div className="shrink-0 w-40 snap-start rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 flex flex-col items-center text-center gap-2">
       <button onClick={() => navigate(`/channel?id=${t.id}`)} className="flex flex-col items-center gap-2">
@@ -75,7 +78,7 @@ function TeacherCard({ t, onToggleFollow }: { t: TeacherCardData; onToggleFollow
         </div>
       </button>
       <button onClick={onToggleFollow} className={cn('text-xs font-semibold rounded-full px-4 py-1.5 w-full transition', t.isFollowing ? 'text-slate-300 bg-white/[0.06] border border-white/10 hover:bg-white/[0.1]' : 'text-brand-300 hover:text-white border border-brand-400/30 bg-brand-500/10 hover:bg-brand-500/30')}>
-        {t.isFollowing ? 'Following ✓' : 'Follow'}
+        {t.isFollowing ? `${tr('common.following')} ✓` : tr('common.follow')}
       </button>
     </div>
   )
@@ -96,6 +99,7 @@ function BookCard({ b, onClick }: { b: LibraryItem; onClick: () => void }): JSX.
 
 export default function FeedRails(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const lang = useTargetLanguageCode()
   const userId = backend.currentUserId()
 
@@ -144,40 +148,40 @@ export default function FeedRails(): JSX.Element {
   return (
     <div className="flex flex-col gap-7">
       {continueLearning.data.length > 0 && (
-        <Rail title="Continue learning">
+        <Rail title={t('home.continueLearning')}>
           {continueLearning.data.map(({ course, progress }) => (
             <CourseCard key={course.id} c={course} progress={progress} onClick={() => navigate(`/course/${course.id}`)} />
           ))}
         </Rail>
       )}
 
-      <Rail title="Popular courses" action={<SeeAll onClick={() => navigate('/courses')} />}>
+      <Rail title={t('home.popularCourses')} action={<SeeAll onClick={() => navigate('/courses')} />}>
         {courses.data.length === 0 && !courses.loading
-          ? <p className="text-xs text-slate-500 px-4">No courses yet for this language.</p>
+          ? <p className="text-xs text-slate-500 px-4">{t('home.noCourses')}</p>
           : rankCourses(courses.data).slice(0, 8).map((c) => <CourseCard key={c.id} c={c} onClick={() => navigate(`/course/${c.id}`)} />)}
       </Rail>
 
-      <Rail title="Trending videos" action={<SeeAll onClick={() => navigate('/library')} />}>
+      <Rail title={t('home.trendingVideos')} action={<SeeAll onClick={() => navigate('/library')} />}>
         {videos.data.length === 0
-          ? <p className="text-xs text-slate-500 px-4">No videos yet — add some in Library.</p>
+          ? <p className="text-xs text-slate-500 px-4">{t('home.noVideos')}</p>
           : videos.data.map((v) => <VideoCard key={v.id} v={v} onClick={() => navigate('/library')} />)}
       </Rail>
 
-      <Rail title="Listen" action={<SeeAll onClick={() => navigate('/library')} />}>
+      <Rail title={t('home.listen')} action={<SeeAll onClick={() => navigate('/library')} />}>
         {audios.data.length === 0
-          ? <p className="text-xs text-slate-500 px-4">No audio yet — add some in Library.</p>
+          ? <p className="text-xs text-slate-500 px-4">{t('home.noAudio')}</p>
           : audios.data.map((p) => <PodcastCard key={p.id} p={p} onClick={() => navigate('/library')} />)}
       </Rail>
 
       {teachers.data.length > 0 && (
-        <Rail title="Featured teachers">
+        <Rail title={t('home.featuredTeachers')}>
           {teachers.data.map((t) => <TeacherCard key={t.id} t={t} onToggleFollow={() => void toggleFollow(t.id)} />)}
         </Rail>
       )}
 
-      <Rail title="New books" action={<SeeAll onClick={() => navigate('/library')} />}>
+      <Rail title={t('home.newBooks')} action={<SeeAll onClick={() => navigate('/library')} />}>
         {books.data.length === 0
-          ? <p className="text-xs text-slate-500 px-4">No books yet — add a PDF in Library.</p>
+          ? <p className="text-xs text-slate-500 px-4">{t('home.noBooks')}</p>
           : books.data.map((b) => <BookCard key={b.id} b={b} onClick={() => navigate(`/library/book/${b.id}`)} />)}
       </Rail>
     </div>

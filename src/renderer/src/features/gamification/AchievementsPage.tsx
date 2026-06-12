@@ -3,10 +3,12 @@ import { cn } from '../../lib/classnames'
 import { PageHeader, ProgressBar, SectionHeading } from '../../components/ui'
 import { iconByName } from '../../lib/iconByName'
 import { useAchievements, type AchievementView } from '../../services/progress'
+import { useT } from '../../i18n'
 
 type Cat = string
 
 function BadgeCard({ b }: { b: AchievementView }): JSX.Element {
+  const t = useT()
   const Icon = iconByName(b.icon)
   return (
     <div
@@ -34,7 +36,7 @@ function BadgeCard({ b }: { b: AchievementView }): JSX.Element {
       )}
       {b.unlocked && (
         <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
-          ✓ Unlocked
+          ✓ {t('gamification.unlocked')}
         </span>
       )}
     </div>
@@ -42,6 +44,7 @@ function BadgeCard({ b }: { b: AchievementView }): JSX.Element {
 }
 
 export default function AchievementsPage(): JSX.Element {
+  const t = useT()
   const achievements = useAchievements()
   const [filter, setFilter] = useState<Cat | 'All'>('All')
 
@@ -61,10 +64,10 @@ export default function AchievementsPage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-6">
         <PageHeader
-          title="Achievements"
-          subtitle={`${unlocked} of ${total} badges unlocked`}
+          title={t('progress.achievements')}
+          subtitle={t('gamification.badgesUnlocked', { n: unlocked, total })}
           back="/progress"
-          crumbs={[{ label: 'Progress', to: '/progress' }, { label: 'Achievements' }]}
+          crumbs={[{ label: t('nav.progress'), to: '/progress' }, { label: t('progress.achievements') }]}
         />
 
         {/* Filter chips */}
@@ -80,7 +83,7 @@ export default function AchievementsPage(): JSX.Element {
                   : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.07]'
               )}
             >
-              {c}
+              {c === 'All' ? t('common.all') : c}
             </button>
           ))}
         </div>
@@ -89,7 +92,7 @@ export default function AchievementsPage(): JSX.Element {
           <div key={c}>
             <SectionHeading
               title={c}
-              subtitle={`${byCat[c].filter((b) => b.unlocked).length} / ${byCat[c].length} unlocked`}
+              subtitle={t('progress.unlockedOf', { n: byCat[c].filter((b) => b.unlocked).length, total: byCat[c].length })}
             />
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {byCat[c].map((b) => (

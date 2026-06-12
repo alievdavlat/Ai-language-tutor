@@ -9,13 +9,9 @@ import { useBackendQuery } from '../../services/backend/useBackend'
 import { library } from '../../services/library/store'
 import { isImageCover } from '../../lib/cover'
 import LibraryUploadModal from './LibraryUploadModal'
+import { useT } from '../../i18n'
 
 type Tab = 'videos' | 'books' | 'audio'
-const TABS: TabItem<Tab>[] = [
-  { id: 'videos', label: 'Videos' },
-  { id: 'books', label: 'Books' },
-  { id: 'audio', label: 'Listen' }
-]
 
 const LEVEL_TONE: Record<string, string> = {
   A1: 'bg-teal-500/80', A2: 'bg-emerald-500/80', B1: 'bg-amber-500/80', B2: 'bg-rose-500/80', C1: 'bg-violet-500/80', C2: 'bg-fuchsia-500/80'
@@ -34,6 +30,12 @@ function SaveLike({ id }: { id: string }): JSX.Element {
 
 export default function LibraryPage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
+  const TABS: TabItem<Tab>[] = [
+    { id: 'videos', label: t('library.videos') },
+    { id: 'books', label: t('library.books') },
+    { id: 'audio', label: t('library.listen') }
+  ]
   const [tab, setTab] = useState<Tab>('videos')
   const [adding, setAdding] = useState(false)
   const [video, setVideo] = useState<LibraryItem | null>(null)
@@ -51,12 +53,12 @@ export default function LibraryPage(): JSX.Element {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{lang.flag} {lang.name}</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Library</h1>
-            <p className="text-sm text-slate-400 mt-1">Watch, read and listen — upload your own or open anything to start.</p>
+            <h1 className="text-2xl font-bold tracking-tight mt-0.5">{t('library.title')}</h1>
+            <p className="text-sm text-slate-400 mt-1">{t('library.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => navigate('/stories')} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5">📖 Stories</button>
-            <button onClick={() => setAdding(true)} className="btn-primary px-4 py-2 text-sm inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> Add</button>
+            <button onClick={() => navigate('/stories')} className="btn-ghost px-4 py-2 text-sm inline-flex items-center gap-1.5">📖 {t('library.stories')}</button>
+            <button onClick={() => setAdding(true)} className="btn-primary px-4 py-2 text-sm inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> {t('library.add')}</button>
           </div>
         </div>
 
@@ -157,11 +159,14 @@ export default function LibraryPage(): JSX.Element {
   )
 }
 
-function Empty({ kind, onAdd }: { kind: string; onAdd: () => void }): JSX.Element {
+function Empty({ kind, onAdd }: { kind: Tab; onAdd: () => void }): JSX.Element {
+  const t = useT()
+  const emptyText = kind === 'videos' ? t('library.noVideos') : kind === 'books' ? t('library.noBooks') : t('library.noAudio')
+  const addText = kind === 'videos' ? t('library.addVideo') : kind === 'books' ? t('library.addBook') : t('library.addAudio')
   return (
     <div className="rounded-card border border-dashed border-white/15 bg-white/[0.02] p-10 text-center">
-      <p className="text-sm text-slate-400">No {kind} yet.</p>
-      <button onClick={onAdd} className="btn-primary px-4 py-2 text-sm mt-3 inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> Add {kind === 'audio' ? 'audio' : kind.replace(/s$/, '')}</button>
+      <p className="text-sm text-slate-400">{emptyText}</p>
+      <button onClick={onAdd} className="btn-primary px-4 py-2 text-sm mt-3 inline-flex items-center gap-1.5"><IconPlus className="w-4 h-4" /> {addText}</button>
     </div>
   )
 }

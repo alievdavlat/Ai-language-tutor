@@ -13,25 +13,26 @@ import AboutSection from './sections/AboutSection'
 import ProductivitySection from './sections/ProductivitySection'
 import DesktopSection from './sections/DesktopSection'
 import NotificationsSection from './sections/NotificationsSection'
+import { useT } from '../../i18n'
 
 type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone' | 'notifications' | 'productivity' | 'desktop' | 'privacy' | 'about'
-
-const TABS: readonly TabItem<SettingsTab>[] = [
-  { id: 'ai', label: 'AI' },
-  { id: 'language', label: 'Language' },
-  { id: 'companion', label: 'Companion' },
-  { id: 'microphone', label: 'Microphone' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'productivity', label: 'Productivity' },
-  { id: 'desktop', label: 'Desktop' },
-  { id: 'privacy', label: 'Privacy' },
-  { id: 'about', label: 'About' }
-] as const
 
 const TAB_IDS: readonly SettingsTab[] = ['ai', 'language', 'companion', 'microphone', 'productivity', 'privacy', 'about']
 
 export default function SettingsPage(): JSX.Element {
   const { profile, saving, patch, patchProfile } = useSettingsPatch()
+  const t = useT()
+  const TABS: readonly TabItem<SettingsTab>[] = [
+    { id: 'ai', label: t('settings.tab.ai') },
+    { id: 'language', label: t('settings.tab.language') },
+    { id: 'companion', label: t('settings.tab.companion') },
+    { id: 'microphone', label: t('settings.tab.microphone') },
+    { id: 'notifications', label: t('settings.tab.notifications') },
+    { id: 'productivity', label: t('settings.tab.productivity') },
+    { id: 'desktop', label: t('settings.tab.desktop') },
+    { id: 'privacy', label: t('settings.tab.privacy') },
+    { id: 'about', label: t('settings.tab.about') }
+  ] as const
   // Honor a deep-link like /settings?tab=productivity (e.g. the old /productivity
   // route now redirects here). Falls back to AI for unknown/missing values.
   const [params] = useSearchParams()
@@ -41,7 +42,7 @@ export default function SettingsPage(): JSX.Element {
   if (!profile) {
     return (
       <div className="h-full flex items-center justify-center text-slate-400">
-        Loading…
+        {t('common.loading')}
       </div>
     )
   }
@@ -53,15 +54,15 @@ export default function SettingsPage(): JSX.Element {
       <div className="px-6 py-8 animate-fade-in">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="page-title">Settings</h1>
+            <h1 className="page-title">{t('settings.title')}</h1>
             <p className="text-sm text-slate-400 mt-1">
-              Personalise your AI conversation partner and speaking experience.
+              {t('settings.subtitle')}
             </p>
           </div>
           {saving && (
             <span className="flex items-center gap-1.5 text-xs text-brand-300">
               <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />
-              Saving…
+              {t('settings.saving')}
             </span>
           )}
         </header>

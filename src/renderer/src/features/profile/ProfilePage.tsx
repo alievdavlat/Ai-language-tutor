@@ -28,15 +28,13 @@ import type {
   SkillRadar,
   UserStats
 } from '@shared/types'
+import { useT, type StringKey } from '../../i18n'
 
 type Tab = 'overview' | 'certificates' | 'activity'
-const TABS: TabItem<Tab>[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'certificates', label: 'Certificates' },
-  { id: 'activity', label: 'Activity' }
-]
 
-const SKILL_LABELS = ['Pronunciation', 'Fluency', 'Grammar', 'Intonation', 'Vocabulary'] as const
+const SKILL_LABEL_KEYS: readonly StringKey[] = [
+  'skill.pronunciation', 'skill.fluency', 'skill.grammar', 'skill.intonation', 'skill.vocabulary'
+]
 
 // Pentagon radar — 5 points on a regular pentagon.
 function RadarChart({ values, labels }: { values: number[]; labels: readonly string[] }): JSX.Element {
@@ -89,6 +87,7 @@ function RadarChart({ values, labels }: { values: number[]; labels: readonly str
 }
 
 function CertCard({ c, learnerName }: { c: Certificate; learnerName: string }): JSX.Element {
+  const t = useT()
   return (
     <div className={cn('rounded-card p-5 bg-gradient-to-br ring-1 ring-white/10 relative overflow-hidden', c.cover)}>
       <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
@@ -102,7 +101,7 @@ function CertCard({ c, learnerName }: { c: Certificate; learnerName: string }): 
             onClick={() => downloadProfileCertificate(c, learnerName)}
             className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur px-3 py-1.5 text-[11px] font-bold text-white hover:bg-white/30 transition"
           >
-            <IconDownload className="w-3.5 h-3.5" /> Download
+            <IconDownload className="w-3.5 h-3.5" /> {t('common.download')}
           </button>
         </div>
       </div>
@@ -124,9 +123,15 @@ const ACTIVITY_META: Record<string, { Icon: (p: IconProps) => JSX.Element; tint:
 
 export default function ProfilePage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const profile = useAppStore((s) => s.profile)
   const lang = useTargetLanguage()
   const me = meId()
+  const TABS: TabItem<Tab>[] = [
+    { id: 'overview', label: t('progress.overview') },
+    { id: 'certificates', label: t('profile.tab.certificates') },
+    { id: 'activity', label: t('profile.tab.activity') }
+  ]
   const [tab, setTab] = useState<Tab>('overview')
   const displayName = profile?.name?.trim() || 'You'
   const level = profile?.level ?? 'B1'
@@ -172,11 +177,11 @@ export default function ProfilePage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-6">
         <PageHeader
-          eyebrow="Account · Profile"
-          title="Your profile"
-          subtitle="Public page · stats, badges, certificates"
+          eyebrow={t('profile.eyebrow')}
+          title={t('profile.title')}
+          subtitle={t('profile.subtitle')}
           back="/home"
-          crumbs={[{ label: 'Home', to: '/home' }, { label: 'Profile' }]}
+          crumbs={[{ label: t('nav.home'), to: '/home' }, { label: t('nav.profile') }]}
         />
 
         {/* Header */}
@@ -189,26 +194,26 @@ export default function ProfilePage(): JSX.Element {
                 {level}
               </span>
             </div>
-            <p className="text-sm text-slate-400 mt-1">Learning {lang.name} {lang.flag}</p>
+            <p className="text-sm text-slate-400 mt-1">{t('profile.learning', { language: lang.name })} {lang.flag}</p>
             {profile?.name && <p className="text-sm text-slate-300 mt-2 max-w-md">Practicing daily to level up.</p>}
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3 text-xs text-slate-400">
-              <span><b className="text-white">{counts.following}</b> following</span>
-              <span><b className="text-white">{counts.followers}</b> followers</span>
-              <span><b className="text-white">{enrollCount}</b> courses enrolled</span>
+              <span><b className="text-white">{counts.following}</b> {t('account.following')}</span>
+              <span><b className="text-white">{counts.followers}</b> {t('account.followers')}</span>
+              <span><b className="text-white">{enrollCount}</b> {t('profile.coursesEnrolled')}</span>
             </div>
           </div>
           <div className="flex sm:flex-col gap-2">
-            <button onClick={() => navigate('/settings')} className="btn-ghost text-xs px-4 py-2">Edit profile</button>
-            <button onClick={() => navigate('/account')} className="btn-ghost text-xs px-4 py-2">Account</button>
+            <button onClick={() => navigate('/settings')} className="btn-ghost text-xs px-4 py-2">{t('account.editProfile')}</button>
+            <button onClick={() => navigate('/account')} className="btn-ghost text-xs px-4 py-2">{t('settings.account')}</button>
           </div>
         </div>
 
         {/* Top stats row — real */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard value={(stats?.xp ?? 0).toLocaleString()} label="Total XP" tone="brand" icon={<IconBolt />} />
-          <StatCard value={stats?.streak ?? 0} label="Day streak" tone="amber" icon={<IconFlame />} />
-          <StatCard value={stats?.wordsLearned ?? 0} label="Words learned" tone="emerald" icon={<IconStar />} />
-          <StatCard value={certs.length} label="Certificates" tone="violet" icon={<IconTrophy />} />
+          <StatCard value={(stats?.xp ?? 0).toLocaleString()} label={t('profile.totalXp')} tone="brand" icon={<IconBolt />} />
+          <StatCard value={stats?.streak ?? 0} label={t('progress.dayStreak')} tone="amber" icon={<IconFlame />} />
+          <StatCard value={stats?.wordsLearned ?? 0} label={t('progress.wordsLearned')} tone="emerald" icon={<IconStar />} />
+          <StatCard value={certs.length} label={t('progress.certificates')} tone="violet" icon={<IconTrophy />} />
         </div>
 
         <Tabs items={TABS} active={tab} onChange={setTab} className="self-start" />
@@ -216,14 +221,14 @@ export default function ProfilePage(): JSX.Element {
         {tab === 'overview' && (
           <>
             <div className="rounded-card border border-white/10 bg-white/[0.025] p-6">
-              <SectionHeading title="Proficiency" subtitle="Estimated from your activity & exams" />
+              <SectionHeading title={t('profile.proficiency')} subtitle={t('profile.proficiencySub')} />
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-                <RadarChart values={radarValues} labels={SKILL_LABELS} />
+                <RadarChart values={radarValues} labels={SKILL_LABEL_KEYS.map((k) => t(k))} />
                 <div className="flex flex-col gap-3">
-                  {SKILL_LABELS.map((label, i) => (
-                    <div key={label}>
+                  {SKILL_LABEL_KEYS.map((key, i) => (
+                    <div key={key}>
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-sm font-medium text-slate-200">{label}</span>
+                        <span className="text-sm font-medium text-slate-200">{t(key)}</span>
                         <span className="text-xs font-bold text-brand-200">{radarValues[i]}%</span>
                       </div>
                       <ProgressBar value={radarValues[i]} color="brand" />
@@ -235,8 +240,8 @@ export default function ProfilePage(): JSX.Element {
 
             <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
               <div className="flex items-center justify-between mb-4">
-                <SectionHeading title="Badges" subtitle={`${earnedBadges.length} earned`} />
-                <button onClick={() => navigate('/achievements')} className="text-xs font-semibold text-brand-300 hover:text-brand-200">See all →</button>
+                <SectionHeading title={t('profile.badges')} subtitle={t('profile.earnedCount', { n: earnedBadges.length })} />
+                <button onClick={() => navigate('/achievements')} className="text-xs font-semibold text-brand-300 hover:text-brand-200">{t('common.seeAll')} →</button>
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {recentBadges.map((b) => (
@@ -262,9 +267,9 @@ export default function ProfilePage(): JSX.Element {
             {certs.map((c) => <CertCard key={c.id} c={c} learnerName={displayName} />)}
             <div className="rounded-card border border-dashed border-white/15 bg-white/[0.02] p-5 flex flex-col items-center text-center gap-2 min-h-[180px] justify-center">
               <span className="w-11 h-11 rounded-full bg-brand-500/15 text-brand-300 flex items-center justify-center"><IconTrophy className="w-5 h-5" /></span>
-              <p className="text-sm font-semibold text-white">{certs.length === 0 ? 'No certificates yet' : 'Earn more'}</p>
-              <p className="text-xs text-slate-400">Finish a course or take an exam to earn a certificate.</p>
-              <button onClick={() => navigate('/courses')} className="text-xs font-semibold text-brand-300 hover:text-brand-200 mt-1">Browse courses →</button>
+              <p className="text-sm font-semibold text-white">{certs.length === 0 ? t('profile.noCerts') : t('profile.earnMore')}</p>
+              <p className="text-xs text-slate-400">{t('profile.certHint')}</p>
+              <button onClick={() => navigate('/courses')} className="text-xs font-semibold text-brand-300 hover:text-brand-200 mt-1">{t('profile.browseCourses')} →</button>
             </div>
           </div>
         )}
@@ -272,7 +277,7 @@ export default function ProfilePage(): JSX.Element {
         {tab === 'activity' && (
           <div className="rounded-card border border-white/10 bg-white/[0.025] divide-y divide-white/[0.06]">
             {activity.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-slate-500 text-center">No activity yet — start a lesson or a conversation.</p>
+              <p className="px-4 py-6 text-sm text-slate-500 text-center">{t('profile.noActivity')}</p>
             ) : (
               activity.map((a) => {
                 const meta = ACTIVITY_META[a.kind] ?? ACTIVITY_META.custom

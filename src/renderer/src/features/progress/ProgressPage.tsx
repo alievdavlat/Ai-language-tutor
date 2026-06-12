@@ -25,21 +25,22 @@ import {
 import { useProgressStore } from '../../services/progress'
 import { CEFR_ORDER } from '../leveltest/questions'
 import { IconBolt, IconFlame, IconHeart, IconStar, IconTarget, IconTrophy, IconUsers } from '../../components/icons'
+import { useT, type StringKey } from '../../i18n'
 
-const SKILL_META: { key: SkillKey; label: string; color: 'brand' | 'green' | 'amber' }[] = [
-  { key: 'speaking', label: 'Speaking', color: 'brand' },
-  { key: 'listening', label: 'Listening', color: 'brand' },
-  { key: 'grammar', label: 'Grammar', color: 'green' },
-  { key: 'vocabulary', label: 'Vocabulary', color: 'amber' }
+const SKILL_META: { key: SkillKey; labelKey: StringKey; color: 'brand' | 'green' | 'amber' }[] = [
+  { key: 'speaking', labelKey: 'skill.speaking', color: 'brand' },
+  { key: 'listening', labelKey: 'skill.listening', color: 'brand' },
+  { key: 'grammar', labelKey: 'skill.grammar', color: 'green' },
+  { key: 'vocabulary', labelKey: 'skill.vocabulary', color: 'amber' }
 ]
 
 // Khan-style mastery crowns: 0=none, 1=bronze, 2=silver, 3=gold, 4=diamond
-const CROWN_TIERS: { tint: string; label: string }[] = [
-  { tint: 'bg-white/[0.05] text-slate-500', label: 'Locked' },
-  { tint: 'bg-amber-700/30 text-amber-300', label: 'Bronze' },
-  { tint: 'bg-slate-300/20 text-slate-200', label: 'Silver' },
-  { tint: 'bg-amber-400/25 text-amber-200', label: 'Gold' },
-  { tint: 'bg-cyan-300/25 text-cyan-200', label: 'Diamond' }
+const CROWN_TIERS: { tint: string; labelKey: StringKey }[] = [
+  { tint: 'bg-white/[0.05] text-slate-500', labelKey: 'progress.crown.locked' },
+  { tint: 'bg-amber-700/30 text-amber-300', labelKey: 'progress.crown.bronze' },
+  { tint: 'bg-slate-300/20 text-slate-200', labelKey: 'progress.crown.silver' },
+  { tint: 'bg-amber-400/25 text-amber-200', labelKey: 'progress.crown.gold' },
+  { tint: 'bg-cyan-300/25 text-cyan-200', labelKey: 'progress.crown.diamond' }
 ]
 
 // The six headline badges shown on the progress hub (full set lives on /achievements).
@@ -54,13 +55,14 @@ function nextLevel(level: string): string {
 }
 
 type ProgressTab = 'overview' | 'goals'
-const PROGRESS_TABS: TabItem<ProgressTab>[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'goals', label: 'Goals & Streak' }
-]
 
 export default function ProgressPage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
+  const PROGRESS_TABS: TabItem<ProgressTab>[] = [
+    { id: 'overview', label: t('progress.overview') },
+    { id: 'goals', label: t('progress.goalsStreak') }
+  ]
   const [tab, setTab] = useState<ProgressTab>('overview')
   const profile = useAppStore((s) => s.profile)
   const stats = useStats()
@@ -77,10 +79,10 @@ export default function ProgressPage(): JSX.Element {
   )
 
   const STATS = [
-    { value: stats.corrections, label: 'Corrections', tone: 'rose' as const, icon: <IconStar /> },
-    { value: stats.wordsLearned, label: 'Words learned', tone: 'emerald' as const, icon: <IconHeart /> },
-    { value: stats.streak, label: 'Day streak', tone: 'amber' as const, icon: <IconFlame /> },
-    { value: certificates, label: 'Certificates', tone: 'violet' as const, icon: <IconTrophy /> }
+    { value: stats.corrections, label: t('progress.corrections'), tone: 'rose' as const, icon: <IconStar /> },
+    { value: stats.wordsLearned, label: t('progress.wordsLearned'), tone: 'emerald' as const, icon: <IconHeart /> },
+    { value: stats.streak, label: t('progress.dayStreak'), tone: 'amber' as const, icon: <IconFlame /> },
+    { value: certificates, label: t('progress.certificates'), tone: 'violet' as const, icon: <IconTrophy /> }
   ]
 
   const headline = HEADLINE_BADGES.map((id) => achievements.find((a) => a.id === id)).filter(
@@ -92,9 +94,9 @@ export default function ProgressPage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Your progress</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('progress.header')}</h1>
           <p className="text-sm text-slate-400 mt-1">
-            How your {profile?.targetLanguage === 'en' ? 'English' : 'language'} is growing across every skill.
+            {t('progress.growth', { language: profile?.targetLanguage === 'en' ? 'English' : t('settings.tab.language').toLowerCase() })}
           </p>
         </div>
 
@@ -107,14 +109,14 @@ export default function ProgressPage(): JSX.Element {
         <div className="rounded-card border border-white/10 bg-white/[0.03] p-6 flex flex-col sm:flex-row items-center gap-6">
           <ProgressRing value={knowledge} size={150} stroke={12} tone="brand">
             <span className="text-3xl font-bold text-white">{knowledge}%</span>
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider mt-0.5">knowledge</span>
+            <span className="text-[11px] text-slate-400 uppercase tracking-wider mt-0.5">{t('progress.knowledge')}</span>
           </ProgressRing>
           <div className="flex-1 min-w-0 text-center sm:text-left">
             <p className="text-xs uppercase tracking-widest text-brand-300 font-semibold">
-              Level {level}
+              {t('common.level')} {level}
             </p>
             <h2 className="text-xl font-bold text-white mt-1">
-              {knowledge >= 100 ? `You've mastered ${level}` : `You're on your way to ${nextLevel(level)}`}
+              {knowledge >= 100 ? t('progress.levelMastered', { level }) : t('progress.onYourWay', { level: nextLevel(level) })}
             </h2>
             <p className="text-sm text-slate-400 mt-1.5">
               {stats.totalXp.toLocaleString()} XP earned · keep practicing speaking daily — it's your fastest path
@@ -124,7 +126,7 @@ export default function ProgressPage(): JSX.Element {
               onClick={() => navigate('/level-test')}
               className="inline-flex items-center gap-2 mt-3 rounded-pill bg-white/[0.06] hover:bg-white/10 border border-white/10 px-4 py-2 text-xs font-semibold text-slate-200 transition"
             >
-              <IconTarget className="w-4 h-4 text-brand-300" /> Take the level test
+              <IconTarget className="w-4 h-4 text-brand-300" /> {t('progress.takeLevelTest')}
             </button>
           </div>
         </div>
@@ -139,9 +141,9 @@ export default function ProgressPage(): JSX.Element {
         {/* Compete & connect — leaderboard, quests, study buddy */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { to: '/leaderboard', label: 'Leaderboard', sub: 'Weekly XP league', Icon: IconTrophy, tint: 'bg-amber-500/15 text-amber-300' },
-            { to: '/quests', label: 'Quests', sub: 'Daily & weekly goals', Icon: IconBolt, tint: 'bg-brand-500/15 text-brand-300' },
-            { to: '/buddy', label: 'Study buddy', sub: 'Practice with a partner', Icon: IconUsers, tint: 'bg-emerald-500/15 text-emerald-300' }
+            { to: '/leaderboard', label: t('progress.leaderboard'), sub: t('progress.leaderboardSub'), Icon: IconTrophy, tint: 'bg-amber-500/15 text-amber-300' },
+            { to: '/quests', label: t('progress.quests'), sub: t('progress.questsSub'), Icon: IconBolt, tint: 'bg-brand-500/15 text-brand-300' },
+            { to: '/buddy', label: t('progress.studyBuddy'), sub: t('progress.studyBuddySub'), Icon: IconUsers, tint: 'bg-emerald-500/15 text-emerald-300' }
           ].map((q) => (
             <button
               key={q.to}
@@ -162,9 +164,9 @@ export default function ProgressPage(): JSX.Element {
         {/* This week */}
         <div className="rounded-card border border-white/10 bg-white/[0.03] p-5">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-semibold text-white">This week</span>
+            <span className="text-sm font-semibold text-white">{t('progress.thisWeek')}</span>
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-300 bg-amber-500/10 rounded-full px-2.5 py-1">
-              <IconFlame className="w-3.5 h-3.5" /> {stats.streak} {stats.streak === 1 ? 'day' : 'days'}
+              <IconFlame className="w-3.5 h-3.5" /> {t('home.daysCount', { n: stats.streak })}
             </span>
           </div>
           <WeekStudyTracker days={week} />
@@ -172,7 +174,7 @@ export default function ProgressPage(): JSX.Element {
 
         {/* Skills breakdown — with mastery crowns */}
         <div>
-          <SectionHeading title="Skills · mastery" subtitle="Crown tier rises as you score 90%+ over time" />
+          <SectionHeading title={t('progress.skillsMastery')} subtitle={t('progress.crownHint')} />
           <div className="rounded-card border border-white/10 bg-white/[0.03] p-5 flex flex-col gap-4">
             {SKILL_META.map((s) => {
               const value = stats.skills[s.key]
@@ -182,15 +184,15 @@ export default function ProgressPage(): JSX.Element {
                 <div key={s.key}>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-sm font-medium text-slate-200 inline-flex items-center gap-2">
-                      {s.label}
+                      {t(s.labelKey)}
                       <span
                         className={cn(
                           'inline-flex items-center gap-1 rounded-full text-[10px] font-bold uppercase tracking-wider px-2 py-0.5',
                           tier.tint
                         )}
-                        title={`Mastery crown: ${tier.label}`}
+                        title={t(tier.labelKey)}
                       >
-                        ♛ {tier.label}
+                        ♛ {t(tier.labelKey)}
                       </span>
                     </span>
                     <span className="text-xs font-semibold text-slate-400 inline-flex items-center gap-1.5">
@@ -214,11 +216,11 @@ export default function ProgressPage(): JSX.Element {
         {/* Achievements */}
         <div>
           <SectionHeading
-            title="Achievements"
-            subtitle={`${unlockedCount} of ${headline.length} unlocked`}
+            title={t('progress.achievements')}
+            subtitle={t('progress.unlockedOf', { n: unlockedCount, total: headline.length })}
             action={
               <button onClick={() => navigate('/achievements')} className="text-xs font-semibold text-brand-300 hover:text-brand-200">
-                See all →
+                {t('common.seeAll')} →
               </button>
             }
           />

@@ -4,13 +4,9 @@ import { AvatarCircle, PageHeader, Tabs, type TabItem } from '../../components/u
 import { IconBolt, IconFlame, IconTrophy } from '../../components/icons'
 import { useAppStore } from '../../store/useAppStore'
 import { LEAGUES, buildLeaderboardReal, leagueForXp, useStats, type LeaderRow } from '../../services/progress'
+import { useT } from '../../i18n'
 
 type Scope = 'global' | 'friends'
-
-const SCOPES: TabItem<Scope>[] = [
-  { id: 'global', label: 'Global' },
-  { id: 'friends', label: 'Friends' }
-]
 
 function MedalBadge({ rank }: { rank: number }): JSX.Element {
   const tone =
@@ -40,6 +36,11 @@ function resetCountdown(): string {
 }
 
 export default function LeaderboardPage(): JSX.Element {
+  const t = useT()
+  const SCOPES: TabItem<Scope>[] = [
+    { id: 'global', label: t('gamification.global') },
+    { id: 'friends', label: t('gamification.friends') }
+  ]
   const [scope, setScope] = useState<Scope>('global')
   const profile = useAppStore((s) => s.profile)
   const stats = useStats()
@@ -69,13 +70,13 @@ export default function LeaderboardPage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-6">
         <PageHeader
-          title="Leaderboard"
-          subtitle="Weekly XP race — resets Sunday at midnight."
+          title={t('progress.leaderboard')}
+          subtitle={t('gamification.leaderboardSubtitle')}
           back="/progress"
-          crumbs={[{ label: 'Progress', to: '/progress' }, { label: 'Leaderboard' }]}
+          crumbs={[{ label: t('nav.progress'), to: '/progress' }, { label: t('progress.leaderboard') }]}
           action={
             <div className="text-right">
-              <p className="text-[11px] uppercase tracking-widest text-slate-500">Resets in</p>
+              <p className="text-[11px] uppercase tracking-widest text-slate-500">{t('gamification.resetsIn')}</p>
               <p className="text-sm font-bold text-white">{resetCountdown()}</p>
             </div>
           }
@@ -85,10 +86,10 @@ export default function LeaderboardPage(): JSX.Element {
         <div className={cn('rounded-card border border-white/10 p-5 bg-gradient-to-br', currentLeague.tint)}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-widest text-white/70">Your league</p>
+              <p className="text-[11px] uppercase tracking-widest text-white/70">{t('gamification.yourLeague')}</p>
               <h2 className="text-2xl font-bold text-white">{currentLeague.id}</h2>
               <p className="text-xs text-white/80 mt-1">
-                Rank #{myRank} · {stats.weekXp.toLocaleString()} XP this week · keep going to promote
+                {t('gamification.rankLine', { rank: myRank, xp: stats.weekXp.toLocaleString() })}
               </p>
             </div>
             <span className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/15 backdrop-blur ring-2 ring-white/30">
@@ -99,7 +100,7 @@ export default function LeaderboardPage(): JSX.Element {
 
         {/* League ladder */}
         <div>
-          <p className="section-title px-1">All leagues</p>
+          <p className="section-title px-1">{t('gamification.allLeagues')}</p>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {LEAGUES.map((l, i) => {
               const active = l.id === currentLeague.id
@@ -126,11 +127,11 @@ export default function LeaderboardPage(): JSX.Element {
         {/* Ranking */}
         <div className="rounded-card border border-white/10 bg-white/[0.025] divide-y divide-white/[0.06]">
           {loading && rows.length === 0 && (
-            <p className="px-4 py-6 text-sm text-slate-500 text-center">Loading rankings…</p>
+            <p className="px-4 py-6 text-sm text-slate-500 text-center">{t('gamification.loadingRankings')}</p>
           )}
           {!loading && rows.length <= 1 && scope === 'friends' && (
             <p className="px-4 py-6 text-sm text-slate-500 text-center">
-              Follow other learners to race them here — find people in Explore.
+              {t('gamification.friendsEmpty')}
             </p>
           )}
           {rows.map((r) => (
@@ -146,7 +147,7 @@ export default function LeaderboardPage(): JSX.Element {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white truncate">
                   {r.country && <span className="mr-1">{r.country}</span>}
-                  {r.name} {r.me && <span className="text-[10px] text-brand-300 font-bold ml-1">YOU</span>}
+                  {r.name} {r.me && <span className="text-[10px] text-brand-300 font-bold ml-1 uppercase">{t('common.you')}</span>}
                 </p>
                 <p className="text-[11px] text-slate-500 flex items-center gap-2">
                   <span className="inline-flex items-center gap-1 text-amber-300">
@@ -162,7 +163,7 @@ export default function LeaderboardPage(): JSX.Element {
         </div>
 
         <p className="text-xs text-slate-500 text-center">
-          Top 3 each week promote · bottom 3 demote · stay top 30% to keep your league
+          {t('gamification.promoteRule')}
         </p>
       </div>
     </div>

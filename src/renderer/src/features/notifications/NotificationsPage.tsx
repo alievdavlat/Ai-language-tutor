@@ -8,14 +8,9 @@ import { canAuthorContent } from '@shared/constants'
 import { IconBolt, IconPlus, IconStar, IconUsers, type IconProps } from '../../components/icons'
 import { notifMeta, NOTIF_EVENT } from '../../services/notifications'
 import NotificationComposer from './NotificationComposer'
+import { useT } from '../../i18n'
 
 type Filter = 'all' | 'social' | 'learning' | 'system'
-const FILTERS: TabItem<Filter>[] = [
-  { id: 'all', label: 'All' },
-  { id: 'social', label: 'Social' },
-  { id: 'learning', label: 'Learning' },
-  { id: 'system', label: 'System' }
-]
 
 function relTime(iso: string): string {
   const diff = Math.max(0, Date.now() - new Date(iso).getTime())
@@ -28,6 +23,13 @@ function relTime(iso: string): string {
 }
 
 export default function NotificationsPage(): JSX.Element {
+  const t = useT()
+  const FILTERS: TabItem<Filter>[] = [
+    { id: 'all', label: t('common.all') },
+    { id: 'social', label: t('notifs.filter.social') },
+    { id: 'learning', label: t('notifs.filter.learning') },
+    { id: 'system', label: t('notifs.filter.system') }
+  ]
   const [filter, setFilter] = useState<Filter>('all')
   const navigate = useNavigate()
   const me = backend.currentUserId()
@@ -75,16 +77,16 @@ export default function NotificationsPage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-5">
         <PageHeader
-          title="Notifications"
-          subtitle={`${unread} unread`}
+          title={t('nav.notifications')}
+          subtitle={t('notifs.unread', { n: unread })}
           back="/home"
-          crumbs={[{ label: 'Home', to: '/home' }, { label: 'Notifications' }]}
+          crumbs={[{ label: t('nav.home'), to: '/home' }, { label: t('nav.notifications') }]}
           action={
             <div className="flex items-center gap-3">
               {canSend && (
-                <button onClick={() => setComposing(true)} className="btn-primary px-3 py-1.5 text-xs inline-flex items-center gap-1.5"><IconPlus className="w-3.5 h-3.5" /> Send</button>
+                <button onClick={() => setComposing(true)} className="btn-primary px-3 py-1.5 text-xs inline-flex items-center gap-1.5"><IconPlus className="w-3.5 h-3.5" /> {t('notifs.send')}</button>
               )}
-              <button onClick={() => void markAllRead()} className="text-xs font-semibold text-brand-300 hover:text-brand-200">Mark all read</button>
+              <button onClick={() => void markAllRead()} className="text-xs font-semibold text-brand-300 hover:text-brand-200">{t('notifs.markAllRead')}</button>
             </div>
           }
         />
@@ -93,7 +95,7 @@ export default function NotificationsPage(): JSX.Element {
 
         {list.length === 0 ? (
           <div className="rounded-card border border-dashed border-white/12 bg-white/[0.02] p-10 text-center text-sm text-slate-400">
-            {live.loading ? 'Loading…' : "No notifications yet — you're all caught up."}
+            {live.loading ? t('common.loading') : t('notifs.empty')}
           </div>
         ) : (
           <div className="rounded-card border border-white/10 bg-white/[0.025] divide-y divide-white/[0.06]">

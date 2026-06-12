@@ -11,6 +11,7 @@ import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { uploadUrl } from '../../services/backend'
 import { useRef } from 'react'
 import DangerZoneSection from '../settings/sections/DangerZoneSection'
+import { useT } from '../../i18n'
 
 const LEVELS: readonly CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 import {
@@ -26,12 +27,6 @@ import {
 } from '../../components/icons'
 
 type Tab = 'saved' | 'likes' | 'uploads' | 'help'
-const TABS: TabItem<Tab>[] = [
-  { id: 'saved', label: 'Saved' },
-  { id: 'likes', label: 'Likes' },
-  { id: 'uploads', label: 'Uploads' },
-  { id: 'help', label: 'Help' }
-]
 
 const HELP = [
   'How do I download a book?',
@@ -65,6 +60,7 @@ function EmptyState({ text }: { text: string }): JSX.Element {
 }
 
 function ProfileEditModal({ profile, onClose }: { profile: UserProfile; onClose: () => void }): JSX.Element {
+  const t = useT()
   const setProfile = useAppStore((s) => s.setProfile)
   const [name, setName] = useState(profile.name ?? '')
   const [dob, setDob] = useState(profile.dateOfBirth ?? '')
@@ -95,11 +91,11 @@ function ProfileEditModal({ profile, onClose }: { profile: UserProfile; onClose:
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in" onClick={onClose}>
       <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <header className="sticky top-0 bg-slate-900/95 backdrop-blur px-6 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Edit profile</h2>
+          <h2 className="text-lg font-semibold">{t('account.editProfile')}</h2>
           <div className="flex gap-2">
-            <button onClick={onClose} className="btn-ghost text-sm px-3 py-1.5">Cancel</button>
+            <button onClick={onClose} className="btn-ghost text-sm px-3 py-1.5">{t('common.cancel')}</button>
             <button onClick={() => void save()} disabled={saving} className="btn-primary text-sm px-4 py-1.5 disabled:opacity-60">
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? t('settings.saving') : t('common.save')}
             </button>
           </div>
         </header>
@@ -160,9 +156,16 @@ function ProfileEditModal({ profile, onClose }: { profile: UserProfile; onClose:
 
 export default function AccountPage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const profile = useAppStore((s) => s.profile)
   const setProfile = useAppStore((s) => s.setProfile)
   const lang = useTargetLanguage()
+  const TABS: TabItem<Tab>[] = [
+    { id: 'saved', label: t('account.tab.saved') },
+    { id: 'likes', label: t('account.tab.likes') },
+    { id: 'uploads', label: t('account.tab.uploads') },
+    { id: 'help', label: t('account.tab.help') }
+  ]
   const [tab, setTab] = useState<Tab>('saved')
   const [editing, setEditing] = useState(false)
   const avatarInput = useRef<HTMLInputElement>(null)
@@ -227,30 +230,30 @@ export default function AccountPage(): JSX.Element {
           <div className="relative group shrink-0">
             <AvatarCircle name={displayName} src={profile?.avatarUrl} size="lg" className="!w-20 !h-20 !text-2xl" />
             <input ref={avatarInput} type="file" accept="image/*" className="hidden" onChange={(e) => void uploadAvatar(e.target.files?.[0])} />
-            <button onClick={() => avatarInput.current?.click()} className="absolute inset-0 rounded-full bg-black/55 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[10px] font-bold text-white" title="Change photo">
-              Change
+            <button onClick={() => avatarInput.current?.click()} className="absolute inset-0 rounded-full bg-black/55 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[10px] font-bold text-white" title={t('common.change')}>
+              {t('common.change')}
             </button>
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
-            <p className="text-sm text-slate-400">Level {level} · learning {lang.name} {lang.flag}</p>
+            <p className="text-sm text-slate-400">{t('account.levelLine', { level, language: lang.name })} {lang.flag}</p>
             <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
-              <span><b className="text-white">{counts.data.following}</b> following</span>
-              <span><b className="text-white">{counts.data.followers}</b> followers</span>
+              <span><b className="text-white">{counts.data.following}</b> {t('account.following')}</span>
+              <span><b className="text-white">{counts.data.followers}</b> {t('account.followers')}</span>
               <span><b className="text-white">{xp.toLocaleString()}</b> XP</span>
-              <span><b className="text-amber-300">🔥 {streak}</b> day streak</span>
+              <span><b className="text-amber-300">🔥 {streak}</b> {t('account.dayStreak')}</span>
             </div>
           </div>
-          <button onClick={() => setEditing(true)} className="btn-ghost px-4 py-2 text-sm shrink-0">Edit profile</button>
+          <button onClick={() => setEditing(true)} className="btn-ghost px-4 py-2 text-sm shrink-0">{t('account.editProfile')}</button>
         </div>
 
         {/* Quick links — the personal surfaces that don't sit in the main sidebar. */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { to: '/profile', label: 'My profile', sub: 'Stats, badges & certificates', Icon: IconUsers, tint: 'bg-brand-500/15 text-brand-300' },
-            { to: '/notifications', label: 'Notifications', sub: 'Reminders & updates', Icon: IconBolt, tint: 'bg-amber-500/15 text-amber-300' },
-            { to: '/inbox', label: 'Messages', sub: 'Your conversations', Icon: IconChat, tint: 'bg-emerald-500/15 text-emerald-300' },
-            { to: '/downloads', label: 'Downloads', sub: 'Offline & sync', Icon: IconDownload, tint: 'bg-violet-500/15 text-violet-300' }
+            { to: '/profile', label: t('account.myProfile'), sub: t('account.myProfileSub'), Icon: IconUsers, tint: 'bg-brand-500/15 text-brand-300' },
+            { to: '/notifications', label: t('nav.notifications'), sub: t('account.notifsSub'), Icon: IconBolt, tint: 'bg-amber-500/15 text-amber-300' },
+            { to: '/inbox', label: t('account.messages'), sub: t('account.messagesSub'), Icon: IconChat, tint: 'bg-emerald-500/15 text-emerald-300' },
+            { to: '/downloads', label: t('account.downloads'), sub: t('account.downloadsSub'), Icon: IconDownload, tint: 'bg-violet-500/15 text-violet-300' }
           ].map((q) => (
             <button
               key={q.to}
@@ -274,10 +277,10 @@ export default function AccountPage(): JSX.Element {
           >
             <span className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center shrink-0">🛡️</span>
             <span className="flex-1 min-w-0">
-              <span className="block text-sm font-semibold text-white">Confirm your age</span>
-              <span className="block text-xs text-slate-400">Companions & AI tutor stay locked until you add your date of birth.</span>
+              <span className="block text-sm font-semibold text-white">{t('account.confirmAge')}</span>
+              <span className="block text-xs text-slate-400">{t('account.confirmAgeSub')}</span>
             </span>
-            <span className="text-xs text-amber-300 font-semibold shrink-0">Set →</span>
+            <span className="text-xs text-amber-300 font-semibold shrink-0">{t('account.set')} →</span>
           </button>
         )}
 
@@ -286,7 +289,7 @@ export default function AccountPage(): JSX.Element {
         {tab === 'saved' && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {saved.data.length === 0
-              ? <EmptyState text="Nothing saved yet. Tap the bookmark on any course or post to keep it here." />
+              ? <EmptyState text={t('account.emptySaved')} />
               : saved.data.map((i, idx) => (
                 <button key={idx} onClick={() => navigate(i.kind === 'course' ? '/courses' : '/community')} className="text-left">
                   <MediaTile item={i} />
@@ -297,7 +300,7 @@ export default function AccountPage(): JSX.Element {
         {tab === 'likes' && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {likes.data.length === 0
-              ? <EmptyState text="No likes yet. Like posts in the Community to find them later." />
+              ? <EmptyState text={t('account.emptyLikes')} />
               : likes.data.map((i, idx) => <MediaTile key={idx} item={i} />)}
           </div>
         )}
@@ -305,14 +308,14 @@ export default function AccountPage(): JSX.Element {
           <div className="flex flex-col gap-3">
             <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-5 flex flex-col items-center text-center gap-2">
               <span className="w-10 h-10 rounded-full bg-brand-500/15 text-brand-300 flex items-center justify-center"><IconPlus className="w-5 h-5" /></span>
-              <p className="text-sm font-semibold text-white">Share a resource</p>
-              <p className="text-xs text-slate-400">Post a PDF, audio or a YouTube link to the Community.</p>
+              <p className="text-sm font-semibold text-white">{t('account.shareResource')}</p>
+              <p className="text-xs text-slate-400">{t('account.shareResourceSub')}</p>
               <button onClick={() => navigate('/community')} className="inline-flex items-center gap-1.5 text-xs font-medium rounded-full bg-white/[0.05] border border-white/10 px-3 py-1.5 text-slate-300 hover:bg-white/10 mt-1">
-                <IconPlus className="w-3.5 h-3.5" /> New post
+                <IconPlus className="w-3.5 h-3.5" /> {t('account.newPost')}
               </button>
             </div>
             {uploads.data.length === 0
-              ? <EmptyState text="No uploads yet." />
+              ? <EmptyState text={t('account.emptyUploads')} />
               : uploads.data.map((u) => (
                 <div key={u.id} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3">
                   <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center', u.kind === 'pdf' ? 'bg-rose-500/15 text-rose-300' : 'bg-brand-500/15 text-brand-300')}>

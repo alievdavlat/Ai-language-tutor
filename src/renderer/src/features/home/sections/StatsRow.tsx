@@ -1,12 +1,14 @@
 import type { UserProfile } from '@shared/types'
 import LevelProgress from '../../../components/ui/LevelProgress'
 import StatTile from '../../../components/ui/StatTile'
+import { useT } from '../../../i18n'
 
 interface StatsRowProps {
   profile: UserProfile
 }
 
 export default function StatsRow({ profile }: StatsRowProps): JSX.Element {
+  const t = useT()
   // Real streak / XP tracking comes in Phase 8.
   // Until then, show "–" instead of misleading zeros.
   const currentStreak: number = 0
@@ -22,12 +24,12 @@ export default function StatsRow({ profile }: StatsRowProps): JSX.Element {
 
       {/* Streak */}
       <StatTile
-        label="Daily streak"
-        value={noData ? '–' : `${currentStreak} ${currentStreak === 1 ? 'day' : 'days'}`}
+        label={t('home.dailyStreak')}
+        value={noData ? '–' : t('home.daysCount', { n: currentStreak })}
         sublabel={
           noData
-            ? 'Start your first session!'
-            : `Best: ${longestStreak} day${longestStreak === 1 ? '' : 's'}`
+            ? t('home.startFirstSession')
+            : t('home.bestStreak', { n: longestStreak })
         }
         icon="🔥"
         tone="listen"
@@ -35,14 +37,14 @@ export default function StatsRow({ profile }: StatsRowProps): JSX.Element {
 
       {/* Daily goal */}
       <StatTile
-        label="Today's practice"
+        label={t('home.todaysPractice')}
         value={noData ? '–' : `${todayMinutes}/${dailyGoal} min`}
         sublabel={
           noData
-            ? `Goal: ${dailyGoal} min/day`
+            ? t('home.goalPerDay', { n: dailyGoal })
             : todayMinutes >= dailyGoal
-              ? '✓ Goal reached!'
-              : `${dailyGoal - todayMinutes} min left`
+              ? t('home.goalReached')
+              : t('home.minLeft', { n: dailyGoal - todayMinutes })
         }
         icon="⏱️"
         tone="vocab"

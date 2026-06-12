@@ -1,16 +1,17 @@
 import type { UserProfile } from '@shared/types'
 import AvatarCircle from '../../../components/ui/AvatarCircle'
+import { useT, type StringKey } from '../../../i18n'
 
 interface GreetingHeaderProps {
   profile: UserProfile
 }
 
-function timeGreeting(): string {
+function timeGreetingKey(): StringKey {
   const hour = new Date().getHours()
-  if (hour < 5) return 'Still up'
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
+  if (hour < 5) return 'home.stillUp'
+  if (hour < 12) return 'home.goodMorning'
+  if (hour < 18) return 'home.goodAfternoon'
+  return 'home.goodEvening'
 }
 
 /** Motivational tip shown under the greeting — cycles by day-of-year */
@@ -30,6 +31,7 @@ function todayTip(): string {
 }
 
 export default function GreetingHeader({ profile }: GreetingHeaderProps): JSX.Element {
+  const t = useT()
   const name = profile.name ?? 'friend'
 
   return (
@@ -48,7 +50,7 @@ export default function GreetingHeader({ profile }: GreetingHeaderProps): JSX.El
       <AvatarCircle name={name} src={profile.avatarUrl} size="lg" />
 
       <div className="min-w-0 flex-1 relative">
-        <p className="text-xs text-slate-400 mb-0.5">{timeGreeting()} 👋</p>
+        <p className="text-xs text-slate-400 mb-0.5">{t(timeGreetingKey())} 👋</p>
         <h1 className="text-2xl font-bold tracking-tight leading-tight truncate">{name}</h1>
         <p className="text-xs text-slate-500 mt-1 italic truncate">💡 {todayTip()}</p>
       </div>
@@ -56,7 +58,7 @@ export default function GreetingHeader({ profile }: GreetingHeaderProps): JSX.El
       {/* Level badge */}
       <div className="shrink-0 hidden sm:block relative">
         <div className="rounded-full bg-brand-500/20 border border-brand-400/30 px-4 py-1.5 text-sm font-bold text-brand-300">
-          Level {profile.level}
+          {t('common.level')} {profile.level}
         </div>
       </div>
     </header>

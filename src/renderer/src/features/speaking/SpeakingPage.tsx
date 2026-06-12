@@ -17,6 +17,7 @@ import { roleplays, useRoleplays, ROLEPLAY_SECTIONS, type Roleplay, type Rolepla
 import ConversationMode from './modes/ConversationMode'
 import PronunciationPage from '../pronunciation/PronunciationPage'
 import RoleplayEditor from './sections/RoleplayEditor'
+import { useT } from '../../i18n'
 
 type View = 'hub' | 'chat' | 'pronunciation'
 
@@ -73,6 +74,7 @@ function Rail({ title, items, locked, onOpen }: { title: string; items: Roleplay
 export default function SpeakingPage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
   const navigate = useNavigate()
+  const t = useT()
   const aiReady = useIsAIReady()
   const { list, refresh } = useRoleplays()
 
@@ -141,7 +143,7 @@ export default function SpeakingPage(): JSX.Element {
     return (
       <div className="h-full flex flex-col">
         <div className="px-4 py-2.5 border-b border-white/10 flex items-center gap-2 backdrop-blur-xl bg-canvas-soft/40">
-          <button onClick={() => setView('hub')} className="inline-flex items-center gap-1 text-sm text-slate-300 hover:text-white"><IconChevronLeft className="w-4 h-4" /> Speaking</button>
+          <button onClick={() => setView('hub')} className="inline-flex items-center gap-1 text-sm text-slate-300 hover:text-white"><IconChevronLeft className="w-4 h-4" /> {t('speaking.title')}</button>
         </div>
         <div className="flex-1 overflow-hidden">
           <ConversationMode topic={topic} onTopicChange={setTopic} />
@@ -153,7 +155,7 @@ export default function SpeakingPage(): JSX.Element {
     return (
       <div className="h-full flex flex-col">
         <div className="px-4 py-2.5 border-b border-white/10 flex items-center gap-2 backdrop-blur-xl bg-canvas-soft/40">
-          <button onClick={() => setView('hub')} className="inline-flex items-center gap-1 text-sm text-slate-300 hover:text-white"><IconChevronLeft className="w-4 h-4" /> Speaking</button>
+          <button onClick={() => setView('hub')} className="inline-flex items-center gap-1 text-sm text-slate-300 hover:text-white"><IconChevronLeft className="w-4 h-4" /> {t('speaking.title')}</button>
         </div>
         <div className="flex-1 overflow-hidden"><PronunciationPage /></div>
       </div>
@@ -169,8 +171,8 @@ export default function SpeakingPage(): JSX.Element {
           onClick={() => navigate('/account')}
           className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-brand-500/15 via-violet-500/10 to-transparent px-5 py-3.5 flex items-center gap-3 text-left"
         >
-          <span className="text-sm"><b className="text-white">0/2</b> <span className="text-slate-400">Daily free lessons used</span></span>
-          <span className="ml-auto text-sm font-black bg-gradient-to-r from-amber-300 to-rose-300 bg-clip-text text-transparent">Upgrade Now</span>
+          <span className="text-sm"><b className="text-white">0/2</b> <span className="text-slate-400">{t('speaking.freeLessonsUsed')}</span></span>
+          <span className="ml-auto text-sm font-black bg-gradient-to-r from-amber-300 to-rose-300 bg-clip-text text-transparent">{t('speaking.upgradeNow')}</span>
         </button>
 
         {/* Hero — AI tutor + speaking partner */}
@@ -178,12 +180,12 @@ export default function SpeakingPage(): JSX.Element {
           {/* AI tutor */}
           <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-600/25 via-violet-600/15 to-slate-900/30 p-6 flex items-center gap-5 min-h-[180px]">
             <div className="flex-1">
-              <h2 className="text-2xl font-black tracking-tight text-white">Talk to AI Tutor</h2>
-              <p className="text-sm text-slate-300/90 mt-1">Practice anytime, anywhere.</p>
+              <h2 className="text-2xl font-black tracking-tight text-white">{t('speaking.talkToTutor')}</h2>
+              <p className="text-sm text-slate-300/90 mt-1">{t('speaking.practiceAnywhere')}</p>
               {aiReady ? (
-                <button onClick={startFreeTalk} className="mt-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 px-5 py-2.5 text-sm font-bold text-white transition">Start Talking</button>
+                <button onClick={startFreeTalk} className="mt-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 px-5 py-2.5 text-sm font-bold text-white transition">{t('speaking.startTalking')}</button>
               ) : (
-                <button onClick={() => navigate('/settings')} className="mt-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 px-5 py-2.5 text-sm font-bold text-amber-200 inline-flex items-center gap-2 transition"><IconLock className="w-4 h-4" /> Add AI key to talk</button>
+                <button onClick={() => navigate('/settings')} className="mt-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 px-5 py-2.5 text-sm font-bold text-amber-200 inline-flex items-center gap-2 transition"><IconLock className="w-4 h-4" /> {t('speaking.addKeyToTalk')}</button>
               )}
             </div>
             {/* mascot orb */}
@@ -193,10 +195,10 @@ export default function SpeakingPage(): JSX.Element {
           {/* Speaking partner — always available (human, no AI key) */}
           <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-600/20 via-teal-600/10 to-slate-900/30 p-6 flex items-center gap-5 min-h-[180px]">
             <div className="flex-1">
-              <h2 className="text-2xl font-black tracking-tight text-white">Speaking partner</h2>
-              <p className="text-sm text-slate-300/90 mt-1">Practice live with a real person.</p>
-              <button onClick={() => navigate('/meet')} className="mt-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 px-5 py-2.5 text-sm font-bold text-white inline-flex items-center gap-2 transition"><IconUsers className="w-4 h-4" /> Find a partner</button>
-              <p className="text-[11px] text-emerald-300/80 mt-2">No AI key needed</p>
+              <h2 className="text-2xl font-black tracking-tight text-white">{t('speaking.partner')}</h2>
+              <p className="text-sm text-slate-300/90 mt-1">{t('speaking.practiceLive')}</p>
+              <button onClick={() => navigate('/meet')} className="mt-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 px-5 py-2.5 text-sm font-bold text-white inline-flex items-center gap-2 transition"><IconUsers className="w-4 h-4" /> {t('speaking.findPartner')}</button>
+              <p className="text-[11px] text-emerald-300/80 mt-2">{t('speaking.noKeyNeeded')}</p>
             </div>
             <div className="shrink-0 w-28 h-28 rounded-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 shadow-[0_0_40px_-5px] shadow-emerald-500/40 flex items-center justify-center text-5xl select-none">🗣️</div>
           </div>
@@ -204,34 +206,37 @@ export default function SpeakingPage(): JSX.Element {
 
         {/* Role-play labs */}
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-black uppercase tracking-widest text-slate-400">Role-play labs</h2>
+          <h2 className="text-sm font-black uppercase tracking-widest text-slate-400">{t('speaking.roleplays')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <button onClick={surpriseMe} className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-fuchsia-600/20 to-indigo-700/20 p-5 text-left min-h-[120px] flex flex-col justify-between transition hover:-translate-y-0.5 hover:border-white/20">
               <span className="text-3xl">🎁</span>
               <div className="flex items-center justify-between">
-                <span className="text-lg font-black text-white">Surprise me</span>
+                <span className="text-lg font-black text-white">{t('speaking.surpriseMe')}</span>
                 {!aiReady && <IconLock className="w-4 h-4 text-amber-300" />}
               </div>
             </button>
             <button onClick={() => setEditing(true)} className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-violet-600/20 to-blue-700/20 p-5 text-left min-h-[120px] flex flex-col justify-between transition hover:-translate-y-0.5 hover:border-white/20">
               <span className="text-3xl">✨</span>
-              <span className="text-lg font-black text-white inline-flex items-center gap-2">Create my own <IconPlus className="w-4 h-4 text-slate-300" /></span>
+              <span className="text-lg font-black text-white inline-flex items-center gap-2">{t('speaking.createMyOwn')} <IconPlus className="w-4 h-4 text-slate-300" /></span>
             </button>
             <button onClick={() => setView('pronunciation')} className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-amber-600/20 to-rose-700/20 p-5 text-left min-h-[120px] flex flex-col justify-between transition hover:-translate-y-0.5 hover:border-white/20">
               <span className="text-3xl">🎤</span>
-              <span className="text-lg font-black text-white inline-flex items-center gap-2">Pronunciation <IconMic className="w-4 h-4 text-slate-300" /></span>
+              <span className="text-lg font-black text-white inline-flex items-center gap-2">{t('speaking.pronunciation')} <IconMic className="w-4 h-4 text-slate-300" /></span>
             </button>
           </div>
         </section>
 
         {/* More ways to practice — companions, video AI tutor, human tutors */}
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-black uppercase tracking-widest text-slate-400">More ways to practice</h2>
+          <h2 className="text-sm font-black uppercase tracking-widest text-slate-400">{t('speaking.moreWays')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { to: '/companions', label: 'Companions', sub: 'Pick a conversation partner', Icon: IconMasks, tint: 'bg-fuchsia-500/15 text-fuchsia-300' },
-              { to: '/ai-tutor', label: 'Video call tutor', sub: 'Live voice call with Lily', Icon: IconChat, tint: 'bg-indigo-500/15 text-indigo-300' },
-              { to: '/tutors', label: 'Find a tutor', sub: 'Book a human teacher', Icon: IconUsers, tint: 'bg-emerald-500/15 text-emerald-300' }
+              { to: '/companions', label: t('speaking.companions'), sub: t('speaking.companionsSub'), Icon: IconMasks, tint: 'bg-fuchsia-500/15 text-fuchsia-300' },
+              { to: '/ai-tutor', label: t('speaking.videoCallTutor'), sub: t('speaking.videoCallTutorSub'), Icon: IconChat, tint: 'bg-indigo-500/15 text-indigo-300' },
+              { to: '/tutors', label: t('speaking.findTutor'), sub: t('speaking.findTutorSub'), Icon: IconUsers, tint: 'bg-emerald-500/15 text-emerald-300' },
+              // #A66 — these speaking features existed but had NO link from the hub.
+              { to: '/shadowing', label: 'Shadowing', sub: 'Listen, repeat, compare — themed packs', Icon: IconMic, tint: 'bg-sky-500/15 text-sky-300' },
+              { to: '/exams/ielts/speaking', label: 'Speaking exam simulator', sub: 'Full mock interview with AI examiner', Icon: IconMic, tint: 'bg-amber-500/15 text-amber-300' }
             ].map((q) => (
               <button
                 key={q.to}
@@ -251,8 +256,8 @@ export default function SpeakingPage(): JSX.Element {
         </section>
 
         {/* Role-play rails */}
-        <Rail title="Based on your activity ✨" items={forYou} locked={!aiReady} onOpen={startScenario} />
-        <Rail title="Trending now" items={trending} locked={!aiReady} onOpen={startScenario} />
+        <Rail title={t('speaking.basedOnActivity')} items={forYou} locked={!aiReady} onOpen={startScenario} />
+        <Rail title={t('speaking.trendingNow')} items={trending} locked={!aiReady} onOpen={startScenario} />
         {ROLEPLAY_SECTIONS.filter((s) => s.id !== 'trending').map((sec) => (
           <Rail key={sec.id} title={sec.label} items={bySection.get(sec.id) ?? []} locked={!aiReady} onOpen={startScenario} />
         ))}
