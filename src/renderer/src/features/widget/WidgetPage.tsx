@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { lookupWord, type LookupResult } from '../../services/lookup/dictionary'
+import { useVocab } from '../../services/study/useStudy'
+import { useStats } from '../../services/progress/useProgress'
+import { useAppStore } from '../../store/useAppStore'
 import { IconFlame, IconSearch, IconVolume } from '../../components/icons'
 
 /**
@@ -7,17 +10,15 @@ import { IconFlame, IconSearch, IconVolume } from '../../components/icons'
  * main process). Word of the day + streak + a one-tap lookup. Designed for the
  * transparent frameless widget window.
  */
-const WORDS = [
-  { word: 'serendipity', phonetic: '/ˌser.ənˈdɪp.ə.ti/', gloss: 'finding something good without looking for it' },
-  { word: 'eloquent', phonetic: '/ˈel.ə.kwənt/', gloss: 'fluent and persuasive in speech' },
-  { word: 'resilient', phonetic: '/rɪˈzɪl.i.ənt/', gloss: 'able to recover quickly from difficulties' },
-  { word: 'meticulous', phonetic: '/məˈtɪk.jə.ləs/', gloss: 'very careful and precise' }
-]
+const FALLBACK = { term: 'serendipity', translation: 'finding something good without looking for it', example: undefined as string | undefined }
 
 export default function WidgetPage(): JSX.Element {
-  // Deterministic word for the day (no Math.random / Date.now churn).
-  const dayIndex = Math.floor(new Date().getHours() / 6) % WORDS.length
-  const wod = WORDS[dayIndex]
+  const targetLanguage = useAppStore((s) => s.profile?.targetLanguage) ?? 'en'
+  const { cards } = useVocab(targetLanguage)
+  const { streak } = useStats()
+  // Deterministic word for the day from the learner's own deck — rotates daily.
+  const dayKey = Math.floor(new Date().setHours(0, 0, 0, 0) / 86_400_000)
+  const wod = cards.length > 0 ? cards[dayKey % cards.length] : FALLBACK
   const [q, setQ] = useState('')
   const [result, setResult] = useState<LookupResult | null>(null)
 
@@ -30,7 +31,7 @@ export default function WidgetPage(): JSX.Element {
       <div className="w-full h-full rounded-2xl border border-white/12 bg-[#0f1424]/95 backdrop-blur-xl shadow-2xl p-4 flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <p className="text-[10px] uppercase tracking-widest text-brand-300 font-bold">Word of the day</p>
-          <span className="inline-flex items-center gap-1 text-amber-300 text-xs font-bold"><IconFlame className="w-3.5 h-3.5" /> 12</span>
+          <span className="inline-flex items-center gap-1 text-amber-300 text-xs font-bold"><IconFlame className="w-3.5 h-3.5" /> {streak}</span>
         </div>
 
         {result ? (
@@ -42,12 +43,12 @@ export default function WidgetPage(): JSX.Element {
         ) : (
           <div className="flex-1">
             <p className="text-lg font-bold text-white flex items-center gap-2">
-              {wod.word}
-              <button onClick={() => { void new Audio(`https://api.dictionaryapi.dev/media/pronunciations/en/${wod.word}-us.mp3`).play().catch(() => undefined) }}
+              {wod.term}
+              <button onClick={() => { void new Audio(`https://api.dictionaryapi.dev/media/pronunciations/en/${wod.term}-us.mp3`).play().catch(() => undefined) }}
                 style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties} className="text-brand-300"><IconVolume className="w-4 h-4" /></button>
             </p>
-            <p className="text-[11px] text-slate-500">{wod.phonetic}</p>
-            <p className="text-xs text-slate-300 mt-1.5 leading-snug">{wod.gloss}</p>
+            <p className="text-xs text-slate-300 mt-1.5 leading-snug">{wod.translation}</p>
+            {wod.example && <p className="text-[11px] text-slate-500 mt-1 italic leading-snug">{wod.example}</p>}
           </div>
         )}
 

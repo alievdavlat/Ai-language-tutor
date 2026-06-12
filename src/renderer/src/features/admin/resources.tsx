@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Resource registry for the Admin CMS (#A56). Each entity the platform manages
- * is described once — how to load it, the table columns, the create/edit form
+ * is described once вЂ” how to load it, the table columns, the create/edit form
  * (schema-driven, or a reused bespoke editor for deeply-nested ones), delete,
  * and bulk JSON import. The generic ResourcePage renders any of these.
  *
- * Everything is wired to the REAL data layer — the shared Backend
+ * Everything is wired to the REAL data layer вЂ” the shared Backend
  * (LocalBackend + supabaseBackend) for courses/groups/challenges, and the
  * dedicated localStorage stores for library/stories/exams/roleplays/clips/paths.
  * No inline mock arrays.
@@ -67,12 +67,12 @@ export interface ResourceDef {
   toForm?: (row: any) => FormValues
   save?: (values: FormValues, existing: any | null) => Promise<void>
   remove?: (row: any) => Promise<void>
-  /** Built-in seed rows that re-appear on reload — surfaced to the user. */
+  /** Built-in seed rows that re-appear on reload вЂ” surfaced to the user. */
   isBuiltIn?: (row: any) => boolean
   bulkImport?: (rows: any[]) => Promise<number>
 }
 
-// ─── Shared option getters ───────────────────────────────────────────────────
+// в”Ђв”Ђв”Ђ Shared option getters в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 const langOptions = (): { value: string; label: string }[] =>
   SUPPORTED_LANGUAGES.map((l) => ({ value: l.code, label: `${l.flag} ${l.name}` }))
@@ -108,10 +108,10 @@ function Cover({ cover, img, emoji }: { cover?: string; img?: string; emoji?: st
   )
 }
 
-// ─── Registry ─────────────────────────────────────────────────────────────────
+// в”Ђв”Ђв”Ђ Registry в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 export const RESOURCES: ResourceDef[] = [
-  // ── Courses ────────────────────────────────────────────────────────────────
+  // в”Ђв”Ђ Courses в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   {
     key: 'courses',
     label: 'Courses',
@@ -133,11 +133,11 @@ export const RESOURCES: ResourceDef[] = [
       { key: 'level', label: 'Level', render: (c) => <Tag>{c.level}</Tag>, cls: 'w-24' },
       { key: 'lang', label: 'Language', render: (c) => <span className="text-slate-300">{langCell(c.targetLanguage)}</span>, cls: 'w-32' },
       { key: 'price', label: 'Pricing', render: (c) => (
-        c.pricing.kind === 'free' ? <Tag tone="sky">Free</Tag>
+        !c.pricing || c.pricing.kind === 'free' ? <Tag tone="sky">Free</Tag>
           : c.pricing.kind === 'one-off' ? <span className="text-slate-200 tabular-nums">${c.pricing.usd}</span>
           : <span className="text-slate-200 tabular-nums">${c.pricing.usdPerMo}/mo</span>
       ), cls: 'w-24' },
-      { key: 'enroll', label: 'Enrolled', render: (c) => <span className="text-slate-400 tabular-nums">{c.enrollmentCount.toLocaleString()}</span>, cls: 'w-24 text-right' }
+      { key: 'enroll', label: 'Enrolled', render: (c) => <span className="text-slate-400 tabular-nums">{(c.enrollmentCount ?? 0).toLocaleString()}</span>, cls: 'w-24 text-right' }
     ],
     fields: [
       { name: 'title', label: 'Title', type: 'text', required: true, full: true, placeholder: 'e.g. Business English 101' },
@@ -156,8 +156,8 @@ export const RESOURCES: ResourceDef[] = [
     ],
     toForm: (c: Course) => ({
       title: c.title, description: c.description, level: c.level, targetLanguage: c.targetLanguage,
-      pricingKind: c.pricing.kind,
-      priceUsd: c.pricing.kind === 'one-off' ? c.pricing.usd : c.pricing.kind === 'sub' ? c.pricing.usdPerMo : 0,
+      pricingKind: c.pricing?.kind ?? 'free',
+      priceUsd: c.pricing?.kind === 'one-off' ? c.pricing.usd : c.pricing?.kind === 'sub' ? c.pricing.usdPerMo : 0,
       hours: c.hours, capstone: c.capstone ?? '', thumbnailUrl: c.thumbnailUrl ?? '', cover: c.cover, published: !!c.publishedAt
     }),
     save: async (v, existing: Course | null) => {
@@ -202,7 +202,7 @@ export const RESOURCES: ResourceDef[] = [
     }
   },
 
-  // ── Library ──────────────────────────────────────────────────────────────────
+  // в”Ђв”Ђ Library в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   {
     key: 'library',
     label: 'Library',
@@ -217,7 +217,7 @@ export const RESOURCES: ResourceDef[] = [
     columns: [
       { key: 'title', label: 'Title', render: (i) => (
         <div className="flex items-center gap-2.5 min-w-0">
-          <Cover img={i.thumbnailUrl} cover="from-violet-500 to-purple-700" emoji={i.kind === 'book' ? '📘' : i.kind === 'video' ? '🎬' : '🎧'} />
+          <Cover img={i.thumbnailUrl} cover="from-violet-500 to-purple-700" emoji={i.kind === 'book' ? 'рџ“' : i.kind === 'video' ? 'рџЋ¬' : 'рџЋ§'} />
           <div className="min-w-0">
             <span className="block truncate font-semibold text-white">{i.title}</span>
             {i.author && <span className="block truncate text-[11px] text-slate-500">{i.author}</span>}
@@ -225,12 +225,12 @@ export const RESOURCES: ResourceDef[] = [
         </div>
       ) },
       { key: 'kind', label: 'Type', render: (i) => <Tag>{i.kind}</Tag>, cls: 'w-20' },
-      { key: 'level', label: 'Level', render: (i) => <span className="text-slate-300">{i.level ?? '—'}</span>, cls: 'w-20' },
+      { key: 'level', label: 'Level', render: (i) => <span className="text-slate-300">{i.level ?? 'вЂ”'}</span>, cls: 'w-20' },
       { key: 'lang', label: 'Language', render: (i) => <span className="text-slate-300">{langCell(i.language)}</span>, cls: 'w-32' }
     ],
     fields: [
       { name: 'kind', label: 'Type', type: 'select', options: [
-        { value: 'book', label: '📘 Book (PDF)' }, { value: 'video', label: '🎬 Video' }, { value: 'audio', label: '🎧 Audio' }
+        { value: 'book', label: 'рџ“ Book (PDF)' }, { value: 'video', label: 'рџЋ¬ Video' }, { value: 'audio', label: 'рџЋ§ Audio' }
       ] },
       { name: 'title', label: 'Title', type: 'text', required: true, full: true },
       { name: 'author', label: 'Author / source', type: 'text' },
@@ -238,9 +238,9 @@ export const RESOURCES: ResourceDef[] = [
       { name: 'language', label: 'Language', type: 'select', options: langOptions },
       { name: 'description', label: 'Description', type: 'textarea', full: true, rows: 2 },
       { name: 'thumbnailUrl', label: 'Thumbnail', type: 'image', uploadPrefix: 'library', full: true },
-      { name: 'pdfUrl', label: 'PDF URL', type: 'text', full: true, when: (v) => v.kind === 'book', placeholder: 'https://… .pdf' },
+      { name: 'pdfUrl', label: 'PDF URL', type: 'text', full: true, when: (v) => v.kind === 'book', placeholder: 'https://вЂ¦ .pdf' },
       { name: 'youtubeId', label: 'YouTube ID or URL', type: 'text', full: true, when: (v) => v.kind === 'video' },
-      { name: 'audioUrl', label: 'Audio URL', type: 'text', full: true, when: (v) => v.kind === 'audio', placeholder: 'https://… .mp3' },
+      { name: 'audioUrl', label: 'Audio URL', type: 'text', full: true, when: (v) => v.kind === 'audio', placeholder: 'https://вЂ¦ .mp3' },
       { name: 'durationLabel', label: 'Duration label', type: 'text', when: (v) => v.kind === 'audio', placeholder: '3:00' }
     ],
     toForm: (i: LibraryItem) => ({
@@ -272,7 +272,7 @@ export const RESOURCES: ResourceDef[] = [
     }
   },
 
-  // ── Stories (bespoke editor) ──────────────────────────────────────────────────
+  // в”Ђв”Ђ Stories (bespoke editor) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   {
     key: 'stories',
     label: 'Stories',
@@ -298,7 +298,7 @@ export const RESOURCES: ResourceDef[] = [
     bulkImport: async (rows) => { let n = 0; for (const r of rows) { stories.upsert(r); n++ } return n }
   },
 
-  // ── Exams (bespoke editor) ────────────────────────────────────────────────────
+  // в”Ђв”Ђ Exams (bespoke editor) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   {
     key: 'exams',
     label: 'Exams',
@@ -321,7 +321,7 @@ export const RESOURCES: ResourceDef[] = [
     bulkImport: async (rows) => { let n = 0; for (const r of rows) { exams.upsert(r); n++ } return n }
   },
 
-  // ── Roleplays (bespoke editor) ────────────────────────────────────────────────
+  // в”Ђв”Ђ Roleplays (bespoke editor) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   {
     key: 'roleplays',
     label: 'Role-plays',
@@ -338,14 +338,14 @@ export const RESOURCES: ResourceDef[] = [
         <div className="flex items-center gap-2.5 min-w-0"><Cover cover={r.cover} img={r.thumbnailUrl} emoji={r.emoji} /><span className="truncate font-semibold text-white">{r.title}</span></div>
       ) },
       { key: 'section', label: 'Section', render: (r) => <span className="text-slate-300 capitalize">{r.section}</span>, cls: 'w-32' },
-      { key: 'level', label: 'Level', render: (r) => <Tag>{r.level ?? '—'}</Tag>, cls: 'w-20' }
+      { key: 'level', label: 'Level', render: (r) => <Tag>{r.level ?? 'вЂ”'}</Tag>, cls: 'w-20' }
     ],
     customEditor: ({ initial, onClose, onSaved }) => <RoleplayEditor initial={initial ?? undefined} authorId={me()} onClose={onClose} onSaved={() => onSaved()} />,
     remove: async (r) => { roleplays.remove(r.id) },
     bulkImport: async (rows) => { let n = 0; for (const r of rows) { roleplays.upsert(r); n++ } return n }
   },
 
-  // ── Clips ──────────────────────────────────────────────────────────────────────
+  // в”Ђв”Ђ Clips в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   {
     key: 'clips',
     label: 'Clips',
@@ -364,7 +364,7 @@ export const RESOURCES: ResourceDef[] = [
       ) },
       { key: 'kind', label: 'Kind', render: (c) => <Tag tone="sky">{c.kind}</Tag>, cls: 'w-20' },
       { key: 'level', label: 'Level', render: (c) => <Tag>{c.level}</Tag>, cls: 'w-20' },
-      { key: 'yt', label: 'YouTube', render: (c) => <span className="text-[11px] font-mono text-slate-500">{c.youtubeId || '—'}</span>, cls: 'w-28' }
+      { key: 'yt', label: 'YouTube', render: (c) => <span className="text-[11px] font-mono text-slate-500">{c.youtubeId || 'вЂ”'}</span>, cls: 'w-28' }
     ],
     fields: [
       { name: 'title', label: 'Title', type: 'text', required: true, full: true },
@@ -379,7 +379,7 @@ export const RESOURCES: ResourceDef[] = [
       { name: 'accent', label: 'Accent flag', type: 'emoji' },
       { name: 'cover', label: 'Cover gradient', type: 'gradient', full: true }
     ],
-    toForm: (c) => ({ title: c.title, artist: c.artist, kind: c.kind, youtubeId: c.youtubeId, level: c.level, duration: c.duration, genre: c.genre ?? '', accent: c.accent ?? '🇺🇸', cover: c.cover }),
+    toForm: (c) => ({ title: c.title, artist: c.artist, kind: c.kind, youtubeId: c.youtubeId, level: c.level, duration: c.duration, genre: c.genre ?? '', accent: c.accent ?? 'рџ‡єрџ‡ё', cover: c.cover }),
     save: async (v, existing) => {
       clips.upsert({
         id: existing?.id ?? createId('clip'),
@@ -388,16 +388,16 @@ export const RESOURCES: ResourceDef[] = [
         cover: String(v.cover || 'from-sky-500 to-blue-700'),
         youtubeId: String(v.youtubeId || ''), level: String(v.level || 'A2'),
         duration: String(v.duration || ''), genre: (v.genre as string) || undefined,
-        accent: String(v.accent || '🇺🇸'),
+        accent: String(v.accent || 'рџ‡єрџ‡ё'),
         plays: existing?.plays ?? '0', ago: existing?.ago ?? 'just now',
         lines: existing?.lines, builtIn: existing?.builtIn, authorId: existing?.authorId ?? me()
       })
     },
     remove: async (c) => { clips.remove(c.id) },
-    bulkImport: async (rows) => { let n = 0; for (const r of rows) { clips.upsert({ id: r.id ?? createId('clip'), plays: '0', ago: 'just now', accent: '🇺🇸', cover: 'from-sky-500 to-blue-700', kind: 'song', level: 'A2', duration: '', ...r }); n++ } return n }
+    bulkImport: async (rows) => { let n = 0; for (const r of rows) { clips.upsert({ id: r.id ?? createId('clip'), plays: '0', ago: 'just now', accent: 'рџ‡єрџ‡ё', cover: 'from-sky-500 to-blue-700', kind: 'song', level: 'A2', duration: '', ...r }); n++ } return n }
   },
 
-  // ── Learning paths ────────────────────────────────────────────────────────────
+  // в”Ђв”Ђ Learning paths в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   {
     key: 'paths',
     label: 'Learning paths',
@@ -419,7 +419,7 @@ export const RESOURCES: ResourceDef[] = [
     fields: [
       { name: 'title', label: 'Title', type: 'text', required: true, full: true },
       { name: 'subtitle', label: 'Subtitle', type: 'text', full: true },
-      { name: 'level', label: 'Level range', type: 'text', placeholder: 'B1 → C1' },
+      { name: 'level', label: 'Level range', type: 'text', placeholder: 'B1 в†’ C1' },
       { name: 'capstone', label: 'Capstone', type: 'textarea', full: true, rows: 2 },
       { name: 'cover', label: 'Cover gradient', type: 'gradient', full: true }
     ],
@@ -428,7 +428,7 @@ export const RESOURCES: ResourceDef[] = [
       paths.upsert({
         id: existing?.id ?? createId('path'),
         title: String(v.title || '').trim() || 'Untitled path',
-        subtitle: String(v.subtitle || ''), level: String(v.level || 'A1 → B1'),
+        subtitle: String(v.subtitle || ''), level: String(v.level || 'A1 в†’ B1'),
         cover: String(v.cover || 'from-rose-500 to-pink-700'),
         capstone: String(v.capstone || ''),
         courseIds: existing?.courseIds ?? [],
@@ -440,7 +440,7 @@ export const RESOURCES: ResourceDef[] = [
     bulkImport: async (rows) => { let n = 0; for (const r of rows) { paths.upsert({ id: r.id ?? createId('path'), subtitle: '', level: 'A1', capstone: '', cover: 'from-rose-500 to-pink-700', courseIds: [], goal: 'foundations', ...r }); n++ } return n }
   },
 
-  // ── Groups / clubs ────────────────────────────────────────────────────────────
+  // в”Ђв”Ђ Groups / clubs в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   {
     key: 'groups',
     label: 'Groups & clubs',
@@ -457,7 +457,7 @@ export const RESOURCES: ResourceDef[] = [
         <div className="flex items-center gap-2.5 min-w-0"><Cover cover={g.cover} img={g.imageUrl} /><span className="truncate font-semibold text-white">{g.name}</span></div>
       ) },
       { key: 'lang', label: 'Language', render: (g) => <span className="text-slate-300">{langCell(g.language)}</span>, cls: 'w-32' },
-      { key: 'members', label: 'Members', render: (g) => <span className="text-slate-400 tabular-nums">{g.memberCount.toLocaleString()}</span>, cls: 'w-24 text-right' }
+      { key: 'members', label: 'Members', render: (g) => <span className="text-slate-400 tabular-nums">{(g.memberCount ?? 0).toLocaleString()}</span>, cls: 'w-24 text-right' }
     ],
     fields: [
       { name: 'name', label: 'Name', type: 'text', required: true, full: true },
@@ -494,7 +494,7 @@ export const RESOURCES: ResourceDef[] = [
     }
   },
 
-  // ── Challenges ────────────────────────────────────────────────────────────────
+  // в”Ђв”Ђ Challenges в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   {
     key: 'challenges',
     label: 'Challenges',
@@ -512,7 +512,7 @@ export const RESOURCES: ResourceDef[] = [
       ) },
       { key: 'goal', label: 'Goal', render: (c) => <span className="text-slate-300 tabular-nums">{c.goal} <span className="text-slate-500">{c.kind}</span></span>, cls: 'w-28' },
       { key: 'lang', label: 'Language', render: (c) => <span className="text-slate-300">{langCell(c.language)}</span>, cls: 'w-28' },
-      { key: 'parts', label: 'Joined', render: (c) => <span className="text-slate-400 tabular-nums">{c.participantCount.toLocaleString()}</span>, cls: 'w-20 text-right' }
+      { key: 'parts', label: 'Joined', render: (c) => <span className="text-slate-400 tabular-nums">{(c.participantCount ?? 0).toLocaleString()}</span>, cls: 'w-20 text-right' }
     ],
     fields: [
       { name: 'title', label: 'Title', type: 'text', required: true, full: true },

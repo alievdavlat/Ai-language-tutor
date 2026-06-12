@@ -15,6 +15,39 @@ const SENTENCES = [
   'I really think we should leave a little earlier'
 ]
 
+interface Phoneme {
+  ipa: string
+  word: string
+  against: string
+  pairs: [string, string][]
+}
+
+const PHONEMES: Phoneme[] = [
+  { ipa: '/θ/', word: 'think', against: '/s/ sink', pairs: [['think', 'sink'], ['thin', 'sin'], ['thank', 'sank'], ['mouth', 'mouse']] },
+  { ipa: '/ð/', word: 'this', against: '/z/ ziss', pairs: [['then', 'zen'], ['they', 'day'], ['breathe', 'breeze'], ['though', 'dough']] },
+  { ipa: '/w/', word: 'wood', against: '/v/ vood', pairs: [['west', 'vest'], ['wine', 'vine'], ['wet', 'vet'], ['while', 'vile']] },
+  { ipa: '/æ/', word: 'cat', against: '/e/ ket', pairs: [['bad', 'bed'], ['man', 'men'], ['sat', 'set'], ['had', 'head']] },
+  { ipa: '/ɪ/', word: 'ship', against: '/iː/ sheep', pairs: [['ship', 'sheep'], ['bit', 'beat'], ['sit', 'seat'], ['chip', 'cheap']] },
+  { ipa: '/ʌ/', word: 'cup', against: '/ɑː/ cop', pairs: [['cup', 'cop'], ['nut', 'not'], ['duck', 'dock'], ['luck', 'lock']] }
+]
+
+// Per-user measured phoneme strength — rolling average of real drill attempts.
+const PHONEME_KEY = 'speakai.phonemes.v1'
+
+function loadPhonemeScores(): Record<string, number[]> {
+  try {
+    return JSON.parse(localStorage.getItem(PHONEME_KEY) ?? '{}') as Record<string, number[]>
+  } catch {
+    return {}
+  }
+}
+
+function phonemeStrength(scores: number[] | undefined): number | null {
+  if (!scores || scores.length === 0) return null
+  const recent = scores.slice(-5)
+  return Math.round(recent.reduce((a, b) => a + b, 0) / recent.length)
+}
+
 function wordColor(score: number): string {
   if (score >= 85) return 'text-emerald-300'
   if (score >= 65) return 'text-amber-300'
@@ -48,6 +81,37 @@ export default function PronunciationPage(): JSX.Element {
   const [overall, setOverall] = useState<number | null>(null)
   const [wpm, setWpm] = useState<number | null>(null)
   const [selected, setSelected] = useState(0)
+
+  // Phoneme drills — measured per user from real recorded attempts.
+  const [phonemeScores, setPhonemeScores] = useState<Record<string, number[]>>(loadPhonemeScores)
+  const [drillIpa, setDrillIpa] = useState(PHONEMES[0].ipa)
+  const [recordingDrill, setRecordingDrill] = useState<string | null>(null)
+  const [lastDrillResult, setLastDrillResult] = useState<{ word: string; score: number } | null>(null)
+  const activePhoneme = PHONEMES.find((p) => p.ipa === drillIpa) ?? PHONEMES[0]
+
+  const recordDrillScore = (ipa: string, score: number): void => {
+    setPhonemeScores((cur) => {
+      const next = { ...cur, [ipa]: [...(cur[ipa] ?? []), score].slice(-20) }
+      localStorage.setItem(PHONEME_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const toggleDrillRecord = (ipa: string, word: string): void => {
+    if (attempt.recording && recordingDrill === word) {
+      attempt.stop()
+      window.setTimeout(() => {
+        const result = scoreAttempt(word, attempt.transcript)
+        recordDrillScore(ipa, result.overall)
+        setLastDrillResult({ word, score: result.overall })
+        setRecordingDrill(null)
+      }, 350)
+    } else if (!attempt.recording) {
+      setLastDrillResult(null)
+      setRecordingDrill(word)
+      attempt.start()
+    }
+  }
 
   const finishAndScore = (): void => {
     attempt.stop()
@@ -226,56 +290,84 @@ export default function PronunciationPage(): JSX.Element {
           </p>
         </div>
 
-        {/* Phoneme drills */}
+        {/* Phoneme drills — strengths measured from your own recorded attempts */}
         <div>
-          <SectionHeading title="Phoneme drills" subtitle="Train the sounds Uzbek speakers often mix up" />
+          <SectionHeading
+            title="Phoneme drills"
+            subtitle="Record each sound — your strength is measured from real attempts"
+          />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {([
-              { ipa: '/θ/', word: 'think', against: '/s/ sink', strength: 32 },
-              { ipa: '/ð/', word: 'this', against: '/z/ ziss', strength: 41 },
-              { ipa: '/w/', word: 'wood', against: '/v/ vood', strength: 78 },
-              { ipa: '/æ/', word: 'cat', against: '/e/ ket', strength: 64 },
-              { ipa: '/ɪ/', word: 'ship', against: '/iː/ sheep', strength: 55 },
-              { ipa: '/ʌ/', word: 'cup', against: '/ɑː/ cop', strength: 49 }
-            ] as const).map((p) => {
-              const TONE = p.strength >= 75
-                ? { text: 'text-emerald-300', bar: 'bg-emerald-400' }
-                : p.strength >= 50
-                  ? { text: 'text-amber-300', bar: 'bg-amber-400' }
-                  : { text: 'text-rose-300', bar: 'bg-rose-400' }
+            {PHONEMES.map((p) => {
+              const strength = phonemeStrength(phonemeScores[p.ipa])
+              const TONE =
+                strength == null
+                  ? { text: 'text-slate-500', bar: 'bg-slate-500' }
+                  : strength >= 75
+                    ? { text: 'text-emerald-300', bar: 'bg-emerald-400' }
+                    : strength >= 50
+                      ? { text: 'text-amber-300', bar: 'bg-amber-400' }
+                      : { text: 'text-rose-300', bar: 'bg-rose-400' }
+              const isRecording = attempt.recording && recordingDrill === p.word
               return (
-                <button
+                <div
                   key={p.ipa}
-                  onClick={() => speak(p.word)}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white/[0.05] transition"
+                  className={cn(
+                    'rounded-2xl border bg-white/[0.03] p-4 text-left transition',
+                    p.ipa === drillIpa ? 'border-brand-400/50 ring-1 ring-brand-400/30' : 'border-white/10 hover:bg-white/[0.05]'
+                  )}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setDrillIpa(p.ipa)}
                 >
                   <div className="flex items-baseline justify-between">
                     <span className="text-2xl font-black text-white">{p.ipa}</span>
-                    <span className={cn('text-[11px] font-bold uppercase tracking-wider', TONE.text)}>{p.strength}%</span>
+                    <span className={cn('text-[11px] font-bold uppercase tracking-wider', TONE.text)}>
+                      {strength == null ? 'not measured' : `${strength}%`}
+                    </span>
                   </div>
                   <p className="text-sm text-slate-200 mt-2">
                     <b className="text-white">{p.word}</b> vs <span className="text-slate-400">{p.against}</span>
                   </p>
                   <div className="mt-2 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                    <div className={cn('h-full rounded-full', TONE.bar)} style={{ width: `${p.strength}%` }} />
+                    <div className={cn('h-full rounded-full', TONE.bar)} style={{ width: `${strength ?? 0}%` }} />
                   </div>
-                  <p className="text-[10px] text-slate-500 mt-2">Tap to hear the word</p>
-                </button>
+                  <div className="flex items-center gap-2 mt-2.5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); speak(p.word) }}
+                      className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] hover:bg-white/10 px-2.5 py-1 text-[10px] font-bold text-slate-200"
+                    >
+                      <IconVolume className="w-3 h-3 text-brand-300" /> Hear
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleDrillRecord(p.ipa, p.word) }}
+                      disabled={!attempt.supported || (attempt.recording && recordingDrill !== p.word)}
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold transition disabled:opacity-40',
+                        isRecording ? 'bg-rose-500/30 text-rose-200 animate-pulse' : 'bg-brand-500/20 text-brand-200 hover:bg-brand-500/30'
+                      )}
+                    >
+                      <IconMic className="w-3 h-3" /> {isRecording ? 'Stop' : 'Say it'}
+                    </button>
+                  </div>
+                  {lastDrillResult?.word === p.word && (
+                    <p className={cn('text-[10px] font-bold mt-1.5', lastDrillResult.score >= 65 ? 'text-emerald-300' : 'text-rose-300')}>
+                      Last attempt: {lastDrillResult.score}%
+                    </p>
+                  )}
+                </div>
               )
             })}
           </div>
         </div>
 
-        {/* Minimal pairs picker (drill detail) */}
+        {/* Minimal pairs picker — follows the selected phoneme drill */}
         <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-          <SectionHeading title="Minimal pairs: /θ/ vs /s/" subtitle="Tap a word to hear it" />
+          <SectionHeading
+            title={`Minimal pairs: ${activePhoneme.ipa} vs ${activePhoneme.against.split(' ')[0]}`}
+            subtitle="Tap a word to hear it"
+          />
           <div className="grid grid-cols-2 gap-3 mt-2">
-            {[
-              ['think', 'sink'],
-              ['thin', 'sin'],
-              ['thank', 'sank'],
-              ['mouth', 'mouse']
-            ].map(([a, b]) => (
+            {activePhoneme.pairs.map(([a, b]) => (
               <div key={a} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 flex items-center justify-between gap-2">
                 <button onClick={() => speak(a)} className="flex-1 rounded-xl bg-white/[0.05] hover:bg-emerald-500/20 py-3 text-sm font-bold text-white transition">{a}</button>
                 <button onClick={() => speak(b)} className="flex-1 rounded-xl bg-white/[0.05] hover:bg-emerald-500/20 py-3 text-sm font-bold text-white transition">{b}</button>

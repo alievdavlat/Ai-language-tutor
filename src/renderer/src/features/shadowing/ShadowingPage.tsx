@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { cn } from '../../lib/classnames'
 import { PageHeader, ProgressBar, SectionHeading } from '../../components/ui'
 import { IconHeadphones, IconMic, IconPlay, IconStar, IconVolume } from '../../components/icons'
@@ -7,23 +7,104 @@ import { useTTS } from '../../hooks/tts'
 import { useSpeechAttempt } from '../../hooks/useSpeechAttempt'
 import { useWaveformRecorder } from '../../hooks/useWaveformRecorder'
 import { scoreAttempt, type ScoredWord } from '../../lib/pronunciation'
+import { logActivity } from '../../services/activity'
+import { backend } from '../../services/backend/useBackend'
 import { ACCENT_TO_LANG } from '@shared/constants'
 
 type Step = 'listen' | 'record' | 'compare'
 
-const SENTENCES = [
-  'Could you tell me where the nearest subway station is?',
-  'I was wondering if you could help me with something.',
-  'Let me know if there is anything else you need.',
-  'It looks like the meeting has been moved to tomorrow.'
+interface ShadowPack {
+  id: string
+  title: string
+  level: string
+  cover: string
+  sentences: string[]
+}
+
+const PACKS: ShadowPack[] = [
+  {
+    id: 'everyday',
+    title: 'Everyday conversation',
+    level: 'A2',
+    cover: 'from-brand-500 to-indigo-700',
+    sentences: [
+      'Could you tell me where the nearest subway station is?',
+      'I was wondering if you could help me with something.',
+      'Let me know if there is anything else you need.',
+      'It looks like the meeting has been moved to tomorrow.'
+    ]
+  },
+  {
+    id: 'travel',
+    title: 'Travel essentials',
+    level: 'A2',
+    cover: 'from-emerald-500 to-teal-700',
+    sentences: [
+      'I would like to check in for my flight to London, please.',
+      'Could I get a window seat if one is still available?',
+      'How long does it take to get to the city center from here?',
+      'Is breakfast included in the price of the room?',
+      'Could you recommend a good local restaurant nearby?',
+      'What time does the last train leave tonight?'
+    ]
+  },
+  {
+    id: 'business',
+    title: 'Business meetings',
+    level: 'B1',
+    cover: 'from-sky-500 to-blue-700',
+    sentences: [
+      'Let me walk you through the main points of the proposal.',
+      'Could we schedule a follow-up call for early next week?',
+      'I think we should focus on the long-term benefits first.',
+      'Does anyone have any questions before we move on?',
+      'We need to finalize the budget by the end of the month.',
+      'Thank you all for taking the time to join the meeting today.'
+    ]
+  },
+  {
+    id: 'service',
+    title: 'Customer service',
+    level: 'A2',
+    cover: 'from-rose-500 to-pink-700',
+    sentences: [
+      'I am sorry to hear that — let me see what I can do.',
+      'Could you give me your order number, please?',
+      'Your refund should arrive within three to five business days.',
+      'Is there anything else I can help you with today?',
+      'I will transfer you to the right department right away.'
+    ]
+  },
+  {
+    id: 'idioms',
+    title: 'Idioms & expressions',
+    level: 'B2',
+    cover: 'from-violet-500 to-purple-700',
+    sentences: [
+      'It costs an arm and a leg, but it is worth every penny.',
+      'Let us not beat around the bush and get straight to the point.',
+      'I was on the fence about it, but you have convinced me.',
+      'That exam was a piece of cake compared to the last one.',
+      'We will cross that bridge when we come to it.',
+      'He let the cat out of the bag about the surprise party.'
+    ]
+  }
 ]
 
-const SETS = [
-  { title: 'Travel essentials', count: 12, level: 'A2', cover: 'from-emerald-500 to-teal-700' },
-  { title: 'Business meetings', count: 18, level: 'B1', cover: 'from-sky-500 to-blue-700' },
-  { title: 'Customer service', count: 10, level: 'A2', cover: 'from-rose-500 to-pink-700' },
-  { title: 'Idioms & expressions', count: 22, level: 'B2', cover: 'from-violet-500 to-purple-700' }
-]
+// Per-pack completed-sentence progress, persisted across sessions.
+const PROGRESS_KEY = 'speakai.shadowing.v1'
+
+function loadProgress(): Record<string, string[]> {
+  try {
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY) ?? '{}') as Record<string, string[]>
+  } catch {
+    return {}
+  }
+}
+
+function saveProgress(p: Record<string, string[]>): void {
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(p))
+}
 
 function wordColor(s: number): string {
   if (s >= 85) return 'text-emerald-300'
@@ -41,9 +122,38 @@ export default function ShadowingPage(): JSX.Element {
   const recorder = useWaveformRecorder()
 
   const [step, setStep] = useState<Step>('listen')
+  const [packId, setPackId] = useState(PACKS[0].id)
+  const pack = PACKS.find((p) => p.id === packId) ?? PACKS[0]
   const [sentenceIdx, setSentenceIdx] = useState(0)
-  const sentence = SENTENCES[sentenceIdx]
+  const sentence = pack.sentences[sentenceIdx]
   const words = useMemo(() => sentence.split(/\s+/), [sentence])
+  const [progress, setProgress] = useState<Record<string, string[]>>(loadProgress)
+
+  const markDone = useCallback(
+    (s: string): void => {
+      setProgress((cur) => {
+        const done = new Set(cur[pack.id] ?? [])
+        if (done.has(s)) return cur
+        done.add(s)
+        const next = { ...cur, [pack.id]: [...done] }
+        saveProgress(next)
+        return next
+      })
+      const me = backend.currentUserId()
+      if (me) void logActivity({ userId: me, kind: 'speaking_session', minutes: 1, meta: { feature: 'shadowing', pack: pack.id } })
+    },
+    [pack.id]
+  )
+
+  const openPack = (id: string): void => {
+    if (id === packId) return
+    attempt.stop()
+    recorder.stop()
+    setScored(null)
+    setPackId(id)
+    setSentenceIdx(0)
+    setStep('listen')
+  }
 
   const [scored, setScored] = useState<ScoredWord[] | null>(null)
   const overall = scored ? Math.round(scored.reduce((a, b) => a + b.score, 0) / scored.length) : 0
@@ -76,14 +186,19 @@ export default function ShadowingPage(): JSX.Element {
     attempt.stop()
     recorder.stop()
     window.setTimeout(() => {
-      setScored(scoreAttempt(sentence, attempt.transcript).words)
+      const result = scoreAttempt(sentence, attempt.transcript)
+      setScored(result.words)
+      const pct = result.words.length
+        ? Math.round(result.words.reduce((a, b) => a + b.score, 0) / result.words.length)
+        : 0
+      if (pct >= 65) markDone(sentence)
       setStep('compare')
     }, 350)
   }
 
   const nextSentence = (): void => {
     setScored(null)
-    setSentenceIdx((i) => (i + 1) % SENTENCES.length)
+    setSentenceIdx((i) => (i + 1) % pack.sentences.length)
     setStep('listen')
   }
 
@@ -121,7 +236,9 @@ export default function ShadowingPage(): JSX.Element {
 
         {/* Stage card */}
         <div className="rounded-card border border-white/10 bg-white/[0.03] p-6 flex flex-col items-center gap-5">
-          <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">Target sentence</p>
+          <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">
+            {pack.title} · {sentenceIdx + 1}/{pack.sentences.length}
+          </p>
           <p className="text-2xl font-bold text-white text-center leading-relaxed">
             {step === 'compare' && scored
               ? scored.map((w, i) => <span key={i} className={cn('mr-2', wordColor(w.score))}>{w.text}</span>)
@@ -250,22 +367,34 @@ export default function ShadowingPage(): JSX.Element {
 
         {/* Sets */}
         <SectionHeading title="Shadowing sets" subtitle="Pick a themed pack" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {SETS.map((s) => (
-            <button key={s.title} className="rounded-2xl overflow-hidden border border-white/10 bg-white/[0.025] hover:border-white/20 text-left">
-              <div className={cn('relative h-20 bg-gradient-to-br', s.cover)}>
-                <span className="absolute top-2 left-2 rounded-full bg-black/30 backdrop-blur text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">{s.level}</span>
-                <IconHeadphones className="absolute bottom-2 right-2 w-5 h-5 text-white/80" />
-              </div>
-              <div className="p-3">
-                <p className="text-sm font-bold text-white">{s.title}</p>
-                <p className="text-[11px] text-slate-400 inline-flex items-center gap-1"><IconStar className="w-3 h-3 text-amber-300" /> {s.count} sentences</p>
-              </div>
-            </button>
-          ))}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          {PACKS.map((p) => {
+            const done = (progress[p.id] ?? []).filter((s) => p.sentences.includes(s)).length
+            const pct = Math.round((done / p.sentences.length) * 100)
+            return (
+              <button
+                key={p.id}
+                onClick={() => openPack(p.id)}
+                className={cn(
+                  'rounded-2xl overflow-hidden border bg-white/[0.025] text-left transition',
+                  p.id === packId ? 'border-brand-400/60 ring-1 ring-brand-400/40' : 'border-white/10 hover:border-white/20'
+                )}
+              >
+                <div className={cn('relative h-20 bg-gradient-to-br', p.cover)}>
+                  <span className="absolute top-2 left-2 rounded-full bg-black/30 backdrop-blur text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">{p.level}</span>
+                  <IconHeadphones className="absolute bottom-2 right-2 w-5 h-5 text-white/80" />
+                </div>
+                <div className="p-3">
+                  <p className="text-sm font-bold text-white">{p.title}</p>
+                  <p className="text-[11px] text-slate-400 inline-flex items-center gap-1">
+                    <IconStar className="w-3 h-3 text-amber-300" /> {done}/{p.sentences.length} done
+                  </p>
+                  <div className="mt-2"><ProgressBar value={pct} color="brand" /></div>
+                </div>
+              </button>
+            )
+          })}
         </div>
-
-        <ProgressBar value={42} color="brand" className="hidden" />
       </div>
     </div>
   )

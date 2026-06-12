@@ -37,6 +37,7 @@ function InnerTutor(): JSX.Element {
   const level = profile?.level ?? 'B1'
   const [scenario, setScenario] = useState(SCENARIOS[0])
   const [callSeconds, setCallSeconds] = useState(0)
+  const [subtitles, setSubtitles] = useState(true)
 
   const convo = useVoiceConversation({
     systemPrompt: buildLilyPrompt(level, scenario.brief),
@@ -115,16 +116,18 @@ function InnerTutor(): JSX.Element {
           <p className="text-sm font-bold text-slate-200 uppercase tracking-widest">{PHASE_LABEL[phase]}</p>
 
           {/* Live transcript */}
-          <div className="w-full max-w-md flex flex-col gap-2">
-            {lastTwo.map((m, i) => (
-              <div key={i} className={cn('rounded-2xl px-4 py-2.5 text-sm', m.role === 'user' ? 'bg-white/[0.08] text-slate-200 self-end' : 'bg-brand-500/15 text-brand-100 self-start ring-1 ring-brand-400/20')}>
-                {m.text}
-              </div>
-            ))}
-            {convo.interim && (
-              <div className="rounded-2xl px-4 py-2.5 text-sm bg-white/[0.05] text-slate-400 self-end italic">{convo.interim}</div>
-            )}
-          </div>
+          {subtitles && (
+            <div className="w-full max-w-md flex flex-col gap-2">
+              {lastTwo.map((m, i) => (
+                <div key={i} className={cn('rounded-2xl px-4 py-2.5 text-sm', m.role === 'user' ? 'bg-white/[0.08] text-slate-200 self-end' : 'bg-brand-500/15 text-brand-100 self-start ring-1 ring-brand-400/20')}>
+                  {m.text}
+                </div>
+              ))}
+              {convo.interim && (
+                <div className="rounded-2xl px-4 py-2.5 text-sm bg-white/[0.05] text-slate-400 self-end italic">{convo.interim}</div>
+              )}
+            </div>
+          )}
 
           {convo.error && (
             <button onClick={() => navigate('/settings')} className="text-xs text-rose-300 underline">
@@ -135,8 +138,18 @@ function InnerTutor(): JSX.Element {
 
         {/* Controls */}
         <footer className="px-6 pb-8 flex items-center justify-center gap-5">
-          <button title="Mute" className="w-14 h-14 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-white flex items-center justify-center">
+          <button
+            title={convo.muted ? 'Unmute voice' : 'Mute voice'}
+            onClick={() => convo.toggleMuted()}
+            className={cn(
+              'relative w-14 h-14 rounded-full flex items-center justify-center transition',
+              convo.muted
+                ? 'bg-rose-500/25 text-rose-300 ring-2 ring-rose-400/50'
+                : 'bg-white/[0.08] hover:bg-white/[0.14] text-white'
+            )}
+          >
             <IconVolume className="w-5 h-5" />
+            {convo.muted && <span className="absolute w-7 h-0.5 bg-rose-300 rotate-45 rounded-full" />}
           </button>
           <button
             onClick={() => convo.toggleMic()}
@@ -148,7 +161,16 @@ function InnerTutor(): JSX.Element {
           >
             <IconMic className="w-7 h-7" />
           </button>
-          <button title="Subtitles" className="w-14 h-14 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-white flex items-center justify-center">
+          <button
+            title={subtitles ? 'Hide subtitles' : 'Show subtitles'}
+            onClick={() => setSubtitles((v) => !v)}
+            className={cn(
+              'w-14 h-14 rounded-full flex items-center justify-center transition',
+              subtitles
+                ? 'bg-brand-500/25 text-brand-200 ring-2 ring-brand-400/40'
+                : 'bg-white/[0.08] hover:bg-white/[0.14] text-white'
+            )}
+          >
             <IconChat className="w-5 h-5" />
           </button>
         </footer>

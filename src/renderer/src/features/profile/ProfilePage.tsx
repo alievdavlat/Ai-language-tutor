@@ -6,6 +6,7 @@ import { useTargetLanguage } from '../../lib/language'
 import { backend } from '../../services/backend/useBackend'
 import { social, meId, ensureLearnerSeed } from '../../services/backend/social'
 import { timeAgo } from '../../lib/time'
+import { downloadProfileCertificate } from '../../lib/certificate'
 import { AvatarCircle, PageHeader, ProgressBar, SectionHeading, StatCard, Tabs, type TabItem } from '../../components/ui'
 import {
   IconBolt,
@@ -87,7 +88,7 @@ function RadarChart({ values, labels }: { values: number[]; labels: readonly str
   )
 }
 
-function CertCard({ c }: { c: Certificate }): JSX.Element {
+function CertCard({ c, learnerName }: { c: Certificate; learnerName: string }): JSX.Element {
   return (
     <div className={cn('rounded-card p-5 bg-gradient-to-br ring-1 ring-white/10 relative overflow-hidden', c.cover)}>
       <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
@@ -97,7 +98,10 @@ function CertCard({ c }: { c: Certificate }): JSX.Element {
         <p className="text-xs text-white/80 mt-1">{c.detail}</p>
         <div className="flex items-center justify-between mt-4">
           <span className="text-[11px] text-white/70">{new Date(c.issuedAt).toLocaleDateString()}</span>
-          <button className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur px-3 py-1.5 text-[11px] font-bold text-white hover:bg-white/30 transition">
+          <button
+            onClick={() => downloadProfileCertificate(c, learnerName)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur px-3 py-1.5 text-[11px] font-bold text-white hover:bg-white/30 transition"
+          >
             <IconDownload className="w-3.5 h-3.5" /> Download
           </button>
         </div>
@@ -255,7 +259,7 @@ export default function ProfilePage(): JSX.Element {
 
         {tab === 'certificates' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {certs.map((c) => <CertCard key={c.id} c={c} />)}
+            {certs.map((c) => <CertCard key={c.id} c={c} learnerName={displayName} />)}
             <div className="rounded-card border border-dashed border-white/15 bg-white/[0.02] p-5 flex flex-col items-center text-center gap-2 min-h-[180px] justify-center">
               <span className="w-11 h-11 rounded-full bg-brand-500/15 text-brand-300 flex items-center justify-center"><IconTrophy className="w-5 h-5" /></span>
               <p className="text-sm font-semibold text-white">{certs.length === 0 ? 'No certificates yet' : 'Earn more'}</p>

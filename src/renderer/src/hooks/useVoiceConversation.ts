@@ -35,6 +35,10 @@ export interface VoiceConversation {
   /** True while TTS is playing. */
   speaking: boolean
   error: string | null
+  /** True while the tutor's voice output is muted (text still streams). */
+  muted: boolean
+  /** Mute/unmute the assistant's voice — muting cuts any speech mid-word. */
+  toggleMuted: () => void
   /** Begin the conversation — speaks the greeting (call once). */
   begin: () => void
   /** Toggle the mic on/off (push-to-talk style). */
@@ -74,7 +78,16 @@ export function useVoiceConversation(opts: UseVoiceConversationOptions): VoiceCo
     rate: settings?.ttsSpeed,
     voiceURI: settings?.voiceURI
   })
-  const streamer = useStreamingSpeaker({ speak, cancel: cancelTTS })
+  const [muted, setMuted] = useState(false)
+  const mutedRef = useRef(false)
+  const speakOut = useCallback(
+    async (text: string): Promise<void> => {
+      if (mutedRef.current) return
+      await speak(text)
+    },
+    [speak]
+  )
+  const streamer = useStreamingSpeaker({ speak: speakOut, cancel: cancelTTS })
   const { send, abort: abortChat, streaming, error } = useChatStream(model)
 
   const buildMessages = (history: VoiceTurn[]): ChatMessage[] => [
@@ -146,13 +159,24 @@ export function useVoiceConversation(opts: UseVoiceConversationOptions): VoiceCo
   const pushAssistantLine = useCallback(
     (text: string, speakIt = true): void => {
       setTurns((cur) => [...cur, { role: 'assistant', text }])
-      if (speakIt) {
+      if (speakIt && !mutedRef.current) {
         setPhase('speaking')
         void speak(text).then(() => setPhase('listening'))
       }
     },
     [speak]
   )
+
+  const toggleMuted = useCallback((): void => {
+    const next = !mutedRef.current
+    mutedRef.current = next
+    setMuted(next)
+    if (next) {
+      streamer.cancel()
+      cancelTTS()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cancelTTS])
 
   const begunRef = useRef(false)
   const begin = useCallback((): void => {
@@ -192,6 +216,8 @@ export function useVoiceConversation(opts: UseVoiceConversationOptions): VoiceCo
     thinking: streaming,
     speaking,
     error,
+    muted,
+    toggleMuted,
     begin,
     toggleMic,
     startMic,
