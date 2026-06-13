@@ -85,9 +85,63 @@ export async function logActivity(
   const xp = input.xp ?? DEFAULT_XP[input.kind] ?? 0
   const res = await backend.recordActivity({ ...input, xp })
   mirrorToProgressStore(res.event)
+  void syncChallenges(res.event, res.stats)
   emitLocalChange({ event: 'INSERT', table: 'activity_events', new: res.event as unknown as Record<string, unknown>, old: null })
   emitLocalChange({ event: 'UPDATE', table: 'user_stats', new: res.stats as unknown as Record<string, unknown>, old: null })
   return res
+}
+
+/**
+ * #B18 — bridge real activity into joined challenges so progress actually
+ * advances (they were joinable-but-inert: only the seed ever moved them).
+ * Maps each event to the challenge metric and writes the new cumulative
+ * progress; completing fires a one-time notification.
+ *
+ *   streak  → absolute current streak
+ *   words   → += word_learned count
+ *   minutes → += this event's minutes
+ *   lessons → +1 per lesson_complete
+ */
+async function syncChallenges(event: ActivityEvent, stats: UserStats): Promise<void> {
+  try {
+    const joined = await backend.myChallenges(event.userId)
+    for (const { challenge, participant } of joined) {
+      if (participant.completedAt) continue
+      let next = participant.progress
+      switch (challenge.kind) {
+        case 'streak':
+          next = Math.max(participant.progress, stats.streak)
+          break
+        case 'words':
+          if (event.kind === 'word_learned') next += Number((event.meta?.count as number) ?? 1)
+          break
+        case 'minutes':
+          next += event.minutes ?? 0
+          break
+        case 'lessons':
+          if (event.kind === 'lesson_complete') next += 1
+          break
+        default:
+          break
+      }
+      if (next <= participant.progress) continue
+      await backend.updateChallengeProgress(event.userId, challenge.id, next)
+      if (next >= challenge.goal) {
+        await backend
+          .createNotif({
+            userId: event.userId,
+            type: 'social',
+            kind: 'challenge',
+            title: 'Challenge complete! 🏆',
+            body: `You finished "${challenge.title}".`,
+            link: '/community'
+          })
+          .catch(() => undefined)
+      }
+    }
+  } catch {
+    /* challenge sync is best-effort */
+  }
 }
 
 /** Minutes practised today (local day), summed from the activity log. */

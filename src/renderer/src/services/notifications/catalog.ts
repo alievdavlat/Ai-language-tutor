@@ -111,6 +111,11 @@ export const NOTIF_CATALOG: Record<NotifKind, NotifKindMeta> = {
     kind: 'certificate', label: 'Certificate', category: 'learning', group: 'learning',
     Icon: IconTrophy, tint: 'bg-amber-500/15 text-amber-300', defaultLink: '/profile',
     hint: 'You earned a course or exam certificate.'
+  },
+  challenge: {
+    kind: 'challenge', label: 'Challenge', category: 'social', group: 'social',
+    Icon: IconTrophy, tint: 'bg-amber-500/15 text-amber-300', defaultLink: '/community',
+    hint: 'Progress and completion of community challenges you joined.'
   }
 }
 

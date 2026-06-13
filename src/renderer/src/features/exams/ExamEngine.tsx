@@ -143,8 +143,15 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
         out.push(scoreMcqSection(bank, sec, correct))
       } else if (sec.kind === 'writing') {
         const essay = essays[sec.id] ?? ''
+        const words = essay.trim().split(/\s+/).filter(Boolean).length
         let res: SectionResult | null = null
-        if (llmKind) {
+        // #B16 — a blank / trivially-short answer scores the FLOOR, never a free
+        // passing band. The neutral mid-band fallback applies only when there is
+        // substantive content but the grader is unreachable.
+        if (words < 20) {
+          res = { id: sec.id, label: sec.label, score: bank.kind === 'toefl' ? '0' : '1.0', numeric: bank.kind === 'toefl' ? 0 : 1, pct: 0 }
+          fb.push('Writing — no substantive response submitted (write the required word count for a real band).')
+        } else if (llmKind) {
           const graded = await scoreWriting(llmKind, essay, send)
           if (graded) {
             res = { id: sec.id, label: sec.label, score: graded.score, numeric: Number(graded.score), pct: graded.pct, aiGraded: true }
@@ -152,16 +159,20 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
           }
         }
         if (!res) {
-          // Neutral fallback when too short / no LLM.
+          // Substantive content but grader unreachable → neutral estimate, flagged.
           const numeric = bank.kind === 'toefl' ? 18 : 5
           res = { id: sec.id, label: sec.label, score: bank.kind === 'toefl' ? '18' : '5.0', numeric, pct: bank.kind === 'toefl' ? 60 : 56 }
-          fb.push('Writing — write at least the required word count to get an AI-graded band.')
+          fb.push('Writing — estimated band (AI grader was unavailable).')
         }
         out.push(res)
       } else if (sec.kind === 'speaking') {
         const transcript = transcripts[sec.id] ?? ''
+        const words = transcript.trim().split(/\s+/).filter(Boolean).length
         let res: SectionResult | null = null
-        if (llmKind) {
+        if (words < 15) {
+          res = { id: sec.id, label: sec.label, score: bank.kind === 'toefl' ? '0' : '1.0', numeric: bank.kind === 'toefl' ? 0 : 1, pct: 0 }
+          fb.push('Speaking — no substantive response captured (speak or type a few sentences for a real band).')
+        } else if (llmKind) {
           const graded = await scoreSpeaking(llmKind, transcript, send)
           if (graded) {
             res = { id: sec.id, label: sec.label, score: graded.score, numeric: graded.numeric, pct: graded.pct, aiGraded: true }
@@ -171,7 +182,7 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
         if (!res) {
           const numeric = bank.kind === 'toefl' ? 18 : 5
           res = { id: sec.id, label: sec.label, score: bank.kind === 'toefl' ? '18' : '5.0', numeric, pct: bank.kind === 'toefl' ? 60 : 56 }
-          fb.push('Speaking — record or type at least a few sentences to get an AI-graded band.')
+          fb.push('Speaking — estimated band (AI grader was unavailable).')
         }
         out.push(res)
       }
