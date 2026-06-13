@@ -10,6 +10,8 @@ import { useSTT } from '../../hooks/stt'
 import { useTTS } from '../../hooks/tts'
 import { useWhisperModelLoader } from '../../hooks/useWhisperModelLoader'
 import { buildSystemPrompt } from '../../services/prompts'
+import { logActivity } from '../../services/activity'
+import { backend } from '../../services/backend/useBackend'
 import { cn } from '../../lib/classnames'
 import { micPrefsFromSettings } from '../../lib/audio'
 import { useActiveAI } from '../../lib/ai'
@@ -147,6 +149,9 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
   })
 
   const historyRef = useRef<ChatMessage[]>([])
+  // #B13 — call duration + exchange count, logged once on end.
+  const callStartRef = useRef<number>(Date.now())
+  const exchangesRef = useRef(0)
 
   const handleTurn = useCallback(
     async (transcript: string): Promise<void> => {
@@ -179,6 +184,18 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
       ]
       historyRef.current = nextHistory.slice(-HISTORY_CAP)
       await streamer.flushAndWait()
+
+      // #B13 — a voice call must earn XP/streak like the text speaking page.
+      const meId = backend.currentUserId()
+      if (meId) {
+        exchangesRef.current += 1
+        void logActivity({
+          userId: meId,
+          kind: 'speaking_session',
+          xp: 5,
+          meta: { progressKind: 'speaking_exchange', skill: 'speaking', mode: 'call' }
+        }).catch(() => {})
+      }
     },
     [profile, send, streamer]
   )
@@ -236,6 +253,19 @@ function CallPageInner({ profile, rec, ollama, setProfile }: InnerProps): JSX.El
     streamer.cancel()
     abortChat()
     void stt.stop()
+    // #B13 — log call minutes so daily-minute goals + Home stats move (only if
+    // the learner actually spoke, to avoid logging empty open-and-close calls).
+    const meId = backend.currentUserId()
+    const minutes = Math.round((Date.now() - callStartRef.current) / 60000)
+    if (meId && exchangesRef.current > 0 && minutes >= 1) {
+      void logActivity({
+        userId: meId,
+        kind: 'speaking_session',
+        xp: 0,
+        minutes,
+        meta: { progressKind: 'speaking_exchange', skill: 'speaking', mode: 'call', summary: true }
+      }).catch(() => {})
+    }
     navigate('/speaking')
   }, [streamer, abortChat, stt, navigate])
 

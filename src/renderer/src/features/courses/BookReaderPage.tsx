@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { Spinner } from '../../components/ui'
@@ -14,6 +14,7 @@ import { buildCourseView } from '../../services/content/courseModel'
 import { getLessonContent, type BookBlock } from '../../services/content/lessonContent'
 import { useContentState, isLessonComplete, markLessonComplete } from '../../services/content/progress'
 import { logActivity } from '../../services/activity'
+import { courseAccess } from '../../services/access/entitlement'
 import type { Lesson } from '@shared/types'
 
 function Block({ block }: { block: BookBlock }): JSX.Element {
@@ -67,6 +68,25 @@ export default function BookReaderPage(): JSX.Element {
   const orderIdx = view.ordered.findIndex((l) => l.id === lessonId)
   const nextLesson = orderIdx >= 0 ? view.ordered[orderIdx + 1] : null
 
+  // #B1 — same paywall guard as ClassroomPage for rule/book lessons.
+  const { data: enrollments } = useBackendQuery(
+    () => (userId ? backend.myEnrollments(userId) : Promise.resolve([])),
+    [userId],
+    []
+  )
+  useEffect(() => {
+    if (!course || !lesson || course.pricing.kind === 'free' || lesson.preview) return
+    const enrolled = enrollments.some((e) => e.courseId === courseId)
+    let cancelled = false
+    void courseAccess(userId, course, enrolled).then((acc) => {
+      if (!cancelled && !acc.unlocked) navigate(`/course/${courseId}?paywall=1`, { replace: true })
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course?.id, lesson?.id, enrollments])
+
   if (!lesson) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3">
@@ -83,11 +103,14 @@ export default function BookReaderPage(): JSX.Element {
   const done = isLessonComplete(lessonId)
 
   function finish(): void {
-    markLessonComplete(lesson!.id)
-    if (userId) {
-      logActivity({ userId, kind: 'lesson_complete', xp: 20, minutes: lesson!.durationMin, meta: { courseId, lessonId } }).catch(() => {})
-      const fresh = buildCourseView(courseId, units, lessons)
-      backend.setEnrollmentProgress(userId, courseId, fresh.progress).catch(() => {})
+    // #B2 — award XP only on first completion; repeat clicks just navigate on.
+    if (!done) {
+      markLessonComplete(lesson!.id)
+      if (userId) {
+        logActivity({ userId, kind: 'lesson_complete', xp: 20, minutes: lesson!.durationMin, meta: { courseId, lessonId } }).catch(() => {})
+        const fresh = buildCourseView(courseId, units, lessons)
+        backend.setEnrollmentProgress(userId, courseId, fresh.progress).catch(() => {})
+      }
     }
     if (nextLesson) {
       const base = nextLesson.kind === 'rule' ? `/learn/book/${courseId}` : `/learn/${courseId}`

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { AvatarCircle, Spinner } from '../../components/ui'
@@ -22,6 +22,7 @@ import {
 } from '../../services/content/progress'
 import { getCheckpointQuiz } from '../../services/content/exams'
 import { logActivity } from '../../services/activity'
+import { courseAccess } from '../../services/access/entitlement'
 import YouTubeEmbed from '../../components/content/YouTubeEmbed'
 import { RichTextView } from '../../components/forms'
 import ExamRunner from './ExamRunner'
@@ -101,6 +102,29 @@ export default function ClassroomPage(): JSX.Element {
   const unitLessons = view.units.find((u) => u.unit.id === unit?.id)?.lessons ?? []
   const done = isLessonComplete(lessonId)
 
+  // #B1 — entitlement guard. A paid lesson opened by deep link / curriculum
+  // rail must re-check access; non-preview lessons of a course the learner
+  // hasn't bought (or whose sub lapsed) bounce to the course page paywall.
+  const { data: enrollments } = useBackendQuery(
+    () => (userId ? backend.myEnrollments(userId) : Promise.resolve([])),
+    [userId],
+    []
+  )
+  useEffect(() => {
+    if (!course || !lesson) return
+    if (course.pricing.kind === 'free') return
+    if (lesson.preview) return
+    const enrolled = enrollments.some((e) => e.courseId === courseId)
+    let cancelled = false
+    void courseAccess(userId, course, enrolled).then((acc) => {
+      if (!cancelled && !acc.unlocked) navigate(`/course/${courseId}?paywall=1`, { replace: true })
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course?.id, lesson?.id, enrollments])
+
   // Next lesson in global order.
   const orderIdx = view.ordered.findIndex((l) => l.id === lessonId)
   const nextLesson = orderIdx >= 0 ? view.ordered[orderIdx + 1] : null
@@ -122,6 +146,13 @@ export default function ClassroomPage(): JSX.Element {
 
   function complete(): void {
     if (!lesson) return
+    // #B2 — already done → this is just "Next", never re-award XP. XP is logged
+    // only on the first completion (markLessonComplete is idempotent, but the
+    // activity event must not fire again on repeat clicks).
+    if (done) {
+      goNext()
+      return
+    }
     markLessonComplete(lesson.id)
     if (userId) logActivity({ userId, kind: 'lesson_complete', xp: 20, minutes: lesson.durationMin, meta: { courseId, lessonId: lesson.id } }).catch(() => {})
     syncProgress()
@@ -230,7 +261,7 @@ export default function ClassroomPage(): JSX.Element {
                 {/* Footer actions */}
                 <div className="flex items-center gap-3 pt-2">
                   <button onClick={complete} className={cn('px-5 py-2.5 inline-flex items-center gap-2 rounded-pill font-semibold transition', done ? 'bg-emerald-500/15 text-emerald-300' : 'btn-ghost')}>
-                    <IconCheck className="w-4 h-4" /> {done ? 'Completed' : 'Mark complete'}
+                    <IconCheck className="w-4 h-4" /> {done ? (nextLesson ? 'Completed · Next' : 'Completed') : 'Mark complete'}
                   </button>
                   <button onClick={() => navigate('/learn/exercise')} className="btn-primary flex-1 py-2.5 inline-flex items-center justify-center gap-2">
                     <IconBolt className="w-4 h-4" /> Practice exercises <IconArrowRight className="w-4 h-4" />

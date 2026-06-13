@@ -4,6 +4,8 @@ import { cn } from '../../lib/classnames'
 import { AIGate, AgeGate } from '../../components/ui'
 import { useVoiceConversation, type VoicePhase } from '../../hooks/useVoiceConversation'
 import { useAppStore } from '../../store/useAppStore'
+import { logActivity } from '../../services/activity'
+import { backend } from '../../services/backend/useBackend'
 import { IconChat, IconMic, IconUsers, IconVolume, IconX } from '../../components/icons'
 
 const PHASE_LABEL: Record<VoicePhase, string> = {
@@ -41,7 +43,19 @@ function InnerTutor(): JSX.Element {
 
   const convo = useVoiceConversation({
     systemPrompt: buildLilyPrompt(level, scenario.brief),
-    greeting: "Hi! I'm Lily. What would you like to talk about today?"
+    greeting: "Hi! I'm Lily. What would you like to talk about today?",
+    // #B13 — each completed exchange earns speaking XP (was: call earned nothing).
+    onAssistantDone: () => {
+      const me = useAppStore.getState().profile ? backend.currentUserId() : null
+      if (me) {
+        void logActivity({
+          userId: me,
+          kind: 'speaking_session',
+          xp: 5,
+          meta: { progressKind: 'speaking_exchange', skill: 'speaking', mode: 'ai-tutor' }
+        }).catch(() => {})
+      }
+    }
   })
 
   useEffect(() => {
