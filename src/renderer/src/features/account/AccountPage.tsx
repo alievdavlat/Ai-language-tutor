@@ -12,6 +12,13 @@ import { uploadUrl } from '../../services/backend'
 import { useRef } from 'react'
 import DangerZoneSection from '../settings/sections/DangerZoneSection'
 import { useT } from '../../i18n'
+import { UserButton } from '@clerk/clerk-react'
+
+// Clerk is mounted only when active (main.tsx); its built-in account component
+// (<UserButton> → "Manage account" opens Clerk's <UserProfile>) is shown then.
+const clerkActive =
+  typeof window !== 'undefined' &&
+  (window as unknown as { __SPEAKAI_AUTH_MODE?: string }).__SPEAKAI_AUTH_MODE === 'clerk'
 
 const LEVELS: readonly CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 import {
@@ -244,7 +251,12 @@ export default function AccountPage(): JSX.Element {
               <span><b className="text-amber-300">🔥 {streak}</b> {t('account.dayStreak')}</span>
             </div>
           </div>
-          <button onClick={() => setEditing(true)} className="btn-ghost px-4 py-2 text-sm shrink-0">{t('account.editProfile')}</button>
+          <div className="flex items-center gap-2 shrink-0">
+            {clerkActive && (
+              <UserButton afterSignOutUrl="/#/signin" appearance={{ elements: { userButtonAvatarBox: 'w-9 h-9' } }} />
+            )}
+            <button onClick={() => setEditing(true)} className="btn-ghost px-4 py-2 text-sm">{t('account.editProfile')}</button>
+          </div>
         </div>
 
         {/* Quick links — the personal surfaces that don't sit in the main sidebar. */}

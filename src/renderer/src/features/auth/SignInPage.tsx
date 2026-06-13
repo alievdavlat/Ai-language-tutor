@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { SignIn, SignUp, useUser } from '@clerk/clerk-react'
+import { SignIn, SignUp, useUser, ClerkLoaded, ClerkLoading } from '@clerk/clerk-react'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { backend } from '../../services/backend'
@@ -37,17 +37,30 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const authenticated = useAppStore((s) => s.authenticated)
+  // If Clerk's script never initialises (region-blocked), fall back to the
+  // always-visible Supabase form so the user is never stuck on a blank panel.
+  const [clerkFailed, setClerkFailed] = useState(false)
+  const showClerk = useClerk && !clerkFailed
+
+  useEffect(() => {
+    if (!useClerk) return
+    const t = setTimeout(() => {
+      const w = window as unknown as { Clerk?: { loaded?: boolean } }
+      if (!w.Clerk?.loaded) setClerkFailed(true)
+    }, 6000)
+    return () => clearTimeout(t)
+  }, [])
 
   // Fallback (Supabase) path: wire the auth-state listener once so a real
   // email/password OR OAuth session is mirrored into the store, then route as
   // soon as that lands.
   useEffect(() => {
-    if (!useClerk) auth.initSupabaseAuthListener()
+    auth.initSupabaseAuthListener()
   }, [])
   useEffect(() => {
-    if (!useClerk && authenticated) route()
+    if (!showClerk && authenticated) route()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authenticated])
+  }, [authenticated, showClerk])
 
   // ── Clerk session sync ─────────────────────────────────────────────────
   // When Clerk reports the user is signed in, mirror that into our local
@@ -156,15 +169,16 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
           <p className="text-sm text-slate-300 mt-4">AI tutors. Native conversation partners. Real teachers. All in one app.</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 max-w-md">
+        {/* Honest value props (no fabricated learner/teacher counts). */}
+        <div className="grid grid-cols-1 gap-2 max-w-md">
           {[
-            { v: '12M', l: 'Learners' },
-            { v: '4,800+', l: 'Teachers' },
-            { v: '32', l: 'Languages' }
-          ].map((s) => (
-            <div key={s.l} className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur p-3 text-center">
-              <p className="text-xl font-black text-white">{s.v}</p>
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{s.l}</p>
+            'AI tutor available 24/7 — practice speaking any time',
+            'Adaptive level test places you on the right CEFR level',
+            'Real teachers, courses, and a learning community'
+          ].map((line) => (
+            <div key={line} className="flex items-center gap-2.5 text-sm text-slate-300">
+              <span className="w-5 h-5 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center text-[11px] shrink-0">✓</span>
+              {line}
             </div>
           ))}
         </div>
@@ -200,19 +214,28 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
             {mode === 'signin' ? 'Pick up where you left off.' : 'Start learning in 30 seconds — free forever for the basics.'}
           </p>
 
-          {/* Real Clerk component when wired, fallback below */}
-          {useClerk && (
+          {/* Real Clerk component when wired. Shown behind ClerkLoaded; while
+              Clerk's script initialises we show a spinner, and if it never loads
+              (region-blocked) the 6s timeout flips showClerk→false and the
+              Supabase form below renders instead. */}
+          {showClerk && (
             <div className="mt-6">
-              {mode === 'signin' ? (
-                <SignIn routing="virtual" signUpUrl="#" appearance={{ elements: { rootBox: 'w-full', card: 'bg-transparent shadow-none border-0' } }} />
-              ) : (
-                <SignUp routing="virtual" signInUrl="#" appearance={{ elements: { rootBox: 'w-full', card: 'bg-transparent shadow-none border-0' } }} />
-              )}
+              <ClerkLoading>
+                <div className="py-12 text-center text-sm text-slate-400">Loading sign-in…</div>
+              </ClerkLoading>
+              <ClerkLoaded>
+                {mode === 'signin' ? (
+                  <SignIn routing="virtual" signUpUrl="#" appearance={{ elements: { rootBox: 'w-full', card: 'bg-transparent shadow-none border-0 p-0' } }} />
+                ) : (
+                  <SignUp routing="virtual" signInUrl="#" appearance={{ elements: { rootBox: 'w-full', card: 'bg-transparent shadow-none border-0 p-0' } }} />
+                )}
+              </ClerkLoaded>
             </div>
           )}
 
-          {/* Mock OAuth — shown only when Clerk is disabled */}
-          {!useClerk && (<>
+          {/* Supabase/local fallback — real email + OAuth. Shown when Clerk is
+              off OR failed to load. */}
+          {!showClerk && (<>
           {/* OAuth */}
           <div className="flex flex-col gap-2 mt-6">
             <button disabled={busy} onClick={() => void handleOAuth('google')} className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition disabled:opacity-50">

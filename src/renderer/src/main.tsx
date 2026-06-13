@@ -51,53 +51,16 @@ const root = document.getElementById('root')
 if (!root) throw new Error('Root element not found')
 
 // ── Auth mode: Clerk PRIMARY, Supabase fallback ──────────────────────────────
-// The user picked "Clerk first, Supabase as a safety net". Clerk's hosted
-// instance can be unreachable in some regions (the documented bug), so rather
-// than gamble on it at render time we PROBE the Clerk frontend-API at boot:
-//   • reachable  → mount <ClerkProvider> → real Clerk sign-in (Google/Apple).
-//   • unreachable→ skip Clerk entirely → SignInPage renders the Supabase Auth
-//                  path (real email/password + OAuth). No blank screen, no fake
-//                  sign-in. The decision is published on window.__SPEAKAI_AUTH_MODE
-//                  so SignInPage knows which UI to show.
+// The user picked "Clerk first, Supabase as a safety net". We DON'T gate Clerk
+// on a boot network probe — a no-cors probe can't tell "reachable" from
+// "captive portal", which made Clerk mount blank. Instead: mount <ClerkProvider>
+// whenever it's enabled, and SignInPage shows Clerk's UI behind <ClerkLoaded>
+// with a load-timeout that flips to the visible Supabase form if Clerk's script
+// never initialises (the region issue). So the user ALWAYS sees usable inputs.
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
-const clerkEnabled = import.meta.env.VITE_USE_CLERK === '1' && !!clerkPubKey
-
-/** Decode the Clerk frontend-API host from a `pk_test_…`/`pk_live_…` key. */
-function clerkFrontendApi(pubKey: string): string | null {
-  try {
-    const b64 = pubKey.replace(/^pk_(test|live)_/, '')
-    return atob(b64).replace(/\$+$/, '') || null
-  } catch {
-    return null
-  }
-}
-
-/** Ping the Clerk frontend-API; resolve false on any network error / timeout.
- *  Capped at 2s so a region-blocked instance delays first paint by at most that
- *  (and offline short-circuits instantly) before falling back to Supabase. */
-async function clerkReachable(pubKey: string, timeoutMs = 2000): Promise<boolean> {
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) return false
-  const host = clerkFrontendApi(pubKey)
-  if (!host) return false
-  const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
-  try {
-    // no-cors → opaque response, but a thrown error means it's unreachable.
-    await fetch(`https://${host}/v1/health`, { mode: 'no-cors', signal: ctrl.signal })
-    return true
-  } catch {
-    return false
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
-const useClerk = clerkEnabled && (await clerkReachable(clerkPubKey!))
+const useClerk = import.meta.env.VITE_USE_CLERK === '1' && !!clerkPubKey
 ;(window as unknown as { __SPEAKAI_AUTH_MODE?: 'clerk' | 'fallback' }).__SPEAKAI_AUTH_MODE =
   useClerk ? 'clerk' : 'fallback'
-if (clerkEnabled && !useClerk) {
-  console.warn('[auth] Clerk unreachable — falling back to Supabase Auth.')
-}
 
 function AppTree(): JSX.Element {
   return (
