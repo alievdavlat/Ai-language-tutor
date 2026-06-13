@@ -554,6 +554,9 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
   const [text, setText] = useState('')
   const [kind, setKind] = useState<PostKind>('text')
   const [posting, setPosting] = useState(false)
+  // #A80 — the toolbar had 9 controls in one row (overload). Primary kinds show
+  // always; the rest hide behind a "More" toggle.
+  const [showMore, setShowMore] = useState(false)
   // Rich-payload capture so poll/resource posts a learner creates match the feed
   // (previously these set only the kind label → broken polls, no attachment).
   const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
@@ -794,7 +797,8 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
           <IconFilm className="w-3.5 h-3.5" /> {uploading ? 'Uploading…' : 'Video'}
         </button>
         <span className="w-px h-5 bg-white/10 mx-0.5" />
-        {(['text', 'question', 'resource', 'achievement', 'poll', 'study-session', 'voice'] as PostKind[]).map((k) => {
+        {/* Primary kinds always visible; the rest behind "More" (#A80). */}
+        {(['text', 'question'] as PostKind[]).map((k) => {
           const m = KIND[k]
           const active = kind === k
           return (
@@ -810,6 +814,30 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
             </button>
           )
         })}
+        {showMore &&
+          (['resource', 'achievement', 'poll', 'study-session', 'voice'] as PostKind[]).map((k) => {
+            const m = KIND[k]
+            const active = kind === k
+            return (
+              <button
+                key={k}
+                onClick={() => setKind(k)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition border',
+                  active ? 'bg-brand-500/20 border-brand-400/40 text-brand-100' : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]'
+                )}
+              >
+                <m.Icon className="w-3.5 h-3.5" /> {m.label}
+              </button>
+            )
+          })}
+        <button
+          onClick={() => setShowMore((v) => !v)}
+          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold transition border bg-white/[0.04] border-white/10 text-slate-400 hover:bg-white/[0.08]"
+          title={showMore ? 'Show fewer post types' : 'More post types'}
+        >
+          {showMore ? '− Less' : '+ More'}
+        </button>
         <button
           onClick={() => void submit()}
           disabled={posting || !canSubmit}
