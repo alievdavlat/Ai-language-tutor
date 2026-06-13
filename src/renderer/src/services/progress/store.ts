@@ -14,7 +14,7 @@ import type {
   ReminderPrefs,
   SkillKey
 } from './types'
-import { MILESTONES } from './catalog'
+import { MILESTONES, LEAGUES } from './catalog'
 import {
   deriveAchievements,
   deriveStats,
@@ -61,6 +61,13 @@ interface ProgressState {
   digests: DigestPrefs
   buddyId: string | null
   buddySince: string | null
+  /** #B6 — stored league tier (index into LEAGUES); changes by weekly rank, not lifetime XP. */
+  league: number
+  /** ISO week key the league standing is currently tracking. */
+  leagueWeekKey: string
+  /** Latest rank + cohort size recorded this week (used to settle at rollover). */
+  lastRank: number
+  lastCohort: number
   /** Bumped whenever derived state should re-read (also drives selectors). */
   rev: number
 
@@ -77,6 +84,12 @@ interface ProgressState {
   protectStreak: () => void
   pairBuddy: (buddyId: string) => void
   unpairBuddy: () => void
+  /**
+   * #B6 — report the user's current weekly standing. On a new week it first
+   * SETTLES the prior week (top 3 promote, bottom 3 demote) using the last
+   * standing recorded, then tracks the new week. Idempotent within a week.
+   */
+  noteWeeklyStanding: (weekKey: string, rank: number, cohortSize: number) => void
   /** Wipe all progress (Account → danger zone). */
   resetProgress: () => void
 }
@@ -154,6 +167,10 @@ export const useProgressStore = create<ProgressState>()(
       digests: { dailyEmail: false, weeklyEmail: true, push: true },
       buddyId: null,
       buddySince: null,
+      league: 0,
+      leagueWeekKey: '',
+      lastRank: 0,
+      lastCohort: 0,
       rev: 0,
 
       record: (kind, opts = {}) => {
@@ -262,6 +279,31 @@ export const useProgressStore = create<ProgressState>()(
       },
       unpairBuddy: () => set({ buddyId: null, buddySince: null, rev: get().rev + 1 }),
 
+      noteWeeklyStanding: (weekKey, rank, cohortSize) => {
+        const s = get()
+        if (s.leagueWeekKey === weekKey) {
+          // Same week — just keep the latest standing (no rev bump → no re-render loop).
+          if (s.lastRank !== rank || s.lastCohort !== cohortSize) {
+            set({ lastRank: rank, lastCohort: cohortSize })
+          }
+          return
+        }
+        // New week. Settle the previous week from the last standing we saw.
+        let league = s.league
+        if (s.leagueWeekKey && s.lastRank > 0) {
+          const topLeague = LEAGUES.length - 1
+          if (s.lastRank <= 3 && league < topLeague) league += 1
+          else if (s.lastCohort >= 7 && s.lastRank > s.lastCohort - 3 && league > 0) league -= 1
+        }
+        set({
+          league,
+          leagueWeekKey: weekKey,
+          lastRank: rank,
+          lastCohort: cohortSize,
+          rev: get().rev + 1
+        })
+      },
+
       resetProgress: () =>
         set({
           events: [],
@@ -272,6 +314,10 @@ export const useProgressStore = create<ProgressState>()(
           frozenDates: [],
           buddyId: null,
           buddySince: null,
+          league: 0,
+          leagueWeekKey: '',
+          lastRank: 0,
+          lastCohort: 0,
           rev: get().rev + 1
         })
     }),
@@ -290,7 +336,11 @@ export const useProgressStore = create<ProgressState>()(
         reminders: s.reminders,
         digests: s.digests,
         buddyId: s.buddyId,
-        buddySince: s.buddySince
+        buddySince: s.buddySince,
+        league: s.league,
+        leagueWeekKey: s.leagueWeekKey,
+        lastRank: s.lastRank,
+        lastCohort: s.lastCohort
       })
     }
   )

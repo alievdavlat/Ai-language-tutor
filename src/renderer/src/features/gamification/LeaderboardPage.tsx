@@ -3,7 +3,7 @@ import { cn } from '../../lib/classnames'
 import { AvatarCircle, PageHeader, Tabs, type TabItem } from '../../components/ui'
 import { IconBolt, IconFlame, IconTrophy } from '../../components/icons'
 import { useAppStore } from '../../store/useAppStore'
-import { LEAGUES, buildLeaderboardReal, leagueForXp, useStats, type LeaderRow } from '../../services/progress'
+import { LEAGUES, buildLeaderboardReal, useStats, useProgressStore, weekKey, nextWeekStart, type LeaderRow } from '../../services/progress'
 import { useT } from '../../i18n'
 
 type Scope = 'global' | 'friends'
@@ -24,12 +24,10 @@ function MedalBadge({ rank }: { rank: number }): JSX.Element {
   )
 }
 
-/** Time until Sunday midnight, for the weekly-reset chip. */
+/** Time until the real reset — next Monday 00:00, matching the weekKey boundary (#B6). */
 function resetCountdown(): string {
   const now = new Date()
-  const daysToSun = (7 - now.getDay()) % 7 || 7
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysToSun)
-  const ms = end.getTime() - now.getTime()
+  const ms = nextWeekStart(now).getTime() - now.getTime()
   const d = Math.floor(ms / 86400000)
   const h = Math.floor((ms % 86400000) / 3600000)
   return `${d}d ${h}h`
@@ -46,7 +44,10 @@ export default function LeaderboardPage(): JSX.Element {
   const stats = useStats()
 
   const meName = profile?.name?.trim() || 'You'
-  const currentLeague = leagueForXp(stats.totalXp)
+  // #B6 — league is a STORED tier that moves by weekly rank, not lifetime XP.
+  const leagueIdx = useProgressStore((s) => s.league)
+  const noteWeeklyStanding = useProgressStore((s) => s.noteWeeklyStanding)
+  const currentLeague = LEAGUES[Math.min(leagueIdx, LEAGUES.length - 1)]
   const [rows, setRows] = useState<LeaderRow[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -57,12 +58,18 @@ export default function LeaderboardPage(): JSX.Element {
       if (!cancelled) {
         setRows(r)
         setLoading(false)
+        // Report this week's standing (global scope only) so the store can
+        // settle promotion/demotion when the week rolls over.
+        if (scope === 'global') {
+          const mine = r.find((x) => x.me)
+          if (mine) noteWeeklyStanding(weekKey(new Date()), mine.rank, r.length)
+        }
       }
     })
     return () => {
       cancelled = true
     }
-  }, [meName, stats.weekXp, stats.streak, scope])
+  }, [meName, stats.weekXp, stats.streak, scope, noteWeeklyStanding])
 
   const myRank = rows.find((r) => r.me)?.rank ?? rows.length
 

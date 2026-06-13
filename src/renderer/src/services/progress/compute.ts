@@ -20,6 +20,27 @@ export function dayKeyOf(iso: string): string {
   return dayKey(new Date(iso))
 }
 
+/**
+ * Local Monday 00:00 that starts the ISO week containing `d` — the single
+ * canonical week boundary for the leaderboard (#B6). Everyone's "weekly XP"
+ * and the reset countdown are measured against this, so the three different
+ * week definitions that used to disagree are now one.
+ */
+export function startOfWeek(d: Date): Date {
+  const s = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const dayNum = (s.getDay() + 6) % 7 // Mon=0 … Sun=6
+  s.setDate(s.getDate() - dayNum)
+  s.setHours(0, 0, 0, 0)
+  return s
+}
+
+/** Local Monday 00:00 that starts NEXT week — the leaderboard reset moment. */
+export function nextWeekStart(d: Date): Date {
+  const s = startOfWeek(d)
+  s.setDate(s.getDate() + 7)
+  return s
+}
+
 /** Monday-anchored ISO-week key, e.g. "2026-W22". */
 export function weekKey(d: Date): string {
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))

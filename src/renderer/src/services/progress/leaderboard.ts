@@ -6,13 +6,13 @@
  */
 import { backend } from '../backend/useBackend'
 import { COMPETITORS } from './catalog'
-import type { LeaderRow } from './compute'
+import { startOfWeek, type LeaderRow } from './compute'
 
-async function weeklyXpOf(userId: string, weekAgoMs: number): Promise<number> {
+async function weeklyXpOf(userId: string, weekStartMs: number): Promise<number> {
   try {
     const acts = await backend.listActivity(userId, { limit: 200 })
     return acts
-      .filter((a) => new Date(a.createdAt).getTime() >= weekAgoMs)
+      .filter((a) => new Date(a.createdAt).getTime() >= weekStartMs)
       .reduce((sum, e) => sum + (e.xp ?? 0), 0)
   } catch {
     return 0
@@ -32,12 +32,13 @@ export async function buildLeaderboardReal(
       scope === 'friends' && meId
         ? await backend.following(meId)
         : await backend.listUsers({ limit: 30 })
-    const weekAgo = Date.now() - 7 * 86_400_000
+    // #B6 — same canonical week (Monday 00:00) the user's own weekXp uses.
+    const weekStart = startOfWeek(new Date()).getTime()
     const pool = users.filter((u) => u.id !== meId).slice(0, 20)
     others = await Promise.all(
       pool.map(async (u) => {
         const [xp, stats] = await Promise.all([
-          weeklyXpOf(u.id, weekAgo),
+          weeklyXpOf(u.id, weekStart),
           backend.getStats(u.id).catch(() => null)
         ])
         return { name: u.name, xp, streak: stats?.streak ?? 0, country: u.country, me: false }

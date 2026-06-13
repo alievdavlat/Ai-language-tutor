@@ -17,6 +17,8 @@ export {
   dayKey,
   weekKey,
   weekDays,
+  startOfWeek,
+  nextWeekStart,
   type WeekDay,
   type ProgressStats,
   type QuestView,
