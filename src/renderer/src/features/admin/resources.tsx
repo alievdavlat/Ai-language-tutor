@@ -379,7 +379,7 @@ export const RESOURCES: ResourceDef[] = [
         <div className="flex items-center gap-2.5 min-w-0"><Cover cover={p.cover} /><span className="truncate font-semibold text-white">{p.title}</span></div>
       ) },
       { key: 'level', label: 'Level', render: (p) => <Tag>{p.level}</Tag>, cls: 'w-28' },
-      { key: 'courses', label: 'Courses', render: (p) => <span className="text-slate-400 tabular-nums">{p.courseIds.length}</span>, cls: 'w-24 text-right' }
+      { key: 'courses', label: 'Courses', render: (p) => <span className="text-slate-400 tabular-nums">{p.courseIds?.length ?? 0}</span>, cls: 'w-24 text-right' }
     ],
     fields: [
       { name: 'title', label: 'Title', type: 'text', required: true, full: true },

@@ -539,32 +539,49 @@ const socialLocal: LocalSocial = {
   },
 
   async createPeerReview(input): Promise<{ review: PeerReview; karma: KarmaWallet }> {
+    const subEarly = sdb().feedback.find((f) => f.id === input.submissionId)
+    // #B19 — karma anti-exploit guards:
+    //  (a) can't review your own submission to mint karma,
+    //  (b) one rewarded review per (reviewer, submission) — re-reviews pay 0,
+    //  (c) reward pool: only the first PAID_REVIEWS reviews of a submission pay.
+    const isSelf = !!subEarly && subEarly.authorId === input.reviewerId
+    const already = sdb().peerReviews.some(
+      (r) => r.submissionId === input.submissionId && r.reviewerId === input.reviewerId
+    )
+    const PAID_REVIEWS = 3
+    const poolOpen = subEarly ? Math.min(subEarly.reviewCount, PAID_REVIEWS) < PAID_REVIEWS : true
+    const rewarded = !isSelf && !already && poolOpen
+
     const review: PeerReview = { ...input, id: newId('pr'), thanked: false, createdAt: now() }
     sdb().peerReviews.unshift(review)
     // Bump the submission's review count + flip to "reviewed".
     const fi = sdb().feedback.findIndex((f) => f.id === input.submissionId)
-    let reward = 10
+    let reward = 0
     if (fi >= 0) {
       const sub = sdb().feedback[fi]
-      reward = sub.reward
+      reward = rewarded ? sub.reward : 0
       sdb().feedback[fi] = { ...sub, reviewCount: sub.reviewCount + 1, status: 'reviewed' }
-      // Notify the author.
-      void backend
-        .createNotif({
-          userId: sub.authorId,
-          type: 'social',
-          kind: 'peer-review',
-          title: 'New feedback on your work',
-          body: `Someone reviewed "${sub.topic}"`,
-          link: '/feedback'
-        })
-        .catch(() => undefined)
+      // Notify the author — but not when they reviewed their own piece.
+      if (!isSelf) {
+        void backend
+          .createNotif({
+            userId: sub.authorId,
+            type: 'social',
+            kind: 'peer-review',
+            title: 'New feedback on your work',
+            body: `Someone reviewed "${sub.topic}"`,
+            link: '/feedback'
+          })
+          .catch(() => undefined)
+      }
     }
-    // Reward the reviewer's karma.
+    // Reward the reviewer's karma only when the review actually qualifies.
     const wallet = getKarmaRow(input.reviewerId)
-    wallet.balance += reward
-    wallet.earnedTotal += reward
-    wallet.updatedAt = now()
+    if (reward > 0) {
+      wallet.balance += reward
+      wallet.earnedTotal += reward
+      wallet.updatedAt = now()
+    }
     persist()
     return { review, karma: wallet }
   },
@@ -772,15 +789,36 @@ const supabaseSocial: SocialBackend = {
       .map((review) => ({ review, submission: byId.get(review.submissionId)! }))
   },
   async createPeerReview(input): Promise<{ review: PeerReview; karma: KarmaWallet }> {
+    const sub = await this.getFeedback(input.submissionId)
+    // #B19 — same guards as the local impl (self-review, one-paid-per-reviewer,
+    // reward pool of the first 3 reviews).
+    const isSelf = !!sub && sub.authorId === input.reviewerId
+    const PAID_REVIEWS = 3
+    const poolOpen = sub ? Math.min(sub.reviewCount, PAID_REVIEWS) < PAID_REVIEWS : true
+    let already = false
+    {
+      const { data: prior } = await sb()
+        .from('peer_reviews')
+        .select('id')
+        .eq('submission_id', input.submissionId)
+        .eq('reviewer_id', input.reviewerId)
+        .limit(1)
+      already = !!prior && prior.length > 0
+    }
+    const rewarded = !isSelf && !already && poolOpen
+
     const row = { id: newId('pr'), submission_id: input.submissionId, reviewer_id: input.reviewerId, rating: input.rating, text: input.text, thanked: false, created_at: now() }
     const { data, error } = await sb().from('peer_reviews').insert(row).select().single()
     if (error) throw error
-    const sub = await this.getFeedback(input.submissionId)
     await sb().from('feedback_submissions').update({ status: 'reviewed', review_count: (sub?.reviewCount ?? 0) + 1 }).eq('id', input.submissionId)
     const karma = await this.getKarma(input.reviewerId)
-    const reward = sub?.reward ?? 10
-    const updated = { ...karma, balance: karma.balance + reward, earnedTotal: karma.earnedTotal + reward, updatedAt: now() }
-    await sb().from('karma_wallets').upsert({ user_id: updated.userId, balance: updated.balance, earned_total: updated.earnedTotal, spent_total: updated.spentTotal, submitted_today: updated.submittedToday, last_submit_day: updated.lastSubmitDay ?? null, updated_at: updated.updatedAt })
+    const reward = rewarded ? (sub?.reward ?? 10) : 0
+    const updated = reward > 0
+      ? { ...karma, balance: karma.balance + reward, earnedTotal: karma.earnedTotal + reward, updatedAt: now() }
+      : karma
+    if (reward > 0) {
+      await sb().from('karma_wallets').upsert({ user_id: updated.userId, balance: updated.balance, earned_total: updated.earnedTotal, spent_total: updated.spentTotal, submitted_today: updated.submittedToday, last_submit_day: updated.lastSubmitDay ?? null, updated_at: updated.updatedAt })
+    }
     return { review: pr2pr(data), karma: updated }
   },
   async thankReview(reviewId): Promise<void> {

@@ -29,7 +29,26 @@ export default function HeroCarousel(): JSX.Element {
   const navigate = useNavigate()
   const [i, setI] = useState(0)
 
-  const announcements = useBackendQuery(() => backend.listAnnouncements(), [], [] as LiveAnnouncement[])
+  const me = backend.currentUserId()
+  // #B22 — an announcement reaches only people with a relationship to the
+  // teacher: those following them OR enrolled in one of their courses. A
+  // teacher's "join my session" no longer hijacks every stranger's Home hero.
+  const announcements = useBackendQuery(async () => {
+    const all = await backend.listAnnouncements()
+    if (!me) return all
+    const [following, enrollments, courses] = await Promise.all([
+      backend.following(me),
+      backend.myEnrollments(me),
+      backend.listCourses()
+    ])
+    const followed = new Set(following.map((u) => u.id))
+    const enrolledTeacherIds = new Set(
+      enrollments
+        .map((e) => courses.find((c) => c.id === e.courseId)?.teacherId)
+        .filter((id): id is string => !!id)
+    )
+    return all.filter((a) => a.teacherId === me || followed.has(a.teacherId) || enrolledTeacherIds.has(a.teacherId))
+  }, [me], [] as LiveAnnouncement[])
   const courses = useBackendQuery(() => backend.listCourses(), [], [] as Course[])
   const challenges = useBackendQuery(() => backend.listChallenges({ active: true }), [], [] as Challenge[])
   const teachers = useBackendQuery(async () => {
