@@ -17,7 +17,9 @@ import { useT } from '../../i18n'
 
 type SettingsTab = 'ai' | 'language' | 'companion' | 'microphone' | 'notifications' | 'productivity' | 'desktop' | 'privacy' | 'about'
 
-const TAB_IDS: readonly SettingsTab[] = ['ai', 'language', 'companion', 'microphone', 'productivity', 'privacy', 'about']
+// #A85 — must list EVERY tab or a deep-link like ?tab=notifications silently
+// falls back to 'ai'. (Was missing notifications + desktop.)
+const TAB_IDS: readonly SettingsTab[] = ['ai', 'language', 'companion', 'microphone', 'notifications', 'productivity', 'desktop', 'privacy', 'about']
 
 export default function SettingsPage(): JSX.Element {
   const { profile, saving, patch, patchProfile } = useSettingsPatch()
