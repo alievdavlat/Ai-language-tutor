@@ -127,9 +127,12 @@ export default function YouTubeConnectPage(): JSX.Element {
           )}
         </div>
 
-        {!youtubeConfigured && (
+        {/* Developer hint only — end users must never see env-var names or repo
+            file paths. In production the connect button simply works once the
+            keys are configured; no banner. */}
+        {!youtubeConfigured && import.meta.env.DEV && (
           <div className="rounded-xl border border-amber-400/20 bg-amber-500/[0.06] p-3 text-xs text-amber-200/90">
-            ⚙️ Google sign-in runs in <b>demo mode</b> — set <code className="text-amber-100">VITE_YT_CLIENT_ID</code>{!youtubeApiKeyConfigured && <> and <code className="text-amber-100">VITE_YT_API_KEY</code></>} in <code>.env.local</code> for the real OAuth flow. See <code>docs/YOUTUBE-OAUTH.md</code>.
+            ⚙️ Dev: Google sign-in is in <b>demo mode</b> — set <code className="text-amber-100">VITE_YT_CLIENT_ID</code>{!youtubeApiKeyConfigured && <> and <code className="text-amber-100">VITE_YT_API_KEY</code></>} in <code>.env.local</code> for the real OAuth flow. See <code>docs/YOUTUBE-OAUTH.md</code>.
           </div>
         )}
 
@@ -150,7 +153,7 @@ export default function YouTubeConnectPage(): JSX.Element {
               </button>
             </div>
             {linkError && <p className="text-xs text-red-300 mt-2">{linkError}</p>}
-            {!youtubeApiKeyConfigured && <p className="text-xs text-amber-200/80 mt-2">Needs <code className="text-amber-100">VITE_YT_API_KEY</code> in <code>.env.local</code>.</p>}
+            {!youtubeApiKeyConfigured && import.meta.env.DEV && <p className="text-xs text-amber-200/80 mt-2">Dev: needs <code className="text-amber-100">VITE_YT_API_KEY</code> in <code>.env.local</code>.</p>}
           </div>
         )}
 
