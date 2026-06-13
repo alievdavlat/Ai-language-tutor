@@ -81,6 +81,9 @@ export default function SpeakingPage(): JSX.Element {
   const [view, setView] = useState<View>('hub')
   const [topic, setTopic] = useState('')
   const [editing, setEditing] = useState(false)
+  // #A71 — scenario rails were stacked 6+ deep (overload). Now one category tab
+  // bar shows a single rail at a time.
+  const [cat, setCat] = useState('foryou')
 
   const bySection = useMemo(() => {
     const map = new Map<string, Roleplay[]>()
@@ -112,6 +115,18 @@ export default function SpeakingPage(): JSX.Element {
     const matched = lvl ? list.filter((r) => r.level === lvl) : []
     return (matched.length >= 3 ? matched : list).slice(0, 6)
   }, [list, profile?.level])
+
+  // Category tabs for the role-play browser (one rail shown at a time).
+  const categories = useMemo(() => {
+    const base: { id: string; label: string; items: Roleplay[] }[] = [
+      { id: 'foryou', label: t('speaking.basedOnActivity'), items: forYou },
+      { id: 'trending', label: t('speaking.trendingNow'), items: trending }
+    ]
+    for (const sec of ROLEPLAY_SECTIONS.filter((s) => s.id !== 'trending')) {
+      base.push({ id: sec.id, label: sec.label, items: bySection.get(sec.id) ?? [] })
+    }
+    return base.filter((c) => c.items.length > 0)
+  }, [forYou, trending, bySection, t])
 
   if (!profile) {
     return <div className="h-full flex items-center justify-center text-slate-400">Loading…</div>
@@ -166,15 +181,6 @@ export default function SpeakingPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full max-w-5xl mx-auto flex flex-col gap-7">
-        {/* Freemium banner */}
-        <button
-          onClick={() => navigate('/account')}
-          className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-brand-500/15 via-violet-500/10 to-transparent px-5 py-3.5 flex items-center gap-3 text-left"
-        >
-          <span className="text-sm"><b className="text-white">0/2</b> <span className="text-slate-400">{t('speaking.freeLessonsUsed')}</span></span>
-          <span className="ml-auto text-sm font-black bg-gradient-to-r from-amber-300 to-rose-300 bg-clip-text text-transparent">{t('speaking.upgradeNow')}</span>
-        </button>
-
         {/* Hero — AI tutor + speaking partner */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* AI tutor */}
@@ -226,41 +232,56 @@ export default function SpeakingPage(): JSX.Element {
           </div>
         </section>
 
-        {/* More ways to practice — companions, video AI tutor, human tutors */}
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-black uppercase tracking-widest text-slate-400">{t('speaking.moreWays')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { to: '/companions', label: t('speaking.companions'), sub: t('speaking.companionsSub'), Icon: IconMasks, tint: 'bg-fuchsia-500/15 text-fuchsia-300' },
-              { to: '/ai-tutor', label: t('speaking.videoCallTutor'), sub: t('speaking.videoCallTutorSub'), Icon: IconChat, tint: 'bg-indigo-500/15 text-indigo-300' },
-              { to: '/tutors', label: t('speaking.findTutor'), sub: t('speaking.findTutorSub'), Icon: IconUsers, tint: 'bg-emerald-500/15 text-emerald-300' },
-              // #A66 — these speaking features existed but had NO link from the hub.
-              { to: '/shadowing', label: 'Shadowing', sub: 'Listen, repeat, compare — themed packs', Icon: IconMic, tint: 'bg-sky-500/15 text-sky-300' },
-              { to: '/exams/ielts/speaking', label: 'Speaking exam simulator', sub: 'Full mock interview with AI examiner', Icon: IconMic, tint: 'bg-amber-500/15 text-amber-300' }
-            ].map((q) => (
-              <button
-                key={q.to}
-                onClick={() => navigate(q.to)}
-                className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] transition flex items-center gap-3"
-              >
-                <span className={cn('w-11 h-11 rounded-xl flex items-center justify-center shrink-0', q.tint)}>
-                  <q.Icon className="w-5 h-5" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-bold text-white">{q.label}</span>
-                  <span className="block text-[11px] text-slate-400 leading-tight">{q.sub}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
+        {/* More ways to practice — compact icon strip (was 5 big stacked cards, #A71) */}
+        <div className="flex flex-wrap gap-2">
+          {[
+            { to: '/companions', label: t('speaking.companions'), Icon: IconMasks },
+            { to: '/ai-tutor', label: t('speaking.videoCallTutor'), Icon: IconChat },
+            { to: '/tutors', label: t('speaking.findTutor'), Icon: IconUsers },
+            { to: '/shadowing', label: 'Shadowing', Icon: IconMic },
+            { to: '/exams/ielts/speaking', label: 'Exam sim', Icon: IconMic }
+          ].map((q) => (
+            <button
+              key={q.to}
+              onClick={() => navigate(q.to)}
+              className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3.5 py-2 text-xs font-semibold text-slate-200 hover:bg-white/[0.07] hover:text-white transition"
+            >
+              <q.Icon className="w-4 h-4 text-slate-400" /> {q.label}
+            </button>
+          ))}
+        </div>
 
-        {/* Role-play rails */}
-        <Rail title={t('speaking.basedOnActivity')} items={forYou} locked={!aiReady} onOpen={startScenario} />
-        <Rail title={t('speaking.trendingNow')} items={trending} locked={!aiReady} onOpen={startScenario} />
-        {ROLEPLAY_SECTIONS.filter((s) => s.id !== 'trending').map((sec) => (
-          <Rail key={sec.id} title={sec.label} items={bySection.get(sec.id) ?? []} locked={!aiReady} onOpen={startScenario} />
-        ))}
+        {/* Role-play browser — category tabs + a single rail (was 6+ stacked rails, #A71) */}
+        {categories.length > 0 && (
+          <section className="flex flex-col gap-3">
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setCat(c.id)}
+                  className={cn(
+                    'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide transition border',
+                    (cat === c.id || (!categories.some((x) => x.id === cat) && c.id === categories[0].id))
+                      ? 'bg-brand-500/15 text-brand-100 border-brand-400/30'
+                      : 'bg-white/[0.03] text-slate-400 border-white/10 hover:text-slate-200'
+                  )}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            {(() => {
+              const active = categories.find((c) => c.id === cat) ?? categories[0]
+              return (
+                <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin">
+                  {active.items.map((rp) => (
+                    <RoleplayCard key={rp.id} rp={rp} locked={!aiReady} onOpen={() => startScenario(rp)} />
+                  ))}
+                </div>
+              )
+            })()}
+          </section>
+        )}
 
         {!aiReady && (
           <p className="text-center text-xs text-slate-500 inline-flex items-center justify-center gap-1.5">
