@@ -35,7 +35,6 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [info, setInfo] = useState<string | null>(null)
   const authenticated = useAppStore((s) => s.authenticated)
   // If Clerk's script never initialises (region-blocked), fall back to the
   // always-visible Supabase form so the user is never stuck on a blank panel.
@@ -131,23 +130,6 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
     }
   }
 
-  // Real social sign-in via Supabase Auth (fallback path; Clerk renders its own
-  // social buttons). Opens the provider consent screen — the Supabase auth
-  // listener (initSupabaseAuthListener) mirrors the session in and routing
-  // happens via the effect once the user row is synced.
-  const handleOAuth = async (provider: 'google' | 'apple'): Promise<void> => {
-    setBusy(true)
-    setError(null)
-    try {
-      await auth.oauth(provider)
-      setInfo('Continue in the window that just opened…')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Sign-in failed.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
     <div className="h-full w-full flex bg-slate-950 overflow-hidden">
       {/* Left visual */}
@@ -233,29 +215,11 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
             </div>
           )}
 
-          {/* Supabase/local fallback — real email + OAuth. Shown when Clerk is
-              off OR failed to load. */}
+          {/* Supabase email auth — the primary path. Social OAuth was dropped
+              (unreliable in Electron without Clerk); email + password only.
+              Shown when Clerk is off OR failed to load. */}
           {!showClerk && (<>
-          {/* OAuth */}
-          <div className="flex flex-col gap-2 mt-6">
-            <button disabled={busy} onClick={() => void handleOAuth('google')} className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition disabled:opacity-50">
-              <span className="w-5 h-5 rounded-full bg-white text-slate-900 text-[10px] font-black flex items-center justify-center">G</span>
-              Continue with Google
-            </button>
-            <button disabled={busy} onClick={() => void handleOAuth('apple')} className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 transition disabled:opacity-50">
-              <span className="w-5 h-5 rounded-full bg-white text-slate-900 text-sm flex items-center justify-center"></span>
-              Continue with Apple
-            </button>
-          </div>
-
-          {info && <p className="text-[12px] text-brand-300 font-medium mt-3">{info}</p>}
-
-          <div className="flex items-center gap-3 my-4">
-            <span className="flex-1 h-px bg-white/[0.06]" />
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">or email</span>
-            <span className="flex-1 h-px bg-white/[0.06]" />
-          </div>
-
+          <div className="mt-6" />
           {/* Email form */}
           <form
             className="flex flex-col gap-3"
