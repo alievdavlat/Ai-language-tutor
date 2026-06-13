@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { CEFRLevel, UserProfile } from '@shared/types'
+import type { UserProfile } from '@shared/types'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { logActivity } from '../../services/activity'
 import { backend } from '../../services/backend/useBackend'
-import { ProgressBar } from '../../components/ui'
-import { IconCheck, IconTarget, IconX } from '../../components/icons'
-import { CEFR_ORDER, QUESTIONS, scoreToResult, type LevelResult } from './questions'
+import { IconTarget } from '../../components/icons'
+import { CEFR_ORDER, MIN_ITEMS, MAX_ITEMS, type LevelEstimate } from './engine'
+import AdaptiveQuiz from './AdaptiveQuiz'
 
 type Phase = 'intro' | 'quiz' | 'result'
 
@@ -17,55 +17,33 @@ export default function LevelTestPage(): JSX.Element {
   const setProfile = useAppStore((s) => s.setProfile)
 
   const [phase, setPhase] = useState<Phase>('intro')
-  const [index, setIndex] = useState(0)
-  const [answers, setAnswers] = useState<(number | null)[]>(() => QUESTIONS.map(() => null))
+  const [estimate, setEstimate] = useState<LevelEstimate | null>(null)
   const [saved, setSaved] = useState(false)
 
-  const total = QUESTIONS.length
-  const q = QUESTIONS[index]
-
-  const correctCount = useMemo(() => {
-    let c = 0
-    answers.forEach((a, i) => {
-      if (a !== null && a === QUESTIONS[i].correct) c += 1
-    })
-    return c
-  }, [answers])
-  const result: LevelResult = useMemo(() => scoreToResult(correctCount, total), [correctCount, total])
-
-  // Gamification — finishing the test logs to the backend activity log AND the
-  // progress store via the mirror (#A49), so Home + Progress both update.
-  useEffect(() => {
-    if (phase === 'result') {
-      const userId = backend.currentUserId()
-      if (userId) {
-        void logActivity({
-          userId,
-          kind: 'exam_attempt',
-          xp: 20,
-          meta: { progressKind: 'level_test', level: result.level, score: correctCount }
-        }).catch(() => {})
-      }
+  const finish = (result: LevelEstimate): void => {
+    setEstimate(result)
+    setPhase('result')
+    // Gamification — finishing logs to the backend activity log AND the progress
+    // store via the mirror (#A49), so Home + Progress both update.
+    const userId = backend.currentUserId()
+    if (userId) {
+      void logActivity({
+        userId,
+        kind: 'exam_attempt',
+        xp: 20,
+        meta: { progressKind: 'level_test', level: result.level, score: result.correct }
+      }).catch(() => {})
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase])
-
-  const choose = (optIdx: number): void => {
-    setAnswers((prev) => {
-      const next = [...prev]
-      next[index] = optIdx
-      return next
-    })
-  }
-
-  const next = (): void => {
-    if (index + 1 >= total) setPhase('result')
-    else setIndex((i) => i + 1)
   }
 
   const saveLevel = async (): Promise<void> => {
-    if (!profile) return
-    const updated: UserProfile = { ...profile, level: result.level, updatedAt: new Date().toISOString() }
+    if (!profile || !estimate) return
+    const updated: UserProfile = {
+      ...profile,
+      level: estimate.level,
+      weakAreas: estimate.weakAreas,
+      updatedAt: new Date().toISOString()
+    }
     await window.api.profile.save(updated)
     setProfile(updated)
     setSaved(true)
@@ -80,12 +58,13 @@ export default function LevelTestPage(): JSX.Element {
         </div>
         <h1 className="text-3xl font-bold tracking-tight">English level test</h1>
         <p className="text-slate-400 mt-3 leading-relaxed">
-          {total} multiple-choice questions, no time limit. Find your CEFR level
-          (A1–C2) and an IELTS estimate. You can retake it any time.
+          An adaptive test that adjusts to you — questions get harder or easier
+          based on your answers, so it finds your CEFR level (A1–C2) in fewer
+          questions. You can retake it any time.
         </p>
         <div className="flex items-center gap-6 mt-6 text-sm text-slate-400">
-          <span><b className="text-white">{total}</b> questions</span>
-          <span><b className="text-white">~10</b> min</span>
+          <span><b className="text-white">{MIN_ITEMS}–{MAX_ITEMS}</b> questions</span>
+          <span><b className="text-white">~5</b> min</span>
           <span><b className="text-white">A1–C2</b> result</span>
         </div>
         <button onClick={() => setPhase('quiz')} className="btn-primary px-10 py-3 mt-8">
@@ -99,22 +78,22 @@ export default function LevelTestPage(): JSX.Element {
   }
 
   // ── Result ─────────────────────────────────────────────────────────────────
-  if (phase === 'result') {
+  if (phase === 'result' && estimate) {
     return (
       <div className="h-full overflow-y-auto">
         <div className="min-h-full flex flex-col items-center justify-center px-6 py-10 max-w-lg mx-auto text-center">
           <p className="text-xs uppercase tracking-widest text-brand-300 font-semibold">Your level</p>
           <div className="text-6xl font-bold tracking-tight mt-2 bg-grad-brand bg-clip-text text-transparent">
-            {result.level}
+            {estimate.level}
           </div>
-          <p className="text-lg font-semibold text-white mt-1">{result.label}</p>
-          <p className="text-slate-400 mt-3 max-w-sm">{result.blurb}</p>
+          <p className="text-lg font-semibold text-white mt-1">{estimate.label}</p>
+          <p className="text-slate-400 mt-3 max-w-sm">{estimate.blurb}</p>
 
           {/* CEFR ladder */}
           <div className="flex items-center gap-1.5 mt-7 w-full">
             {CEFR_ORDER.map((lv) => {
-              const active = lv === result.level
-              const passed = CEFR_ORDER.indexOf(lv) < CEFR_ORDER.indexOf(result.level)
+              const active = lv === estimate.level
+              const passed = CEFR_ORDER.indexOf(lv) < CEFR_ORDER.indexOf(estimate.level)
               return (
                 <div key={lv} className="flex-1 flex flex-col items-center gap-1.5">
                   <div
@@ -134,14 +113,27 @@ export default function LevelTestPage(): JSX.Element {
           {/* Score + IELTS */}
           <div className="flex items-center gap-3 mt-7 w-full">
             <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.04] py-3">
-              <p className="text-2xl font-bold text-white">{correctCount}/{total}</p>
+              <p className="text-2xl font-bold text-white">{estimate.correct}/{estimate.total}</p>
               <p className="text-xs text-slate-400">Correct</p>
             </div>
             <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.04] py-3">
-              <p className="text-2xl font-bold text-brand-300">{result.ielts}</p>
+              <p className="text-2xl font-bold text-brand-300">{estimate.ielts}</p>
               <p className="text-xs text-slate-400">IELTS estimate</p>
             </div>
           </div>
+
+          {estimate.weakAreas.length > 0 && (
+            <div className="mt-5 w-full rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left">
+              <p className="text-xs font-semibold text-slate-400 mb-2">Areas to focus on</p>
+              <div className="flex flex-wrap gap-1.5">
+                {estimate.weakAreas.map((a) => (
+                  <span key={a} className="text-xs rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-slate-200">
+                    {a.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <button
             onClick={() => void saveLevel()}
@@ -152,7 +144,7 @@ export default function LevelTestPage(): JSX.Element {
           </button>
           <div className="flex items-center gap-4 mt-3">
             <button
-              onClick={() => { setIndex(0); setAnswers(QUESTIONS.map(() => null)); setSaved(false); setPhase('intro') }}
+              onClick={() => { setEstimate(null); setSaved(false); setPhase('intro') }}
               className="text-sm text-slate-400 hover:text-white"
             >
               Retake
@@ -166,76 +158,10 @@ export default function LevelTestPage(): JSX.Element {
     )
   }
 
-  // ── Quiz ───────────────────────────────────────────────────────────────────
-  const selected = answers[index]
-  const progress = (index / total) * 100
-
+  // ── Quiz (adaptive) ──────────────────────────────────────────────────────────
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-6 py-6">
-      <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => navigate(-1)} className="text-slate-500 hover:text-white transition shrink-0" title="Exit test">
-          <IconX className="w-6 h-6" />
-        </button>
-        <ProgressBar value={progress} className="h-2.5" />
-        <span className="text-xs font-semibold text-slate-400 shrink-0 tabular-nums">
-          {index + 1}/{total}
-        </span>
-      </div>
-
-      <div className="flex-1">
-        <p className="text-[11px] uppercase tracking-widest text-brand-300 font-semibold mb-2">
-          {q.area} · {q.level}
-        </p>
-        <h2 className="text-2xl font-bold leading-snug mb-8">{q.prompt}</h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {q.options.map((opt, i) => (
-            <button
-              key={opt}
-              onClick={() => choose(i)}
-              className={cn(
-                'rounded-2xl border px-4 py-4 text-left font-semibold transition',
-                selected === i
-                  ? 'border-brand-400 bg-brand-500/15 text-white'
-                  : 'border-white/10 bg-white/[0.03] text-slate-200 hover:bg-white/[0.07]'
-              )}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-
-        {/* "I don't know" — counts as incorrect but lets the learner move on
-            honestly instead of guessing, which keeps the level estimate accurate. */}
-        <button
-          onClick={() => choose(-1)}
-          className={cn(
-            'mt-3 w-full rounded-2xl border border-dashed px-4 py-3 text-sm font-semibold transition',
-            selected === -1
-              ? 'border-slate-400 bg-white/[0.08] text-slate-200'
-              : 'border-white/15 bg-transparent text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
-          )}
-        >
-          🤔 I don't know — skip this one
-        </button>
-      </div>
-
-      <div className="mt-6 flex items-center justify-between gap-3">
-        <button
-          onClick={() => setIndex((i) => Math.max(0, i - 1))}
-          disabled={index === 0}
-          className="btn-ghost px-6 py-3 disabled:opacity-40"
-        >
-          Back
-        </button>
-        <button onClick={next} disabled={selected === null} className="btn-primary flex-1 py-3 disabled:opacity-40">
-          {index + 1 >= total ? (
-            <span className="inline-flex items-center gap-2"><IconCheck className="w-4 h-4" /> See result</span>
-          ) : (
-            'Next'
-          )}
-        </button>
-      </div>
+      <AdaptiveQuiz onComplete={finish} onExit={() => navigate(-1)} />
     </div>
   )
 }

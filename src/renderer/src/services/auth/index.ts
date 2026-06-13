@@ -73,10 +73,56 @@ export async function signIn(input: { email: string; password?: string }): Promi
   return user
 }
 
-/** Quick demo sign-in for the OAuth buttons when no real provider is wired. */
-export async function quickContinue(provider: 'google' | 'apple'): Promise<PlatformUser> {
-  const token = Math.random().toString(36).slice(2, 8)
-  return signUp({ name: `${provider === 'google' ? 'Google' : 'Apple'} User`, email: `${provider}.${token}@speakai.app` })
+/**
+ * REAL social sign-in (Google / Apple) via Supabase Auth — used on the fallback
+ * path (Clerk has its own buttons). Returns the provider URL after kicking off
+ * the redirect; in a hosted/dev build Supabase redirects the page and the
+ * onAuthStateChange listener below mirrors the session in. Throws a clear error
+ * when Supabase Auth isn't enabled so the UI never silently fakes a login.
+ */
+export async function oauth(provider: 'google' | 'apple'): Promise<void> {
+  if (!useSupabaseAuth) {
+    throw new Error(
+      'Social sign-in needs Supabase Auth (VITE_USE_SUPABASE_AUTH=1) or a reachable Clerk instance. Use email for now.'
+    )
+  }
+  const redirectTo =
+    typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : undefined
+  const { data, error } = await getSupabaseClient().auth.signInWithOAuth({
+    provider,
+    options: { redirectTo, skipBrowserRedirect: true }
+  })
+  if (error) throw error
+  // skipBrowserRedirect → we open the consent URL ourselves. In Electron this
+  // opens the system browser; the deep-link return is handled by the auth
+  // listener once Supabase detects the session. (Live OAuth must be verified on
+  // the user's machine — sandbox has no network egress.)
+  if (data?.url && typeof window !== 'undefined') window.open(data.url, '_blank', 'noopener')
+}
+
+/**
+ * Wire a one-time Supabase auth listener: whenever a real Supabase session
+ * appears (email/password OR OAuth callback), mirror it into the backend users
+ * row + the app store, exactly like the Clerk sync effect does. Idempotent.
+ */
+let _supaListenerWired = false
+export function initSupabaseAuthListener(): void {
+  if (_supaListenerWired || !useSupabaseAuth || typeof window === 'undefined') return
+  _supaListenerWired = true
+  const client = getSupabaseClient()
+  client.auth.onAuthStateChange((event, session) => {
+    if (event !== 'SIGNED_IN' || !session?.user) return
+    const email = (session.user.email ?? '').trim().toLowerCase()
+    if (!email) return
+    void (async () => {
+      const meta = session.user.user_metadata ?? {}
+      const name = (meta.full_name || meta.name || emailToName(email)) as string
+      let user = await backend.signIn(email).catch(() => null)
+      const returning = !!user
+      if (!user) user = await backend.signUp({ name, email, role: 'student' }).catch(() => null)
+      if (user) applySession(user, returning)
+    })()
+  })
 }
 
 export async function signOut(): Promise<void> {

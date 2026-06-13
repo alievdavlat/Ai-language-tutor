@@ -10,9 +10,18 @@ import { IconMic } from '../../components/icons'
 
 type Mode = 'signin' | 'signup'
 
-// Detects whether Clerk is actually wired up. When the env flag is off we
-// fall back to the original in-app email form (still useful for offline dev).
-const useClerk = import.meta.env.VITE_USE_CLERK === '1' && !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+// Auth mode is decided at boot by main.tsx (Clerk reachability probe) and
+// published on window.__SPEAKAI_AUTH_MODE. 'clerk' → mount Clerk's <SignIn>;
+// 'fallback' → real Supabase Auth (email/password + OAuth). We read the runtime
+// flag (not just the env) so a Clerk instance that's enabled-but-unreachable
+// correctly shows the working fallback instead of a dead Clerk widget.
+const authMode: 'clerk' | 'fallback' =
+  (typeof window !== 'undefined' &&
+    (window as unknown as { __SPEAKAI_AUTH_MODE?: 'clerk' | 'fallback' }).__SPEAKAI_AUTH_MODE) ||
+  (import.meta.env.VITE_USE_CLERK === '1' && !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+    ? 'clerk'
+    : 'fallback')
+const useClerk = authMode === 'clerk'
 
 export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mode } = {}): JSX.Element {
   const navigate = useNavigate()
@@ -26,6 +35,19 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null)
+  const authenticated = useAppStore((s) => s.authenticated)
+
+  // Fallback (Supabase) path: wire the auth-state listener once so a real
+  // email/password OR OAuth session is mirrored into the store, then route as
+  // soon as that lands.
+  useEffect(() => {
+    if (!useClerk) auth.initSupabaseAuthListener()
+  }, [])
+  useEffect(() => {
+    if (!useClerk && authenticated) route()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated])
 
   // ── Clerk session sync ─────────────────────────────────────────────────
   // When Clerk reports the user is signed in, mirror that into our local
@@ -96,12 +118,16 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
     }
   }
 
+  // Real social sign-in via Supabase Auth (fallback path; Clerk renders its own
+  // social buttons). Opens the provider consent screen — the Supabase auth
+  // listener (initSupabaseAuthListener) mirrors the session in and routing
+  // happens via the effect once the user row is synced.
   const handleOAuth = async (provider: 'google' | 'apple'): Promise<void> => {
     setBusy(true)
     setError(null)
     try {
-      await auth.quickContinue(provider)
-      route()
+      await auth.oauth(provider)
+      setInfo('Continue in the window that just opened…')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sign-in failed.')
     } finally {
@@ -198,6 +224,8 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
               Continue with Apple
             </button>
           </div>
+
+          {info && <p className="text-[12px] text-brand-300 font-medium mt-3">{info}</p>}
 
           <div className="flex items-center gap-3 my-4">
             <span className="flex-1 h-px bg-white/[0.06]" />

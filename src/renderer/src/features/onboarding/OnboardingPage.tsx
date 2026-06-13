@@ -1,40 +1,31 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type {
   CEFRLevel,
   Interest,
   LearningGoal,
-  PlacementAnswer,
-  PlacementQuestion,
   PlacementResult,
   TargetLanguage,
   UserProfile
 } from '@shared/types'
 import { useAppStore } from '../../store/useAppStore'
 import { homeForRole } from '@shared/constants'
-import { Card, ProgressBar } from '../../components/ui'
+import { ProgressBar } from '../../components/ui'
 import { useOnboardingFlow } from './hooks/useOnboardingFlow'
 import { buildEmptyProfile } from './constants/defaultProfile'
 import { useUILanguage, type UILanguage } from '../../i18n'
 import WelcomeStep from './sections/WelcomeStep'
 import LanguageStep from './sections/LanguageStep'
 import NativeLanguageStep from './sections/NativeLanguageStep'
-import ModelCheckStep from './sections/ModelCheckStep'
 import GoalsStep from './sections/GoalsStep'
 import InterestsStep from './sections/InterestsStep'
-import PlacementStep from './sections/PlacementStep'
 import CompleteStep from './sections/CompleteStep'
-
-const FALLBACK_PLACEMENT: PlacementResult = {
-  level: 'A2',
-  score: 0,
-  weakAreas: [],
-  detail: 'Level estimated from your answers.'
-}
+import AdaptiveQuiz from '../leveltest/AdaptiveQuiz'
+import type { LevelEstimate } from '../leveltest/engine'
 
 export default function OnboardingPage(): JSX.Element {
   const navigate = useNavigate()
-  const { rec, refreshOllama, setProfile, profile } = useAppStore()
+  const { rec, setProfile, profile } = useAppStore()
   const setOnboardingComplete = useAppStore((s) => s.setOnboardingComplete)
   const role = useAppStore((s) => s.role)
   const flow = useOnboardingFlow('welcome')
@@ -50,30 +41,16 @@ export default function OnboardingPage(): JSX.Element {
   const toUILang = (c: string): UILanguage => (c === 'uz' || c === 'ru' || c === 'en' ? c : 'en')
   const [goals, setGoals] = useState<LearningGoal[]>([])
   const [interests, setInterests] = useState<Interest[]>([])
-  const [placementQuestions, setPlacementQuestions] = useState<PlacementQuestion[] | null>(null)
   const [placementResult, setPlacementResult] = useState<PlacementResult | null>(null)
 
-  useEffect(() => {
-    if (flow.step === 'placement' && !placementQuestions) {
-      window.api.placement.generate().then(setPlacementQuestions)
-    }
-  }, [flow.step, placementQuestions])
-
-  const finishPlacement = async (answers: PlacementAnswer[]): Promise<void> => {
-    if (!rec) {
-      setPlacementResult(FALLBACK_PLACEMENT)
-      flow.goTo('complete')
-      return
-    }
-    try {
-      const result = await window.api.placement.evaluate({
-        model: rec.llm.tag,
-        answers
-      })
-      setPlacementResult(result)
-    } catch {
-      setPlacementResult(FALLBACK_PLACEMENT)
-    }
+  // The adaptive engine produces the level client-side (no LLM / no local model).
+  const onPlacementComplete = (est: LevelEstimate): void => {
+    setPlacementResult({
+      level: est.level,
+      score: est.correct,
+      weakAreas: est.weakAreas,
+      detail: est.blurb
+    })
     flow.goTo('complete')
   }
 
@@ -127,16 +104,6 @@ export default function OnboardingPage(): JSX.Element {
             onBack={flow.back}
           />
         )}
-        {flow.step === 'modelCheck' && (
-          <ModelCheckStep
-            onReady={() => {
-              refreshOllama()
-              flow.next()
-            }}
-            onSkip={flow.next}
-            onBack={flow.back}
-          />
-        )}
         {flow.step === 'goals' && (
           <GoalsStep
             goals={goals}
@@ -153,18 +120,16 @@ export default function OnboardingPage(): JSX.Element {
             onBack={flow.back}
           />
         )}
-        {flow.step === 'placement' && placementQuestions && (
-          <PlacementStep
-            questions={placementQuestions}
-            onDone={finishPlacement}
-            onBack={flow.back}
-          />
-        )}
-        {flow.step === 'placement' && !placementQuestions && (
-          <Card className="text-center text-slate-400 py-12">
-            <div className="text-3xl mb-3">📝</div>
-            <p>Preparing your placement test…</p>
-          </Card>
+        {flow.step === 'placement' && (
+          <div>
+            <div className="mb-6 text-center">
+              <h2 className="text-2xl font-bold">Let's find your level</h2>
+              <p className="text-slate-400 text-sm mt-1">
+                A few adaptive questions — they get easier or harder as you go.
+              </p>
+            </div>
+            <AdaptiveQuiz onComplete={onPlacementComplete} onExit={flow.back} />
+          </div>
         )}
         {flow.step === 'complete' && placementResult && (
           <CompleteStep
