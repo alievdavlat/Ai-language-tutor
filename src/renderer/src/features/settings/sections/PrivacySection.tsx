@@ -8,7 +8,6 @@ import { useState } from 'react'
 import type { UserSettings } from '@shared/types'
 import { cn } from '../../../lib/classnames'
 import { useT } from '../../../i18n'
-import UILanguageSwitch from '../../../components/ui/UILanguageSwitch'
 import * as privacy from '../../../services/privacy'
 
 function ToggleRow({
@@ -80,11 +79,6 @@ export default function PrivacySection({
 
   return (
     <div className="grid grid-cols-1 gap-5 max-w-2xl">
-      <section>
-        <h2 className="text-sm font-bold text-white mb-2">{t('settings.uiLanguage')}</h2>
-        <UILanguageSwitch variant="list" />
-      </section>
-
       <section className="grid grid-cols-1 gap-2">
         <h2 className="text-sm font-bold text-white mb-1">{t('settings.privacy')}</h2>
         <ToggleRow

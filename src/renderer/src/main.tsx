@@ -14,6 +14,39 @@ if (import.meta.env.DEV && !window.api) {
   installDevApiMock()
 }
 
+// ── YouTube OAuth popup handoff (#A23) ───────────────────────────────────────
+// Google's implicit flow returns the access token in the URL fragment. In a
+// HashRouter app that fragment collides with routing, so the /youtube/callback
+// route may never mount. Catch the token here — BEFORE the router — whenever
+// this window is the OAuth popup, hand it to the opener, and close. Works no
+// matter what path Google redirected to (/youtube/callback, /auth/callback, …)
+// because it scans every '#'/'?' segment of the href for the token.
+function handleYouTubeOAuthRedirect(): boolean {
+  if (typeof window === 'undefined' || !window.opener) return false
+  const seg = window.location.href
+    .split(/[#?]/)
+    .find((p) => p.includes('access_token=') || p.includes('error='))
+  if (!seg) return false
+  const params = new URLSearchParams(seg)
+  const accessToken = params.get('access_token')
+  const error = params.get('error')
+  if (!accessToken && !error) return false
+  const payload = accessToken
+    ? { source: 'yt-oauth' as const, accessToken, expiresIn: Number(params.get('expires_in') ?? '3600') }
+    : { source: 'yt-oauth' as const, error: error ?? 'no_token' }
+  try {
+    window.opener.postMessage(payload, window.location.origin)
+  } catch {
+    /* opener gone */
+  }
+  document.body.innerHTML =
+    '<div style="display:grid;place-items:center;height:100vh;font-family:sans-serif;color:#e2e8f0;background:#0a0e1f">Channel connected — you can close this window.</div>'
+  setTimeout(() => window.close(), 500)
+  return true
+}
+
+const isOAuthPopup = handleYouTubeOAuthRedirect()
+
 const root = document.getElementById('root')
 if (!root) throw new Error('Root element not found')
 
@@ -38,7 +71,7 @@ function AppTree(): JSX.Element {
  * instead of a silent white page. Enable with VITE_USE_CLERK=1 once the Clerk
  * instance is confirmed reachable.
  */
-ReactDOM.createRoot(root).render(
+if (!isOAuthPopup) ReactDOM.createRoot(root).render(
   <React.StrictMode>
     <ErrorBoundary>
       {useClerk ? (

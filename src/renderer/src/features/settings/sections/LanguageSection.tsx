@@ -3,6 +3,7 @@ import type { TargetLanguage } from '@shared/types'
 import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 import { useT } from '../../../i18n'
+import UILanguageSwitch from '../../../components/ui/UILanguageSwitch'
 
 interface LanguageSectionProps {
   current: TargetLanguage
@@ -48,6 +49,12 @@ export default function LanguageSection({ current, onChange }: LanguageSectionPr
           )
         })}
       </div>
+
+      {/* Interface language — moved here from Privacy (it never belonged there). */}
+      <header className="mt-7 mb-3 pt-5 border-t border-white/[0.06]">
+        <h2 className="text-base font-bold text-white tracking-tight">{t('settings.uiLanguage')}</h2>
+      </header>
+      <UILanguageSwitch variant="list" />
     </Card>
   )
 }
