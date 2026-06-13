@@ -22,6 +22,7 @@ import { exams } from '../../services/exams/store'
 import { roleplays } from '../../services/roleplay'
 import { clips } from '../../services/clips/store'
 import { paths } from '../../services/paths/store'
+import { COURSE_FIELDS, courseToForm, saveCourseForm } from '../courses/courseForm'
 import StoryEditor from '../stories/StoryEditor'
 import ExamEditor from '../exams/ExamEditor'
 import RoleplayEditor from '../speaking/sections/RoleplayEditor'
@@ -139,49 +140,13 @@ export const RESOURCES: ResourceDef[] = [
       ), cls: 'w-24' },
       { key: 'enroll', label: 'Enrolled', render: (c) => <span className="text-slate-400 tabular-nums">{(c.enrollmentCount ?? 0).toLocaleString()}</span>, cls: 'w-24 text-right' }
     ],
-    fields: [
-      { name: 'title', label: 'Title', type: 'text', required: true, full: true, placeholder: 'e.g. Business English 101' },
-      { name: 'description', label: 'Description', type: 'textarea', full: true, rows: 3 },
-      { name: 'level', label: 'Level', type: 'select', options: levelOptions },
-      { name: 'targetLanguage', label: 'Language', type: 'select', options: langOptions },
-      { name: 'pricingKind', label: 'Pricing model', type: 'select', options: [
-        { value: 'free', label: 'Free' }, { value: 'one-off', label: 'One-off purchase' }, { value: 'sub', label: 'Subscription / month' }
-      ] },
-      { name: 'priceUsd', label: 'Price (USD)', type: 'number', min: 0, prefix: '$', when: (v) => v.pricingKind !== 'free' },
-      { name: 'hours', label: 'Length (hours)', type: 'number', min: 0, step: 0.5 },
-      { name: 'capstone', label: 'Capstone project', type: 'text', full: true, placeholder: 'Final project learners complete' },
-      { name: 'thumbnailUrl', label: 'Cover image', type: 'image', uploadPrefix: 'covers', full: true },
-      { name: 'cover', label: 'Fallback gradient', type: 'gradient' },
-      { name: 'published', label: 'Published', type: 'toggle', help: 'Visible to learners in the catalog' }
-    ],
-    toForm: (c: Course) => ({
-      title: c.title, description: c.description, level: c.level, targetLanguage: c.targetLanguage,
-      pricingKind: c.pricing?.kind ?? 'free',
-      priceUsd: c.pricing?.kind === 'one-off' ? c.pricing.usd : c.pricing?.kind === 'sub' ? c.pricing.usdPerMo : 0,
-      hours: c.hours, capstone: c.capstone ?? '', thumbnailUrl: c.thumbnailUrl ?? '', cover: c.cover, published: !!c.publishedAt
-    }),
+    // Course-level form logic is SHARED with the teacher Course builder (#A68)
+    // — fields, defaults, validation, pricing (default FREE) and the save
+    // routine all come from features/courses/courseForm.ts.
+    fields: COURSE_FIELDS,
+    toForm: (c: Course) => courseToForm(c),
     save: async (v, existing: Course | null) => {
-      const kind = String(v.pricingKind || 'free')
-      const amt = Number(v.priceUsd) || 0
-      const pricing: Course['pricing'] = kind === 'one-off' ? { kind: 'one-off', usd: amt } : kind === 'sub' ? { kind: 'sub', usdPerMo: amt } : { kind: 'free' }
-      const course: Course = {
-        id: existing?.id ?? createId('course'),
-        teacherId: existing?.teacherId ?? me(),
-        title: String(v.title || '').trim() || 'Untitled course',
-        description: String(v.description || ''),
-        level: String(v.level || 'A1'),
-        targetLanguage: (String(v.targetLanguage || 'en')) as TargetLanguage,
-        cover: String(v.cover || 'from-sky-500 to-blue-700'),
-        thumbnailUrl: (v.thumbnailUrl as string) || undefined,
-        pricing,
-        rating: existing?.rating ?? 0,
-        reviewCount: existing?.reviewCount ?? 0,
-        enrollmentCount: existing?.enrollmentCount ?? 0,
-        hours: Number(v.hours) || 0,
-        publishedAt: v.published ? (existing?.publishedAt ?? nowIso()) : undefined,
-        capstone: (v.capstone as string) || undefined
-      }
-      await backend.upsertCourse(course)
+      await saveCourseForm(v, existing)
     },
     remove: (c) => backend.deleteCourse(c.id),
     bulkImport: async (rows) => {

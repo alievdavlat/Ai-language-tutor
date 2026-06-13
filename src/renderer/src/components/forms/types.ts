@@ -18,6 +18,8 @@ export type FieldType =
   | 'gradient'
   | 'emoji'
   | 'repeatable'
+  /** CEFR/custom level picker — renders the shared LevelSelect chips (#A68). */
+  | 'level'
 
 export interface SelectOption {
   value: string
@@ -50,6 +52,8 @@ export interface FieldDef {
   itemLabel?: string
   /** Render the field only when this predicate passes (depends on sibling values). */
   when?: (values: Record<string, unknown>) => boolean
+  /** Initial value for blank forms (overrides the per-type default). */
+  defaultValue?: unknown
   /** Decorative prefix shown inside the control (e.g. "$"). */
   prefix?: string
 }

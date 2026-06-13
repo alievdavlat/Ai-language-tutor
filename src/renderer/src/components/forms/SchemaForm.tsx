@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { cn } from '../../lib/classnames'
 import { uploadUrl } from '../../services/backend'
 import { IconPlus, IconX } from '../icons'
+import LevelSelect from '../ui/LevelSelect'
 import type { FieldDef, FormValues, SelectOption } from './types'
 
 const COVERS = [
@@ -111,7 +112,8 @@ function ImageInput({ def, value, onChange }: { def: FieldDef; value: string; on
   )
 }
 
-function GradientPicker({ value, onChange }: { value: string; onChange: (v: string) => void }): JSX.Element {
+/** Gradient swatch picker — exported for bespoke forms (teacher course builder, #A68). */
+export function GradientPicker({ value, onChange }: { value: string; onChange: (v: string) => void }): JSX.Element {
   return (
     <div className="flex flex-wrap gap-2">
       {COVERS.map((c) => (
@@ -162,6 +164,7 @@ function RepeatableField({ def, value, onChange }: { def: FieldDef; value: FormV
 }
 
 export function defaultFor(def: FieldDef): unknown {
+  if (def.defaultValue !== undefined) return def.defaultValue
   switch (def.type) {
     case 'number':
       return def.min ?? 0
@@ -175,6 +178,8 @@ export function defaultFor(def: FieldDef): unknown {
       return resolveOptions(def)[0]?.value ?? ''
     case 'gradient':
       return COVERS[0]
+    case 'level':
+      return 'A1'
     default:
       return ''
   }
@@ -242,6 +247,9 @@ export function FormField({ def, value, onChange }: { def: FieldDef; value: unkn
       break
     case 'gradient':
       control = <GradientPicker value={(value as string) ?? COVERS[0]} onChange={onChange} />
+      break
+    case 'level':
+      control = <LevelSelect value={(value as string) ?? ''} onChange={onChange} />
       break
     case 'emoji':
       control = (

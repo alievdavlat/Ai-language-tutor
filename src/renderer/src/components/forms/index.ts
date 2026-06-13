@@ -50,5 +50,5 @@ export { default as LevelSelect } from '../ui/LevelSelect'
 
 // Schema-driven form (Admin CMS #A56). `SelectOption` already exported above
 // (from ./Select); the schema form uses FieldDef-internal options.
-export { default as SchemaForm, FormField, blankValues, defaultFor } from './SchemaForm'
+export { default as SchemaForm, FormField, GradientPicker, blankValues, defaultFor } from './SchemaForm'
 export type { FieldDef, FieldType, FormValues } from './types'

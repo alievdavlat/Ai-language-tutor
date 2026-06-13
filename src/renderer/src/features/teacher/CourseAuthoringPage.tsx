@@ -5,11 +5,17 @@ import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
 import { backend } from '../../services/backend/useBackend'
 import { isImageCover } from '../../lib/cover'
-import { uploadUrl } from '../../services/backend'
-import { checkDuplicate, contentKey } from '../../services/dedup'
+import {
+  COURSE_DEFAULTS,
+  courseLanguageOptions,
+  findDuplicateCourse,
+  saveCourseForm,
+  uploadCourseCover,
+  type CoursePricingKind
+} from '../courses/courseForm'
 import LevelSelect from '../../components/ui/LevelSelect'
 import { Tabs, type TabItem } from '../../components/ui'
-import { Field, MaterialsField, RichTextEditor } from '../../components/forms'
+import { Field, GradientPicker, MaterialsField, RichTextEditor, type FormValues } from '../../components/forms'
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -67,17 +73,24 @@ export default function CourseAuthoringPage(): JSX.Element {
   const profile = useAppStore((s) => s.profile)
 
   const [step, setStep] = useState<Step>('basics')
+  const [existing, setExisting] = useState<Course | null>(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [about, setAbout] = useState('')
-  const [level, setLevel] = useState('B1')
+  const [level, setLevel] = useState<string>(COURSE_DEFAULTS.level)
+  const [targetLanguage, setTargetLanguage] = useState<string>(profile?.targetLanguage ?? COURSE_DEFAULTS.targetLanguage)
+  const [capstone, setCapstone] = useState('')
   const [thumbnailUrl, setThumbnailUrl] = useState('')
   const [bannerUrl, setBannerUrl] = useState('')
+  const [cover, setCover] = useState<string>(COURSE_DEFAULTS.cover)
   const thumbInput = useRef<HTMLInputElement>(null)
   const bannerInput = useRef<HTMLInputElement>(null)
   const [imgError, setImgError] = useState<string | null>(null)
   const [pricingMode, setPricingMode] = useState<'free' | 'one-off' | 'subscription'>('free')
   const [price, setPrice] = useState('29')
+  /** Manual course length in hours — 0 means "auto-calculate from lessons". */
+  const [hoursOverride, setHoursOverride] = useState(0)
+  const [published, setPublished] = useState(false)
   const [units, setUnits] = useState<DraftUnit[]>([
     { id: rid('u'), title: 'Unit 1 — Foundations', about: '', lessons: [emptyLesson()] }
   ])
@@ -90,12 +103,17 @@ export default function CourseAuthoringPage(): JSX.Element {
     void (async () => {
       const course = await backend.getCourse(editId)
       if (!course) { setBusy('idle'); return }
+      setExisting(course)
       setTitle(course.title)
       setDescription(course.description)
       setAbout(course.about ?? '')
       setLevel(course.level)
+      setTargetLanguage(course.targetLanguage)
+      setCapstone(course.capstone ?? '')
       setThumbnailUrl(course.thumbnailUrl ?? '')
       setBannerUrl(course.bannerUrl ?? '')
+      setCover(course.cover || COURSE_DEFAULTS.cover)
+      setPublished(!!course.publishedAt)
       setPricingMode(course.pricing.kind === 'free' ? 'free' : course.pricing.kind === 'one-off' ? 'one-off' : 'subscription')
       if (course.pricing.kind === 'one-off') setPrice(String(course.pricing.usd))
       if (course.pricing.kind === 'sub') setPrice(String(course.pricing.usdPerMo))
@@ -127,31 +145,30 @@ export default function CourseAuthoringPage(): JSX.Element {
     })()
   }, [editId])
 
-  const buildCourse = (publish: boolean): Course => {
-    const me = backend.currentUserId() ?? 'u_anon'
-    const id = savedCourseId ?? rid('c')
-    const pricing: Course['pricing'] =
-      pricingMode === 'free' ? { kind: 'free' }
-        : pricingMode === 'one-off' ? { kind: 'one-off', usd: Number(price) || 0 }
-        : { kind: 'sub', usdPerMo: Number(price) || 0 }
+  /** Hours auto-derived from lesson durations (fallback: lesson count). */
+  const autoHours = Math.max(1, Math.round(units.reduce((acc, u) => acc + u.lessons.reduce((a, l) => a + (l.durationMin || 0), 0), 0) / 60) || units.reduce((acc, u) => acc + u.lessons.length, 0))
+
+  /**
+   * Map the builder state onto the SHARED course form values (#A68) — the same
+   * shape the Admin CMS feeds into courseForm.ts, so validation, defaults,
+   * pricing and the save routine are identical on both surfaces.
+   */
+  const toFormValues = (publish: boolean): FormValues => {
+    const pricingKind: CoursePricingKind = pricingMode === 'subscription' ? 'sub' : pricingMode
     return {
-      id,
-      teacherId: me,
-      title: title || 'Untitled course',
-      description: description || 'Course description coming soon.',
-      about: about || undefined,
+      title,
+      description,
+      about,
       level,
-      targetLanguage: profile?.targetLanguage ?? 'en',
-      cover: 'from-violet-500 to-purple-700',
-      thumbnailUrl: thumbnailUrl || undefined,
-      bannerUrl: bannerUrl || undefined,
-      pricing,
-      rating: 0,
-      reviewCount: 0,
-      enrollmentCount: 0,
-      hours: Math.max(1, Math.round(units.reduce((acc, u) => acc + u.lessons.reduce((a, l) => a + (l.durationMin || 0), 0), 0) / 60) || units.reduce((acc, u) => acc + u.lessons.length, 0)),
-      publishedAt: publish ? new Date().toISOString() : undefined,
-      contentHash: contentKey.titleOwner(title || 'Untitled course', me)
+      targetLanguage,
+      pricingKind,
+      priceUsd: Number(price) || 0,
+      hours: hoursOverride > 0 ? hoursOverride : autoHours,
+      capstone,
+      thumbnailUrl,
+      bannerUrl,
+      cover,
+      published: publish
     }
   }
 
@@ -161,13 +178,7 @@ export default function CourseAuthoringPage(): JSX.Element {
    */
   const ensureNotDuplicate = async (): Promise<boolean> => {
     const me = backend.currentUserId() ?? 'u_anon'
-    const mine = await backend.myCourses(me)
-    const dup = checkDuplicate(
-      { contentHash: contentKey.titleOwner(title || 'Untitled course', me), title: title || 'Untitled course', excludeId: savedCourseId ?? undefined },
-      mine,
-      { getId: (c) => c.id, getKey: (c) => c.contentHash, getTitle: (c) => c.title }
-    )
-    const hit = dup.exact ?? dup.near[0]?.item
+    const hit = await findDuplicateCourse(title, me, savedCourseId ?? undefined)
     if (hit) {
       setImgError(`You already have a course called “${hit.title}”. Rename this one or edit the original instead.`)
       setStep('basics')
@@ -208,12 +219,20 @@ export default function CourseAuthoringPage(): JSX.Element {
   }
 
   const saveDraft = async (): Promise<void> => {
+    setImgError(null)
     if (!(await ensureNotDuplicate())) return
     setBusy('saving')
-    const course = await backend.upsertCourse(buildCourse(false))
-    await persistCurriculum(course.id)
-    setSavedCourseId(course.id)
-    setBusy('idle')
+    try {
+      // Shared save routine (#A68): validate → build → dedup → upsert.
+      const course = await saveCourseForm(toFormValues(published), existing, { id: savedCourseId ?? undefined })
+      await persistCurriculum(course.id)
+      setSavedCourseId(course.id)
+      setExisting(course)
+    } catch (e) {
+      setImgError(e instanceof Error ? e.message : 'Save failed')
+    } finally {
+      setBusy('idle')
+    }
   }
   const publish = async (): Promise<void> => {
     if (!thumbnailUrl || !bannerUrl) {
@@ -221,23 +240,34 @@ export default function CourseAuthoringPage(): JSX.Element {
       setStep('basics')
       return
     }
+    setImgError(null)
     if (!(await ensureNotDuplicate())) return
     setBusy('publishing')
-    const course = await backend.upsertCourse(buildCourse(true))
-    await persistCurriculum(course.id)
-    setSavedCourseId(course.id)
-    setBusy('idle')
-    navigate(`/course/${course.id}`)
+    try {
+      const course = await saveCourseForm(toFormValues(true), existing, { id: savedCourseId ?? undefined })
+      await persistCurriculum(course.id)
+      setSavedCourseId(course.id)
+      setExisting(course)
+      setPublished(true)
+      navigate(`/course/${course.id}`)
+    } catch (e) {
+      setImgError(e instanceof Error ? e.message : 'Publish failed')
+    } finally {
+      setBusy('idle')
+    }
   }
 
   const pickImage = async (kind: 'thumb' | 'banner', file?: File): Promise<void> => {
     setImgError(null)
     if (!file) return
-    if (!file.type.startsWith('image/')) { setImgError('Please choose an image file.'); return }
-    if (file.size > 4 * 1024 * 1024) { setImgError('Image must be under 4 MB.'); return }
-    const url = await uploadUrl(file, 'covers')
-    if (kind === 'thumb') setThumbnailUrl(url)
-    else setBannerUrl(url)
+    try {
+      // Shared cover upload (#A68) — same storage wrapper the Admin CMS uses.
+      const url = await uploadCourseCover(file)
+      if (kind === 'thumb') setThumbnailUrl(url)
+      else setBannerUrl(url)
+    } catch (e) {
+      setImgError(e instanceof Error ? e.message : 'Upload failed')
+    }
   }
 
   // ── Curriculum mutations ──
@@ -289,6 +319,13 @@ export default function CourseAuthoringPage(): JSX.Element {
             <Field label="Level">
               <LevelSelect value={level} onChange={setLevel} />
             </Field>
+            <Field label="Language" hint="The language this course teaches.">
+              <select value={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)} className="input max-w-[260px] appearance-none cursor-pointer">
+                {courseLanguageOptions().map((o) => (
+                  <option key={o.value} value={o.value} className="bg-[#10131f]">{o.label}</option>
+                ))}
+              </select>
+            </Field>
             <Field label="Short tagline" hint="One line shown on the course card.">
               <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Speak naturally in everyday situations." className="input" />
             </Field>
@@ -330,6 +367,12 @@ export default function CourseAuthoringPage(): JSX.Element {
               </Field>
               {imgError && <p className="text-[12px] text-rose-400 sm:col-span-2">⚠ {imgError}</p>}
             </div>
+            <Field label="Fallback gradient" hint="Shown wherever a cover image is missing.">
+              <GradientPicker value={cover} onChange={setCover} />
+            </Field>
+            <Field label="Capstone project" hint="Optional — the final project learners complete.">
+              <input value={capstone} onChange={(e) => setCapstone(e.target.value)} placeholder="e.g. Record a 5-minute talk about your city" className="input" />
+            </Field>
           </div>
         )}
 
@@ -391,6 +434,9 @@ export default function CourseAuthoringPage(): JSX.Element {
                 <input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="29" className="input max-w-[200px]" />
               </Field>
             )}
+            <Field label="Course length (hours)" hint={`Leave 0 to auto-calculate from lesson durations (currently ${autoHours}h).`}>
+              <input type="number" min={0} step={0.5} value={hoursOverride} onChange={(e) => setHoursOverride(Math.max(0, Number(e.target.value || 0)))} className="input max-w-[200px]" />
+            </Field>
           </div>
         )}
 
@@ -398,6 +444,19 @@ export default function CourseAuthoringPage(): JSX.Element {
         {step === 'publish' && (
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-6 flex flex-col gap-4">
             <p className="text-sm text-slate-300">Ready to publish? Your course appears on your channel and in the catalog.</p>
+            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-white">Published</p>
+                <p className="text-[11px] text-slate-500">Visible to learners in the catalog.</p>
+              </div>
+              <button
+                onClick={() => setPublished((p) => !p)}
+                className={cn('relative w-11 h-6 rounded-full transition shrink-0', published ? 'bg-emerald-500' : 'bg-white/15')}
+                title={published ? 'Unpublish on next save' : 'Publish on next save'}
+              >
+                <span className={cn('absolute top-0.5 w-5 h-5 rounded-full bg-white transition', published ? 'left-[22px]' : 'left-0.5')} />
+              </button>
+            </div>
             <ul className="text-sm text-slate-300 flex flex-col gap-1.5">
               <li className={title.trim() ? '' : 'text-amber-300'}>{title.trim() ? '✓' : '⚠'} {title.trim() ? 'Title set' : 'Add a title (Basics)'}</li>
               <li className={totalLessons > 0 ? '' : 'text-amber-300'}>{totalLessons > 0 ? '✓' : '⚠'} {totalLessons} lessons across {units.length} unit{units.length === 1 ? '' : 's'}</li>
@@ -408,7 +467,7 @@ export default function CourseAuthoringPage(): JSX.Element {
             {imgError && <p className="text-[12px] text-rose-400">⚠ {imgError}</p>}
             <div className="flex items-center gap-3 pt-2">
               <button onClick={() => void saveDraft()} disabled={busy !== 'idle'} className="btn-ghost px-5 py-2.5 disabled:opacity-50">
-                {busy === 'saving' ? 'Saving…' : savedCourseId ? 'Update draft' : 'Save draft'}
+                {busy === 'saving' ? 'Saving…' : savedCourseId ? 'Save changes' : 'Save draft'}
               </button>
               <button onClick={() => savedCourseId && navigate(`/course/${savedCourseId}`)} disabled={busy !== 'idle' || !savedCourseId} className="btn-ghost px-5 py-2.5 disabled:opacity-50">Preview</button>
               <button onClick={() => void publish()} disabled={busy !== 'idle' || !title.trim() || !thumbnailUrl || !bannerUrl} className="btn-primary flex-1 py-2.5 disabled:opacity-50">
