@@ -113,7 +113,8 @@ export default function ClipSetupPage(): JSX.Element {
             </span>
             <span>{clip.accent} {clip.level}</span>
             <span>·</span>
-            <span>{clip.plays} plays</span>
+            {/* Real local play count (seed `plays` vanity strings were fake — #A86). */}
+            <span>{clip.playCount ? `${clip.playCount} ${clip.playCount === 1 ? 'play' : 'plays'}` : 'New'}</span>
             <span>·</span>
             <span>{clip.duration}</span>
           </div>

@@ -62,7 +62,9 @@ function ClipCard({ clip, onOpen }: { clip: Clip; onOpen: () => void }): JSX.Ele
         <p className="text-sm font-semibold text-white truncate group-hover:text-brand-200 transition">{clip.title}</p>
         <p className="text-xs text-slate-400 truncate">{clip.artist}</p>
         <p className="text-[11px] text-slate-500 mt-0.5">
-          {clip.playCount ? `${clip.playCount} plays` : clip.plays + ' plays'}
+          {/* Real engagement only — show the actual local playCount, or "New" when
+             unplayed. (The seed `plays` vanity strings like "8.2M" were fake — #A86.) */}
+          {clip.playCount ? `${clip.playCount} ${clip.playCount === 1 ? 'play' : 'plays'}` : 'New'}
           <span className="ml-2 inline-flex items-center rounded bg-white/[0.06] text-slate-300 px-1.5 py-0.5 text-[10px] font-bold">{clip.level}</span>
         </p>
       </div>
