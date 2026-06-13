@@ -40,6 +40,7 @@ import type {
   UserStats
 } from '@shared/types'
 import { searchClips } from '../clips/store'
+import { logActivity, reconcileProgressFromBackend } from '../activity'
 import { backend, backendKind } from './index'
 import { getSupabaseClient } from './client'
 import {
@@ -961,9 +962,21 @@ export async function ensureLearnerSeed(userId: string): Promise<void> {
       backend.listActivity(userId, { limit: 1 }),
       backend.myEnrollments(userId)
     ])
-    if (activity.length > 0 || enrollments.length > 0) return
+    if (activity.length > 0 || enrollments.length > 0) {
+      // Already has backend history, so don't re-seed. But a learner seeded
+      // before the progress mirror existed has an empty local progress store —
+      // Account/Profile (backend stats) show the full XP while Home/Progress/
+      // Quests (progress store) show 0. Reconcile the two once.
+      await reconcileProgressFromBackend(userId)
+      return
+    }
 
     // A handful of recent activity events → gives streak / xp / words / lessons.
+    // Route through logActivity (not backend.recordActivity) so each event is
+    // ALSO mirrored into the local gamification progress store — the source the
+    // Home daily goal, Progress and Quests pages read from. Recording the seed
+    // straight to the backend left those surfaces at 0 XP while Account/Profile
+    // (which read backend stats) showed the full total; the two never agreed.
     const events: { kind: Parameters<typeof backend.recordActivity>[0]['kind']; xp: number; minutes?: number; meta?: Record<string, unknown> }[] = [
       { kind: 'lesson_complete', xp: 40, minutes: 12, meta: { lesson: 'Greetings' } },
       { kind: 'word_learned', xp: 20, minutes: 6, meta: { count: 18 } },
@@ -972,7 +985,7 @@ export async function ensureLearnerSeed(userId: string): Promise<void> {
       { kind: 'lesson_complete', xp: 40, minutes: 14, meta: { lesson: 'Past tenses' } }
     ]
     for (const e of events) {
-      await backend.recordActivity({ userId, language: 'en', ...e })
+      await logActivity({ userId, language: 'en', ...e })
     }
 
     // Enroll in two courses; complete one → a real certificate.

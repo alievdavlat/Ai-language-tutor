@@ -60,6 +60,24 @@ function mirrorToProgressStore(event: ActivityEvent): void {
   }
 }
 
+/**
+ * Backfill the local gamification progress store from the backend activity
+ * ledger. Used to reconcile a learner whose backend already has history but
+ * whose progress store is empty — e.g. someone seeded before the
+ * `mirrorToProgressStore` bridge existed, or a fresh device sharing one cloud
+ * account. Without this they show the full XP on Account/Profile (backend
+ * stats) but 0 XP on Home/Progress/Quests (progress store).
+ *
+ * Idempotent and safe: it's a no-op the moment the progress store has ANY
+ * events, so it never double-counts learning the mirror already recorded.
+ */
+export async function reconcileProgressFromBackend(userId: string): Promise<void> {
+  if (useProgressStore.getState().events.length > 0) return
+  const events = await backend.listActivity(userId, { limit: 500 })
+  // Oldest-first so streak/day derivations see events in chronological order.
+  for (const ev of events.slice().reverse()) mirrorToProgressStore(ev)
+}
+
 /** XP awarded per event kind when the caller doesn't specify its own. */
 const DEFAULT_XP: Record<ActivityEvent['kind'], number> = {
   lesson_complete: 20,
