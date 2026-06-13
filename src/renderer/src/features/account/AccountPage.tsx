@@ -368,18 +368,24 @@ function RoleSwitcher(): JSX.Element {
   return (
     <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
       <h2 className="text-sm font-bold text-white">Switch role (testing)</h2>
-      <p className="text-xs text-slate-400 mt-0.5 mb-3">View the app as any role in the hierarchy. Admin &amp; Owner open the platform console, not a learner home. You can also press <kbd className="font-mono text-[11px] bg-white/10 border border-white/15 rounded px-1 py-0.5">Ctrl+Shift+A</kbd> to jump to Admin.</p>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {ROLES.map((id) => {
-          const meta = ROLE_META[id]
+      <p className="text-xs text-slate-400 mt-0.5 mb-3">Dev-only — not shown in production. There is ONE elevated account: the Owner/Admin (the founder), who operates the platform console. Press <kbd className="font-mono text-[11px] bg-white/10 border border-white/15 rounded px-1 py-0.5">Ctrl+Shift+A</kbd> to jump to it.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* #A122 — Admin & Owner are ONE identity (the founder). The switcher
+            shows a single elevated entry, not two separate people. */}
+        {([
+          { id: 'student' as const, label: 'Student', description: ROLE_META.student.description },
+          { id: 'teacher' as const, label: 'Teacher', description: ROLE_META.teacher.description },
+          { id: 'admin' as const, label: 'Owner / Admin', description: 'Founder — full platform control: CMS, user CRM, moderation, settings & billing' }
+        ]).map(({ id, label, description }) => {
+          const active = role === id || (id === 'admin' && role === 'owner')
           return (
             <button
               key={id}
-              onClick={() => { setRole(id); navigate(meta.home) }}
-              className={cn('rounded-2xl border p-4 text-left transition', role === id ? 'border-brand-400/50 bg-brand-500/10 ring-1 ring-brand-400/30' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]')}
+              onClick={() => { setRole(id); navigate(ROLE_META[id].home) }}
+              className={cn('rounded-2xl border p-4 text-left transition', active ? 'border-brand-400/50 bg-brand-500/10 ring-1 ring-brand-400/30' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]')}
             >
-              <p className="text-sm font-bold text-white">{meta.label}{role === id ? ' ✓' : ''}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">{meta.description}</p>
+              <p className="text-sm font-bold text-white">{label}{active ? ' ✓' : ''}</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">{description}</p>
             </button>
           )
         })}
