@@ -121,6 +121,29 @@ function RunExam(): JSX.Element {
   return <ExamEngine bankId={examId ?? ''} />
 }
 
+// Routes reachable WITHOUT being signed in. Everything else (home, onboarding,
+// role pick, settings, teacher/admin…) requires authentication.
+const PUBLIC_PATHS = new Set(['/', '/signin', '/signup', '/youtube/callback', '/widget'])
+
+/**
+ * #A120 — hard auth gate. The post-boot redirect only fired from "/", so a
+ * deep link to /home (or /onboarding) while signed out still rendered the app.
+ * This guard runs on every navigation: once booted, an unauthenticated user on
+ * any non-public route is sent to /signin. No onboarding or app UI is reachable
+ * before login/register.
+ */
+function useAuthGate(): void {
+  const booted = useAppStore((s) => s.booted)
+  const authenticated = useAppStore((s) => s.authenticated)
+  const location = useLocation()
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (!booted || authenticated) return
+    if (PUBLIC_PATHS.has(location.pathname)) return
+    navigate('/signin', { replace: true })
+  }, [booted, authenticated, location.pathname, navigate])
+}
+
 function usePostBootRedirect(): void {
   const booted = useAppStore((s) => s.booted)
   const authenticated = useAppStore((s) => s.authenticated)
@@ -231,6 +254,7 @@ export default function AppRoutes(): JSX.Element {
   const navigate = useNavigate()
   const setRole = useAppStore((s) => s.setRole)
   useBootstrap()
+  useAuthGate()
   usePostBootRedirect()
   useSyncUILanguage()
   useSyncUserToBackend()

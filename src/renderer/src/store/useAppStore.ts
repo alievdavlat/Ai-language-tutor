@@ -225,7 +225,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     // profile with empty defaults at the end of onboarding.
     const hasCompleteProfile = !!migrated && (migrated.goals?.length ?? 0) > 0
     const state = get()
-    if (hasCompleteProfile && !state.authenticated && !state.onboardingComplete && !state.roleSelected) {
+    // #A120 — ONLY a true first-launch of a pre-PR install (a complete profile
+    // but NONE of the auth/onboarding/role flags ever set) is auto-seeded into a
+    // session. A user who explicitly signed out (LS_AUTH=false but onboarding/
+    // role already done) is NOT silently re-authenticated — they must sign in.
+    // Having a saved profile is no longer the same as having a session.
+    const autoSeed = hasCompleteProfile && !state.authenticated && !state.onboardingComplete && !state.roleSelected
+    if (autoSeed) {
       writeBool(LS_AUTH, true)
       writeBool(LS_ONBOARDING, true)
       if (typeof window !== 'undefined') window.localStorage?.setItem(LS_ROLE, 'student')
@@ -238,16 +244,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       rec,
       ollama,
       profile: migrated ?? null,
-      authenticated: hasCompleteProfile ? true : state.authenticated,
-      onboardingComplete: hasCompleteProfile ? true : state.onboardingComplete,
-      roleSelected: hasCompleteProfile ? true : state.roleSelected
+      authenticated: autoSeed ? true : state.authenticated,
+      onboardingComplete: autoSeed ? true : state.onboardingComplete,
+      roleSelected: autoSeed ? true : state.roleSelected
     })
 
     // Make sure the backend has a current user so pages can read/write likes,
     // saves, enrollments, follows etc. without showing "sign in first", and
     // RECONCILE the role from that server row (the server is the source of
     // truth — a tampered local `speakai.role` gets corrected here).
-    if (hasCompleteProfile) {
+    // Only when there's an actual session (#A120) — a signed-out visitor must
+    // not get a backend session silently restored.
+    if (get().authenticated) {
       const email = `${(migrated?.name ?? 'aziz').toLowerCase().replace(/\s+/g, '.')}@speakai.app`
       let user: PlatformUser | null = null
       const currentId = backend.currentUserId()
