@@ -197,6 +197,18 @@ export interface Backend {
 
   // Live
   listLiveNow(filter?: { language?: string }): Promise<LiveStream[]>
+  /** Start a live stream — creates a real row so it shows in everyone's Live list
+   *  and the room id is unique to this host (fixes the shared `my-stream` bug). */
+  createLiveStream(input: {
+    hostId: ID
+    title: string
+    category: string
+    language: LiveStream['language']
+    cover?: string
+    imageUrl?: string
+  }): Promise<LiveStream>
+  /** End a live stream — removes the row so no zombie streams linger. */
+  endLiveStream(id: ID): Promise<void>
   listAnnouncements(): Promise<LiveAnnouncement[]>
   createAnnouncement(input: Omit<LiveAnnouncement, 'id'>): Promise<LiveAnnouncement>
 

@@ -660,6 +660,29 @@ export const localBackend: Backend = {
     return list
   },
 
+  async createLiveStream(input): Promise<LiveStream> {
+    const s: LiveStream = {
+      id: newId('ls'),
+      hostId: input.hostId,
+      title: input.title,
+      category: input.category,
+      language: input.language,
+      viewerCount: 0,
+      startedAt: now(),
+      cover: input.cover ?? 'from-brand-700 to-indigo-900',
+      imageUrl: input.imageUrl
+    }
+    db().streams.unshift(s)
+    persist()
+    return s
+  },
+
+  async endLiveStream(id): Promise<void> {
+    const d = db()
+    d.streams = d.streams.filter((s) => s.id !== id)
+    persist()
+  },
+
   async listAnnouncements(): Promise<LiveAnnouncement[]> {
     return [...db().announcements]
   },

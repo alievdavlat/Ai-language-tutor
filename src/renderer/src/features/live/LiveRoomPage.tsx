@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { useAppStore } from '../../store/useAppStore'
+import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import VideoTile from '../../components/realtime/VideoTile'
 import { IconHeart, IconMic, IconUsers, IconX } from '../../components/icons'
 import { useMediaRoom } from '../../hooks/realtime/useMediaRoom'
@@ -32,7 +33,31 @@ export default function LiveRoomPage({ group = false }: { group?: boolean }): JS
   const name = useAppStore((s) => s.profile?.name) ?? 'You'
 
   const streamId = params.get('id') ?? (group ? 'group-demo' : 'demo')
-  const isHost = params.get('host') === '1'
+  const me = backend.currentUserId()
+  // Resolve the real stream row so the host is its OWNER, not a URL param
+  // (fixes #B21 — anyone with `?host=1` used to become host). The `?host=1`
+  // hint only covers the brief window before the row loads for the creator.
+  const { data: stream } = useBackendQuery(
+    () => backend.listLiveNow().then((l) => l.find((s) => s.id === streamId) ?? null),
+    [streamId],
+    null
+  )
+  const isHost = stream ? stream.hostId === me : params.get('host') === '1'
+
+  // When the host leaves the room (unmount), END the stream so it doesn't linger
+  // as a zombie in everyone's Live list.
+  const endRef = useRef<{ host: boolean; id: string | null }>({ host: false, id: null })
+  useEffect(() => {
+    endRef.current = { host: isHost, id: stream?.id ?? null }
+  }, [isHost, stream])
+  useEffect(
+    () => () => {
+      if (endRef.current.host && endRef.current.id) {
+        void backend.endLiveStream(endRef.current.id).catch(() => {})
+      }
+    },
+    []
+  )
   // In a group room, hosts AND co-hosts publish video; in a 1-host stream only
   // the host publishes and everyone else is a viewing audience.
   const role: 'host' | 'cohost' | 'viewer' = isHost ? 'host' : group ? 'cohost' : 'viewer'

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
+import { useAppStore } from '../../store/useAppStore'
 import { AvatarCircle, Tabs, type TabItem } from '../../components/ui'
 import RealtimeStatus from '../../components/realtime/RealtimeStatus'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
@@ -83,7 +84,27 @@ function StreamCard({ r }: { r: ResolvedStream }): JSX.Element {
 export default function LivePage(): JSX.Element {
   const navigate = useNavigate()
   const me = backend.currentUserId()
+  const profile = useAppStore((s) => s.profile)
   const [filter, setFilter] = useState<Filter>('following')
+
+  // Start a real stream: create a backend row (unique id, host = me) then enter
+  // the room by that id. No more shared `my-stream` / `?host=1` (fixes #B21).
+  const goLive = async (group: boolean): Promise<void> => {
+    if (!me) { navigate('/signin'); return }
+    const who = profile?.name ?? 'You'
+    try {
+      const stream = await backend.createLiveStream({
+        hostId: me,
+        title: group ? `${who}'s group practice` : `${who} is live`,
+        category: group ? 'Group practice' : 'Live',
+        language: profile?.targetLanguage ?? 'en'
+      })
+      navigate(`${group ? '/live/group' : '/live/room'}?id=${stream.id}&host=1`)
+    } catch {
+      // Best-effort: still enter a room so the host isn't blocked.
+      navigate(`${group ? '/live/group' : '/live/room'}?id=my-${group ? 'room' : 'stream'}`)
+    }
+  }
 
   const { data: streams, loading } = useBackendQuery(() => resolveLiveStreams(), [], [])
   const { data: followingIds } = useBackendQuery(
@@ -118,10 +139,10 @@ export default function LivePage(): JSX.Element {
             <button onClick={() => navigate('/quiz/live')} className="btn-ghost px-4 py-2.5 inline-flex items-center gap-2 text-sm">
               <IconTrophy className="w-4 h-4" /> Live quiz
             </button>
-            <button onClick={() => navigate('/live/group?host=1&id=my-room')} className="btn-ghost px-4 py-2.5 inline-flex items-center gap-2 text-sm">
+            <button onClick={() => void goLive(true)} className="btn-ghost px-4 py-2.5 inline-flex items-center gap-2 text-sm">
               <IconUsers className="w-4 h-4" /> Group live
             </button>
-            <button onClick={() => navigate('/live/room?host=1&id=my-stream')} className="btn-primary px-5 py-2.5 inline-flex items-center gap-2">
+            <button onClick={() => void goLive(false)} className="btn-primary px-5 py-2.5 inline-flex items-center gap-2">
               <IconLive className="w-4 h-4" /> Go live
             </button>
           </div>
@@ -138,7 +159,7 @@ export default function LivePage(): JSX.Element {
               <p className="text-sm text-slate-400 mt-1 max-w-md">Be the first to go live, or pair with a study buddy and practise together.</p>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => navigate('/live/room?host=1&id=my-stream')} className="btn-primary px-5 py-2.5 inline-flex items-center gap-2">
+              <button onClick={() => void goLive(false)} className="btn-primary px-5 py-2.5 inline-flex items-center gap-2">
                 <IconLive className="w-4 h-4" /> Go live
               </button>
               <button onClick={() => navigate('/buddy')} className="btn-ghost px-4 py-2.5 inline-flex items-center gap-2 text-sm">
@@ -150,7 +171,7 @@ export default function LivePage(): JSX.Element {
           <>
             {/* Live-now story rings — the real hosts streaming now. */}
             <div className="flex gap-4 overflow-x-auto pb-1 -mx-6 px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <GoLiveRing onClick={() => navigate('/live/room?host=1&id=my-stream')} />
+              <GoLiveRing onClick={() => void goLive(false)} />
               {streams.map((r) => (
                 <StoryRing key={r.stream.id} r={r} onClick={() => navigate(roomLink(r))} />
               ))}

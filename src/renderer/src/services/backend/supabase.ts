@@ -814,6 +814,25 @@ export const supabaseBackend: Backend = {
     const { data } = await q
     return (data ?? []).map(s2s)
   },
+  async createLiveStream(input): Promise<LiveStream> {
+    const row = {
+      id: newId('ls'),
+      host_id: input.hostId,
+      title: input.title,
+      category: input.category,
+      language: input.language,
+      viewer_count: 0,
+      started_at: now(),
+      cover: input.cover ?? 'from-brand-700 to-indigo-900',
+      image_url: input.imageUrl ?? null
+    }
+    const { data, error } = await sb.from('live_streams').insert(row).select().single()
+    if (error) throw error
+    return s2s(data)
+  },
+  async endLiveStream(id): Promise<void> {
+    await sb.from('live_streams').delete().eq('id', id)
+  },
   async listAnnouncements(): Promise<LiveAnnouncement[]> {
     const { data } = await sb.from('live_announcements').select('*').order('when_iso', { ascending: true })
     return (data ?? []).map(a2a)
