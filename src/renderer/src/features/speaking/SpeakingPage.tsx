@@ -180,7 +180,7 @@ export default function SpeakingPage(): JSX.Element {
   // ── HUB ──
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 w-full max-w-5xl mx-auto flex flex-col gap-7">
+      <div className="px-6 py-6 w-full flex flex-col gap-7">
         {/* Hero — AI tutor + speaking partner */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* AI tutor */}

@@ -8,7 +8,7 @@ import DictionaryPanel from './DictionaryPanel'
 export default function DictionaryPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 w-full max-w-3xl mx-auto flex flex-col gap-6">
+      <div className="px-6 py-6 w-full flex flex-col gap-6">
         <PageHeader
           eyebrow="Offline dictionary"
           title="Dictionary & phrasebook"

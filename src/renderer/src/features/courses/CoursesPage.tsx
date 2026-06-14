@@ -117,7 +117,7 @@ export default function CoursesPage(): JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-6 w-full max-w-5xl mx-auto flex flex-col gap-6">
+      <div className="px-6 py-6 w-full flex flex-col gap-6">
         {/* Header + level filter */}
         <div className="flex items-end justify-between gap-3 flex-wrap">
           <div>
