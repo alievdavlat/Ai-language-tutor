@@ -366,7 +366,15 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-6 py-5">
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => navigate(-1)} className="text-slate-500 hover:text-white transition shrink-0" title="Exit exam"><IconX className="w-6 h-6" /></button>
+        <button
+          onClick={() => {
+            // #B17 — confirm before abandoning a timed mock; one accidental
+            // click shouldn't destroy an in-progress attempt with no warning.
+            if (window.confirm('Leave the exam? Your answers will be lost.')) navigate(-1)
+          }}
+          className="text-slate-500 hover:text-white transition shrink-0"
+          title="Exit exam"
+        ><IconX className="w-6 h-6" /></button>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold truncate">{section.label}</p>
           <p className="text-[11px] text-slate-400">Section {secIdx + 1} of {bank.sections.length}</p>

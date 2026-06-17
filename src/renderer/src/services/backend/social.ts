@@ -870,6 +870,20 @@ export const social: SocialBackend = backendKind === 'supabase' ? supabaseSocial
  */
 export const meId = (): string => backend.currentUserId() ?? 'u_priya'
 
+/**
+ * #B20 — fabricated learning history (a 6.5 IELTS attempt, completed courses →
+ * unearned certificates/badges, unread DMs the user never received) must NOT be
+ * planted into a fresh REAL account: it destroys trust in every real metric and
+ * makes the unread badge meaningless. Allow it only for the canonical demo users
+ * (`u_emma`/`u_priya`) or when the build opts in via `VITE_DEMO_SEED=1`. Real
+ * new accounts get the authentic empty states (which already exist and are good).
+ */
+const DEMO_USER_IDS = new Set(['u_emma', 'u_priya'])
+function demoSeedEnabled(userId: string): boolean {
+  if (import.meta.env.VITE_DEMO_SEED === '1') return true
+  return DEMO_USER_IDS.has(userId)
+}
+
 let seedingPromise: Promise<void> | null = null
 
 export function ensureCommunitySeed(): Promise<void> {
@@ -914,6 +928,8 @@ const dmSeedDone = new Set<string>()
 export async function ensureDmSeed(userId: string): Promise<void> {
   if (dmSeedDone.has(userId)) return
   dmSeedDone.add(userId)
+  // #B20 — only demo accounts get a pre-populated inbox; real users start empty.
+  if (!demoSeedEnabled(userId)) return
   try {
     const existing = await backend.listThreads(userId)
     if (existing.length > 0) return
@@ -971,6 +987,11 @@ export async function ensureLearnerSeed(userId: string): Promise<void> {
       await reconcileProgressFromBackend(userId)
       return
     }
+
+    // #B20 — a fresh REAL account must not be handed fabricated history
+    // (fake IELTS 6.5, unearned certificates/badges, a phantom streak). Only
+    // the canonical demo users (or VITE_DEMO_SEED=1) get the showcase data.
+    if (!demoSeedEnabled(userId)) return
 
     // A handful of recent activity events → gives streak / xp / words / lessons.
     // Route through logActivity (not backend.recordActivity) so each event is
