@@ -54,18 +54,24 @@ export default function TeacherAnalyticsPage(): JSX.Element {
           <StatCard value={`$${s.revenueUsd.toLocaleString()}`} label="Revenue (paid)" tone="amber" icon={<IconTrophy />} />
         </div>
 
-        {/* Plays chart */}
+        {/* Plays chart — only when a real weekly series exists. */}
         <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
           <SectionHeading title="Weekly plays" subtitle="Last 12 weeks" />
-          <div className="flex items-end gap-2 h-36">
-            {s.weeklyPlays.map((v, i) => (
-              <div key={i} className="flex-1 h-full flex flex-col justify-end items-center gap-1.5">
-                <div className="w-full rounded-t bg-gradient-to-t from-brand-700 to-brand-400 transition" style={{ height: `${(v / maxPlays) * 88}%` }} title={`${v} plays`} />
-                <span className="text-[9px] text-slate-500">W{i + 1}</span>
+          {s.weeklyPlays.length === 0 ? (
+            <p className="text-sm text-slate-400 py-8 text-center">No weekly play history yet — it appears here once your lessons are played over time.</p>
+          ) : (
+            <>
+              <div className="flex items-end gap-2 h-36">
+                {s.weeklyPlays.map((v, i) => (
+                  <div key={i} className="flex-1 h-full flex flex-col justify-end items-center gap-1.5">
+                    <div className="w-full rounded-t bg-gradient-to-t from-brand-700 to-brand-400 transition" style={{ height: `${(v / maxPlays) * 88}%` }} title={`${v} plays`} />
+                    <span className="text-[9px] text-slate-500">W{i + 1}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <p className="text-[11px] text-slate-500 mt-2">{s.watchTimeHours.toLocaleString()} watch-hours estimated this period.</p>
+              <p className="text-[11px] text-slate-500 mt-2">~{s.watchTimeHours.toLocaleString()} watch-hours (estimated from {s.views.toLocaleString()} lesson plays).</p>
+            </>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -94,6 +100,9 @@ export default function TeacherAnalyticsPage(): JSX.Element {
 
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
             <SectionHeading title="Audience" subtitle="By country" />
+            {s.audience.length === 0 && (
+              <p className="text-sm text-slate-400 py-6 text-center">No enrolled students yet — your audience breakdown appears here.</p>
+            )}
             <div className="flex flex-col gap-2.5">
               {s.audience.map((a) => (
                 <div key={a.country}>

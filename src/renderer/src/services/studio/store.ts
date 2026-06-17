@@ -202,30 +202,40 @@ export const studio = {
     const lessons = db().lessons.filter((l) => l.teacherId === tid)
     const orders = db().orders.filter((o) => o.teacherId === tid && o.status === 'paid')
 
-    const courseViews = courses.reduce((a, c) => a + c.enrollmentCount, 0)
-    const lessonViews = lessons.reduce((a, l) => a + l.views, 0)
-    const views = courseViews * 6 + lessonViews // each enrollment ~6 lesson plays
-    const watchTimeHours = Math.round((views * 4.5) / 60) // ~4.5 min avg / play
+    // Views = REAL recorded lesson plays only (recordLessonView). No synthetic
+    // multiplier on enrollment counts.
+    const views = lessons.reduce((a, l) => a + l.views, 0)
+    // Watch-hours: transparent estimate off real plays (~4.5 min avg/play),
+    // shown to the teacher as an estimate, not a measured figure.
+    const watchTimeHours = Math.round((views * 4.5) / 60)
+    // Avg completion = mean of REAL student enrollment progress. No rating-based
+    // fallback: a course with no students has no measured completion → 0.
     const completion = students.length
       ? Math.round(students.reduce((a, s) => a + s.enrollment.progress, 0) / students.length)
-      : courses.length
-        ? Math.round(courses.reduce((a, c) => a + Math.min(95, 40 + c.rating * 8), 0) / courses.length)
-        : 0
+      : 0
     const revenueUsd = orders.reduce((a, o) => a + o.amountUsd, 0)
 
-    const seed = courses.reduce((a, c) => a + c.enrollmentCount, 0)
-    const weeklyPlays = Array.from({ length: 12 }, (_, i) =>
-      Math.max(0, Math.round((seed / 14) * (0.6 + 0.5 * Math.sin(i / 2) + i * 0.06)))
-    )
+    // No per-day/per-week play history is recorded anywhere, so we cannot show a
+    // real weekly trend. Return an empty series rather than a synthetic curve.
+    const weeklyPlays: number[] = []
 
+    // Per-course completion from REAL student progress for that course; views
+    // from REAL lesson plays of that course's lessons.
     const topCourses = courses
-      .map((c) => ({
-        courseId: c.id,
-        title: c.title,
-        views: c.enrollmentCount * 6,
-        completion: Math.min(95, Math.round(40 + c.rating * 8)),
-        revenueUsd: orders.filter((o) => o.courseId === c.id).reduce((a, o) => a + o.amountUsd, 0)
-      }))
+      .map((c) => {
+        const courseStudents = students.filter((s) => s.enrollment.courseId === c.id)
+        const courseCompletion = courseStudents.length
+          ? Math.round(courseStudents.reduce((a, s) => a + s.enrollment.progress, 0) / courseStudents.length)
+          : 0
+        const courseViews = lessons.filter((l) => l.courseId === c.id).reduce((a, l) => a + l.views, 0)
+        return {
+          courseId: c.id,
+          title: c.title,
+          views: courseViews,
+          completion: courseCompletion,
+          revenueUsd: orders.filter((o) => o.courseId === c.id).reduce((a, o) => a + o.amountUsd, 0)
+        }
+      })
       .sort((a, b) => b.views - a.views)
       .slice(0, 5)
 
@@ -248,7 +258,8 @@ export const studio = {
       watchTimeHours,
       avgCompletion: completion,
       revenueUsd,
-      subscribers: students.length + Math.round(courseViews / 8),
+      // Subscribers = REAL enrolled students only.
+      subscribers: students.length,
       weeklyPlays,
       topCourses,
       audience
@@ -599,10 +610,10 @@ export const studio = {
     persist()
   },
   async syncState(): Promise<{ deviceId: ID; lastSyncedAt?: string; pendingChanges: number; devices: DeviceInfo[] }> {
+    // Only the REAL current device. Cross-device sync needs a cloud backend that
+    // isn't wired up yet, so we never invent phantom phones/tablets.
     const devices: DeviceInfo[] = [
-      { id: db().deviceId, name: 'This computer', platform: 'Windows · Desktop', lastSeenAt: now(), current: true },
-      { id: 'dev_phone', name: 'iPhone 14', platform: 'iOS · Mobile', lastSeenAt: new Date(Date.now() - 3 * 60 * 60_000).toISOString(), current: false },
-      { id: 'dev_tablet', name: 'iPad Air', platform: 'iPadOS · Tablet', lastSeenAt: new Date(Date.now() - 2 * 24 * 60 * 60_000).toISOString(), current: false }
+      { id: db().deviceId, name: 'This computer', platform: 'Windows · Desktop', lastSeenAt: now(), current: true }
     ]
     return { deviceId: db().deviceId, lastSyncedAt: db().lastSyncedAt, pendingChanges: db().downloads.filter((d) => d.status === 'ready').length, devices }
   },
