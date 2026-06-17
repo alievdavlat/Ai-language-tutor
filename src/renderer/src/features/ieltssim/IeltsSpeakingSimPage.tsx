@@ -18,6 +18,8 @@ import { ACCENT_TO_LANG } from '@shared/constants'
 import { AIGate, ParticleOrb, SectionHeading, type OrbState } from '../../components/ui'
 import { cn } from '../../lib/classnames'
 import { useActiveAI } from '../../lib/ai'
+import { backend } from '../../services/backend'
+import { logActivity } from '../../services/activity'
 import { useAppStore } from '../../store/useAppStore'
 import { useTTS } from '../../hooks/tts'
 import { useSTT } from '../../hooks/stt'
@@ -126,7 +128,7 @@ function CountdownTimer({ seconds, onElapsed, color = 'amber' }: { seconds: numb
 
 // ─── Inner sim ─────────────────────────────────────────────────────────────
 
-function InnerSim(): JSX.Element {
+function InnerSim({ onRetry }: { onRetry: () => void }): JSX.Element {
   const navigate = useNavigate()
   const ai = useActiveAI()
   const profile = useAppStore((s) => s.profile)
@@ -299,6 +301,21 @@ function InnerSim(): JSX.Element {
       .then((result) => {
         setScoring(result)
         setScoringState('done')
+        // #B14 — the interview no longer evaporates: log it as speaking practice
+        // with the real minutes so XP / streak / daily-minutes goals move (the
+        // sim previously rewarded nothing). Persisted as practice, not a full
+        // mock attempt, so it doesn't pollute full-mock best scores.
+        const meId = backend.currentUserId()
+        if (meId) {
+          void logActivity({
+            userId: meId,
+            kind: 'speaking_session',
+            language: 'en',
+            xp: 25,
+            minutes: Math.max(1, Math.round(elapsed / 60)),
+            meta: { progressKind: 'speaking_exchange', skill: 'speaking', topic: 'IELTS Speaking mock', band: result.overall }
+          }).catch(() => {})
+        }
       })
       .catch(() => setScoringState('done'))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -325,7 +342,7 @@ function InnerSim(): JSX.Element {
         </div>
       )
     }
-    return <ResultScreen scoring={scoring} transcript={transcript} />
+    return <ResultScreen scoring={scoring} transcript={transcript} onRetry={onRetry} />
   }
 
   return (
@@ -448,7 +465,7 @@ function InnerSim(): JSX.Element {
 
 // ─── Result screen (same data shape, lifted into its own component) ─────
 
-function ResultScreen({ scoring, transcript }: { scoring: IeltsScoreResult; transcript: Turn[] }): JSX.Element {
+function ResultScreen({ scoring, transcript, onRetry }: { scoring: IeltsScoreResult; transcript: Turn[]; onRetry: () => void }): JSX.Element {
   const navigate = useNavigate()
   return (
     <div className="h-full w-full overflow-y-auto bg-slate-950">
@@ -505,7 +522,7 @@ function ResultScreen({ scoring, transcript }: { scoring: IeltsScoreResult; tran
 
         <div className="flex items-center gap-2">
           <button onClick={() => navigate('/exams/ielts')} className="btn-ghost text-sm px-4 py-2">Back to exams</button>
-          <button onClick={() => window.location.reload()} className="btn-primary flex-1 text-sm py-2 inline-flex items-center justify-center gap-1.5">
+          <button onClick={onRetry} className="btn-primary flex-1 text-sm py-2 inline-flex items-center justify-center gap-1.5">
             <IconStar className="w-4 h-4" /> Try another card
           </button>
         </div>
@@ -515,13 +532,16 @@ function ResultScreen({ scoring, transcript }: { scoring: IeltsScoreResult; tran
 }
 
 export default function IeltsSpeakingSimPage(): JSX.Element {
+  // #B14 — "Try another card" resets the simulator by remounting (fresh card,
+  // transcript, timer, scoring) instead of a full page reload.
+  const [runId, setRunId] = useState(0)
   return (
     <AIGate
       featureName="IELTS Speaking simulator"
       description="The AI examiner needs a cloud model to conduct the live interview and grade your bands."
       fullscreen
     >
-      <InnerSim />
+      <InnerSim key={runId} onRetry={() => setRunId((n) => n + 1)} />
     </AIGate>
   )
 }
