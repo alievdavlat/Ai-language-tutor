@@ -12,6 +12,7 @@ import { useWritingTasks, type WritingTask } from '../../services/writing/store'
 import { levels } from '../../services/levels/store'
 import { usePermissions } from '../../lib/permissions'
 import WritingTaskEditor from './WritingTaskEditor'
+import { useT } from '../../i18n'
 
 type Mode = 'write' | 'edit'
 
@@ -45,6 +46,7 @@ const GUIDE: { color: string; label: string; tip: string }[] = [
 
 export default function WritingCoachPage(): JSX.Element {
   const navigate = useNavigate()
+  const T = useT()
   const [text, setText] = useState(SAMPLE_TEXT)
   const [mode, setMode] = useState<Mode>('edit')
   const [showHelp, setShowHelp] = useState(true)
@@ -90,11 +92,11 @@ export default function WritingCoachPage(): JSX.Element {
     if (busy) return
     setAiError(null)
     if (!aiReady) {
-      setAiError('No AI provider configured. Add one in Settings → AI to use the coach.')
+      setAiError(T('writing.noProvider'))
       return
     }
     if (!text.trim()) {
-      setAiError('Write something first.')
+      setAiError(T('writing.writeFirst'))
       return
     }
     setBusy(kind)
@@ -132,9 +134,9 @@ export default function WritingCoachPage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-5">
         <PageHeader
-          eyebrow="Write clearer English"
-          title="Writing Coach"
-          subtitle="Real-time readability feedback — bold, clear sentences win."
+          eyebrow={T('writing.eyebrow')}
+          title={T('writing.title')}
+          subtitle={T('writing.subtitle')}
           back="/home"
           action={
             <div className="flex items-center gap-2">
@@ -143,7 +145,7 @@ export default function WritingCoachPage(): JSX.Element {
                   onClick={() => setEditing('new')}
                   className="btn-primary px-4 py-2 text-sm inline-flex items-center gap-1.5"
                 >
-                  <IconPlus className="w-4 h-4" /> Create writing task
+                  <IconPlus className="w-4 h-4" /> {T('writing.createTask')}
                 </button>
               )}
               {!showHelp && (
@@ -151,7 +153,7 @@ export default function WritingCoachPage(): JSX.Element {
                   onClick={() => setShowHelp(true)}
                   className="inline-flex items-center gap-2 rounded-pill bg-white/[0.05] border border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.09] px-3.5 py-2 text-sm font-medium transition"
                 >
-                  ℹ How it works
+                  {T('writing.howItWorks')}
                 </button>
               )}
             </div>
@@ -161,14 +163,14 @@ export default function WritingCoachPage(): JSX.Element {
         {/* Writing-task bank (#A33) — pick a prompt to write against */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
           <div className="flex items-center justify-between gap-3 mb-3">
-            <SectionHeading title="Writing tasks" subtitle="Pick a prompt, then draft your answer below" />
+            <SectionHeading title={T('writing.tasksTitle')} subtitle={T('writing.tasksSub')} />
             {activeTask && (
-              <button onClick={() => { setActiveTaskId(null); setShowSample(false) }} className="text-xs font-semibold text-slate-400 hover:text-slate-200 shrink-0">Free write</button>
+              <button onClick={() => { setActiveTaskId(null); setShowSample(false) }} className="text-xs font-semibold text-slate-400 hover:text-slate-200 shrink-0">{T('writing.freeWrite')}</button>
             )}
           </div>
 
           {tasks.length === 0 ? (
-            <p className="text-sm text-slate-400">No writing tasks yet.{canAuthorContent ? ' Create one to give learners a prompt.' : ' Free-write below — your text gets the same readability feedback.'}</p>
+            <p className="text-sm text-slate-400">{T('writing.noTasks')}{canAuthorContent ? T('writing.noTasksAuthor') : T('writing.noTasksLearner')}</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {tasks.map((t) => (
@@ -185,7 +187,7 @@ export default function WritingCoachPage(): JSX.Element {
                     <span className="text-sm font-bold text-white truncate">{t.title}</span>
                   </span>
                   <span className="block text-[11px] text-slate-400 mt-0.5">
-                    <span className="capitalize">{t.type}</span> · {levels.nameOf(t.level)}{t.targetWords ? ` · ${t.targetWords} words` : ''}
+                    <span className="capitalize">{t.type}</span> · {levels.nameOf(t.level)}{t.targetWords ? ` · ${t.targetWords} ${T('writing.words').toLowerCase()}` : ''}
                   </span>
                 </button>
               ))}
@@ -201,21 +203,21 @@ export default function WritingCoachPage(): JSX.Element {
                   <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-400">
                     {activeTask.targetWords && (
                       <span className={cn(a.words >= activeTask.targetWords ? 'text-emerald-300' : '')}>
-                        {a.words}/{activeTask.targetWords} words
+                        {a.words}/{activeTask.targetWords} {T('writing.words').toLowerCase()}
                       </span>
                     )}
                     {activeTask.sampleAnswer && (
                       <button onClick={() => setShowSample((s) => !s)} className="font-semibold text-brand-300 hover:text-brand-200">
-                        {showSample ? 'Hide sample answer' : 'Show sample answer'}
+                        {showSample ? T('writing.hideSample') : T('writing.showSample')}
                       </button>
                     )}
                     {canAuthorContent && (
-                      <button onClick={() => setEditing(activeTask)} className="font-semibold text-slate-400 hover:text-slate-200 ml-auto">Edit task</button>
+                      <button onClick={() => setEditing(activeTask)} className="font-semibold text-slate-400 hover:text-slate-200 ml-auto">{T('writing.editTask')}</button>
                     )}
                   </div>
                   {showSample && activeTask.sampleAnswer && (
                     <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                      <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Sample answer</p>
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">{T('writing.sampleAnswer')}</p>
                       <p className="text-[13px] text-slate-200 leading-relaxed whitespace-pre-wrap">{activeTask.sampleAnswer}</p>
                     </div>
                   )}
@@ -232,10 +234,10 @@ export default function WritingCoachPage(): JSX.Element {
         >
           <span className="w-10 h-10 rounded-xl bg-violet-500/15 text-violet-300 flex items-center justify-center shrink-0"><IconUsers className="w-5 h-5" /></span>
           <span className="flex-1 min-w-0">
-            <span className="block text-sm font-bold text-white">Peer feedback exchange</span>
-            <span className="block text-xs text-slate-400">Review others' writing and get yours reviewed — earn karma.</span>
+            <span className="block text-sm font-bold text-white">{T('writing.peerTitle')}</span>
+            <span className="block text-xs text-slate-400">{T('writing.peerSub')}</span>
           </span>
-          <span className="text-violet-300 text-sm font-semibold shrink-0">Open →</span>
+          <span className="text-violet-300 text-sm font-semibold shrink-0">{T('writing.open')}</span>
         </button>
 
         {/* How-it-works instructions */}
@@ -248,7 +250,7 @@ export default function WritingCoachPage(): JSX.Element {
             >
               ✕
             </button>
-            <h3 className="text-base font-bold text-white">How Writing Coach works</h3>
+            <h3 className="text-base font-bold text-white">{T('writing.title')}</h3>
             <p className="text-sm text-slate-300 mt-1 max-w-2xl">
               Write or paste your English in <b className="text-white">Write</b> mode, then switch to{' '}
               <b className="text-white">Edit</b> to see what to improve. Each color points to one fix.
@@ -279,7 +281,7 @@ export default function WritingCoachPage(): JSX.Element {
                 <span className="w-7 h-7 rounded-lg bg-write/15 text-write flex items-center justify-center">
                   <IconPencilEdit className="w-4 h-4" />
                 </span>
-                Editor
+                {T('writing.editor')}
               </div>
               <div className="inline-flex items-center gap-1 p-1 rounded-pill bg-white/[0.05] border border-white/10">
                 {(['write', 'edit'] as Mode[]).map((m) => (
@@ -291,7 +293,7 @@ export default function WritingCoachPage(): JSX.Element {
                       mode === m ? 'bg-white/12 text-white' : 'text-slate-400 hover:text-slate-200'
                     )}
                   >
-                    {m}
+                    {m === 'write' ? T('writing.writeMode') : T('writing.editMode')}
                   </button>
                 ))}
               </div>
@@ -301,12 +303,12 @@ export default function WritingCoachPage(): JSX.Element {
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Paste or write something, then switch to Edit to see the highlights…"
+                placeholder={T('writing.editorPlaceholder')}
                 className="flex-1 w-full resize-none bg-transparent px-5 py-4 text-[15px] leading-relaxed text-slate-100 placeholder:text-slate-600 outline-none"
               />
             ) : (
               <div className="flex-1 px-5 py-4 text-[15px] leading-relaxed text-slate-100 overflow-y-auto">
-                {a.sentences.length === 0 && <p className="text-slate-600">Nothing to analyze yet — switch to Write.</p>}
+                {a.sentences.length === 0 && <p className="text-slate-600">{T('writing.nothingAnalyze')}</p>}
                 {a.sentences.map((s, si) => (
                   <span key={si} className={cn('px-0.5', SENTENCE_BG[s.level])}>
                     {s.tokens.map((tk, ti) => (
@@ -326,20 +328,20 @@ export default function WritingCoachPage(): JSX.Element {
           <aside className="flex flex-col gap-4">
             {/* Readability */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
-              <SectionHeading title="Readability" />
+              <SectionHeading title={T('writing.readability')} />
               <p className={cn('text-3xl font-extrabold leading-none', gradeTone)}>
                 {a.grade === 0 ? '—' : `Grade ${a.grade}`}
               </p>
               <p className="text-sm text-slate-400 mt-1">{a.gradeLabel}</p>
               <div className="grid grid-cols-2 gap-2 mt-4">
-                <MiniStat value={a.words} label="Words" />
-                <MiniStat value={`${a.readingSec}s`} label="Read time" />
+                <MiniStat value={a.words} label={T('writing.words')} />
+                <MiniStat value={`${a.readingSec}s`} label={T('writing.readTime')} />
               </div>
             </div>
 
             {/* Highlights legend + counts */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
-              <SectionHeading title="Highlights" subtitle="Switch to Edit to see them inline" />
+              <SectionHeading title={T('writing.highlights')} subtitle={T('writing.highlightsSub')} />
               <div className="flex flex-col gap-2">
                 {legend.map((row) => (
                   <div
@@ -355,13 +357,13 @@ export default function WritingCoachPage(): JSX.Element {
 
             {/* AI actions */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 flex flex-col gap-2">
-              <SectionHeading title="AI help" subtitle="Powered by your cloud model" />
+              <SectionHeading title={T('writing.aiHelp')} subtitle={T('writing.aiHelpSub')} />
               <button
                 onClick={() => void runAi('rewrite')}
                 disabled={busy !== null}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-grad-brand text-white font-bold py-2.5 shadow-glow hover:brightness-110 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <IconBolt className="w-4 h-4" /> {busy === 'rewrite' ? 'Rewriting…' : 'Rewrite to simplify'}
+                <IconBolt className="w-4 h-4" /> {busy === 'rewrite' ? T('writing.rewriting') : T('writing.rewriteSimplify')}
               </button>
               <button
                 onClick={() => void runAi('feedback')}
@@ -369,11 +371,11 @@ export default function WritingCoachPage(): JSX.Element {
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.05] border border-white/10 text-slate-200 font-semibold py-2.5 hover:bg-white/[0.09] transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <IconRefresh className={cn('w-4 h-4', busy === 'feedback' && 'animate-spin')} />{' '}
-                {busy === 'feedback' ? 'Analyzing…' : 'Get feedback'}
+                {busy === 'feedback' ? T('writing.analyzing') : T('writing.getFeedback')}
               </button>
               {!aiReady && (
                 <p className="text-[11px] text-amber-300/90 mt-1 leading-relaxed">
-                  Add a cloud model in Settings → AI to enable the coach.
+                  {T('writing.addCloud')}
                 </p>
               )}
               {aiError && <p className="text-[11px] text-rose-300 mt-1 leading-relaxed">⚠ {aiError}</p>}
@@ -382,7 +384,7 @@ export default function WritingCoachPage(): JSX.Element {
             {/* AI rewrite result */}
             {rewrite && (
               <div className="rounded-2xl border border-brand-400/30 bg-brand-500/[0.06] p-4 flex flex-col gap-3">
-                <SectionHeading title="Simplified rewrite" subtitle="Clearer, bolder version" />
+                <SectionHeading title={T('writing.simplifiedRewrite')} subtitle={T('writing.clearerVersion')} />
                 <p className="text-[14px] leading-relaxed text-slate-100 whitespace-pre-wrap max-h-64 overflow-y-auto">
                   {rewrite}
                 </p>
@@ -391,13 +393,13 @@ export default function WritingCoachPage(): JSX.Element {
                     onClick={applyRewrite}
                     className="flex-1 rounded-xl bg-grad-brand text-white font-bold py-2 text-sm shadow-glow hover:brightness-110 transition"
                   >
-                    Apply
+                    {T('writing.apply')}
                   </button>
                   <button
                     onClick={() => setRewrite(null)}
                     className="rounded-xl bg-white/[0.05] border border-white/10 text-slate-300 font-semibold py-2 px-4 text-sm hover:bg-white/[0.09] transition"
                   >
-                    Dismiss
+                    {T('writing.dismiss')}
                   </button>
                 </div>
               </div>
@@ -406,11 +408,11 @@ export default function WritingCoachPage(): JSX.Element {
             {/* AI feedback result */}
             {feedback && (
               <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 flex flex-col gap-3">
-                <SectionHeading title="Coach feedback" subtitle="Clarity, tone & grammar" />
+                <SectionHeading title={T('writing.coachFeedback')} subtitle={T('writing.coachFeedbackSub')} />
                 {band && (
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-extrabold text-emerald-300 leading-none">{band.score}</span>
-                    <span className="text-xs text-slate-400">est. IELTS band</span>
+                    <span className="text-xs text-slate-400">{T('writing.estBand')}</span>
                   </div>
                 )}
                 <ul className="flex flex-col gap-2">

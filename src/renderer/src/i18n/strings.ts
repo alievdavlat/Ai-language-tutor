@@ -281,6 +281,19 @@ export type StringKey =
   | 'downloads.thisDeviceTag' | 'downloads.syncSoon' | 'downloads.browseMore'
   // ── Widget ───────────────────────────────────────────────────────────
   | 'widget.wordOfDay' | 'widget.noDefinition' | 'widget.backToWod' | 'widget.quickLookup'
+  // ── Writing coach ────────────────────────────────────────────────────
+  | 'writing.eyebrow' | 'writing.title' | 'writing.subtitle' | 'writing.createTask'
+  | 'writing.howItWorks' | 'writing.tasksTitle' | 'writing.tasksSub' | 'writing.freeWrite'
+  | 'writing.noTasks' | 'writing.noTasksAuthor' | 'writing.noTasksLearner'
+  | 'writing.hideSample' | 'writing.showSample' | 'writing.editTask' | 'writing.sampleAnswer'
+  | 'writing.peerTitle' | 'writing.peerSub' | 'writing.open' | 'writing.editor'
+  | 'writing.writeMode' | 'writing.editMode' | 'writing.editorPlaceholder' | 'writing.nothingAnalyze'
+  | 'writing.readability' | 'writing.words' | 'writing.readTime' | 'writing.highlights'
+  | 'writing.highlightsSub' | 'writing.aiHelp' | 'writing.aiHelpSub' | 'writing.rewriting'
+  | 'writing.rewriteSimplify' | 'writing.analyzing' | 'writing.getFeedback' | 'writing.addCloud'
+  | 'writing.simplifiedRewrite' | 'writing.clearerVersion' | 'writing.apply' | 'writing.dismiss'
+  | 'writing.coachFeedback' | 'writing.coachFeedbackSub' | 'writing.estBand'
+  | 'writing.noProvider' | 'writing.writeFirst'
 
 type Table = Record<StringKey, string>
 
@@ -991,7 +1004,52 @@ const en: Table = {
   'widget.wordOfDay': 'Word of the day',
   'widget.noDefinition': 'No definition found.',
   'widget.backToWod': '← word of the day',
-  'widget.quickLookup': 'Quick lookup…'
+  'widget.quickLookup': 'Quick lookup…',
+  // Writing coach
+  'writing.eyebrow': 'Write clearer English',
+  'writing.title': 'Writing Coach',
+  'writing.subtitle': 'Real-time readability feedback — bold, clear sentences win.',
+  'writing.createTask': 'Create writing task',
+  'writing.howItWorks': 'ℹ How it works',
+  'writing.tasksTitle': 'Writing tasks',
+  'writing.tasksSub': 'Pick a prompt, then draft your answer below',
+  'writing.freeWrite': 'Free write',
+  'writing.noTasks': 'No writing tasks yet.',
+  'writing.noTasksAuthor': ' Create one to give learners a prompt.',
+  'writing.noTasksLearner': ' Free-write below — your text gets the same readability feedback.',
+  'writing.hideSample': 'Hide sample answer',
+  'writing.showSample': 'Show sample answer',
+  'writing.editTask': 'Edit task',
+  'writing.sampleAnswer': 'Sample answer',
+  'writing.peerTitle': 'Peer feedback exchange',
+  'writing.peerSub': "Review others' writing and get yours reviewed — earn karma.",
+  'writing.open': 'Open →',
+  'writing.editor': 'Editor',
+  'writing.writeMode': 'write',
+  'writing.editMode': 'edit',
+  'writing.editorPlaceholder': 'Paste or write something, then switch to Edit to see the highlights…',
+  'writing.nothingAnalyze': 'Nothing to analyze yet — switch to Write.',
+  'writing.readability': 'Readability',
+  'writing.words': 'Words',
+  'writing.readTime': 'Read time',
+  'writing.highlights': 'Highlights',
+  'writing.highlightsSub': 'Switch to Edit to see them inline',
+  'writing.aiHelp': 'AI help',
+  'writing.aiHelpSub': 'Powered by your cloud model',
+  'writing.rewriting': 'Rewriting…',
+  'writing.rewriteSimplify': 'Rewrite to simplify',
+  'writing.analyzing': 'Analyzing…',
+  'writing.getFeedback': 'Get feedback',
+  'writing.addCloud': 'Add a cloud model in Settings → AI to enable the coach.',
+  'writing.simplifiedRewrite': 'Simplified rewrite',
+  'writing.clearerVersion': 'Clearer, bolder version',
+  'writing.apply': 'Apply',
+  'writing.dismiss': 'Dismiss',
+  'writing.coachFeedback': 'Coach feedback',
+  'writing.coachFeedbackSub': 'Clarity, tone & grammar',
+  'writing.estBand': 'est. IELTS band',
+  'writing.noProvider': 'No AI provider configured. Add one in Settings → AI to use the coach.',
+  'writing.writeFirst': 'Write something first.'
 }
 
 const uz: Table = {
@@ -1701,7 +1759,52 @@ const uz: Table = {
   'widget.wordOfDay': 'Kun so‘zi',
   'widget.noDefinition': 'Ta’rif topilmadi.',
   'widget.backToWod': '← kun so‘ziga',
-  'widget.quickLookup': 'Tezkor qidiruv…'
+  'widget.quickLookup': 'Tezkor qidiruv…',
+  // Writing coach
+  'writing.eyebrow': 'Aniqroq ingliz tilida yozing',
+  'writing.title': 'Yozuv murabbiyi',
+  'writing.subtitle': 'Real vaqtdagi o‘qilishlik tahlili — aniq, ravon jumlalar yutadi.',
+  'writing.createTask': 'Yozuv topshirig‘i yaratish',
+  'writing.howItWorks': 'ℹ Qanday ishlaydi',
+  'writing.tasksTitle': 'Yozuv topshiriqlari',
+  'writing.tasksSub': 'Mavzu tanlang, so‘ng quyida javobingizni yozing',
+  'writing.freeWrite': 'Erkin yozuv',
+  'writing.noTasks': 'Hali yozuv topshiriqlari yo‘q.',
+  'writing.noTasksAuthor': ' O‘quvchilarga mavzu berish uchun bittasini yarating.',
+  'writing.noTasksLearner': ' Quyida erkin yozing — matningiz xuddi shunday o‘qilishlik tahlilini oladi.',
+  'writing.hideSample': 'Namuna javobni yashirish',
+  'writing.showSample': 'Namuna javobni ko‘rsatish',
+  'writing.editTask': 'Topshiriqni tahrirlash',
+  'writing.sampleAnswer': 'Namuna javob',
+  'writing.peerTitle': 'Tengdoshlar fikr almashinuvi',
+  'writing.peerSub': 'Boshqalarning yozuvlarini ko‘rib chiqing va o‘zingiznikini baholang — karma yig‘ing.',
+  'writing.open': 'Ochish →',
+  'writing.editor': 'Muharrir',
+  'writing.writeMode': 'yozish',
+  'writing.editMode': 'tahrir',
+  'writing.editorPlaceholder': 'Biror narsa yozing yoki joylashtiring, so‘ng belgilarni ko‘rish uchun Tahrirga o‘ting…',
+  'writing.nothingAnalyze': 'Hali tahlil qilinadigan narsa yo‘q — Yozishga o‘ting.',
+  'writing.readability': 'O‘qilishlik',
+  'writing.words': 'So‘zlar',
+  'writing.readTime': 'O‘qish vaqti',
+  'writing.highlights': 'Ajratilganlar',
+  'writing.highlightsSub': 'Ularni matnda ko‘rish uchun Tahrirga o‘ting',
+  'writing.aiHelp': 'AI yordami',
+  'writing.aiHelpSub': 'Bulutli modelingiz bilan ishlaydi',
+  'writing.rewriting': 'Qayta yozilmoqda…',
+  'writing.rewriteSimplify': 'Soddalashtirish uchun qayta yozish',
+  'writing.analyzing': 'Tahlil qilinmoqda…',
+  'writing.getFeedback': 'Fikr olish',
+  'writing.addCloud': 'Murabbiyni yoqish uchun Sozlamalar → AI ga bulutli model qo‘shing.',
+  'writing.simplifiedRewrite': 'Soddalashtirilgan qayta yozuv',
+  'writing.clearerVersion': 'Aniqroq, ravonroq versiya',
+  'writing.apply': 'Qo‘llash',
+  'writing.dismiss': 'Yopish',
+  'writing.coachFeedback': 'Murabbiy fikri',
+  'writing.coachFeedbackSub': 'Aniqlik, ohang va grammatika',
+  'writing.estBand': 'taxminiy IELTS bal',
+  'writing.noProvider': 'AI provayderi sozlanmagan. Murabbiydan foydalanish uchun Sozlamalar → AI ga qo‘shing.',
+  'writing.writeFirst': 'Avval biror narsa yozing.'
 }
 
 const ru: Table = {
@@ -2411,7 +2514,52 @@ const ru: Table = {
   'widget.wordOfDay': 'Слово дня',
   'widget.noDefinition': 'Определение не найдено.',
   'widget.backToWod': '← слово дня',
-  'widget.quickLookup': 'Быстрый поиск…'
+  'widget.quickLookup': 'Быстрый поиск…',
+  // Writing coach
+  'writing.eyebrow': 'Пишите по-английски яснее',
+  'writing.title': 'Коуч письма',
+  'writing.subtitle': 'Анализ читаемости в реальном времени — выигрывают чёткие, ясные предложения.',
+  'writing.createTask': 'Создать задание',
+  'writing.howItWorks': 'ℹ Как это работает',
+  'writing.tasksTitle': 'Задания по письму',
+  'writing.tasksSub': 'Выберите тему, затем напишите ответ ниже',
+  'writing.freeWrite': 'Свободное письмо',
+  'writing.noTasks': 'Пока нет заданий по письму.',
+  'writing.noTasksAuthor': ' Создайте задание, чтобы дать ученикам тему.',
+  'writing.noTasksLearner': ' Пишите свободно ниже — ваш текст получит такой же анализ читаемости.',
+  'writing.hideSample': 'Скрыть образец ответа',
+  'writing.showSample': 'Показать образец ответа',
+  'writing.editTask': 'Редактировать задание',
+  'writing.sampleAnswer': 'Образец ответа',
+  'writing.peerTitle': 'Обмен отзывами',
+  'writing.peerSub': 'Проверяйте чужие тексты и получайте отзывы на свои — зарабатывайте карму.',
+  'writing.open': 'Открыть →',
+  'writing.editor': 'Редактор',
+  'writing.writeMode': 'писать',
+  'writing.editMode': 'правка',
+  'writing.editorPlaceholder': 'Вставьте или напишите текст, затем переключитесь на Правку, чтобы увидеть подсветку…',
+  'writing.nothingAnalyze': 'Пока нечего анализировать — переключитесь на Писать.',
+  'writing.readability': 'Читаемость',
+  'writing.words': 'Слова',
+  'writing.readTime': 'Время чтения',
+  'writing.highlights': 'Подсветка',
+  'writing.highlightsSub': 'Переключитесь на Правку, чтобы увидеть их в тексте',
+  'writing.aiHelp': 'Помощь ИИ',
+  'writing.aiHelpSub': 'Работает на вашей облачной модели',
+  'writing.rewriting': 'Переписываю…',
+  'writing.rewriteSimplify': 'Переписать проще',
+  'writing.analyzing': 'Анализирую…',
+  'writing.getFeedback': 'Получить отзыв',
+  'writing.addCloud': 'Добавьте облачную модель в Настройки → ИИ, чтобы включить коуч.',
+  'writing.simplifiedRewrite': 'Упрощённая версия',
+  'writing.clearerVersion': 'Более ясный, чёткий вариант',
+  'writing.apply': 'Применить',
+  'writing.dismiss': 'Закрыть',
+  'writing.coachFeedback': 'Отзыв коуча',
+  'writing.coachFeedbackSub': 'Ясность, тон и грамматика',
+  'writing.estBand': 'примерный балл IELTS',
+  'writing.noProvider': 'Провайдер ИИ не настроен. Добавьте его в Настройки → ИИ, чтобы использовать коуч.',
+  'writing.writeFirst': 'Сначала что-нибудь напишите.'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────
