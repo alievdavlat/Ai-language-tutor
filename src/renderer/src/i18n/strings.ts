@@ -237,6 +237,12 @@ export type StringKey =
   | 'teacher.referralProgram' | 'teacher.referralSub' | 'teacher.copied' | 'teacher.copy'
   | 'teacher.yourProducts' | 'teacher.managePricing' | 'teacher.noProducts'
   | 'teacher.free' | 'teacher.enrolledShort'
+  // ── AI tutor call ────────────────────────────────────────────────────
+  | 'aitutor.tapMic' | 'aitutor.listening' | 'aitutor.thinking' | 'aitutor.speaking'
+  | 'aitutor.restaurant' | 'aitutor.freeConvo' | 'aitutor.interview' | 'aitutor.airport'
+  | 'aitutor.lilyName' | 'aitutor.end' | 'aitutor.aiError' | 'aitutor.unmute'
+  | 'aitutor.mute' | 'aitutor.talk' | 'aitutor.hideSubs' | 'aitutor.showSubs'
+  | 'aitutor.gateName' | 'aitutor.gateDesc' | 'aitutor.gateAge'
 
 type Table = Record<StringKey, string>
 
@@ -802,7 +808,27 @@ const en: Table = {
   'teacher.managePricing': 'Manage pricing',
   'teacher.noProducts': 'No products yet.',
   'teacher.free': 'Free',
-  'teacher.enrolledShort': '{n} enrolled'
+  'teacher.enrolledShort': '{n} enrolled',
+  // AI tutor call
+  'aitutor.tapMic': 'Tap mic to speak',
+  'aitutor.listening': 'Listening…',
+  'aitutor.thinking': 'Thinking…',
+  'aitutor.speaking': 'Speaking',
+  'aitutor.restaurant': 'Restaurant roleplay',
+  'aitutor.freeConvo': 'Free conversation',
+  'aitutor.interview': 'Job interview',
+  'aitutor.airport': 'At the airport',
+  'aitutor.lilyName': 'Lily · AI tutor',
+  'aitutor.end': 'End',
+  'aitutor.aiError': 'AI error — check Settings → AI',
+  'aitutor.unmute': 'Unmute voice',
+  'aitutor.mute': 'Mute voice',
+  'aitutor.talk': 'Talk',
+  'aitutor.hideSubs': 'Hide subtitles',
+  'aitutor.showSubs': 'Show subtitles',
+  'aitutor.gateName': 'AI tutor video call',
+  'aitutor.gateDesc': 'The AI tutor needs a cloud model to listen, think, and reply in real time.',
+  'aitutor.gateAge': 'The AI tutor'
 }
 
 const uz: Table = {
@@ -1367,7 +1393,27 @@ const uz: Table = {
   'teacher.managePricing': 'Narxlarni boshqarish',
   'teacher.noProducts': 'Hali mahsulotlar yo‘q.',
   'teacher.free': 'Bepul',
-  'teacher.enrolledShort': '{n} ta yozilgan'
+  'teacher.enrolledShort': '{n} ta yozilgan',
+  // AI tutor call
+  'aitutor.tapMic': 'Gapirish uchun mikrofonni bosing',
+  'aitutor.listening': 'Tinglamoqda…',
+  'aitutor.thinking': 'O‘ylamoqda…',
+  'aitutor.speaking': 'Gapirmoqda',
+  'aitutor.restaurant': 'Restoran rolli o‘yini',
+  'aitutor.freeConvo': 'Erkin suhbat',
+  'aitutor.interview': 'Ish suhbati',
+  'aitutor.airport': 'Aeroportda',
+  'aitutor.lilyName': 'Lily · AI repetitor',
+  'aitutor.end': 'Tugatish',
+  'aitutor.aiError': 'AI xatosi — Sozlamalar → AI ni tekshiring',
+  'aitutor.unmute': 'Ovozni yoqish',
+  'aitutor.mute': 'Ovozni o‘chirish',
+  'aitutor.talk': 'Gapirish',
+  'aitutor.hideSubs': 'Subtitrlarni yashirish',
+  'aitutor.showSubs': 'Subtitrlarni ko‘rsatish',
+  'aitutor.gateName': 'AI repetitor video qo‘ng‘irog‘i',
+  'aitutor.gateDesc': 'AI repetitor real vaqtda tinglash, o‘ylash va javob berish uchun bulutli modelga muhtoj.',
+  'aitutor.gateAge': 'AI repetitor'
 }
 
 const ru: Table = {
@@ -1932,7 +1978,27 @@ const ru: Table = {
   'teacher.managePricing': 'Управление ценами',
   'teacher.noProducts': 'Пока нет продуктов.',
   'teacher.free': 'Бесплатно',
-  'teacher.enrolledShort': 'Записано: {n}'
+  'teacher.enrolledShort': 'Записано: {n}',
+  // AI tutor call
+  'aitutor.tapMic': 'Нажмите микрофон, чтобы говорить',
+  'aitutor.listening': 'Слушаю…',
+  'aitutor.thinking': 'Думаю…',
+  'aitutor.speaking': 'Говорю',
+  'aitutor.restaurant': 'Ролевая игра в ресторане',
+  'aitutor.freeConvo': 'Свободный разговор',
+  'aitutor.interview': 'Собеседование',
+  'aitutor.airport': 'В аэропорту',
+  'aitutor.lilyName': 'Lily · ИИ-репетитор',
+  'aitutor.end': 'Завершить',
+  'aitutor.aiError': 'Ошибка ИИ — проверьте Настройки → ИИ',
+  'aitutor.unmute': 'Включить звук',
+  'aitutor.mute': 'Выключить звук',
+  'aitutor.talk': 'Говорить',
+  'aitutor.hideSubs': 'Скрыть субтитры',
+  'aitutor.showSubs': 'Показать субтитры',
+  'aitutor.gateName': 'Видеозвонок с ИИ-репетитором',
+  'aitutor.gateDesc': 'ИИ-репетитору нужна облачная модель, чтобы слушать, думать и отвечать в реальном времени.',
+  'aitutor.gateAge': 'ИИ-репетитор'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

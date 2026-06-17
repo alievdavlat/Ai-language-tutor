@@ -7,19 +7,20 @@ import { useAppStore } from '../../store/useAppStore'
 import { logActivity } from '../../services/activity'
 import { backend } from '../../services/backend/useBackend'
 import { IconChat, IconMic, IconUsers, IconVolume, IconX } from '../../components/icons'
+import { useT, type StringKey } from '../../i18n'
 
-const PHASE_LABEL: Record<VoicePhase, string> = {
-  idle: 'Tap mic to speak',
-  listening: 'Listening…',
-  thinking: 'Thinking…',
-  speaking: 'Speaking'
+const PHASE_LABEL: Record<VoicePhase, StringKey> = {
+  idle: 'aitutor.tapMic',
+  listening: 'aitutor.listening',
+  thinking: 'aitutor.thinking',
+  speaking: 'aitutor.speaking'
 }
 
-const SCENARIOS = [
-  { id: 'restaurant', label: 'Restaurant roleplay', brief: "You're the waiter at Bistro Lily and the learner is your customer." },
-  { id: 'free', label: 'Free conversation', brief: 'Chat freely about the learner\'s day, interests, and plans.' },
-  { id: 'interview', label: 'Job interview', brief: "You're a friendly hiring manager interviewing the learner." },
-  { id: 'travel', label: 'At the airport', brief: "You're airport staff helping the learner check in and find their gate." }
+const SCENARIOS: { id: string; labelKey: StringKey; brief: string }[] = [
+  { id: 'restaurant', labelKey: 'aitutor.restaurant', brief: "You're the waiter at Bistro Lily and the learner is your customer." },
+  { id: 'free', labelKey: 'aitutor.freeConvo', brief: 'Chat freely about the learner\'s day, interests, and plans.' },
+  { id: 'interview', labelKey: 'aitutor.interview', brief: "You're a friendly hiring manager interviewing the learner." },
+  { id: 'travel', labelKey: 'aitutor.airport', brief: "You're airport staff helping the learner check in and find their gate." }
 ]
 
 function buildLilyPrompt(level: string, scenarioBrief: string): string {
@@ -35,6 +36,7 @@ function buildLilyPrompt(level: string, scenarioBrief: string): string {
 
 function InnerTutor(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const profile = useAppStore((s) => s.profile)
   const level = profile?.level ?? 'B1'
   const [scenario, setScenario] = useState(SCENARIOS[0])
@@ -94,14 +96,14 @@ function InnerTutor(): JSX.Element {
               🦋
             </div>
             <div>
-              <p className="text-sm font-bold text-white">Lily · AI tutor</p>
-              <p className="text-[11px] text-slate-400">{mm}:{ss} · {scenario.label}</p>
+              <p className="text-sm font-bold text-white">{t('aitutor.lilyName')}</p>
+              <p className="text-[11px] text-slate-400">{mm}:{ss} · {t(scenario.labelKey)}</p>
             </div>
           </div>
           <button
             onClick={() => { convo.teardown(); navigate('/speaking') }}
             className="rounded-full w-9 h-9 bg-white/10 hover:bg-white/15 text-white flex items-center justify-center"
-            title="End"
+            title={t('aitutor.end')}
           >
             <IconX className="w-4 h-4" />
           </button>
@@ -127,7 +129,7 @@ function InnerTutor(): JSX.Element {
             </div>
           </div>
 
-          <p className="text-sm font-bold text-slate-200 uppercase tracking-widest">{PHASE_LABEL[phase]}</p>
+          <p className="text-sm font-bold text-slate-200 uppercase tracking-widest">{t(PHASE_LABEL[phase])}</p>
 
           {/* Live transcript */}
           {subtitles && (
@@ -145,7 +147,7 @@ function InnerTutor(): JSX.Element {
 
           {convo.error && (
             <button onClick={() => navigate('/settings')} className="text-xs text-rose-300 underline">
-              AI error — check Settings → AI
+              {t('aitutor.aiError')}
             </button>
           )}
         </div>
@@ -153,7 +155,7 @@ function InnerTutor(): JSX.Element {
         {/* Controls */}
         <footer className="px-6 pb-8 flex items-center justify-center gap-5">
           <button
-            title={convo.muted ? 'Unmute voice' : 'Mute voice'}
+            title={convo.muted ? t('aitutor.unmute') : t('aitutor.mute')}
             onClick={() => convo.toggleMuted()}
             className={cn(
               'relative w-14 h-14 rounded-full flex items-center justify-center transition',
@@ -167,7 +169,7 @@ function InnerTutor(): JSX.Element {
           </button>
           <button
             onClick={() => convo.toggleMic()}
-            title="Talk"
+            title={t('aitutor.talk')}
             className={cn(
               'w-20 h-20 rounded-full flex items-center justify-center text-white shadow-2xl transition',
               convo.listening ? 'bg-rose-500 ring-4 ring-rose-400/40' : 'bg-grad-brand ring-4 ring-brand-400/30 hover:brightness-110'
@@ -176,7 +178,7 @@ function InnerTutor(): JSX.Element {
             <IconMic className="w-7 h-7" />
           </button>
           <button
-            title={subtitles ? 'Hide subtitles' : 'Show subtitles'}
+            title={subtitles ? t('aitutor.hideSubs') : t('aitutor.showSubs')}
             onClick={() => setSubtitles((v) => !v)}
             className={cn(
               'w-14 h-14 rounded-full flex items-center justify-center transition',
@@ -194,7 +196,7 @@ function InnerTutor(): JSX.Element {
           {SCENARIOS.map((s) => (
             <button
               key={s.id}
-              title={s.label}
+              title={t(s.labelKey)}
               onClick={() => setScenario(s)}
               className={cn(
                 'w-10 h-10 rounded-full backdrop-blur flex items-center justify-center border transition',
@@ -213,9 +215,10 @@ function InnerTutor(): JSX.Element {
 }
 
 export default function AITutorPage(): JSX.Element {
+  const t = useT()
   return (
-    <AIGate featureName="AI tutor video call" description="The AI tutor needs a cloud model to listen, think, and reply in real time." fullscreen>
-      <AgeGate featureName="The AI tutor" required="teen">
+    <AIGate featureName={t('aitutor.gateName')} description={t('aitutor.gateDesc')} fullscreen>
+      <AgeGate featureName={t('aitutor.gateAge')} required="teen">
         <InnerTutor />
       </AgeGate>
     </AIGate>
