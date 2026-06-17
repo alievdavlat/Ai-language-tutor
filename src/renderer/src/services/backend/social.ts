@@ -917,25 +917,26 @@ export async function ensureDmSeed(userId: string): Promise<void> {
   try {
     const existing = await backend.listThreads(userId)
     if (existing.length > 0) return
+    // Partners must be REAL seed users (see backend/seed.ts) so threads render a
+    // real name + avatar instead of "Unknown". Emma = teacher, Davron = student.
     const starters: { partner: string; lines: string[] }[] = [
       {
-        partner: 'u_james',
+        partner: 'u_emma',
         lines: [
           'Hey! Ready to push for band 7 this week? 💪',
           "Send me a Part 2 recording and I'll mark it tonight 🙏"
         ]
       },
       {
-        partner: 'u_emma',
-        lines: ['Welcome to the community! Ask me anything about Business English.']
-      },
-      {
-        partner: 'u_wei',
+        partner: 'u_priya',
         lines: ['Hi! Want to be speaking-streak buddies? 🔥']
       }
     ]
     for (const s of starters) {
       if (s.partner === userId) continue
+      // Skip any partner that doesn't resolve to a real user row.
+      const partnerUser = await backend.getUser(s.partner)
+      if (!partnerUser) continue
       const thread = await backend.getOrCreateThread(userId, s.partner)
       for (const text of s.lines) {
         await backend.sendMessage({ threadId: thread.id, senderId: s.partner, text })
