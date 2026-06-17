@@ -157,6 +157,22 @@ export type StringKey =
   | 'gamification.resetsIn' | 'gamification.yourLeague' | 'gamification.allLeagues'
   | 'gamification.global' | 'gamification.friends' | 'gamification.loadingRankings'
   | 'gamification.friendsEmpty' | 'gamification.rankLine' | 'gamification.promoteRule'
+  // ── Stories page ─────────────────────────────────────────────────────
+  | 'stories.eyebrow' | 'stories.title' | 'stories.subtitle' | 'stories.createStory'
+  | 'stories.tab.reading' | 'stories.tab.listening' | 'stories.resume'
+  | 'stories.parts' | 'stories.done' | 'stories.partOf' | 'stories.readingStories'
+  | 'stories.listeningStories' | 'stories.allStories' | 'stories.countOf'
+  | 'stories.noMatch'
+  // ── Grammar page ─────────────────────────────────────────────────────
+  | 'grammar.eyebrow' | 'grammar.title' | 'grammar.headerSub' | 'grammar.newUnit'
+  | 'grammar.lessonsDone' | 'grammar.unitsInProgress' | 'grammar.crownTier'
+  | 'grammar.unit' | 'grammar.doneCount' | 'grammar.lessonLine' | 'grammar.lessonMeta'
+  | 'grammar.done' | 'grammar.deepDiveGuides' | 'grammar.deepDiveGuidesSub'
+  | 'grammar.readGuide' | 'grammar.challenges' | 'grammar.challengesSub'
+  | 'grammar.challengeLine' | 'grammar.allUnits' | 'grammar.allUnitsSub'
+  | 'grammar.continueCta'
+  // ── Dictionary page ──────────────────────────────────────────────────
+  | 'dictionary.eyebrow' | 'dictionary.title' | 'dictionary.subtitle'
 
 type Table = Record<StringKey, string>
 
@@ -487,7 +503,49 @@ const en: Table = {
   'gamification.loadingRankings': 'Loading rankings…',
   'gamification.friendsEmpty': 'Follow other learners to race them here — find people in Explore.',
   'gamification.rankLine': 'Rank #{rank} · {xp} XP this week · keep going to promote',
-  'gamification.promoteRule': 'Top 3 each week promote · bottom 3 demote · stay top 30% to keep your league'
+  'gamification.promoteRule': 'Top 3 each week promote · bottom 3 demote · stay top 30% to keep your league',
+  // Stories page
+  'stories.eyebrow': 'Mini-fiction',
+  'stories.title': 'Stories',
+  'stories.subtitle': 'Short reading and listening stories with comprehension checks.',
+  'stories.createStory': 'Create story',
+  'stories.tab.reading': 'Reading',
+  'stories.tab.listening': 'Listening',
+  'stories.resume': 'Resume',
+  'stories.parts': '{n} parts',
+  'stories.done': '✓ Done',
+  'stories.partOf': 'Part {n}/{total}',
+  'stories.readingStories': 'Reading stories',
+  'stories.listeningStories': 'Listening stories',
+  'stories.allStories': 'All stories',
+  'stories.countOf': '{n} of {total} stories',
+  'stories.noMatch': 'No stories match this filter yet.',
+  // Grammar page
+  'grammar.eyebrow': 'Skill tree',
+  'grammar.title': 'Grammar',
+  'grammar.headerSub': '{units} units · CEFR A1 → B2 · {done}/{total} lessons',
+  'grammar.newUnit': 'New unit',
+  'grammar.lessonsDone': 'Lessons done',
+  'grammar.unitsInProgress': 'Units in progress',
+  'grammar.crownTier': 'Crown tier',
+  'grammar.unit': 'Unit {n}',
+  'grammar.doneCount': '{done}/{total} done',
+  'grammar.lessonLine': 'Lesson {n} — {title}',
+  'grammar.lessonMeta': '{kind} · {duration} · {n} exercises',
+  'grammar.done': 'Done',
+  'grammar.deepDiveGuides': 'Free deep-dive guides',
+  'grammar.deepDiveGuidesSub': 'Full explanations + downloadable PDF cheatsheets',
+  'grammar.readGuide': 'Read guide',
+  'grammar.challenges': '30-day challenges',
+  'grammar.challengesSub': 'One short drill set per day — build a streak per topic',
+  'grammar.challengeLine': '30-day challenge · {level}',
+  'grammar.allUnits': 'All units',
+  'grammar.allUnitsSub': 'Tap a unit to open it',
+  'grammar.continueCta': 'Continue: {title} →',
+  // Dictionary page
+  'dictionary.eyebrow': 'Offline dictionary',
+  'dictionary.title': 'Dictionary & phrasebook',
+  'dictionary.subtitle': 'Look up any word — works offline, with definitions and translations.'
 }
 
 const uz: Table = {
@@ -817,7 +875,49 @@ const uz: Table = {
   'gamification.loadingRankings': 'Reyting yuklanmoqda…',
   'gamification.friendsEmpty': 'Poyga qilish uchun boshqa o‘quvchilarga obuna bo‘ling — odamlarni Kashf etishdan toping.',
   'gamification.rankLine': '{rank}-o‘rin · shu hafta {xp} XP · ko‘tarilish uchun davom eting',
-  'gamification.promoteRule': 'Har hafta eng yaxshi 3 tasi ko‘tariladi · oxirgi 3 tasi tushadi · ligada qolish uchun top 30% ichida bo‘ling'
+  'gamification.promoteRule': 'Har hafta eng yaxshi 3 tasi ko‘tariladi · oxirgi 3 tasi tushadi · ligada qolish uchun top 30% ichida bo‘ling',
+  // Stories page
+  'stories.eyebrow': 'Mini-hikoyalar',
+  'stories.title': 'Hikoyalar',
+  'stories.subtitle': 'Tushunishni tekshiruvchi qisqa o‘qish va tinglash hikoyalari.',
+  'stories.createStory': 'Hikoya yaratish',
+  'stories.tab.reading': 'O‘qish',
+  'stories.tab.listening': 'Tinglash',
+  'stories.resume': 'Davom etish',
+  'stories.parts': '{n} qism',
+  'stories.done': '✓ Tugatildi',
+  'stories.partOf': 'Qism {n}/{total}',
+  'stories.readingStories': 'O‘qish hikoyalari',
+  'stories.listeningStories': 'Tinglash hikoyalari',
+  'stories.allStories': 'Barcha hikoyalar',
+  'stories.countOf': '{total} tadan {n} ta hikoya',
+  'stories.noMatch': 'Bu filtrga mos hikoya hozircha yo‘q.',
+  // Grammar page
+  'grammar.eyebrow': 'Ko‘nikma daraxti',
+  'grammar.title': 'Grammatika',
+  'grammar.headerSub': '{units} bo‘lim · CEFR A1 → B2 · {done}/{total} dars',
+  'grammar.newUnit': 'Yangi bo‘lim',
+  'grammar.lessonsDone': 'Tugatilgan darslar',
+  'grammar.unitsInProgress': 'Jarayondagi bo‘limlar',
+  'grammar.crownTier': 'Toj darajasi',
+  'grammar.unit': '{n}-bo‘lim',
+  'grammar.doneCount': '{done}/{total} bajarildi',
+  'grammar.lessonLine': '{n}-dars — {title}',
+  'grammar.lessonMeta': '{kind} · {duration} · {n} mashq',
+  'grammar.done': 'Tugatildi',
+  'grammar.deepDiveGuides': 'Bepul chuqur qo‘llanmalar',
+  'grammar.deepDiveGuidesSub': 'To‘liq tushuntirishlar + yuklab olinadigan PDF shpargalkalar',
+  'grammar.readGuide': 'Qo‘llanmani o‘qish',
+  'grammar.challenges': '30 kunlik chaqiriqlar',
+  'grammar.challengesSub': 'Har kuni bitta qisqa mashq to‘plami — har mavzu bo‘yicha ketma-ketlik tuzing',
+  'grammar.challengeLine': '30 kunlik chaqiriq · {level}',
+  'grammar.allUnits': 'Barcha bo‘limlar',
+  'grammar.allUnitsSub': 'Ochish uchun bo‘limni bosing',
+  'grammar.continueCta': 'Davom etish: {title} →',
+  // Dictionary page
+  'dictionary.eyebrow': 'Oflayn lug‘at',
+  'dictionary.title': 'Lug‘at va so‘zlashgich',
+  'dictionary.subtitle': 'Istalgan so‘zni qidiring — oflayn ishlaydi, ta’rif va tarjimalar bilan.'
 }
 
 const ru: Table = {
@@ -1147,7 +1247,49 @@ const ru: Table = {
   'gamification.loadingRankings': 'Загрузка рейтинга…',
   'gamification.friendsEmpty': 'Подпишитесь на других учеников, чтобы соревноваться с ними — найдите людей в «Обзоре».',
   'gamification.rankLine': 'Место #{rank} · {xp} XP за неделю · продолжайте, чтобы повыситься',
-  'gamification.promoteRule': 'Топ-3 за неделю повышаются · последние 3 понижаются · оставайтесь в топ-30%, чтобы сохранить лигу'
+  'gamification.promoteRule': 'Топ-3 за неделю повышаются · последние 3 понижаются · оставайтесь в топ-30%, чтобы сохранить лигу',
+  // Stories page
+  'stories.eyebrow': 'Мини-истории',
+  'stories.title': 'Истории',
+  'stories.subtitle': 'Короткие истории для чтения и аудирования с проверкой понимания.',
+  'stories.createStory': 'Создать историю',
+  'stories.tab.reading': 'Чтение',
+  'stories.tab.listening': 'Аудирование',
+  'stories.resume': 'Продолжить',
+  'stories.parts': 'частей: {n}',
+  'stories.done': '✓ Готово',
+  'stories.partOf': 'Часть {n}/{total}',
+  'stories.readingStories': 'Истории для чтения',
+  'stories.listeningStories': 'Истории для аудирования',
+  'stories.allStories': 'Все истории',
+  'stories.countOf': '{n} из {total} историй',
+  'stories.noMatch': 'Пока нет историй по этому фильтру.',
+  // Grammar page
+  'grammar.eyebrow': 'Дерево навыков',
+  'grammar.title': 'Грамматика',
+  'grammar.headerSub': 'разделов: {units} · CEFR A1 → B2 · {done}/{total} уроков',
+  'grammar.newUnit': 'Новый раздел',
+  'grammar.lessonsDone': 'Уроков пройдено',
+  'grammar.unitsInProgress': 'Разделов в процессе',
+  'grammar.crownTier': 'Уровень короны',
+  'grammar.unit': 'Раздел {n}',
+  'grammar.doneCount': '{done}/{total} готово',
+  'grammar.lessonLine': 'Урок {n} — {title}',
+  'grammar.lessonMeta': '{kind} · {duration} · упражнений: {n}',
+  'grammar.done': 'Готово',
+  'grammar.deepDiveGuides': 'Бесплатные подробные руководства',
+  'grammar.deepDiveGuidesSub': 'Полные объяснения + PDF-шпаргалки для скачивания',
+  'grammar.readGuide': 'Читать руководство',
+  'grammar.challenges': '30-дневные испытания',
+  'grammar.challengesSub': 'Один короткий набор упражнений в день — серия по каждой теме',
+  'grammar.challengeLine': '30-дневное испытание · {level}',
+  'grammar.allUnits': 'Все разделы',
+  'grammar.allUnitsSub': 'Нажмите на раздел, чтобы открыть',
+  'grammar.continueCta': 'Продолжить: {title} →',
+  // Dictionary page
+  'dictionary.eyebrow': 'Офлайн-словарь',
+  'dictionary.title': 'Словарь и разговорник',
+  'dictionary.subtitle': 'Ищите любое слово — работает офлайн, с определениями и переводами.'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────
