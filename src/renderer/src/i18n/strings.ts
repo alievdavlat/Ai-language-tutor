@@ -363,6 +363,14 @@ export type StringKey =
   | 'group.joinToPost' | 'group.noPosts' | 'group.startConversation' | 'group.noPostsYet'
   | 'group.memberFallback' | 'group.noMessages' | 'group.sayHello' | 'group.messagePh'
   | 'group.sendMessage' | 'group.joinToChat'
+  // ── Meet (speaking partner) ──────────────────────────────────────────
+  | 'meet.title' | 'meet.subtitle' | 'meet.mode' | 'meet.solo' | 'meet.group'
+  | 'meet.partnerLevel' | 'meet.topic' | 'meet.levelAny'
+  | 'meet.topicFree' | 'meet.topicTravel' | 'meet.topicWork' | 'meet.topicMovies' | 'meet.topicDaily'
+  | 'meet.joinGroupRoom' | 'meet.startMatching' | 'meet.respectNote'
+  | 'meet.finding' | 'meet.searchingNow' | 'meet.cancel' | 'meet.waitingGroup'
+  | 'meet.connecting' | 'meet.talkAbout' | 'meet.you' | 'meet.partner' | 'meet.guest'
+  | 'meet.mute' | 'meet.unmute' | 'meet.next' | 'meet.nextPartner' | 'meet.end'
 
 type Table = Record<StringKey, string>
 
@@ -1335,7 +1343,37 @@ const en: Table = {
   'group.sayHello': 'Say hello to the group.',
   'group.messagePh': 'Message the group…',
   'group.sendMessage': 'Send message',
-  'group.joinToChat': 'Join this group to join the chat.'
+  'group.joinToChat': 'Join this group to join the chat.',
+  'meet.title': 'Speaking partner',
+  'meet.subtitle': 'Get matched with a real learner for a live video chat.',
+  'meet.mode': 'Mode',
+  'meet.solo': '1-on-1',
+  'meet.group': 'Group',
+  'meet.partnerLevel': 'Partner level',
+  'meet.topic': 'Topic',
+  'meet.levelAny': 'Any',
+  'meet.topicFree': 'Free talk',
+  'meet.topicTravel': 'Travel',
+  'meet.topicWork': 'Work',
+  'meet.topicMovies': 'Movies',
+  'meet.topicDaily': 'Daily life',
+  'meet.joinGroupRoom': 'Join group room',
+  'meet.startMatching': 'Start matching',
+  'meet.respectNote': 'Be respectful · English only · you can skip or report anytime.',
+  'meet.finding': 'Finding a partner…',
+  'meet.searchingNow': '{n} learners searching now',
+  'meet.cancel': 'Cancel',
+  'meet.waitingGroup': 'Waiting for others to join this group room…',
+  'meet.connecting': 'Connecting to {name}…',
+  'meet.talkAbout': 'Talk about:',
+  'meet.you': 'You',
+  'meet.partner': 'Partner',
+  'meet.guest': 'Guest',
+  'meet.mute': 'Mute',
+  'meet.unmute': 'Unmute',
+  'meet.next': 'Next',
+  'meet.nextPartner': 'Next partner',
+  'meet.end': 'End'
 }
 
 const uz: Table = {
@@ -2307,7 +2345,37 @@ const uz: Table = {
   'group.sayHello': 'Guruhga salom ayting.',
   'group.messagePh': 'Guruhga xabar…',
   'group.sendMessage': 'Xabar yuborish',
-  'group.joinToChat': 'Chatga qo‘shilish uchun guruhga qo‘shiling.'
+  'group.joinToChat': 'Chatga qo‘shilish uchun guruhga qo‘shiling.',
+  'meet.title': 'Suhbat hamrohi',
+  'meet.subtitle': 'Jonli video suhbat uchun haqiqiy o‘quvchi bilan moslashing.',
+  'meet.mode': 'Rejim',
+  'meet.solo': 'Yakkama-yakka',
+  'meet.group': 'Guruh',
+  'meet.partnerLevel': 'Hamroh darajasi',
+  'meet.topic': 'Mavzu',
+  'meet.levelAny': 'Istalgan',
+  'meet.topicFree': 'Erkin suhbat',
+  'meet.topicTravel': 'Sayohat',
+  'meet.topicWork': 'Ish',
+  'meet.topicMovies': 'Kino',
+  'meet.topicDaily': 'Kundalik hayot',
+  'meet.joinGroupRoom': 'Guruh xonasiga qo‘shilish',
+  'meet.startMatching': 'Moslashni boshlash',
+  'meet.respectNote': 'Hurmatli bo‘ling · faqat ingliz tili · istalgan vaqtda o‘tkazib yuborishingiz yoki shikoyat qilishingiz mumkin.',
+  'meet.finding': 'Hamroh qidirilmoqda…',
+  'meet.searchingNow': 'Hozir {n} o‘quvchi qidirmoqda',
+  'meet.cancel': 'Bekor qilish',
+  'meet.waitingGroup': 'Boshqalar bu guruh xonasiga qo‘shilishini kutmoqda…',
+  'meet.connecting': '{name} ga ulanmoqda…',
+  'meet.talkAbout': 'Mavzu:',
+  'meet.you': 'Siz',
+  'meet.partner': 'Hamroh',
+  'meet.guest': 'Mehmon',
+  'meet.mute': 'Ovozsiz',
+  'meet.unmute': 'Ovozni yoqish',
+  'meet.next': 'Keyingi',
+  'meet.nextPartner': 'Keyingi hamroh',
+  'meet.end': 'Tugatish'
 }
 
 const ru: Table = {
@@ -3279,7 +3347,37 @@ const ru: Table = {
   'group.sayHello': 'Поздоровайтесь с группой.',
   'group.messagePh': 'Сообщение группе…',
   'group.sendMessage': 'Отправить сообщение',
-  'group.joinToChat': 'Вступите в группу, чтобы присоединиться к чату.'
+  'group.joinToChat': 'Вступите в группу, чтобы присоединиться к чату.',
+  'meet.title': 'Партнёр для разговора',
+  'meet.subtitle': 'Найдите реального ученика для живого видеочата.',
+  'meet.mode': 'Режим',
+  'meet.solo': 'Один на один',
+  'meet.group': 'Группа',
+  'meet.partnerLevel': 'Уровень партнёра',
+  'meet.topic': 'Тема',
+  'meet.levelAny': 'Любой',
+  'meet.topicFree': 'Свободная беседа',
+  'meet.topicTravel': 'Путешествия',
+  'meet.topicWork': 'Работа',
+  'meet.topicMovies': 'Фильмы',
+  'meet.topicDaily': 'Повседневная жизнь',
+  'meet.joinGroupRoom': 'Войти в групповую комнату',
+  'meet.startMatching': 'Начать подбор',
+  'meet.respectNote': 'Будьте вежливы · только английский · можно пропустить или пожаловаться в любой момент.',
+  'meet.finding': 'Поиск партнёра…',
+  'meet.searchingNow': 'Сейчас ищут: {n}',
+  'meet.cancel': 'Отмена',
+  'meet.waitingGroup': 'Ожидание других участников этой групповой комнаты…',
+  'meet.connecting': 'Подключение к {name}…',
+  'meet.talkAbout': 'Тема:',
+  'meet.you': 'Вы',
+  'meet.partner': 'Партнёр',
+  'meet.guest': 'Гость',
+  'meet.mute': 'Выключить микрофон',
+  'meet.unmute': 'Включить микрофон',
+  'meet.next': 'Далее',
+  'meet.nextPartner': 'Следующий партнёр',
+  'meet.end': 'Завершить'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

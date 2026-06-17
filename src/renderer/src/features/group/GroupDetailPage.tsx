@@ -16,17 +16,18 @@ import { backend } from '../../services/backend/useBackend'
 import { meId, ensureCommunitySeed } from '../../services/backend/social'
 import { getLanguage } from '@shared/constants'
 import { clockTime, timeAgo } from '../../lib/time'
+import { useT, type StringKey } from '../../i18n'
 
 type GroupTab = 'feed' | 'chat' | 'members'
-const TABS: { id: GroupTab; label: string; Icon: typeof IconChat }[] = [
-  { id: 'feed', label: 'Feed', Icon: IconChat },
-  { id: 'chat', label: 'Chat', Icon: IconUsers },
-  { id: 'members', label: 'Members', Icon: IconUsers }
+const TABS: { id: GroupTab; labelKey: StringKey; Icon: typeof IconChat }[] = [
+  { id: 'feed', labelKey: 'group.tabFeed', Icon: IconChat },
+  { id: 'chat', labelKey: 'group.tabChat', Icon: IconUsers },
+  { id: 'members', labelKey: 'group.tabMembers', Icon: IconUsers }
 ]
 
-const ROLE_BADGE: Record<GroupMember['role'], { label: string; cls: string; Icon: typeof IconStar } | null> = {
-  owner: { label: 'Owner', cls: 'bg-amber-500/15 text-amber-300 ring-amber-400/20', Icon: IconStar },
-  moderator: { label: 'Mod', cls: 'bg-sky-500/15 text-sky-300 ring-sky-400/20', Icon: IconBolt },
+const ROLE_BADGE: Record<GroupMember['role'], { labelKey: StringKey; cls: string; Icon: typeof IconStar } | null> = {
+  owner: { labelKey: 'group.roleOwner', cls: 'bg-amber-500/15 text-amber-300 ring-amber-400/20', Icon: IconStar },
+  moderator: { labelKey: 'group.roleMod', cls: 'bg-sky-500/15 text-sky-300 ring-sky-400/20', Icon: IconBolt },
   member: null
 }
 
@@ -38,6 +39,7 @@ const ROLE_BADGE: Record<GroupMember['role'], { label: string; cls: string; Icon
 export default function GroupDetailPage(): JSX.Element {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const tr = useT()
   const me = meId()
 
   const [group, setGroup] = useState<Group | null>(null)
@@ -86,25 +88,25 @@ export default function GroupDetailPage(): JSX.Element {
   if (!group) {
     return (
       <div className="w-full max-w-4xl mx-auto px-1 py-10">
-        <PageHeader eyebrow="Connect" title="Group not found" subtitle="This group may have been removed." back="/community" />
+        <PageHeader eyebrow={tr('group.connect')} title={tr('group.notFound')} subtitle={tr('group.removed')} back="/community" />
         <button onClick={() => navigate('/community')} className="btn-primary text-sm px-4 py-2 mt-6">
-          Back to Groups & Clubs
+          {tr('group.backToGroups')}
         </button>
       </div>
     )
   }
 
   const lang = getLanguage(group.language)
-  const memberWord = group.memberCount === 1 ? 'member' : 'members'
+  const memberWord = group.memberCount === 1 ? tr('group.member') : tr('group.members')
 
   return (
     <div className="w-full max-w-4xl mx-auto px-1 pb-16">
       <div className="pt-1 pb-4">
         <PageHeader
-          eyebrow="Connect"
-          title="Groups & Clubs"
+          eyebrow={tr('group.connect')}
+          title={tr('group.title')}
           back="/community"
-          crumbs={[{ label: 'Connect', to: '/community' }, { label: 'Groups & Clubs', to: '/community' }, { label: group.name }]}
+          crumbs={[{ label: tr('group.connect'), to: '/community' }, { label: tr('group.title'), to: '/community' }, { label: group.name }]}
         />
       </div>
 
@@ -135,7 +137,7 @@ export default function GroupDetailPage(): JSX.Element {
 
             {isOwner ? (
               <span className="text-xs font-semibold rounded-lg px-3.5 py-2 bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/20 inline-flex items-center gap-1.5">
-                <IconStar className="w-3.5 h-3.5" /> You own this group
+                <IconStar className="w-3.5 h-3.5" /> {tr('group.youOwn')}
               </span>
             ) : (
               <button
@@ -148,7 +150,7 @@ export default function GroupDetailPage(): JSX.Element {
                     : 'bg-grad-brand text-white hover:brightness-110'
                 )}
               >
-                {isMember ? 'Joined ✓' : 'Join group'}
+                {isMember ? tr('group.joinedCheck') : tr('group.joinGroup')}
               </button>
             )}
           </div>
@@ -167,7 +169,7 @@ export default function GroupDetailPage(): JSX.Element {
             )}
           >
             <t.Icon className="w-4 h-4" />
-            {t.label}
+            {tr(t.labelKey)}
             {t.id === 'members' && <span className="text-[11px] text-slate-500 tabular-nums">{members.length}</span>}
           </button>
         ))}
@@ -183,13 +185,14 @@ export default function GroupDetailPage(): JSX.Element {
 // ─── Avatar stack (header) ────────────────────────────────────────────────────
 
 function AvatarStack({ members }: { members: GroupMember[] }): JSX.Element {
+  const tr = useT()
   const shown = members.slice(0, 5)
   return (
     <div className="flex -space-x-2">
       {shown.map((m) => (
         <AvatarCircle key={m.user.id} name={m.user.name} size="sm" className="ring-2 ring-canvas" />
       ))}
-      {members.length === 0 && <span className="text-xs text-slate-500">No members yet</span>}
+      {members.length === 0 && <span className="text-xs text-slate-500">{tr('group.noMembersShort')}</span>}
     </div>
   )
 }
@@ -197,8 +200,9 @@ function AvatarStack({ members }: { members: GroupMember[] }): JSX.Element {
 // ─── Members list ─────────────────────────────────────────────────────────────
 
 function MembersList({ members, me }: { members: GroupMember[]; me: string }): JSX.Element {
+  const tr = useT()
   if (members.length === 0) {
-    return <EmptyState icon={<IconUsers className="w-6 h-6" />} title="No members yet" hint="Be the first to join this group." />
+    return <EmptyState icon={<IconUsers className="w-6 h-6" />} title={tr('group.noMembers')} hint={tr('group.beFirst')} />
   }
   return (
     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -210,13 +214,13 @@ function MembersList({ members, me }: { members: GroupMember[]; me: string }): J
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-white truncate">
                 {m.user.name}
-                {m.user.id === me && <span className="text-[11px] text-brand-300 font-medium ml-1.5">You</span>}
+                {m.user.id === me && <span className="text-[11px] text-brand-300 font-medium ml-1.5">{tr('group.you')}</span>}
               </p>
-              <p className="text-[11px] text-slate-500">Joined {timeAgo(m.joinedAt)}</p>
+              <p className="text-[11px] text-slate-500">{tr('group.joinedAt', { time: timeAgo(m.joinedAt) })}</p>
             </div>
             {badge && (
               <span className={cn('text-[11px] font-semibold rounded-full px-2 py-0.5 ring-1 inline-flex items-center gap-1', badge.cls)}>
-                <badge.Icon className="w-3 h-3" /> {badge.label}
+                <badge.Icon className="w-3 h-3" /> {tr(badge.labelKey)}
               </span>
             )}
           </li>
@@ -241,6 +245,7 @@ function GroupFeed({
   members: GroupMember[]
   onJoin: () => Promise<void>
 }): JSX.Element {
+  const tr = useT()
   const [posts, setPosts] = useState<Post[]>([])
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
   const [text, setText] = useState('')
@@ -291,7 +296,7 @@ function GroupFeed({
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={`Share something with ${group.name}…`}
+            placeholder={tr('group.sharePh', { name: group.name })}
             className="input text-sm min-h-[64px] resize-none w-full"
           />
           <div className="flex items-center justify-between mt-3">
@@ -305,21 +310,21 @@ function GroupFeed({
                     kind === k ? 'bg-white/[0.1] text-white' : 'text-slate-400 hover:text-slate-200'
                   )}
                 >
-                  {k === 'text' ? 'Post' : 'Question'}
+                  {k === 'text' ? tr('group.post') : tr('group.question')}
                 </button>
               ))}
             </div>
             <button onClick={() => void submit()} disabled={!text.trim() || posting} className="btn-primary text-xs px-4 py-2 disabled:opacity-50">
-              {posting ? 'Posting…' : 'Post'}
+              {posting ? tr('group.posting') : tr('group.post')}
             </button>
           </div>
         </div>
       ) : (
-        <JoinPrompt label="Join this group to post in its feed." onJoin={onJoin} />
+        <JoinPrompt label={tr('group.joinToPost')} onJoin={onJoin} />
       )}
 
       {posts.length === 0 ? (
-        <EmptyState icon={<IconChat className="w-6 h-6" />} title="No posts yet" hint={isMember ? 'Start the conversation above.' : 'This group has no posts yet.'} />
+        <EmptyState icon={<IconChat className="w-6 h-6" />} title={tr('group.noPosts')} hint={isMember ? tr('group.startConversation') : tr('group.noPostsYet')} />
       ) : (
         <div className="flex flex-col gap-3">
           {posts.map((p) => {
@@ -330,11 +335,11 @@ function GroupFeed({
                 <div className="flex items-center gap-2.5">
                   <AvatarCircle name={author?.name} size="sm" />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white leading-tight truncate">{author?.name ?? 'Member'}</p>
+                    <p className="text-sm font-semibold text-white leading-tight truncate">{author?.name ?? tr('group.memberFallback')}</p>
                     <p className="text-[11px] text-slate-500">{timeAgo(p.createdAt)}</p>
                   </div>
                   {p.kind === 'question' && (
-                    <span className="ml-auto text-[11px] font-semibold rounded-full px-2 py-0.5 bg-sky-500/15 text-sky-300 ring-1 ring-sky-400/20">Question</span>
+                    <span className="ml-auto text-[11px] font-semibold rounded-full px-2 py-0.5 bg-sky-500/15 text-sky-300 ring-1 ring-sky-400/20">{tr('group.question')}</span>
                   )}
                 </div>
                 <p className="text-sm text-slate-200 leading-relaxed mt-3 whitespace-pre-wrap">{p.text}</p>
@@ -373,6 +378,7 @@ function GroupChat({
   members: GroupMember[]
   onJoin: () => Promise<void>
 }): JSX.Element {
+  const tr = useT()
   const [messages, setMessages] = useState<GroupMessage[]>([])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
@@ -410,7 +416,7 @@ function GroupChat({
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
         {messages.length === 0 && (
           <div className="m-auto text-center">
-            <EmptyState icon={<IconUsers className="w-6 h-6" />} title="No messages yet" hint="Say hello to the group." />
+            <EmptyState icon={<IconUsers className="w-6 h-6" />} title={tr('group.noMessages')} hint={tr('group.sayHello')} />
           </div>
         )}
         {messages.map((m) => {
@@ -420,7 +426,7 @@ function GroupChat({
             <div key={m.id} className={cn('flex items-end gap-2 max-w-[80%]', mine ? 'self-end flex-row-reverse' : 'self-start')}>
               {!mine && <AvatarCircle name={sender?.name} size="sm" />}
               <div>
-                {!mine && <p className="text-[11px] text-slate-500 mb-0.5 ml-1">{sender?.name ?? 'Member'}</p>}
+                {!mine && <p className="text-[11px] text-slate-500 mb-0.5 ml-1">{sender?.name ?? tr('group.memberFallback')}</p>}
                 <div
                   className={cn(
                     'rounded-2xl px-3.5 py-2 text-sm leading-relaxed',
@@ -447,21 +453,21 @@ function GroupChat({
                 void send()
               }
             }}
-            placeholder="Message the group…"
+            placeholder={tr('group.messagePh')}
             className="input text-sm flex-1"
           />
           <button
             onClick={() => void send()}
             disabled={!text.trim() || sending}
             className="w-10 h-10 rounded-xl bg-grad-brand text-white flex items-center justify-center shrink-0 disabled:opacity-50 hover:brightness-110 transition"
-            aria-label="Send message"
+            aria-label={tr('group.sendMessage')}
           >
             <IconArrowRight className="w-4 h-4" />
           </button>
         </div>
       ) : (
         <div className="border-t border-white/[0.06] p-3">
-          <JoinPrompt label="Join this group to join the chat." onJoin={onJoin} compact />
+          <JoinPrompt label={tr('group.joinToChat')} onJoin={onJoin} compact />
         </div>
       )}
     </div>
@@ -498,12 +504,13 @@ function useUserMap(members: GroupMember[], ids: string[]): Map<string, Platform
 }
 
 function JoinPrompt({ label, onJoin, compact }: { label: string; onJoin: () => Promise<void>; compact?: boolean }): JSX.Element {
+  const tr = useT()
   return (
     <div className={cn('flex items-center gap-3 rounded-card border border-white/10 bg-white/[0.025]', compact ? 'px-3 py-2' : 'p-4')}>
       <IconLock className="w-4 h-4 text-slate-400 shrink-0" />
       <p className="text-sm text-slate-300 flex-1">{label}</p>
       <button onClick={() => void onJoin()} className="bg-grad-brand text-white text-xs font-semibold rounded-lg px-4 py-2 hover:brightness-110 transition shrink-0">
-        Join group
+        {tr('group.joinGroup')}
       </button>
     </div>
   )
