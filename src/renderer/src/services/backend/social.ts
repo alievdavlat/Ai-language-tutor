@@ -444,15 +444,30 @@ const socialLocal: LocalSocial = {
     }
     sdb().bookings.unshift(booking)
     const ti = sdb().tutors.findIndex((t) => t.id === input.tutorId)
+    const tutor = ti >= 0 ? sdb().tutors[ti] : undefined
     if (ti >= 0) sdb().tutors[ti] = { ...sdb().tutors[ti], lessonsGiven: sdb().tutors[ti].lessonsGiven + 1 }
     persist()
-    // Notify the student so it shows in their bell.
+    const when = new Date(booking.startISO).toLocaleString()
+    const lessonLabel = booking.kind === 'trial' ? 'Free trial' : 'Lesson'
+    // #B25 — the TUTOR's calendar is what changed, so notify the tutor of the
+    // new booking. The student gets a plain confirmation (they made it).
+    if (tutor?.userId && tutor.userId !== input.studentId) {
+      void backend
+        .createNotif({
+          userId: tutor.userId,
+          type: 'learning',
+          title: input.kind === 'instant' ? 'A student is calling' : 'New booking',
+          body: `${lessonLabel} booked with you — ${when}`,
+          link: '/tutors'
+        })
+        .catch(() => undefined)
+    }
     void backend
       .createNotif({
         userId: input.studentId,
         type: 'learning',
-        title: input.kind === 'instant' ? 'Call starting' : 'Lesson booked',
-        body: `${booking.kind === 'trial' ? 'Free trial' : 'Lesson'} with your tutor — ${new Date(booking.startISO).toLocaleString()}`,
+        title: input.kind === 'instant' ? 'Call starting' : 'Lesson confirmed',
+        body: `Your ${lessonLabel.toLowerCase()} with ${tutor?.name ?? 'your tutor'} — ${when}`,
         link: '/tutors'
       })
       .catch(() => undefined)
@@ -734,7 +749,25 @@ const supabaseSocial: SocialBackend = {
     }
     const { data, error } = await sb().from('bookings').insert(row).select().single()
     if (error) throw error
-    return bk2bk(data)
+    const booking = bk2bk(data)
+    // #B25 — notify the tutor (their calendar changed) + confirm to the student.
+    const { data: tutorRow } = await sb().from('tutors').select('*').eq('id', input.tutorId).maybeSingle()
+    const tutor = tutorRow ? t2t(tutorRow) : null
+    const when = new Date(booking.startISO).toLocaleString()
+    const lessonLabel = booking.kind === 'trial' ? 'Free trial' : 'Lesson'
+    if (tutor?.userId && tutor.userId !== input.studentId) {
+      void backend.createNotif({
+        userId: tutor.userId, type: 'learning',
+        title: input.kind === 'instant' ? 'A student is calling' : 'New booking',
+        body: `${lessonLabel} booked with you — ${when}`, link: '/tutors'
+      }).catch(() => undefined)
+    }
+    void backend.createNotif({
+      userId: input.studentId, type: 'learning',
+      title: input.kind === 'instant' ? 'Call starting' : 'Lesson confirmed',
+      body: `Your ${lessonLabel.toLowerCase()} with ${tutor?.name ?? 'your tutor'} — ${when}`, link: '/tutors'
+    }).catch(() => undefined)
+    return booking
   },
   async myBookings(studentId): Promise<Booking[]> {
     const { data } = await sb().from('bookings').select('*').eq('student_id', studentId).order('start_iso', { ascending: false })
