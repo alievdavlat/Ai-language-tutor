@@ -115,29 +115,33 @@ export default function CoursesPage(): JSX.Element {
     .map((sk) => courses.find((c) => courseSkill(c) === sk))
     .filter((c): c is Course => !!c)
 
+  // The Skill-tracks rail only renders on the default (unfiltered) view; when it
+  // does, those courses are pulled out of the grid below so none appear twice.
+  const isDefaultView = skill === 'all' && level === 'All'
+  const showTracks = isDefaultView && tracks.length > 0
+  const trackIds = showTracks ? new Set(tracks.map((c) => c.id)) : new Set<string>()
+  const gridCourses = showTracks ? filtered.filter((c) => !trackIds.has(c.id)) : filtered
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-6">
-        {/* Header + level filter */}
-        <div className="flex items-end justify-between gap-3 flex-wrap">
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{t('nav.section.learn')}</p>
-            <h1 className="text-2xl font-black tracking-tight">{t('courses.title')}</h1>
-            <p className="text-sm text-slate-400 mt-1">{t('courses.subtitle')}</p>
-          </div>
-          <div className="flex gap-1.5">
-            {LEVELS.map((l) => (
-              <button key={l} onClick={() => setLevel(l)} className={cn('rounded-lg px-2.5 py-1.5 text-xs font-bold transition', level === l ? 'bg-brand-500/20 text-brand-100 ring-1 ring-brand-400/40' : 'bg-white/[0.04] text-slate-400 hover:text-white')}>{l}</button>
-            ))}
-          </div>
+        {/* Header */}
+        <div>
+          <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{t('nav.section.learn')}</p>
+          <h1 className="text-2xl font-black tracking-tight">{t('courses.title')}</h1>
+          <p className="text-sm text-slate-400 mt-1">{t('courses.subtitle')}</p>
         </div>
 
-        {/* Skill chips */}
-        <div className="flex flex-wrap gap-2">
+        {/* Unified filter bar — skill chips + level chips in one cohesive row */}
+        <div className="flex flex-wrap items-center gap-2">
           {skillChips.map((s) => (
             <button key={s.id} onClick={() => setSkill(s.id)} className={cn('inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition', skill === s.id ? 'border-brand-400 bg-brand-500/15 text-white' : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.07]')}>
               <span>{s.emoji}</span>{s.label}
             </button>
+          ))}
+          <span aria-hidden className="hidden sm:block h-5 w-px bg-white/10 mx-1" />
+          {LEVELS.map((l) => (
+            <button key={l} onClick={() => setLevel(l)} className={cn('rounded-full px-3 py-1.5 text-xs font-bold transition border', level === l ? 'border-brand-400/40 bg-brand-500/20 text-brand-100' : 'border-white/10 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.07]')}>{l}</button>
           ))}
         </div>
 
@@ -155,7 +159,7 @@ export default function CoursesPage(): JSX.Element {
         </button>
 
         {/* Continue learning hero */}
-        {skill === 'all' && level === 'All' && cont && (
+        {isDefaultView && cont && (
           <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-600/25 via-violet-600/12 to-slate-900/30 p-5 flex flex-col sm:flex-row items-center gap-5">
             <div className="flex-1">
               <p className="text-[11px] uppercase tracking-widest text-brand-200 font-bold">Continue learning</p>
@@ -173,8 +177,9 @@ export default function CoursesPage(): JSX.Element {
           <div className="py-16 flex justify-center"><Spinner /></div>
         ) : (
           <>
-            {/* Skill tracks — built-in core courses */}
-            {skill === 'all' && level === 'All' && tracks.length > 0 && (
+            {/* Skill tracks — built-in core courses (default view only; these are
+                pulled out of the grid below so no course appears twice). */}
+            {showTracks && (
               <div>
                 <SectionHeading title="Skill tracks" subtitle="Built-in courses — grammar, writing, speaking & exam prep" />
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -187,12 +192,17 @@ export default function CoursesPage(): JSX.Element {
 
             {/* All / filtered courses */}
             <div>
-              <SectionHeading title={skill === 'all' ? 'All courses' : SKILLS.find((s) => s.id === skill)?.label ?? 'Courses'} subtitle={`${filtered.length} course${filtered.length === 1 ? '' : 's'}`} />
-              {filtered.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-8 text-center text-sm text-slate-400">No courses match this filter yet.</div>
+              <SectionHeading
+                title={skill === 'all' ? (showTracks ? 'More courses' : 'All courses') : SKILLS.find((s) => s.id === skill)?.label ?? 'Courses'}
+                subtitle={`${gridCourses.length} course${gridCourses.length === 1 ? '' : 's'}`}
+              />
+              {gridCourses.length === 0 ? (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-8 text-center text-sm text-slate-400">
+                  {showTracks ? 'All courses are shown in Skill tracks above.' : 'No courses match this filter yet.'}
+                </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {filtered.map((c) => (
+                  {gridCourses.map((c) => (
                     <CourseCard key={c.id} course={c} progress={progressFor(c.id)} onOpen={() => open(c.id)} />
                   ))}
                 </div>
