@@ -279,6 +279,7 @@ export type StringKey =
   | 'downloads.tapToOpen' | 'downloads.noDownloads' | 'downloads.makeOffline'
   | 'downloads.enrolledCourses' | 'downloads.download' | 'downloads.thisDevice'
   | 'downloads.thisDeviceTag' | 'downloads.syncSoon' | 'downloads.browseMore'
+  | 'downloads.rentalExpires'
   // ── Widget ───────────────────────────────────────────────────────────
   | 'widget.wordOfDay' | 'widget.noDefinition' | 'widget.backToWod' | 'widget.quickLookup'
   // ── Writing coach ────────────────────────────────────────────────────
@@ -294,6 +295,11 @@ export type StringKey =
   | 'writing.simplifiedRewrite' | 'writing.clearerVersion' | 'writing.apply' | 'writing.dismiss'
   | 'writing.coachFeedback' | 'writing.coachFeedbackSub' | 'writing.estBand'
   | 'writing.noProvider' | 'writing.writeFirst'
+  | 'writing.dismissTitle' | 'writing.howItWorksBody' | 'writing.grade' | 'writing.tipBody'
+  | 'writing.guideYellowLabel' | 'writing.guideYellowTip' | 'writing.guideRedLabel' | 'writing.guideRedTip'
+  | 'writing.guidePurpleLabel' | 'writing.guidePurpleTip' | 'writing.guideBlueLabel' | 'writing.guideBlueTip'
+  | 'writing.guideGreenLabel' | 'writing.guideGreenTip'
+  | 'writing.legVeryHard' | 'writing.legHard' | 'writing.legComplex' | 'writing.legAdverb' | 'writing.legPassive'
 
 type Table = Record<StringKey, string>
 
@@ -1000,6 +1006,7 @@ const en: Table = {
   'downloads.thisDeviceTag': '· THIS DEVICE',
   'downloads.syncSoon': 'Cross-device sync (mirror downloads and progress to your phone or tablet) is coming soon.',
   'downloads.browseMore': 'Browse more courses to download',
+  'downloads.rentalExpires': 'rental expires {date}',
   // Widget
   'widget.wordOfDay': 'Word of the day',
   'widget.noDefinition': 'No definition found.',
@@ -1049,7 +1056,26 @@ const en: Table = {
   'writing.coachFeedbackSub': 'Clarity, tone & grammar',
   'writing.estBand': 'est. IELTS band',
   'writing.noProvider': 'No AI provider configured. Add one in Settings → AI to use the coach.',
-  'writing.writeFirst': 'Write something first.'
+  'writing.writeFirst': 'Write something first.',
+  'writing.dismissTitle': 'Dismiss',
+  'writing.howItWorksBody': 'Write or paste your English in Write mode, then switch to Edit to see what to improve. Each color points to one fix. A lower readability grade means your writing is easier to read.',
+  'writing.grade': 'Grade {n}',
+  'writing.tipBody': 'Tip: hover a purple word to see a simpler alternative. Use Rewrite to let AI simplify it for you.',
+  'writing.guideYellowLabel': 'Yellow sentence',
+  'writing.guideYellowTip': 'long & complex — try to split it in two.',
+  'writing.guideRedLabel': 'Red sentence',
+  'writing.guideRedTip': 'very hard to read — rewrite it shorter.',
+  'writing.guidePurpleLabel': 'Purple word',
+  'writing.guidePurpleTip': 'a simpler everyday word exists — swap it.',
+  'writing.guideBlueLabel': 'Blue word',
+  'writing.guideBlueTip': 'an adverb or weakener (just, very, really) — usually cut it.',
+  'writing.guideGreenLabel': 'Green word',
+  'writing.guideGreenTip': 'passive voice — prefer the active voice.',
+  'writing.legVeryHard': '{n} sentences very hard to read',
+  'writing.legHard': '{n} sentences hard to read',
+  'writing.legComplex': '{n} words with a simpler alternative',
+  'writing.legAdverb': '{n} adverbs & weakeners',
+  'writing.legPassive': '{n} uses of passive voice'
 }
 
 const uz: Table = {
@@ -1755,6 +1781,7 @@ const uz: Table = {
   'downloads.thisDeviceTag': '· USHBU QURILMA',
   'downloads.syncSoon': 'Qurilmalararo sinxronlash (yuklamalar va jarayonni telefon yoki planshetga ko‘chirish) tez orada.',
   'downloads.browseMore': 'Yuklash uchun boshqa kurslarni ko‘rish',
+  'downloads.rentalExpires': 'ijara muddati {date} da tugaydi',
   // Widget
   'widget.wordOfDay': 'Kun so‘zi',
   'widget.noDefinition': 'Ta’rif topilmadi.',
@@ -1804,7 +1831,26 @@ const uz: Table = {
   'writing.coachFeedbackSub': 'Aniqlik, ohang va grammatika',
   'writing.estBand': 'taxminiy IELTS bal',
   'writing.noProvider': 'AI provayderi sozlanmagan. Murabbiydan foydalanish uchun Sozlamalar → AI ga qo‘shing.',
-  'writing.writeFirst': 'Avval biror narsa yozing.'
+  'writing.writeFirst': 'Avval biror narsa yozing.',
+  'writing.dismissTitle': 'Yopish',
+  'writing.howItWorksBody': 'Yozish rejimida ingliz tilingizni yozing yoki joylashtiring, so‘ng nimani yaxshilash kerakligini ko‘rish uchun Tahrirga o‘ting. Har bir rang bitta tuzatishni bildiradi. O‘qilishlik darajasi qancha past bo‘lsa, yozuvingiz shuncha oson o‘qiladi.',
+  'writing.grade': '{n}-daraja',
+  'writing.tipBody': 'Maslahat: oddiyroq muqobilni ko‘rish uchun binafsha so‘z ustiga olib boring. AI uni siz uchun soddalashtirishi uchun Qayta yozishdan foydalaning.',
+  'writing.guideYellowLabel': 'Sariq jumla',
+  'writing.guideYellowTip': 'uzun va murakkab — ikkiga bo‘lib ko‘ring.',
+  'writing.guideRedLabel': 'Qizil jumla',
+  'writing.guideRedTip': 'o‘qish juda qiyin — qisqaroq qilib qayta yozing.',
+  'writing.guidePurpleLabel': 'Binafsha so‘z',
+  'writing.guidePurpleTip': 'oddiyroq kundalik so‘z bor — uni almashtiring.',
+  'writing.guideBlueLabel': 'Ko‘k so‘z',
+  'writing.guideBlueTip': 'ravish yoki zaiflashtiruvchi (just, very, really) — odatda olib tashlang.',
+  'writing.guideGreenLabel': 'Yashil so‘z',
+  'writing.guideGreenTip': 'majhul nisbat — aniq nisbatni afzal ko‘ring.',
+  'writing.legVeryHard': '{n} ta o‘qish juda qiyin jumla',
+  'writing.legHard': '{n} ta o‘qish qiyin jumla',
+  'writing.legComplex': '{n} ta soddaroq muqobili bor so‘z',
+  'writing.legAdverb': '{n} ta ravish va zaiflashtiruvchi',
+  'writing.legPassive': '{n} marta majhul nisbat ishlatilgan'
 }
 
 const ru: Table = {
@@ -2510,6 +2556,7 @@ const ru: Table = {
   'downloads.thisDeviceTag': '· ЭТО УСТРОЙСТВО',
   'downloads.syncSoon': 'Синхронизация между устройствами (загрузки и прогресс на телефон или планшет) скоро появится.',
   'downloads.browseMore': 'Найти другие курсы для загрузки',
+  'downloads.rentalExpires': 'аренда истекает {date}',
   // Widget
   'widget.wordOfDay': 'Слово дня',
   'widget.noDefinition': 'Определение не найдено.',
@@ -2559,7 +2606,26 @@ const ru: Table = {
   'writing.coachFeedbackSub': 'Ясность, тон и грамматика',
   'writing.estBand': 'примерный балл IELTS',
   'writing.noProvider': 'Провайдер ИИ не настроен. Добавьте его в Настройки → ИИ, чтобы использовать коуч.',
-  'writing.writeFirst': 'Сначала что-нибудь напишите.'
+  'writing.writeFirst': 'Сначала что-нибудь напишите.',
+  'writing.dismissTitle': 'Закрыть',
+  'writing.howItWorksBody': 'Напишите или вставьте текст на английском в режиме «Писать», затем переключитесь на «Правку», чтобы увидеть, что улучшить. Каждый цвет указывает на одно исправление. Чем ниже оценка читаемости, тем легче читается ваш текст.',
+  'writing.grade': 'Уровень {n}',
+  'writing.tipBody': 'Совет: наведите на фиолетовое слово, чтобы увидеть более простой вариант. Используйте «Переписать», чтобы ИИ упростил текст за вас.',
+  'writing.guideYellowLabel': 'Жёлтое предложение',
+  'writing.guideYellowTip': 'длинное и сложное — попробуйте разбить на два.',
+  'writing.guideRedLabel': 'Красное предложение',
+  'writing.guideRedTip': 'очень трудно читать — перепишите короче.',
+  'writing.guidePurpleLabel': 'Фиолетовое слово',
+  'writing.guidePurpleTip': 'есть более простое повседневное слово — замените его.',
+  'writing.guideBlueLabel': 'Синее слово',
+  'writing.guideBlueTip': 'наречие или усилитель (just, very, really) — обычно убирают.',
+  'writing.guideGreenLabel': 'Зелёное слово',
+  'writing.guideGreenTip': 'страдательный залог — предпочтите действительный.',
+  'writing.legVeryHard': '{n} предложений очень трудно читать',
+  'writing.legHard': '{n} предложений трудно читать',
+  'writing.legComplex': '{n} слов с более простым вариантом',
+  'writing.legAdverb': '{n} наречий и усилителей',
+  'writing.legPassive': '{n} употреблений страдательного залога'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

@@ -12,7 +12,7 @@ import { useWritingTasks, type WritingTask } from '../../services/writing/store'
 import { levels } from '../../services/levels/store'
 import { usePermissions } from '../../lib/permissions'
 import WritingTaskEditor from './WritingTaskEditor'
-import { useT } from '../../i18n'
+import { useT, type StringKey } from '../../i18n'
 
 type Mode = 'write' | 'edit'
 
@@ -35,13 +35,13 @@ interface LegendRow {
   count: number
 }
 
-// Plain-language guide shown in the "How it works" panel.
-const GUIDE: { color: string; label: string; tip: string }[] = [
-  { color: '#f59e0b', label: 'Yellow sentence', tip: 'long & complex — try to split it in two.' },
-  { color: '#f43f5e', label: 'Red sentence', tip: 'very hard to read — rewrite it shorter.' },
-  { color: '#a855f7', label: 'Purple word', tip: 'a simpler everyday word exists — swap it.' },
-  { color: '#0ea5e9', label: 'Blue word', tip: 'an adverb or weakener (just, very, really) — usually cut it.' },
-  { color: '#10b981', label: 'Green word', tip: 'passive voice — prefer the active voice.' }
+// Plain-language guide shown in the "How it works" panel. Labels/tips are i18n keys.
+const GUIDE: { color: string; labelKey: StringKey; tipKey: StringKey }[] = [
+  { color: '#f59e0b', labelKey: 'writing.guideYellowLabel', tipKey: 'writing.guideYellowTip' },
+  { color: '#f43f5e', labelKey: 'writing.guideRedLabel', tipKey: 'writing.guideRedTip' },
+  { color: '#a855f7', labelKey: 'writing.guidePurpleLabel', tipKey: 'writing.guidePurpleTip' },
+  { color: '#0ea5e9', labelKey: 'writing.guideBlueLabel', tipKey: 'writing.guideBlueTip' },
+  { color: '#10b981', labelKey: 'writing.guideGreenLabel', tipKey: 'writing.guideGreenTip' }
 ]
 
 export default function WritingCoachPage(): JSX.Element {
@@ -78,11 +78,11 @@ export default function WritingCoachPage(): JSX.Element {
   const a = useMemo(() => analyze(text), [text])
 
   const legend: LegendRow[] = [
-    { color: '#f43f5e', label: `${a.counts.veryhard} sentence${a.counts.veryhard === 1 ? '' : 's'} very hard to read`, count: a.counts.veryhard },
-    { color: '#f59e0b', label: `${a.counts.hard} sentence${a.counts.hard === 1 ? '' : 's'} hard to read`, count: a.counts.hard },
-    { color: '#a855f7', label: `${a.counts.complex} word${a.counts.complex === 1 ? '' : 's'} with a simpler alternative`, count: a.counts.complex },
-    { color: '#0ea5e9', label: `${a.counts.adverb + a.counts.weakener} adverb${a.counts.adverb + a.counts.weakener === 1 ? '' : 's'} & weakeners`, count: a.counts.adverb + a.counts.weakener },
-    { color: '#10b981', label: `${a.counts.passive} use${a.counts.passive === 1 ? '' : 's'} of passive voice`, count: a.counts.passive }
+    { color: '#f43f5e', label: T('writing.legVeryHard', { n: a.counts.veryhard }), count: a.counts.veryhard },
+    { color: '#f59e0b', label: T('writing.legHard', { n: a.counts.hard }), count: a.counts.hard },
+    { color: '#a855f7', label: T('writing.legComplex', { n: a.counts.complex }), count: a.counts.complex },
+    { color: '#0ea5e9', label: T('writing.legAdverb', { n: a.counts.adverb + a.counts.weakener }), count: a.counts.adverb + a.counts.weakener },
+    { color: '#10b981', label: T('writing.legPassive', { n: a.counts.passive }), count: a.counts.passive }
   ]
 
   const gradeTone =
@@ -246,29 +246,26 @@ export default function WritingCoachPage(): JSX.Element {
             <button
               onClick={() => setShowHelp(false)}
               className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 flex items-center justify-center transition"
-              title="Dismiss"
+              title={T('writing.dismissTitle')}
             >
               ✕
             </button>
             <h3 className="text-base font-bold text-white">{T('writing.title')}</h3>
             <p className="text-sm text-slate-300 mt-1 max-w-2xl">
-              Write or paste your English in <b className="text-white">Write</b> mode, then switch to{' '}
-              <b className="text-white">Edit</b> to see what to improve. Each color points to one fix.
-              A <b className="text-white">lower readability grade</b> means your writing is easier to read.
+              {T('writing.howItWorksBody')}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 mt-4">
               {GUIDE.map((g) => (
-                <div key={g.label} className="flex items-start gap-2.5">
+                <div key={g.labelKey} className="flex items-start gap-2.5">
                   <span className="w-3.5 h-3.5 rounded-sm mt-0.5 shrink-0" style={{ background: g.color }} />
                   <p className="text-sm text-slate-300">
-                    <b className="text-white">{g.label}</b> — {g.tip}
+                    <b className="text-white">{T(g.labelKey)}</b> — {T(g.tipKey)}
                   </p>
                 </div>
               ))}
             </div>
             <p className="text-xs text-slate-400 mt-4">
-              Tip: hover a <span className="text-violet-300 underline decoration-violet-400/40">purple</span> word to
-              see a simpler alternative. Use <b className="text-white">Rewrite</b> to let AI simplify it for you.
+              {T('writing.tipBody')}
             </p>
           </div>
         )}
@@ -330,7 +327,7 @@ export default function WritingCoachPage(): JSX.Element {
             <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
               <SectionHeading title={T('writing.readability')} />
               <p className={cn('text-3xl font-extrabold leading-none', gradeTone)}>
-                {a.grade === 0 ? '—' : `Grade ${a.grade}`}
+                {a.grade === 0 ? '—' : T('writing.grade', { n: a.grade })}
               </p>
               <p className="text-sm text-slate-400 mt-1">{a.gradeLabel}</p>
               <div className="grid grid-cols-2 gap-2 mt-4">

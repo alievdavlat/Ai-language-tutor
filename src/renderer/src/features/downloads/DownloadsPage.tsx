@@ -87,7 +87,7 @@ export default function DownloadsPage(): JSX.Element {
                     </div>
                   ) : (
                     <p className={cn('text-[11px] capitalize', STATUS_TINT[d.status])}>
-                      {d.status} · {d.sizeMb} MB{d.expiresAt ? ` · rental expires ${new Date(d.expiresAt).toLocaleDateString()}` : ''}
+                      {d.status} · {d.sizeMb} MB{d.expiresAt ? ` · ${t('downloads.rentalExpires', { date: new Date(d.expiresAt).toLocaleDateString() })}` : ''}
                     </p>
                   )}
                 </div>
