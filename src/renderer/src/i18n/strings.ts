@@ -215,6 +215,13 @@ export type StringKey =
   | 'teacher.clipsComposerTitle' | 'teacher.publish' | 'teacher.save' | 'teacher.preview'
   | 'teacher.untitled' | 'teacher.search' | 'teacher.allCourses' | 'teacher.export'
   | 'teacher.avgRating' | 'teacher.welcomeBack' | 'teacher.courseStudentLine'
+  | 'teacher.studentsEyebrow' | 'teacher.enrolledActiveLine' | 'teacher.inviteStudent'
+  | 'teacher.searchStudents' | 'teacher.colStudent' | 'teacher.colCourse'
+  | 'teacher.colProgress' | 'teacher.colLastActive' | 'teacher.colStatus'
+  | 'teacher.stActive' | 'teacher.stBehind' | 'teacher.stFinished' | 'teacher.stFallingBehind'
+  | 'teacher.noStudentsEnrolled' | 'teacher.noStudentsMatch' | 'teacher.message'
+  | 'teacher.today' | 'teacher.yesterday' | 'teacher.daysAgo'
+  | 'teacher.tabAll' | 'teacher.tabActive' | 'teacher.tabFinished' | 'teacher.yourStudents'
 
 type Table = Record<StringKey, string>
 
@@ -712,7 +719,30 @@ const en: Table = {
   'teacher.export': 'Export',
   'teacher.avgRating': 'Avg rating',
   'teacher.welcomeBack': 'Welcome back, {name}',
-  'teacher.courseStudentLine': '{courses} courses · {students} students enrolled'
+  'teacher.courseStudentLine': '{courses} courses · {students} students enrolled',
+  'teacher.studentsEyebrow': 'Teacher · Students',
+  'teacher.enrolledActiveLine': '{enrolled} enrolled · {active} active this week',
+  'teacher.inviteStudent': 'Invite student',
+  'teacher.searchStudents': 'Search students by name or course',
+  'teacher.colStudent': 'Student',
+  'teacher.colCourse': 'Course',
+  'teacher.colProgress': 'Progress',
+  'teacher.colLastActive': 'Last active',
+  'teacher.colStatus': 'Status',
+  'teacher.stActive': 'Active',
+  'teacher.stBehind': 'Behind',
+  'teacher.stFinished': 'Finished',
+  'teacher.stFallingBehind': 'Falling behind',
+  'teacher.noStudentsEnrolled': 'No students enrolled yet. When learners enrol in your courses, they appear here.',
+  'teacher.noStudentsMatch': 'No students match this filter.',
+  'teacher.message': 'Message',
+  'teacher.today': 'Today',
+  'teacher.yesterday': 'Yesterday',
+  'teacher.daysAgo': '{n}d ago',
+  'teacher.tabAll': 'All',
+  'teacher.tabActive': 'Active',
+  'teacher.tabFinished': 'Finished',
+  'teacher.yourStudents': 'Your students'
 }
 
 const uz: Table = {
@@ -1209,7 +1239,30 @@ const uz: Table = {
   'teacher.export': 'Eksport',
   'teacher.avgRating': 'O‘rtacha reyting',
   'teacher.welcomeBack': 'Xush kelibsiz, {name}',
-  'teacher.courseStudentLine': '{courses} ta kurs · {students} ta talaba yozilgan'
+  'teacher.courseStudentLine': '{courses} ta kurs · {students} ta talaba yozilgan',
+  'teacher.studentsEyebrow': 'O‘qituvchi · Talabalar',
+  'teacher.enrolledActiveLine': '{enrolled} ta yozilgan · {active} ta bu hafta faol',
+  'teacher.inviteStudent': 'Talaba taklif qilish',
+  'teacher.searchStudents': 'Talabalarni ism yoki kurs bo‘yicha qidiring',
+  'teacher.colStudent': 'Talaba',
+  'teacher.colCourse': 'Kurs',
+  'teacher.colProgress': 'Jarayon',
+  'teacher.colLastActive': 'Oxirgi faollik',
+  'teacher.colStatus': 'Holat',
+  'teacher.stActive': 'Faol',
+  'teacher.stBehind': 'Orqada',
+  'teacher.stFinished': 'Tugatgan',
+  'teacher.stFallingBehind': 'Orqada qolmoqda',
+  'teacher.noStudentsEnrolled': 'Hali talabalar yozilmagan. O‘quvchilar kurslaringizga yozilganda shu yerda ko‘rinadi.',
+  'teacher.noStudentsMatch': 'Bu filtrga mos talaba yo‘q.',
+  'teacher.message': 'Xabar',
+  'teacher.today': 'Bugun',
+  'teacher.yesterday': 'Kecha',
+  'teacher.daysAgo': '{n} kun oldin',
+  'teacher.tabAll': 'Barchasi',
+  'teacher.tabActive': 'Faol',
+  'teacher.tabFinished': 'Tugatgan',
+  'teacher.yourStudents': 'Talabalaringiz'
 }
 
 const ru: Table = {
@@ -1706,7 +1759,30 @@ const ru: Table = {
   'teacher.export': 'Экспорт',
   'teacher.avgRating': 'Средний рейтинг',
   'teacher.welcomeBack': 'С возвращением, {name}',
-  'teacher.courseStudentLine': 'Курсов: {courses} · Записано студентов: {students}'
+  'teacher.courseStudentLine': 'Курсов: {courses} · Записано студентов: {students}',
+  'teacher.studentsEyebrow': 'Преподаватель · Студенты',
+  'teacher.enrolledActiveLine': 'Записано: {enrolled} · Активны на этой неделе: {active}',
+  'teacher.inviteStudent': 'Пригласить студента',
+  'teacher.searchStudents': 'Поиск студентов по имени или курсу',
+  'teacher.colStudent': 'Студент',
+  'teacher.colCourse': 'Курс',
+  'teacher.colProgress': 'Прогресс',
+  'teacher.colLastActive': 'Последняя активность',
+  'teacher.colStatus': 'Статус',
+  'teacher.stActive': 'Активен',
+  'teacher.stBehind': 'Отстаёт',
+  'teacher.stFinished': 'Завершил',
+  'teacher.stFallingBehind': 'Отстаёт',
+  'teacher.noStudentsEnrolled': 'Пока нет записанных студентов. Когда ученики запишутся на ваши курсы, они появятся здесь.',
+  'teacher.noStudentsMatch': 'Нет студентов по этому фильтру.',
+  'teacher.message': 'Сообщение',
+  'teacher.today': 'Сегодня',
+  'teacher.yesterday': 'Вчера',
+  'teacher.daysAgo': '{n} дн. назад',
+  'teacher.tabAll': 'Все',
+  'teacher.tabActive': 'Активные',
+  'teacher.tabFinished': 'Завершившие',
+  'teacher.yourStudents': 'Ваши студенты'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

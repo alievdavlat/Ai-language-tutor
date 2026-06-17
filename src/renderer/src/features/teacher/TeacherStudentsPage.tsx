@@ -3,6 +3,7 @@ import { cn } from '../../lib/classnames'
 import { AvatarCircle, PageHeader, ProgressBar, Tabs, type TabItem } from '../../components/ui'
 import { IconChat, IconSearch, IconStar } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
+import { useT, type StringKey } from '../../i18n'
 
 type Tab = 'all' | 'active' | 'lagging' | 'finished'
 
@@ -15,10 +16,10 @@ interface Student {
   rating?: number
 }
 
-const STATE_CHIP: Record<Student['state'], { label: string; tint: string }> = {
-  active: { label: 'Active', tint: 'bg-emerald-500/15 text-emerald-300' },
-  lagging: { label: 'Behind', tint: 'bg-amber-500/15 text-amber-300' },
-  finished: { label: 'Finished', tint: 'bg-violet-500/15 text-violet-300' }
+const STATE_CHIP: Record<Student['state'], { labelKey: StringKey; tint: string }> = {
+  active: { labelKey: 'teacher.stActive', tint: 'bg-emerald-500/15 text-emerald-300' },
+  lagging: { labelKey: 'teacher.stBehind', tint: 'bg-amber-500/15 text-amber-300' },
+  finished: { labelKey: 'teacher.stFinished', tint: 'bg-violet-500/15 text-violet-300' }
 }
 
 function progressState(p: number, lastActiveAt: string): Student['state'] {
@@ -28,14 +29,15 @@ function progressState(p: number, lastActiveAt: string): Student['state'] {
   return 'active'
 }
 
-function relDays(iso: string): string {
+function relDays(iso: string, t: (k: StringKey, v?: Record<string, string | number>) => string): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
-  if (days < 1) return 'Today'
-  if (days === 1) return 'Yesterday'
-  return `${days}d ago`
+  if (days < 1) return t('teacher.today')
+  if (days === 1) return t('teacher.yesterday')
+  return t('teacher.daysAgo', { n: days })
 }
 
 export default function TeacherStudentsPage(): JSX.Element {
+  const t = useT()
   const [tab, setTab] = useState<Tab>('all')
   const [query, setQuery] = useState('')
   const [courseFilter, setCourseFilter] = useState('all')
@@ -50,7 +52,7 @@ export default function TeacherStudentsPage(): JSX.Element {
     name: r.user.name,
     course: r.course.title,
     progress: r.enrollment.progress,
-    lastActive: relDays(r.enrollment.lastActiveAt),
+    lastActive: relDays(r.enrollment.lastActiveAt, t),
     state: progressState(r.enrollment.progress, r.enrollment.lastActiveAt)
   }))
 
@@ -63,10 +65,10 @@ export default function TeacherStudentsPage(): JSX.Element {
   }
   const courseTitles = [...new Set(liveStudents.map((s) => s.course))]
   const TABS: TabItem<Tab>[] = [
-    { id: 'all', label: `All · ${counts.all}` },
-    { id: 'active', label: `Active · ${counts.active}` },
-    { id: 'lagging', label: `Falling behind · ${counts.lagging}` },
-    { id: 'finished', label: `Finished · ${counts.finished}` }
+    { id: 'all', label: `${t('teacher.tabAll')} · ${counts.all}` },
+    { id: 'active', label: `${t('teacher.tabActive')} · ${counts.active}` },
+    { id: 'lagging', label: `${t('teacher.stFallingBehind')} · ${counts.lagging}` },
+    { id: 'finished', label: `${t('teacher.tabFinished')} · ${counts.finished}` }
   ]
 
   // Functional filtering: tab + course dropdown + search.
@@ -80,22 +82,22 @@ export default function TeacherStudentsPage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full w-full flex flex-col gap-5">
         <PageHeader
-          eyebrow="Teacher · Students"
-          title="Your students"
-          subtitle={`${counts.all} enrolled · ${counts.active} active this week`}
+          eyebrow={t('teacher.studentsEyebrow')}
+          title={t('teacher.yourStudents')}
+          subtitle={t('teacher.enrolledActiveLine', { enrolled: counts.all, active: counts.active })}
           back="/teacher"
-          crumbs={[{ label: 'Teacher', to: '/teacher' }, { label: 'Students' }]}
-          action={<button className="btn-primary text-xs px-4 py-2">Invite student</button>}
+          crumbs={[{ label: t('teacher.teacher'), to: '/teacher' }, { label: t('teacher.studentsTitle') }]}
+          action={<button className="btn-primary text-xs px-4 py-2">{t('teacher.inviteStudent')}</button>}
         />
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 min-w-0">
             <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} type="text" placeholder="Search students by name or course" className="input pl-9 text-sm" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} type="text" placeholder={t('teacher.searchStudents')} className="input pl-9 text-sm" />
           </div>
           <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="input text-sm sm:w-48">
-            <option value="all">All courses</option>
-            {courseTitles.map((t) => <option key={t} value={t}>{t}</option>)}
+            <option value="all">{t('teacher.allCourses')}</option>
+            {courseTitles.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
 
@@ -104,18 +106,18 @@ export default function TeacherStudentsPage(): JSX.Element {
         <div className="rounded-card border border-white/10 bg-white/[0.025] overflow-hidden">
           {/* Header */}
           <div className="hidden sm:grid grid-cols-[1fr_1.2fr_1fr_0.6fr_0.6fr_auto] gap-3 px-4 py-2.5 border-b border-white/[0.07] bg-white/[0.02]">
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Student</span>
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Course</span>
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Progress</span>
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Last active</span>
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Status</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{t('teacher.colStudent')}</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{t('teacher.colCourse')}</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{t('teacher.colProgress')}</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{t('teacher.colLastActive')}</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{t('teacher.colStatus')}</span>
             <span />
           </div>
           {list.length === 0 && (
             <div className="px-4 py-10 text-center text-sm text-slate-400">
               {liveStudents.length === 0
-                ? 'No students enrolled yet. When learners enrol in your courses, they appear here.'
-                : 'No students match this filter.'}
+                ? t('teacher.noStudentsEnrolled')
+                : t('teacher.noStudentsMatch')}
             </div>
           )}
           {list.map((s, i) => (
@@ -141,9 +143,9 @@ export default function TeacherStudentsPage(): JSX.Element {
               </div>
               <p className="text-[11px] text-slate-400 hidden sm:block">{s.lastActive}</p>
               <span className={cn('hidden sm:inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider', STATE_CHIP[s.state].tint)}>
-                {STATE_CHIP[s.state].label}
+                {t(STATE_CHIP[s.state].labelKey)}
               </span>
-              <button className="text-slate-500 hover:text-brand-300 transition" title="Message"><IconChat className="w-4 h-4" /></button>
+              <button className="text-slate-500 hover:text-brand-300 transition" title={t('teacher.message')}><IconChat className="w-4 h-4" /></button>
             </div>
           ))}
         </div>
