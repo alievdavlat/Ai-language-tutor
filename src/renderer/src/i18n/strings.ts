@@ -260,6 +260,19 @@ export type StringKey =
   | 'buddy.act.exam' | 'buddy.act.streak' | 'buddy.act.achievement' | 'buddy.act.enroll'
   | 'buddy.act.default' | 'buddy.you'
   | 'buddy.pokeMsg' | 'buddy.pokeNotifTitle' | 'buddy.pokeNotifBody' | 'buddy.yourBuddyWord'
+  // ── Tutors ───────────────────────────────────────────────────────────
+  | 'tutors.title' | 'tutors.subtitle' | 'tutors.crumbPartner' | 'tutors.instantCall'
+  | 'tutors.tabPro' | 'tutors.tabCommunity' | 'tutors.upcomingLessons'
+  | 'tutors.filterPlaceholder' | 'tutors.anyLanguage' | 'tutors.anyPrice'
+  | 'tutors.onlineNow' | 'tutors.talkNow' | 'tutors.onlineWait' | 'tutors.findTutor'
+  | 'tutors.loading' | 'tutors.noMatch' | 'tutors.tryWidening' | 'tutors.freeTrial'
+  | 'tutors.book' | 'tutors.view' | 'tutors.earnTutor' | 'tutors.earnTutorSub'
+  | 'tutors.applyTeach' | 'tutors.speaks' | 'tutors.pickTime' | 'tutors.noSlots'
+  | 'tutors.bookTrial' | 'tutors.bookLesson' | 'tutors.pickTimeHint' | 'tutors.offline'
+  | 'tutors.messageTutor' | 'tutors.lessons' | 'tutors.students' | 'tutors.reviewsCount'
+  | 'tutors.writeReview' | 'tutors.noReviews' | 'tutors.howWasLesson' | 'tutors.postReview'
+  | 'tutors.posting' | 'tutors.done' | 'tutors.connecting' | 'tutors.lessonBooked'
+  | 'tutors.trialWord' | 'tutors.lessonWord' | 'tutors.talkNowBtn'
 
 type Table = Record<StringKey, string>
 
@@ -902,7 +915,53 @@ const en: Table = {
   'buddy.pokeMsg': '👋 Poke! Keep the streak going — let’s practice today!',
   'buddy.pokeNotifTitle': 'Your study buddy poked you',
   'buddy.pokeNotifBody': '{name} wants to practice together today.',
-  'buddy.yourBuddyWord': 'Your buddy'
+  'buddy.yourBuddyWord': 'Your buddy',
+  // Tutors
+  'tutors.title': 'Tutors',
+  'tutors.subtitle': 'Live 1:1 lessons with native and certified tutors.',
+  'tutors.crumbPartner': 'Speaking partner',
+  'tutors.instantCall': 'Instant call',
+  'tutors.tabPro': 'Professional · $20-40/h',
+  'tutors.tabCommunity': 'Community · $5-15/h',
+  'tutors.upcomingLessons': 'Your upcoming lessons',
+  'tutors.filterPlaceholder': 'Filter by name, language, focus',
+  'tutors.anyLanguage': 'Any language',
+  'tutors.anyPrice': 'Any price',
+  'tutors.onlineNow': 'Online now',
+  'tutors.talkNow': 'Talk to someone right now',
+  'tutors.onlineWait': '{count} tutors online · average wait under 1 min',
+  'tutors.findTutor': 'Find a tutor',
+  'tutors.loading': 'Loading tutors…',
+  'tutors.noMatch': 'No tutors match your filters',
+  'tutors.tryWidening': 'Try widening the price range or clearing the search.',
+  'tutors.freeTrial': 'Free trial',
+  'tutors.book': 'Book',
+  'tutors.view': 'View',
+  'tutors.earnTutor': 'Earn as a community tutor',
+  'tutors.earnTutorSub': 'Set your own rates · keep 85% · cash out monthly.',
+  'tutors.applyTeach': 'Apply to teach',
+  'tutors.speaks': 'Speaks',
+  'tutors.pickTime': 'Pick a time',
+  'tutors.noSlots': 'No open slots in the next two weeks — try an instant call.',
+  'tutors.bookTrial': '🎁 Book a free trial (30 min)',
+  'tutors.bookLesson': 'Book lesson',
+  'tutors.pickTimeHint': '(pick a time)',
+  'tutors.offline': 'Offline',
+  'tutors.messageTutor': '💬 Message tutor',
+  'tutors.lessons': '{n} lessons',
+  'tutors.students': '{n} students',
+  'tutors.reviewsCount': 'Reviews ({n})',
+  'tutors.writeReview': 'Write a review',
+  'tutors.noReviews': 'No reviews yet — be the first.',
+  'tutors.howWasLesson': 'How was the lesson?',
+  'tutors.postReview': 'Post review',
+  'tutors.posting': 'Posting…',
+  'tutors.done': 'Done',
+  'tutors.connecting': 'Connecting you with {name} now…',
+  'tutors.lessonBooked': '{kind} booked for {time}',
+  'tutors.trialWord': 'Free trial',
+  'tutors.lessonWord': 'Lesson',
+  'tutors.talkNowBtn': 'Talk now'
 }
 
 const uz: Table = {
@@ -1544,7 +1603,53 @@ const uz: Table = {
   'buddy.pokeMsg': '👋 Turtki! Seriyani davom ettiring — bugun mashq qilaylik!',
   'buddy.pokeNotifTitle': 'O‘qish sherigingiz sizga turtki yubordi',
   'buddy.pokeNotifBody': '{name} bugun birga mashq qilmoqchi.',
-  'buddy.yourBuddyWord': 'Sherigingiz'
+  'buddy.yourBuddyWord': 'Sherigingiz',
+  // Tutors
+  'tutors.title': 'Repetitorlar',
+  'tutors.subtitle': 'Ona tili va sertifikatlangan repetitorlar bilan jonli 1:1 darslar.',
+  'tutors.crumbPartner': 'Suhbat sherigi',
+  'tutors.instantCall': 'Tezkor qo‘ng‘iroq',
+  'tutors.tabPro': 'Professional · $20-40/soat',
+  'tutors.tabCommunity': 'Hamjamiyat · $5-15/soat',
+  'tutors.upcomingLessons': 'Yaqinlashayotgan darslaringiz',
+  'tutors.filterPlaceholder': 'Ism, til, yo‘nalish bo‘yicha filtrlash',
+  'tutors.anyLanguage': 'Istalgan til',
+  'tutors.anyPrice': 'Istalgan narx',
+  'tutors.onlineNow': 'Hozir onlayn',
+  'tutors.talkNow': 'Hoziroq kimdir bilan gaplashing',
+  'tutors.onlineWait': '{count} ta repetitor onlayn · o‘rtacha kutish 1 daqiqadan kam',
+  'tutors.findTutor': 'Repetitor topish',
+  'tutors.loading': 'Repetitorlar yuklanmoqda…',
+  'tutors.noMatch': 'Filtrlaringizga mos repetitor yo‘q',
+  'tutors.tryWidening': 'Narx oralig‘ini kengaytiring yoki qidiruvni tozalang.',
+  'tutors.freeTrial': 'Bepul sinov',
+  'tutors.book': 'Band qilish',
+  'tutors.view': 'Ko‘rish',
+  'tutors.earnTutor': 'Hamjamiyat repetitori sifatida ishlang',
+  'tutors.earnTutorSub': 'O‘z narxingizni belgilang · 85% ni oling · oyiga yeching.',
+  'tutors.applyTeach': 'O‘qitishga ariza',
+  'tutors.speaks': 'Tillar',
+  'tutors.pickTime': 'Vaqtni tanlang',
+  'tutors.noSlots': 'Keyingi ikki haftada bo‘sh vaqt yo‘q — tezkor qo‘ng‘iroqni sinab ko‘ring.',
+  'tutors.bookTrial': '🎁 Bepul sinov darsini band qiling (30 daqiqa)',
+  'tutors.bookLesson': 'Darsni band qilish',
+  'tutors.pickTimeHint': '(vaqtni tanlang)',
+  'tutors.offline': 'Oflayn',
+  'tutors.messageTutor': '💬 Repetitorga xabar',
+  'tutors.lessons': '{n} ta dars',
+  'tutors.students': '{n} ta talaba',
+  'tutors.reviewsCount': 'Sharhlar ({n})',
+  'tutors.writeReview': 'Sharh yozish',
+  'tutors.noReviews': 'Hali sharhlar yo‘q — birinchi bo‘ling.',
+  'tutors.howWasLesson': 'Dars qanday o‘tdi?',
+  'tutors.postReview': 'Sharh joylash',
+  'tutors.posting': 'Joylanmoqda…',
+  'tutors.done': 'Tayyor',
+  'tutors.connecting': '{name} bilan ulanmoqda…',
+  'tutors.lessonBooked': '{kind} {time} uchun band qilindi',
+  'tutors.trialWord': 'Bepul sinov',
+  'tutors.lessonWord': 'Dars',
+  'tutors.talkNowBtn': 'Hozir gaplashish'
 }
 
 const ru: Table = {
@@ -2186,7 +2291,53 @@ const ru: Table = {
   'buddy.pokeMsg': '👋 Привет! Не теряй серию — давай позанимаемся сегодня!',
   'buddy.pokeNotifTitle': 'Ваш напарник вас подтолкнул',
   'buddy.pokeNotifBody': '{name} хочет позаниматься вместе сегодня.',
-  'buddy.yourBuddyWord': 'Ваш напарник'
+  'buddy.yourBuddyWord': 'Ваш напарник',
+  // Tutors
+  'tutors.title': 'Репетиторы',
+  'tutors.subtitle': 'Живые занятия 1:1 с носителями и сертифицированными репетиторами.',
+  'tutors.crumbPartner': 'Партнёр для разговора',
+  'tutors.instantCall': 'Мгновенный звонок',
+  'tutors.tabPro': 'Профессионалы · $20-40/ч',
+  'tutors.tabCommunity': 'Сообщество · $5-15/ч',
+  'tutors.upcomingLessons': 'Ваши ближайшие занятия',
+  'tutors.filterPlaceholder': 'Фильтр по имени, языку, направлению',
+  'tutors.anyLanguage': 'Любой язык',
+  'tutors.anyPrice': 'Любая цена',
+  'tutors.onlineNow': 'Сейчас онлайн',
+  'tutors.talkNow': 'Поговорите с кем-нибудь прямо сейчас',
+  'tutors.onlineWait': '{count} репетиторов онлайн · среднее ожидание менее 1 мин',
+  'tutors.findTutor': 'Найти репетитора',
+  'tutors.loading': 'Загрузка репетиторов…',
+  'tutors.noMatch': 'Нет репетиторов по вашим фильтрам',
+  'tutors.tryWidening': 'Расширьте диапазон цен или очистите поиск.',
+  'tutors.freeTrial': 'Бесплатный пробный',
+  'tutors.book': 'Записаться',
+  'tutors.view': 'Открыть',
+  'tutors.earnTutor': 'Зарабатывайте как репетитор сообщества',
+  'tutors.earnTutorSub': 'Установите свои ставки · оставляйте 85% · вывод ежемесячно.',
+  'tutors.applyTeach': 'Подать заявку',
+  'tutors.speaks': 'Языки',
+  'tutors.pickTime': 'Выберите время',
+  'tutors.noSlots': 'Нет свободных слотов на ближайшие две недели — попробуйте мгновенный звонок.',
+  'tutors.bookTrial': '🎁 Записаться на бесплатный пробный (30 мин)',
+  'tutors.bookLesson': 'Записаться на урок',
+  'tutors.pickTimeHint': '(выберите время)',
+  'tutors.offline': 'Не в сети',
+  'tutors.messageTutor': '💬 Написать репетитору',
+  'tutors.lessons': '{n} занятий',
+  'tutors.students': '{n} студентов',
+  'tutors.reviewsCount': 'Отзывы ({n})',
+  'tutors.writeReview': 'Написать отзыв',
+  'tutors.noReviews': 'Пока нет отзывов — будьте первым.',
+  'tutors.howWasLesson': 'Как прошло занятие?',
+  'tutors.postReview': 'Оставить отзыв',
+  'tutors.posting': 'Публикация…',
+  'tutors.done': 'Готово',
+  'tutors.connecting': 'Соединяем вас с {name}…',
+  'tutors.lessonBooked': '{kind} забронировано на {time}',
+  'tutors.trialWord': 'Бесплатный пробный',
+  'tutors.lessonWord': 'Урок',
+  'tutors.talkNowBtn': 'Поговорить сейчас'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

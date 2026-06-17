@@ -7,12 +7,9 @@ import { social, meId } from '../../services/backend/social'
 import { backend } from '../../services/backend/useBackend'
 import { dateTime, timeAgo } from '../../lib/time'
 import type { Booking, TutorProfile, TutorReview } from '@shared/types'
+import { useT } from '../../i18n'
 
 type Tab = 'pro' | 'community'
-const TABS: TabItem<Tab>[] = [
-  { id: 'pro', label: 'Professional · $20-40/h' },
-  { id: 'community', label: 'Community · $5-15/h' }
-]
 
 type PriceTier = 'any' | 'low' | 'mid' | 'high'
 const PRICE_RANGES: Record<PriceTier, (p: number) => boolean> = {
@@ -25,6 +22,11 @@ const PRICE_RANGES: Record<PriceTier, (p: number) => boolean> = {
 export default function TutorsPage(): JSX.Element {
   const me = meId()
   const navigate = useNavigate()
+  const T = useT()
+  const TABS: TabItem<Tab>[] = [
+    { id: 'pro', label: T('tutors.tabPro') },
+    { id: 'community', label: T('tutors.tabCommunity') }
+  ]
   const [tab, setTab] = useState<Tab>('pro')
   const [q, setQ] = useState('')
   const [language, setLanguage] = useState('any')
@@ -86,19 +88,19 @@ export default function TutorsPage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-5">
         <PageHeader
-          title="Tutors"
-          subtitle="Live 1:1 lessons with native and certified tutors."
+          title={T('tutors.title')}
+          subtitle={T('tutors.subtitle')}
           back="/meet"
-          crumbs={[{ label: 'Speaking partner', to: '/meet' }, { label: 'Tutors' }]}
+          crumbs={[{ label: T('tutors.crumbPartner'), to: '/meet' }, { label: T('tutors.title') }]}
           action={
-            <button onClick={() => void instantCall()} className="btn-primary text-xs px-3 py-2">Instant call</button>
+            <button onClick={() => void instantCall()} className="btn-primary text-xs px-3 py-2">{T('tutors.instantCall')}</button>
           }
         />
 
         {/* My upcoming lessons */}
         {upcoming.length > 0 && (
           <div className="rounded-card border border-emerald-400/20 bg-emerald-500/[0.07] p-4">
-            <p className="text-xs uppercase tracking-widest text-emerald-200/80 font-bold mb-2">Your upcoming lessons</p>
+            <p className="text-xs uppercase tracking-widest text-emerald-200/80 font-bold mb-2">{T('tutors.upcomingLessons')}</p>
             <div className="flex flex-col gap-2">
               {upcoming.map((b) => {
                 const tutor = tutors.find((t) => t.id === b.tutorId)
@@ -107,7 +109,7 @@ export default function TutorsPage(): JSX.Element {
                     <AvatarCircle name={tutor?.name} size="sm" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-white truncate">
-                        {tutor?.name ?? 'Tutor'} · <span className="capitalize text-slate-300">{b.kind}</span>
+                        {tutor?.name ?? T('tutors.title')} · <span className="capitalize text-slate-300">{b.kind}</span>
                       </p>
                       <p className="text-[11px] text-slate-400">{dateTime(b.startISO)} · {b.durationMin} min</p>
                     </div>
@@ -134,12 +136,12 @@ export default function TutorsPage(): JSX.Element {
               type="text"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Filter by name, language, focus"
+              placeholder={T('tutors.filterPlaceholder')}
               className="input pl-9 text-sm"
             />
           </div>
           <select value={language} onChange={(e) => setLanguage(e.target.value)} className="input text-sm sm:w-44">
-            <option value="any">Any language</option>
+            <option value="any">{T('tutors.anyLanguage')}</option>
             <option value="english">English</option>
             <option value="italian">Italian</option>
             <option value="japanese">Japanese</option>
@@ -147,7 +149,7 @@ export default function TutorsPage(): JSX.Element {
             <option value="hindi">Hindi</option>
           </select>
           <select value={price} onChange={(e) => setPrice(e.target.value as PriceTier)} className="input text-sm sm:w-40">
-            <option value="any">Any price</option>
+            <option value="any">{T('tutors.anyPrice')}</option>
             <option value="low">$5–15</option>
             <option value="mid">$15–30</option>
             <option value="high">$30+</option>
@@ -159,7 +161,7 @@ export default function TutorsPage(): JSX.Element {
               onlineOnly ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-200' : 'bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.06]'
             )}
           >
-            ● Online now
+            ● {T('tutors.onlineNow')}
           </button>
         </div>
 
@@ -171,20 +173,20 @@ export default function TutorsPage(): JSX.Element {
             <IconLive className="w-6 h-6 text-brand-200" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-bold text-white">Talk to someone right now</p>
-            <p className="text-xs text-slate-300">{onlineCount} tutors online · average wait under 1 min</p>
+            <p className="text-sm font-bold text-white">{T('tutors.talkNow')}</p>
+            <p className="text-xs text-slate-300">{T('tutors.onlineWait', { count: onlineCount })}</p>
           </div>
           <button onClick={() => void instantCall()} className="btn-primary text-xs px-4 py-2" disabled={onlineCount === 0}>
-            Find a tutor
+            {T('tutors.findTutor')}
           </button>
         </div>
 
         {loading ? (
-          <p className="text-sm text-slate-500">Loading tutors…</p>
+          <p className="text-sm text-slate-500">{T('tutors.loading')}</p>
         ) : filtered.length === 0 ? (
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-8 text-center">
-            <p className="text-sm font-semibold text-white">No tutors match your filters</p>
-            <p className="text-xs text-slate-500 mt-1">Try widening the price range or clearing the search.</p>
+            <p className="text-sm font-semibold text-white">{T('tutors.noMatch')}</p>
+            <p className="text-xs text-slate-500 mt-1">{T('tutors.tryWidening')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -200,10 +202,10 @@ export default function TutorsPage(): JSX.Element {
             <IconUsers className="w-7 h-7" />
           </div>
           <div className="flex-1 text-center sm:text-left">
-            <p className="text-sm font-bold text-white">Earn as a community tutor</p>
-            <p className="text-xs text-slate-400">Set your own rates · keep 85% · cash out monthly.</p>
+            <p className="text-sm font-bold text-white">{T('tutors.earnTutor')}</p>
+            <p className="text-xs text-slate-400">{T('tutors.earnTutorSub')}</p>
           </div>
-          <button onClick={() => navigate('/teacher')} className="btn-ghost text-xs px-4 py-2 shrink-0">Apply to teach</button>
+          <button onClick={() => navigate('/teacher')} className="btn-ghost text-xs px-4 py-2 shrink-0">{T('tutors.applyTeach')}</button>
         </div>
       </div>
 
@@ -230,6 +232,7 @@ export default function TutorsPage(): JSX.Element {
 // ─── Card ────────────────────────────────────────────────────────────────────
 
 function TutorCard({ t, onOpen }: { t: TutorProfile; onOpen: () => void }): JSX.Element {
+  const T = useT()
   return (
     <article className="rounded-card border border-white/10 bg-white/[0.025] overflow-hidden hover:border-white/20 transition flex flex-col">
       <button onClick={onOpen} className={cn('relative h-32 bg-gradient-to-br text-left', t.cover)}>
@@ -238,11 +241,11 @@ function TutorCard({ t, onOpen }: { t: TutorProfile; onOpen: () => void }): JSX.
         </span>
         {t.online && (
           <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur text-white text-[10px] font-bold px-2 py-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online now
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {T('tutors.onlineNow')}
           </span>
         )}
         {t.trial && (
-          <span className="absolute top-2 right-2 rounded-full bg-amber-400/90 backdrop-blur text-amber-950 text-[10px] font-bold px-2 py-0.5">Free trial</span>
+          <span className="absolute top-2 right-2 rounded-full bg-amber-400/90 backdrop-blur text-amber-950 text-[10px] font-bold px-2 py-0.5">{T('tutors.freeTrial')}</span>
         )}
       </button>
       <div className="p-4 flex flex-col flex-1">
@@ -268,9 +271,9 @@ function TutorCard({ t, onOpen }: { t: TutorProfile; onOpen: () => void }): JSX.
           <span className="text-sm font-bold text-emerald-200">${t.hourlyRateUsd}<span className="text-[10px] text-slate-400">/h</span></span>
         </div>
         <div className="grid grid-cols-2 gap-2 mt-3">
-          <button onClick={onOpen} className="btn-ghost text-xs py-2">Book</button>
+          <button onClick={onOpen} className="btn-ghost text-xs py-2">{T('tutors.book')}</button>
           <button onClick={onOpen} className="text-xs py-2 rounded-xl font-semibold transition bg-grad-brand text-white hover:brightness-110">
-            View
+            {T('tutors.view')}
           </button>
         </div>
       </div>
@@ -322,6 +325,7 @@ function TutorDetail({
   onBooked: () => Promise<void>
   onMessage: () => Promise<void>
 }): JSX.Element {
+  const T = useT()
   const [reviews, setReviews] = useState<TutorReview[]>([])
   const [reviewerNames, setReviewerNames] = useState<Record<string, string>>({})
   const [selected, setSelected] = useState<string | null>(null)
@@ -360,8 +364,8 @@ function TutorDetail({
       await onBooked()
       setConfirmation(
         kind === 'instant'
-          ? `Connecting you with ${tutor.name} now…`
-          : `${kind === 'trial' ? 'Free trial' : 'Lesson'} booked for ${new Date(startISO).toLocaleString()}`
+          ? T('tutors.connecting', { name: tutor.name })
+          : T('tutors.lessonBooked', { kind: kind === 'trial' ? T('tutors.trialWord') : T('tutors.lessonWord'), time: new Date(startISO).toLocaleString() })
       )
     } finally {
       setBooking(false)
@@ -376,7 +380,7 @@ function TutorDetail({
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center hover:bg-black/50">✕</button>
           {tutor.online && (
             <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-emerald-500/90 text-white text-[10px] font-bold px-2 py-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online now
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {T('tutors.onlineNow')}
             </span>
           )}
         </div>
@@ -392,8 +396,8 @@ function TutorDetail({
 
           <div className="flex items-center gap-4 text-xs">
             <span className="inline-flex items-center gap-1 text-amber-300"><IconStar className="w-4 h-4" /><b className="text-white">{tutor.rating}</b> ({tutor.reviewCount})</span>
-            <span className="text-slate-400">{tutor.lessonsGiven.toLocaleString()} lessons</span>
-            <span className="text-slate-400">{tutor.studentsCount} students</span>
+            <span className="text-slate-400">{T('tutors.lessons', { n: tutor.lessonsGiven.toLocaleString() })}</span>
+            <span className="text-slate-400">{T('tutors.students', { n: tutor.studentsCount })}</span>
             <span className="ml-auto text-sm font-bold text-emerald-200">${tutor.hourlyRateUsd}/h</span>
           </div>
 
@@ -406,7 +410,7 @@ function TutorDetail({
           </div>
 
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Speaks</p>
+            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">{T('tutors.speaks')}</p>
             <div className="flex flex-wrap gap-2">
               {tutor.speaks.map((s) => (
                 <span key={s.language} className="text-xs text-slate-300">{s.language} <span className="text-slate-500">· {s.level}</span></span>
@@ -418,15 +422,15 @@ function TutorDetail({
             <div className="rounded-card border border-emerald-400/30 bg-emerald-500/10 p-4 text-center">
               <p className="text-3xl mb-1">✅</p>
               <p className="text-sm font-semibold text-white">{confirmation}</p>
-              <button onClick={onClose} className="btn-ghost text-xs px-4 py-2 mt-3">Done</button>
+              <button onClick={onClose} className="btn-ghost text-xs px-4 py-2 mt-3">{T('tutors.done')}</button>
             </div>
           ) : (
             <>
               {/* Availability calendar */}
               <div>
-                <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-2">Pick a time</p>
+                <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-2">{T('tutors.pickTime')}</p>
                 {slots.length === 0 ? (
-                  <p className="text-xs text-slate-500">No open slots in the next two weeks — try an instant call.</p>
+                  <p className="text-xs text-slate-500">{T('tutors.noSlots')}</p>
                 ) : (
                   <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
                     {slots.map((s) => (
@@ -449,20 +453,20 @@ function TutorDetail({
               <div className="grid grid-cols-2 gap-2">
                 {tutor.trial && (
                   <button onClick={() => void book('trial')} disabled={booking} className="btn-ghost text-xs py-2.5 col-span-2">
-                    🎁 Book a free trial (30 min)
+                    {T('tutors.bookTrial')}
                   </button>
                 )}
                 <button onClick={() => void book('lesson')} disabled={booking || (slots.length > 0 && !selected)} className="btn-primary text-xs py-2.5">
-                  Book lesson {selected ? '' : '(pick a time)'}
+                  {T('tutors.bookLesson')} {selected ? '' : T('tutors.pickTimeHint')}
                 </button>
                 <button
                   onClick={() => void book('instant')}
                   disabled={booking || !tutor.online}
                   className={cn('text-xs py-2.5 rounded-xl font-semibold transition', tutor.online ? 'bg-emerald-500/90 text-white hover:bg-emerald-500' : 'bg-white/[0.04] text-slate-500 border border-white/10 cursor-not-allowed')}
                 >
-                  {tutor.online ? '⚡ Talk now' : 'Offline'}
+                  {tutor.online ? `⚡ ${T('tutors.talkNowBtn')}` : T('tutors.offline')}
                 </button>
-                <button onClick={() => void onMessage()} className="btn-ghost text-xs py-2.5 col-span-2">💬 Message tutor</button>
+                <button onClick={() => void onMessage()} className="btn-ghost text-xs py-2.5 col-span-2">{T('tutors.messageTutor')}</button>
               </div>
             </>
           )}
@@ -470,8 +474,8 @@ function TutorDetail({
           {/* Reviews */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Reviews ({reviews.length})</p>
-              <button onClick={() => setShowReview((v) => !v)} className="text-[11px] text-brand-300 font-semibold">{showReview ? 'Cancel' : 'Write a review'}</button>
+              <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">{T('tutors.reviewsCount', { n: reviews.length })}</p>
+              <button onClick={() => setShowReview((v) => !v)} className="text-[11px] text-brand-300 font-semibold">{showReview ? T('common.cancel') : T('tutors.writeReview')}</button>
             </div>
 
             {showReview && (
@@ -488,7 +492,7 @@ function TutorDetail({
 
             <div className="flex flex-col gap-3 mt-2">
               {reviews.length === 0 ? (
-                <p className="text-xs text-slate-500">No reviews yet — be the first.</p>
+                <p className="text-xs text-slate-500">{T('tutors.noReviews')}</p>
               ) : (
                 reviews.map((r) => (
                   <div key={r.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
@@ -513,6 +517,7 @@ function TutorDetail({
 }
 
 function TutorReviewComposer({ tutorId, me, onDone }: { tutorId: string; me: string; onDone: () => Promise<void> }): JSX.Element {
+  const T = useT()
   const [rating, setRating] = useState(5)
   const [text, setText] = useState('')
   const [saving, setSaving] = useState(false)
@@ -525,7 +530,7 @@ function TutorReviewComposer({ tutorId, me, onDone }: { tutorId: string; me: str
           </button>
         ))}
       </div>
-      <textarea value={text} onChange={(e) => setText(e.target.value)} className="input min-h-[70px] resize-none text-sm" placeholder="How was the lesson?" />
+      <textarea value={text} onChange={(e) => setText(e.target.value)} className="input min-h-[70px] resize-none text-sm" placeholder={T('tutors.howWasLesson')} />
       <button
         onClick={async () => {
           if (text.trim().length < 5 || saving) return
@@ -540,7 +545,7 @@ function TutorReviewComposer({ tutorId, me, onDone }: { tutorId: string; me: str
         disabled={text.trim().length < 5 || saving}
         className="btn-primary text-xs py-2 self-end px-4"
       >
-        {saving ? 'Posting…' : 'Post review'}
+        {saving ? T('tutors.posting') : T('tutors.postReview')}
       </button>
     </div>
   )
