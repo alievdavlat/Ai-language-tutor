@@ -2,12 +2,16 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
 import { PageHeader, SectionHeading } from '../../components/ui'
-import { IconPencilEdit, IconBolt, IconRefresh, IconUsers } from '../../components/icons'
+import { IconPencilEdit, IconBolt, IconRefresh, IconUsers, IconPlus, IconClipboard, IconCheck } from '../../components/icons'
 import { analyze, SAMPLE_TEXT, type WordIssue, type SentenceLevel } from './analyze'
 import { useChatStream } from '../../hooks/useChatStream'
 import { useIsAIReady } from '../../lib/ai'
 import { scoreWriting, type WritingScore } from '../exams/writingScore'
 import { rewriteSimpler, getClarityFeedback } from './ai'
+import { useWritingTasks, type WritingTask } from '../../services/writing/store'
+import { levels } from '../../services/levels/store'
+import { usePermissions } from '../../lib/permissions'
+import WritingTaskEditor from './WritingTaskEditor'
 
 type Mode = 'write' | 'edit'
 
@@ -44,6 +48,22 @@ export default function WritingCoachPage(): JSX.Element {
   const [text, setText] = useState(SAMPLE_TEXT)
   const [mode, setMode] = useState<Mode>('edit')
   const [showHelp, setShowHelp] = useState(true)
+
+  // Standalone writing-task bank (#A33) — pick a prompt to write against.
+  const { list: tasks, refresh: refreshTasks } = useWritingTasks()
+  const { canAuthorContent } = usePermissions()
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
+  const [editing, setEditing] = useState<WritingTask | 'new' | null>(null)
+  const [showSample, setShowSample] = useState(false)
+  const activeTask = tasks.find((t) => t.id === activeTaskId) ?? null
+
+  const pickTask = (t: WritingTask): void => {
+    setActiveTaskId(t.id)
+    setShowSample(false)
+    setMode('write')
+    // Start from a blank draft for the chosen task.
+    setText('')
+  }
 
   const aiReady = useIsAIReady()
   const { send } = useChatStream('')
@@ -117,16 +137,93 @@ export default function WritingCoachPage(): JSX.Element {
           subtitle="Real-time readability feedback — bold, clear sentences win."
           back="/home"
           action={
-            !showHelp ? (
-              <button
-                onClick={() => setShowHelp(true)}
-                className="inline-flex items-center gap-2 rounded-pill bg-white/[0.05] border border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.09] px-3.5 py-2 text-sm font-medium transition"
-              >
-                ℹ How it works
-              </button>
-            ) : undefined
+            <div className="flex items-center gap-2">
+              {canAuthorContent && (
+                <button
+                  onClick={() => setEditing('new')}
+                  className="btn-primary px-4 py-2 text-sm inline-flex items-center gap-1.5"
+                >
+                  <IconPlus className="w-4 h-4" /> Create writing task
+                </button>
+              )}
+              {!showHelp && (
+                <button
+                  onClick={() => setShowHelp(true)}
+                  className="inline-flex items-center gap-2 rounded-pill bg-white/[0.05] border border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.09] px-3.5 py-2 text-sm font-medium transition"
+                >
+                  ℹ How it works
+                </button>
+              )}
+            </div>
           }
         />
+
+        {/* Writing-task bank (#A33) — pick a prompt to write against */}
+        <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <SectionHeading title="Writing tasks" subtitle="Pick a prompt, then draft your answer below" />
+            {activeTask && (
+              <button onClick={() => { setActiveTaskId(null); setShowSample(false) }} className="text-xs font-semibold text-slate-400 hover:text-slate-200 shrink-0">Free write</button>
+            )}
+          </div>
+
+          {tasks.length === 0 ? (
+            <p className="text-sm text-slate-400">No writing tasks yet.{canAuthorContent ? ' Create one to give learners a prompt.' : ' Free-write below — your text gets the same readability feedback.'}</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {tasks.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => pickTask(t)}
+                  className={cn(
+                    'group rounded-xl border px-3 py-2 text-left transition max-w-[15rem]',
+                    activeTaskId === t.id ? 'border-brand-400 bg-brand-500/15' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]'
+                  )}
+                >
+                  <span className="flex items-center gap-1.5">
+                    {activeTaskId === t.id && <IconCheck className="w-3.5 h-3.5 text-brand-300 shrink-0" />}
+                    <span className="text-sm font-bold text-white truncate">{t.title}</span>
+                  </span>
+                  <span className="block text-[11px] text-slate-400 mt-0.5">
+                    <span className="capitalize">{t.type}</span> · {levels.nameOf(t.level)}{t.targetWords ? ` · ${t.targetWords} words` : ''}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {activeTask && (
+            <div className="mt-3 rounded-xl border border-brand-400/25 bg-brand-500/[0.06] p-4">
+              <div className="flex items-start gap-2">
+                <IconClipboard className="w-4 h-4 text-brand-300 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-slate-100 leading-relaxed whitespace-pre-wrap">{activeTask.prompt}</p>
+                  <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-400">
+                    {activeTask.targetWords && (
+                      <span className={cn(a.words >= activeTask.targetWords ? 'text-emerald-300' : '')}>
+                        {a.words}/{activeTask.targetWords} words
+                      </span>
+                    )}
+                    {activeTask.sampleAnswer && (
+                      <button onClick={() => setShowSample((s) => !s)} className="font-semibold text-brand-300 hover:text-brand-200">
+                        {showSample ? 'Hide sample answer' : 'Show sample answer'}
+                      </button>
+                    )}
+                    {canAuthorContent && (
+                      <button onClick={() => setEditing(activeTask)} className="font-semibold text-slate-400 hover:text-slate-200 ml-auto">Edit task</button>
+                    )}
+                  </div>
+                  {showSample && activeTask.sampleAnswer && (
+                    <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Sample answer</p>
+                      <p className="text-[13px] text-slate-200 leading-relaxed whitespace-pre-wrap">{activeTask.sampleAnswer}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Peer feedback exchange — get a human to review your writing */}
         <button
@@ -334,6 +431,14 @@ export default function WritingCoachPage(): JSX.Element {
           </aside>
         </div>
       </div>
+
+      {editing && (
+        <WritingTaskEditor
+          initial={editing === 'new' ? undefined : editing}
+          onClose={() => setEditing(null)}
+          onSaved={(t) => { setEditing(null); refreshTasks(); pickTask(t) }}
+        />
+      )}
     </div>
   )
 }

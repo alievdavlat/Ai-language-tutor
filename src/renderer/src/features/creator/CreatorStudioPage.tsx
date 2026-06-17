@@ -30,7 +30,8 @@ const CREATE_ACTIONS = [
   { icon: IconBook, label: 'New course', desc: 'Units, lessons, rich material, drip & pricing — all in one flow', to: '/teacher/course/new', tone: 'from-sky-500/20 to-blue-600/10 text-sky-300' },
   { icon: IconYouTube, label: 'Interactive lesson', desc: 'Video + Think / Discuss blocks', to: '/teacher/new', tone: 'from-rose-500/20 to-pink-600/10 text-rose-300' },
   { icon: IconBolt, label: 'Short / clip', desc: 'Cut a 9:16 clip from a video or stream', to: '/teacher/clips', tone: 'from-amber-500/20 to-orange-600/10 text-amber-300' },
-  { icon: IconStar, label: 'Vocab deck', desc: 'Add words — or bulk-import below', to: '/vocabulary', tone: 'from-violet-500/20 to-purple-600/10 text-violet-300' }
+  { icon: IconStar, label: 'Vocab deck', desc: 'Add words — or bulk-import below', to: '/vocabulary', tone: 'from-violet-500/20 to-purple-600/10 text-violet-300' },
+  { icon: IconPencilEdit, label: 'Writing task', desc: 'A prompt learners draft against in the Writing Coach', to: '/writing', tone: 'from-emerald-500/20 to-teal-600/10 text-emerald-300' }
 ]
 
 function StatCard({ label, value, hint }: { label: string; value: number; hint?: string }): JSX.Element {

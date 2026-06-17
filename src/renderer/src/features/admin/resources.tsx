@@ -19,6 +19,7 @@ import { levels } from '../../services/levels/store'
 import { library } from '../../services/library/store'
 import { stories } from '../../services/stories/store'
 import { exams } from '../../services/exams/store'
+import { writing } from '../../services/writing/store'
 import { roleplays } from '../../services/roleplay'
 import { clips } from '../../services/clips/store'
 import { paths } from '../../services/paths/store'
@@ -34,7 +35,8 @@ import {
   IconUsers,
   IconTrophy,
   IconPlay,
-  IconTarget
+  IconTarget,
+  IconPencilEdit
 } from '../../components/icons'
 import type { FieldDef, FormValues } from '../../components/forms'
 
@@ -284,6 +286,53 @@ export const RESOURCES: ResourceDef[] = [
     customEditor: ({ initial, onClose, onSaved }) => <ExamEditor initial={initial ?? undefined} authorId={me()} onClose={onClose} onSaved={() => onSaved()} />,
     remove: async (e) => { exams.remove(e.id) },
     bulkImport: async (rows) => { let n = 0; for (const r of rows) { exams.upsert(r); n++ } return n }
+  },
+
+  // ── Writing tasks ────────────────────────────────────────────────────────
+  {
+    key: 'writing',
+    label: 'Writing tasks',
+    singular: 'writing task',
+    group: 'Practice',
+    icon: <IconPencilEdit className="w-4 h-4" />,
+    blurb: 'Standalone writing prompts learners draft against in the Writing Coach.',
+    load: () => writing.list(),
+    rowId: (w) => w.id,
+    search: (w) => `${w.title} ${w.prompt} ${w.type}`,
+    isBuiltIn: (w) => !!w.builtIn,
+    badge: (w) => ({ label: w.type, tone: 'emerald' }),
+    columns: [
+      { key: 'title', label: 'Title', render: (w) => <span className="font-semibold text-white truncate">{w.title}</span> },
+      { key: 'type', label: 'Type', render: (w) => <Tag tone="emerald">{w.type}</Tag>, cls: 'w-24' },
+      { key: 'level', label: 'Level', render: (w) => <Tag>{w.level}</Tag>, cls: 'w-20' },
+      { key: 'words', label: 'Target', render: (w) => <span className="text-slate-400 tabular-nums">{w.targetWords ? `${w.targetWords}w` : '—'}</span>, cls: 'w-20 text-right' }
+    ],
+    fields: [
+      { name: 'title', label: 'Title', type: 'text', required: true, full: true },
+      { name: 'type', label: 'Type', type: 'select', options: [
+        { value: 'essay', label: 'Essay' }, { value: 'letter', label: 'Letter' }, { value: 'report', label: 'Report' },
+        { value: 'review', label: 'Review' }, { value: 'story', label: 'Story' }, { value: 'email', label: 'Email' }, { value: 'other', label: 'Other' }
+      ] },
+      { name: 'level', label: 'Target level', type: 'select', options: levelOptions },
+      { name: 'targetWords', label: 'Word-count target', type: 'number', min: 0 },
+      { name: 'prompt', label: 'Prompt', type: 'textarea', full: true, rows: 3, required: true },
+      { name: 'sampleAnswer', label: 'Sample answer (optional)', type: 'textarea', full: true, rows: 4 }
+    ],
+    toForm: (w) => ({ title: w.title, type: w.type, level: w.level, targetWords: w.targetWords ?? 0, prompt: w.prompt, sampleAnswer: w.sampleAnswer ?? '' }),
+    save: async (v, existing) => {
+      writing.upsert({
+        id: existing?.id ?? createId('wt'),
+        title: String(v.title || '').trim() || 'Untitled task',
+        type: (String(v.type || 'essay')) as any,
+        level: String(v.level || 'B1'),
+        targetWords: Number(v.targetWords) > 0 ? Number(v.targetWords) : undefined,
+        prompt: String(v.prompt || '').trim(),
+        sampleAnswer: (v.sampleAnswer as string)?.trim() || undefined,
+        builtIn: existing?.builtIn, authorId: existing?.authorId ?? me()
+      })
+    },
+    remove: async (w) => { writing.remove(w.id) },
+    bulkImport: async (rows) => { let n = 0; for (const r of rows) { writing.upsert({ id: r.id ?? createId('wt'), title: r.title ?? 'Untitled', type: r.type ?? 'essay', level: r.level ?? 'B1', prompt: r.prompt ?? '', ...r }); n++ } return n }
   },
 
   // в”Ђв”Ђ Roleplays (bespoke editor) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
