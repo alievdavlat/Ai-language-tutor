@@ -6,6 +6,7 @@ import HeroCarousel from './sections/HeroCarousel'
 import DailyProgressCard from './sections/DailyProgressCard'
 import WeekStreakCard from './sections/WeekStreakCard'
 import DailyQuestCard from './sections/DailyQuestCard'
+import FeaturedRail from './sections/FeaturedRail'
 import FeedRails from './sections/FeedRails'
 
 // ─── AI setup status banner ───────────────────────────────────────────────────
@@ -86,6 +87,9 @@ export default function HomePage(): JSX.Element {
           <DailyQuestCard />
           <WeekStreakCard streak={stats.streak} practisedDays={practisedDays} />
         </div>
+
+        {/* Featured & sponsored slots (Admin → Featured & promotions) */}
+        <FeaturedRail />
 
         {/* Content feed */}
         <FeedRails />
