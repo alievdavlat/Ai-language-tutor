@@ -1,4 +1,5 @@
 import { cn } from '../../../lib/classnames'
+import { useT } from '../../../i18n'
 
 interface DailyProgressCardProps {
   current: number
@@ -12,6 +13,7 @@ export default function DailyProgressCard({
   current,
   goal
 }: DailyProgressCardProps): JSX.Element {
+  const t = useT()
   const pct = goal > 0 ? Math.min(current / goal, 1) : 0
   const offset = RING_CIRC * (1 - pct)
   const done = pct >= 1
@@ -19,7 +21,7 @@ export default function DailyProgressCard({
   return (
     <div className="rounded-2xl bg-white/[0.04] border border-white/[0.07] p-5">
       <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-4">
-        Daily goal
+        {t('home.dailyGoal')}
       </p>
 
       <div className="flex items-center gap-4">
@@ -68,12 +70,10 @@ export default function DailyProgressCard({
         {/* Text info */}
         <div className="min-w-0">
           <p className={cn('text-sm font-semibold', done ? 'text-emerald-400' : 'text-slate-200')}>
-            {done ? '✓ Goal reached!' : `${goal - current} XP to go`}
+            {done ? t('home.goalReachedShort') : t('home.xpToGo', { n: goal - current })}
           </p>
           <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-            {done
-              ? 'Great job today!'
-              : 'Keep going — you\'re building a habit.'}
+            {done ? t('home.greatJob') : t('home.keepGoingHabit')}
           </p>
         </div>
       </div>

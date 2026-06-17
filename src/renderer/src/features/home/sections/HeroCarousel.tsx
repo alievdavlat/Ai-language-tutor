@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '../../../lib/classnames'
 import { IconArrowRight } from '../../../components/icons'
 import { backend, useBackendQuery } from '../../../services/backend/useBackend'
+import { useT } from '../../../i18n'
 import { dateTime } from '../../../lib/time'
 import type { Course, LiveAnnouncement, Challenge, PlatformUser } from '@shared/types'
 
@@ -27,6 +28,7 @@ interface Slide {
  */
 export default function HeroCarousel(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const [i, setI] = useState(0)
 
   const me = backend.currentUserId()
@@ -65,12 +67,12 @@ export default function HeroCarousel(): JSX.Element {
       const teacher = teachers.data[a.teacherId]
       out.push({
         key: a.id,
-        badge: 'FROM YOUR TEACHERS',
+        badge: t('hero.fromTeachers'),
         badgeTone: 'bg-rose-500 text-white',
         title: a.title,
         subtitle: teacher ? `${a.body} — ${teacher.name}` : a.body,
         meta: dateTime(a.whenISO),
-        cta: 'View details',
+        cta: t('hero.viewDetails'),
         cover: `bg-gradient-to-br ${a.cover ?? 'from-rose-600 via-red-700 to-slate-950'}`,
         image: a.imageUrl,
         to: `/announcement/${a.id}`
@@ -80,12 +82,12 @@ export default function HeroCarousel(): JSX.Element {
     if (topCourse) {
       out.push({
         key: `course_${topCourse.id}`,
-        badge: 'FEATURED COURSE',
+        badge: t('hero.featuredCourse'),
         badgeTone: 'bg-brand-500 text-white',
         title: topCourse.title,
         subtitle: topCourse.description,
-        meta: `${topCourse.level} · ${topCourse.hours}h · ${topCourse.enrollmentCount.toLocaleString()} learners`,
-        cta: 'Explore course',
+        meta: t('hero.learners', { level: topCourse.level, hours: topCourse.hours, n: topCourse.enrollmentCount.toLocaleString() }),
+        cta: t('hero.exploreCourse'),
         cover: `bg-gradient-to-br ${topCourse.cover}`,
         image: topCourse.thumbnailUrl,
         to: '/courses'
@@ -95,12 +97,12 @@ export default function HeroCarousel(): JSX.Element {
     if (topChallenge) {
       out.push({
         key: `ch_${topChallenge.id}`,
-        badge: 'CHALLENGE',
+        badge: t('hero.challenge'),
         badgeTone: 'bg-amber-500 text-black',
         title: topChallenge.title,
-        subtitle: `Join ${topChallenge.participantCount.toLocaleString()} learners`,
+        subtitle: t('hero.joinLearners', { n: topChallenge.participantCount.toLocaleString() }),
         meta: topChallenge.description,
-        cta: 'Join challenge',
+        cta: t('hero.joinChallenge'),
         cover: `bg-gradient-to-br ${topChallenge.cover}`,
         to: '/community'
       })
@@ -108,18 +110,18 @@ export default function HeroCarousel(): JSX.Element {
     if (out.length === 0) {
       out.push({
         key: 'fallback',
-        badge: 'WELCOME',
+        badge: t('hero.welcome'),
         badgeTone: 'bg-brand-500 text-white',
-        title: 'Start speaking today',
-        subtitle: 'Pick a companion and have your first conversation',
-        meta: 'AI tutors · live rooms · daily practice',
-        cta: 'Start now',
+        title: t('hero.startSpeakingTitle'),
+        subtitle: t('hero.startSpeakingSub'),
+        meta: t('hero.startSpeakingMeta'),
+        cta: t('hero.startNow'),
         cover: 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-950',
         to: '/speaking'
       })
     }
     return out
-  }, [announcements.data, courses.data, challenges.data, teachers.data])
+  }, [announcements.data, courses.data, challenges.data, teachers.data, t])
 
   // Keep index in range as slides load.
   useEffect(() => {

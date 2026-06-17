@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '../../../lib/classnames'
 import { IconBolt, IconCheck } from '../../../components/icons'
 import { useQuests, type QuestView } from '../../../services/progress'
+import { useT } from '../../../i18n'
 
 function QuestRow({ q }: { q: QuestView }): JSX.Element {
   const done = q.done
@@ -36,6 +37,7 @@ function QuestRow({ q }: { q: QuestView }): JSX.Element {
 
 export default function DailyQuestCard(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const { quests } = useQuests()
   const daily = quests.filter((q) => q.scope === 'daily')
   const claimable = daily.filter((q) => q.done && !q.claimed).reduce((a, q) => a + q.reward, 0)
@@ -46,9 +48,9 @@ export default function DailyQuestCard(): JSX.Element {
       className="rounded-2xl bg-white/[0.04] border border-white/[0.07] p-5 text-left transition hover:bg-white/[0.06]"
     >
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Daily quests</p>
+        <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">{t('home.dailyQuests')}</p>
         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/10 rounded-full px-2 py-0.5">
-          <IconBolt className="w-3 h-3" /> {claimable > 0 ? `+${claimable} ready` : `${daily.filter((q) => q.done).length}/${daily.length}`}
+          <IconBolt className="w-3 h-3" /> {claimable > 0 ? t('home.questsReady', { n: claimable }) : `${daily.filter((q) => q.done).length}/${daily.length}`}
         </span>
       </div>
       <div className="flex flex-col gap-3.5">

@@ -173,6 +173,17 @@ export type StringKey =
   | 'grammar.continueCta'
   // ── Dictionary page ──────────────────────────────────────────────────
   | 'dictionary.eyebrow' | 'dictionary.title' | 'dictionary.subtitle'
+  // ── Home cards + hero + featured rail ────────────────────────────────
+  | 'home.xpToGo' | 'home.goalReachedShort' | 'home.greatJob' | 'home.keepGoingHabit'
+  | 'home.thisWeek' | 'home.day' | 'home.days' | 'home.practiceToStreak'
+  | 'home.dailyQuests' | 'home.questsReady' | 'home.aiStarting' | 'home.aiDownloading'
+  | 'home.aiFailed'
+  | 'hero.fromTeachers' | 'hero.featuredCourse' | 'hero.challenge' | 'hero.welcome'
+  | 'hero.viewDetails' | 'hero.exploreCourse' | 'hero.joinChallenge'
+  | 'hero.learners' | 'hero.joinLearners' | 'hero.startSpeakingTitle'
+  | 'hero.startSpeakingSub' | 'hero.startSpeakingMeta' | 'hero.startNow'
+  | 'featured.featured' | 'featured.featuredSub' | 'featured.sponsored'
+  | 'featured.bySponsor' | 'featured.partnerOffer' | 'featured.viewCourse'
 
 type Table = Record<StringKey, string>
 
@@ -545,7 +556,40 @@ const en: Table = {
   // Dictionary page
   'dictionary.eyebrow': 'Offline dictionary',
   'dictionary.title': 'Dictionary & phrasebook',
-  'dictionary.subtitle': 'Look up any word — works offline, with definitions and translations.'
+  'dictionary.subtitle': 'Look up any word — works offline, with definitions and translations.',
+  // Home cards + hero + featured rail
+  'home.xpToGo': '{n} XP to go',
+  'home.goalReachedShort': '✓ Goal reached!',
+  'home.greatJob': 'Great job today!',
+  'home.keepGoingHabit': "Keep going — you're building a habit.",
+  'home.thisWeek': 'This week',
+  'home.day': 'day',
+  'home.days': 'days',
+  'home.practiceToStreak': 'Practice today to start your streak!',
+  'home.dailyQuests': 'Daily quests',
+  'home.questsReady': '+{n} ready',
+  'home.aiStarting': 'Starting your AI coach…',
+  'home.aiDownloading': 'Downloading AI model — {pct}% complete',
+  'home.aiFailed': 'AI could not start automatically. Visit Settings → AI Setup.',
+  'hero.fromTeachers': 'FROM YOUR TEACHERS',
+  'hero.featuredCourse': 'FEATURED COURSE',
+  'hero.challenge': 'CHALLENGE',
+  'hero.welcome': 'WELCOME',
+  'hero.viewDetails': 'View details',
+  'hero.exploreCourse': 'Explore course',
+  'hero.joinChallenge': 'Join challenge',
+  'hero.learners': '{level} · {hours}h · {n} learners',
+  'hero.joinLearners': 'Join {n} learners',
+  'hero.startSpeakingTitle': 'Start speaking today',
+  'hero.startSpeakingSub': 'Pick a companion and have your first conversation',
+  'hero.startSpeakingMeta': 'AI tutors · live rooms · daily practice',
+  'hero.startNow': 'Start now',
+  'featured.featured': 'Featured',
+  'featured.featuredSub': 'Hand-picked courses and partners',
+  'featured.sponsored': 'Sponsored',
+  'featured.bySponsor': 'By {sponsor}',
+  'featured.partnerOffer': 'Partner offer',
+  'featured.viewCourse': 'View course'
 }
 
 const uz: Table = {
@@ -917,7 +961,40 @@ const uz: Table = {
   // Dictionary page
   'dictionary.eyebrow': 'Oflayn lug‘at',
   'dictionary.title': 'Lug‘at va so‘zlashgich',
-  'dictionary.subtitle': 'Istalgan so‘zni qidiring — oflayn ishlaydi, ta’rif va tarjimalar bilan.'
+  'dictionary.subtitle': 'Istalgan so‘zni qidiring — oflayn ishlaydi, ta’rif va tarjimalar bilan.',
+  // Home cards + hero + featured rail
+  'home.xpToGo': 'yana {n} XP',
+  'home.goalReachedShort': '✓ Maqsadga erishildi!',
+  'home.greatJob': 'Bugun zo‘r ish qildingiz!',
+  'home.keepGoingHabit': 'Davom eting — odat shakllantiryapsiz.',
+  'home.thisWeek': 'Bu hafta',
+  'home.day': 'kun',
+  'home.days': 'kun',
+  'home.practiceToStreak': 'Ketma-ketlikni boshlash uchun bugun mashq qiling!',
+  'home.dailyQuests': 'Kunlik topshiriqlar',
+  'home.questsReady': '+{n} tayyor',
+  'home.aiStarting': 'AI murabbiyingiz ishga tushmoqda…',
+  'home.aiDownloading': 'AI modeli yuklanmoqda — {pct}% bajarildi',
+  'home.aiFailed': 'AI avtomatik ishga tushmadi. Sozlamalar → AI Setup ga o‘ting.',
+  'hero.fromTeachers': 'O‘QITUVCHILARINGIZDAN',
+  'hero.featuredCourse': 'TANLANGAN KURS',
+  'hero.challenge': 'CHAQIRIQ',
+  'hero.welcome': 'XUSH KELIBSIZ',
+  'hero.viewDetails': 'Batafsil ko‘rish',
+  'hero.exploreCourse': 'Kursni ko‘rish',
+  'hero.joinChallenge': 'Chaqiriqqa qo‘shilish',
+  'hero.learners': '{level} · {hours} soat · {n} o‘quvchi',
+  'hero.joinLearners': '{n} o‘quvchiga qo‘shiling',
+  'hero.startSpeakingTitle': 'Bugun gapirishni boshlang',
+  'hero.startSpeakingSub': 'Hamroh tanlang va birinchi suhbatingizni o‘tkazing',
+  'hero.startSpeakingMeta': 'AI murabbiylar · jonli xonalar · kunlik mashq',
+  'hero.startNow': 'Hozir boshlash',
+  'featured.featured': 'Tanlangan',
+  'featured.featuredSub': 'Saralangan kurslar va hamkorlar',
+  'featured.sponsored': 'Homiylik',
+  'featured.bySponsor': '{sponsor} tomonidan',
+  'featured.partnerOffer': 'Hamkor taklifi',
+  'featured.viewCourse': 'Kursni ko‘rish'
 }
 
 const ru: Table = {
@@ -1289,7 +1366,40 @@ const ru: Table = {
   // Dictionary page
   'dictionary.eyebrow': 'Офлайн-словарь',
   'dictionary.title': 'Словарь и разговорник',
-  'dictionary.subtitle': 'Ищите любое слово — работает офлайн, с определениями и переводами.'
+  'dictionary.subtitle': 'Ищите любое слово — работает офлайн, с определениями и переводами.',
+  // Home cards + hero + featured rail
+  'home.xpToGo': 'ещё {n} XP',
+  'home.goalReachedShort': '✓ Цель достигнута!',
+  'home.greatJob': 'Отличная работа сегодня!',
+  'home.keepGoingHabit': 'Продолжайте — вы формируете привычку.',
+  'home.thisWeek': 'На этой неделе',
+  'home.day': 'день',
+  'home.days': 'дней',
+  'home.practiceToStreak': 'Позанимайтесь сегодня, чтобы начать серию!',
+  'home.dailyQuests': 'Ежедневные задания',
+  'home.questsReady': '+{n} готово',
+  'home.aiStarting': 'Запуск вашего ИИ-наставника…',
+  'home.aiDownloading': 'Загрузка ИИ-модели — {pct}% завершено',
+  'home.aiFailed': 'ИИ не запустился автоматически. Откройте Настройки → AI Setup.',
+  'hero.fromTeachers': 'ОТ ВАШИХ ПРЕПОДАВАТЕЛЕЙ',
+  'hero.featuredCourse': 'РЕКОМЕНДУЕМЫЙ КУРС',
+  'hero.challenge': 'ИСПЫТАНИЕ',
+  'hero.welcome': 'ДОБРО ПОЖАЛОВАТЬ',
+  'hero.viewDetails': 'Подробнее',
+  'hero.exploreCourse': 'Открыть курс',
+  'hero.joinChallenge': 'Принять участие',
+  'hero.learners': '{level} · {hours} ч · учеников: {n}',
+  'hero.joinLearners': 'Присоединяйтесь к {n} ученикам',
+  'hero.startSpeakingTitle': 'Начните говорить сегодня',
+  'hero.startSpeakingSub': 'Выберите собеседника и проведите первый разговор',
+  'hero.startSpeakingMeta': 'ИИ-наставники · живые комнаты · ежедневная практика',
+  'hero.startNow': 'Начать',
+  'featured.featured': 'Рекомендуем',
+  'featured.featuredSub': 'Отобранные курсы и партнёры',
+  'featured.sponsored': 'Реклама',
+  'featured.bySponsor': 'От {sponsor}',
+  'featured.partnerOffer': 'Партнёрское предложение',
+  'featured.viewCourse': 'Открыть курс'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

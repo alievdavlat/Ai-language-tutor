@@ -1,4 +1,5 @@
 import { useAppStore } from '../../store/useAppStore'
+import { useT } from '../../i18n'
 import { goalDef, useStats, useProgressStore, weekDays } from '../../services/progress'
 import GreetingHeader from './sections/GreetingHeader'
 import MegaSearch from './sections/MegaSearch'
@@ -12,14 +13,15 @@ import FeedRails from './sections/FeedRails'
 // ─── AI setup status banner ───────────────────────────────────────────────────
 
 function AISetupBanner(): JSX.Element | null {
+  const t = useT()
   const autoSetup = useAppStore((s) => s.autoSetup)
 
   if (!autoSetup.phase || autoSetup.phase === 'ready') return null
 
   const messages: Record<string, string> = {
-    starting: 'Starting your AI coach…',
-    pulling: `Downloading AI model — ${autoSetup.pullPct}% complete`,
-    failed: 'AI could not start automatically. Visit Settings → AI Setup.'
+    starting: t('home.aiStarting'),
+    pulling: t('home.aiDownloading', { pct: autoSetup.pullPct }),
+    failed: t('home.aiFailed')
   }
 
   const msg = messages[autoSetup.phase] ?? ''
@@ -49,6 +51,7 @@ function AISetupBanner(): JSX.Element | null {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage(): JSX.Element {
+  const t = useT()
   const profile = useAppStore((s) => s.profile)
   const stats = useStats()
   const dailyGoalId = useProgressStore((s) => s.dailyGoalId)
@@ -60,7 +63,7 @@ export default function HomePage(): JSX.Element {
     .filter((i) => i >= 0)
 
   if (!profile) {
-    return <div className="h-full flex items-center justify-center text-slate-400 text-sm">Loading…</div>
+    return <div className="h-full flex items-center justify-center text-slate-400 text-sm">{t('common.loading')}</div>
   }
 
   return (

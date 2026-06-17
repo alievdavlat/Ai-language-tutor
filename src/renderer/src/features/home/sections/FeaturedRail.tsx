@@ -4,6 +4,7 @@ import { IconArrowRight } from '../../../components/icons'
 import { useBackendQuery } from '../../../services/backend/useBackend'
 import { studio } from '../../../services/studio/store'
 import { SectionHeading } from '../../../components/ui'
+import { useT } from '../../../i18n'
 
 /**
  * Featured rail (#A35). Renders the active featured/sponsored slots authored in
@@ -15,6 +16,7 @@ import { SectionHeading } from '../../../components/ui'
  */
 export default function FeaturedRail(): JSX.Element | null {
   const navigate = useNavigate()
+  const t = useT()
   const featured = useBackendQuery(() => studio.listFeatured(), [], [])
 
   const active = featured.data.filter((f) => f.active)
@@ -22,7 +24,7 @@ export default function FeaturedRail(): JSX.Element | null {
 
   return (
     <section className="flex flex-col gap-3">
-      <SectionHeading title="Featured" subtitle="Hand-picked courses and partners" />
+      <SectionHeading title={t('featured.featured')} subtitle={t('featured.featuredSub')} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {active.map((f) => {
           const isAd = f.kind === 'ad'
@@ -42,18 +44,18 @@ export default function FeaturedRail(): JSX.Element | null {
                 'absolute top-4 left-4 text-[10px] font-bold uppercase tracking-widest rounded-full px-2.5 py-1',
                 isAd ? 'bg-white/90 text-slate-900' : 'bg-black/35 text-white backdrop-blur'
               )}>
-                {isAd ? 'Sponsored' : 'Featured'}
+                {isAd ? t('featured.sponsored') : t('featured.featured')}
               </span>
               <div className="relative">
                 <h3 className="text-lg font-bold text-white tracking-tight">{f.title}</h3>
                 {isAd
-                  ? <p className="text-white/80 text-xs mt-1">{f.sponsor ? `By ${f.sponsor}` : 'Partner offer'}</p>
+                  ? <p className="text-white/80 text-xs mt-1">{f.sponsor ? t('featured.bySponsor', { sponsor: f.sponsor }) : t('featured.partnerOffer')}</p>
                   : f.refId && (
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate(`/course/${f.refId}`) }}
                       className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white text-slate-900 font-semibold text-xs px-3.5 py-1.5 hover:bg-white/90 transition"
                     >
-                      View course <IconArrowRight className="w-3.5 h-3.5" />
+                      {t('featured.viewCourse')} <IconArrowRight className="w-3.5 h-3.5" />
                     </button>
                   )}
               </div>

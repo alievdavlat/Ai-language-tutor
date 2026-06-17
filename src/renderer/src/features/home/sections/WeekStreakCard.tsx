@@ -1,4 +1,5 @@
 import { cn } from '../../../lib/classnames'
+import { useT } from '../../../i18n'
 
 const DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] as const
 
@@ -17,6 +18,7 @@ export default function WeekStreakCard({
   streak,
   practisedDays = []
 }: WeekStreakCardProps): JSX.Element {
+  const t = useT()
   const todayIdx = getTodayIndex()
   const practisedSet = new Set(practisedDays)
 
@@ -24,13 +26,13 @@ export default function WeekStreakCard({
     <div className="rounded-2xl bg-white/[0.04] border border-white/[0.07] p-5">
       <div className="flex items-center justify-between mb-4">
         <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">
-          This week
+          {t('home.thisWeek')}
         </p>
         <div className="flex items-center gap-1.5 rounded-full bg-orange-500/15 border border-orange-400/20 px-3 py-1">
           <span className="text-sm">🔥</span>
           <span className="text-sm font-bold text-orange-300">{streak}</span>
           <span className="text-xs text-orange-400/70">
-            {streak === 1 ? 'day' : 'days'}
+            {streak === 1 ? t('home.day') : t('home.days')}
           </span>
         </div>
       </div>
@@ -72,7 +74,7 @@ export default function WeekStreakCard({
 
       {streak === 0 && (
         <p className="text-xs text-slate-600 mt-3 text-center">
-          Practice today to start your streak!
+          {t('home.practiceToStreak')}
         </p>
       )}
     </div>
