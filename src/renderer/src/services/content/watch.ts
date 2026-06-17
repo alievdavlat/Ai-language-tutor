@@ -20,7 +20,8 @@ export interface WatchVideo {
   title: string
   channel: string
   level: string
-  views: string
+  /** The source video's own public view count on YouTube — NOT in-app engagement. */
+  sourceViews: string
   segments: TranscriptSegment[]
 }
 
@@ -31,7 +32,7 @@ export const WATCH_VIDEOS: WatchVideo[] = [
     title: 'Grit: The Power of Passion and Perseverance',
     channel: 'Angela Lee Duckworth',
     level: 'B2',
-    views: '28M views',
+    sourceViews: '28M',
     segments: [
       { start: 2, text: 'When I was 27 years old, I left a very demanding job in management consulting.' },
       { start: 9, text: 'I left for a job that was even more demanding: teaching.' },
@@ -53,7 +54,7 @@ export const WATCH_VIDEOS: WatchVideo[] = [
     title: 'The Power of Vulnerability',
     channel: 'Brené Brown',
     level: 'C1',
-    views: '20M views',
+    sourceViews: '20M',
     segments: [
       { start: 3, text: "So, I'll start with this: a couple years ago, an event planner called me." },
       { start: 10, text: 'She said, "I\'m really struggling with how to write about you on the little flyer."' },
@@ -74,7 +75,7 @@ export const WATCH_VIDEOS: WatchVideo[] = [
     title: 'Inside the Mind of a Master Procrastinator',
     channel: 'Tim Urban',
     level: 'B2',
-    views: '70M views',
+    sourceViews: '70M',
     segments: [
       { start: 2, text: 'So in college, I was a government major.' },
       { start: 7, text: 'Which means I had to write a lot of papers.' },

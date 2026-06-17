@@ -62,7 +62,7 @@ export default function WatchPage(): JSX.Element {
             {/* Meta */}
             <div>
               <h1 className="text-xl font-bold text-white">{video.title}</h1>
-              <p className="text-xs text-slate-400 mt-1">{video.channel} · {video.views} · {video.level} level</p>
+              <p className="text-xs text-slate-400 mt-1">{video.channel} · {video.sourceViews} views on YouTube · {video.level} level</p>
             </div>
 
             {/* Transcript */}
