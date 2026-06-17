@@ -6,10 +6,12 @@ import { IconBook, IconPlay, IconStar, IconTarget } from '../../components/icons
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { useContentState } from '../../services/content/progress'
 import { useLevels } from '../../services/levels/store'
+import { useAppStore } from '../../store/useAppStore'
 import { useTargetLanguageCode } from '../../lib/language'
 import { useT } from '../../i18n'
 import { isImageCover } from '../../lib/cover'
-import type { Course } from '@shared/types'
+import { CEFR_ORDER } from '@shared/types/cefr.types'
+import type { CEFRLevel, Course } from '@shared/types'
 
 type Skill = 'all' | 'grammar' | 'writing' | 'speaking' | 'listening' | 'exam' | 'business'
 const SKILLS: { id: Skill; label: string; emoji: string }[] = [
@@ -86,6 +88,10 @@ export default function CoursesPage(): JSX.Element {
   const lang = useTargetLanguageCode()
   const t = useT()
   const userId = backend.currentUserId()
+  // #B26 — the onboarding placement level now actually shapes Courses: on the
+  // default view, courses near the learner's level are surfaced first instead
+  // of the level being collected and ignored.
+  const myLevel = useAppStore((s) => s.profile?.level) as CEFRLevel | undefined
   useContentState() // re-render when progress changes
 
   const { data: courses, loading } = useBackendQuery(() => backend.listCourses({ language: lang }), [lang], [])
@@ -122,7 +128,19 @@ export default function CoursesPage(): JSX.Element {
   const isDefaultView = skill === 'all' && level === 'All'
   const showTracks = isDefaultView && tracks.length > 0
   const trackIds = showTracks ? new Set(tracks.map((c) => c.id)) : new Set<string>()
-  const gridCourses = showTracks ? filtered.filter((c) => !trackIds.has(c.id)) : filtered
+  let gridCourses = showTracks ? filtered.filter((c) => !trackIds.has(c.id)) : filtered
+
+  // #B26 — when the user hasn't picked an explicit level filter, order by how
+  // close each course is to their placement level (closest first), so the
+  // onboarding result is reflected in recommendations.
+  const myLevelIdx = myLevel ? CEFR_ORDER.indexOf(myLevel) : -1
+  if (myLevelIdx >= 0 && level === 'All') {
+    const dist = (c: Course): number => {
+      const i = CEFR_ORDER.indexOf(c.level as CEFRLevel)
+      return i < 0 ? 99 : Math.abs(i - myLevelIdx)
+    }
+    gridCourses = [...gridCourses].sort((a, b) => dist(a) - dist(b))
+  }
 
   return (
     <div className="h-full overflow-y-auto">
