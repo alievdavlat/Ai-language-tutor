@@ -243,6 +243,11 @@ export type StringKey =
   | 'aitutor.lilyName' | 'aitutor.end' | 'aitutor.aiError' | 'aitutor.unmute'
   | 'aitutor.mute' | 'aitutor.talk' | 'aitutor.hideSubs' | 'aitutor.showSubs'
   | 'aitutor.gateName' | 'aitutor.gateDesc' | 'aitutor.gateAge'
+  // ── Live hub ─────────────────────────────────────────────────────────
+  | 'live.title' | 'live.subtitle' | 'live.liveQuiz' | 'live.groupLive' | 'live.goLive'
+  | 'live.noOneLive' | 'live.beFirst' | 'live.findBuddy' | 'live.followingTab'
+  | 'live.coursesTab' | 'live.teachersTab' | 'live.studentsTab' | 'live.group'
+  | 'live.fromFollowing' | 'live.mightLike' | 'live.noStreamsView'
 
 type Table = Record<StringKey, string>
 
@@ -828,7 +833,24 @@ const en: Table = {
   'aitutor.showSubs': 'Show subtitles',
   'aitutor.gateName': 'AI tutor video call',
   'aitutor.gateDesc': 'The AI tutor needs a cloud model to listen, think, and reply in real time.',
-  'aitutor.gateAge': 'The AI tutor'
+  'aitutor.gateAge': 'The AI tutor',
+  // Live hub
+  'live.title': 'Live',
+  'live.subtitle': 'Watch live lessons, join group streams, or go live.',
+  'live.liveQuiz': 'Live quiz',
+  'live.groupLive': 'Group live',
+  'live.goLive': 'Go live',
+  'live.noOneLive': 'No one is live right now',
+  'live.beFirst': 'Be the first to go live, or pair with a study buddy and practise together.',
+  'live.findBuddy': 'Find a buddy',
+  'live.followingTab': 'Following',
+  'live.coursesTab': 'Courses',
+  'live.teachersTab': 'Teachers',
+  'live.studentsTab': 'Students',
+  'live.group': 'Group',
+  'live.fromFollowing': 'Live from people you follow',
+  'live.mightLike': 'Live channels you might like',
+  'live.noStreamsView': 'No live streams in this view yet.'
 }
 
 const uz: Table = {
@@ -1413,7 +1435,24 @@ const uz: Table = {
   'aitutor.showSubs': 'Subtitrlarni ko‘rsatish',
   'aitutor.gateName': 'AI repetitor video qo‘ng‘irog‘i',
   'aitutor.gateDesc': 'AI repetitor real vaqtda tinglash, o‘ylash va javob berish uchun bulutli modelga muhtoj.',
-  'aitutor.gateAge': 'AI repetitor'
+  'aitutor.gateAge': 'AI repetitor',
+  // Live hub
+  'live.title': 'Jonli efir',
+  'live.subtitle': 'Jonli darslarni tomosha qiling, guruh efirlariga qo‘shiling yoki jonli efirga chiqing.',
+  'live.liveQuiz': 'Jonli viktorina',
+  'live.groupLive': 'Guruh efiri',
+  'live.goLive': 'Jonli efir',
+  'live.noOneLive': 'Hozir hech kim efirda emas',
+  'live.beFirst': 'Birinchi bo‘lib efirga chiqing yoki sherik bilan birga mashq qiling.',
+  'live.findBuddy': 'Sherik topish',
+  'live.followingTab': 'Kuzatilayotgan',
+  'live.coursesTab': 'Kurslar',
+  'live.teachersTab': 'O‘qituvchilar',
+  'live.studentsTab': 'Talabalar',
+  'live.group': 'Guruh',
+  'live.fromFollowing': 'Siz kuzatayotganlardan jonli efir',
+  'live.mightLike': 'Sizga yoqishi mumkin bo‘lgan efirlar',
+  'live.noStreamsView': 'Bu ko‘rinishda hali jonli efirlar yo‘q.'
 }
 
 const ru: Table = {
@@ -1998,7 +2037,24 @@ const ru: Table = {
   'aitutor.showSubs': 'Показать субтитры',
   'aitutor.gateName': 'Видеозвонок с ИИ-репетитором',
   'aitutor.gateDesc': 'ИИ-репетитору нужна облачная модель, чтобы слушать, думать и отвечать в реальном времени.',
-  'aitutor.gateAge': 'ИИ-репетитор'
+  'aitutor.gateAge': 'ИИ-репетитор',
+  // Live hub
+  'live.title': 'Эфир',
+  'live.subtitle': 'Смотрите живые уроки, присоединяйтесь к групповым эфирам или начните свой.',
+  'live.liveQuiz': 'Живая викторина',
+  'live.groupLive': 'Групповой эфир',
+  'live.goLive': 'Начать эфир',
+  'live.noOneLive': 'Сейчас никто не в эфире',
+  'live.beFirst': 'Будьте первым в эфире или потренируйтесь вместе с напарником.',
+  'live.findBuddy': 'Найти напарника',
+  'live.followingTab': 'Подписки',
+  'live.coursesTab': 'Курсы',
+  'live.teachersTab': 'Преподаватели',
+  'live.studentsTab': 'Студенты',
+  'live.group': 'Группа',
+  'live.fromFollowing': 'Эфиры тех, на кого вы подписаны',
+  'live.mightLike': 'Эфиры, которые могут понравиться',
+  'live.noStreamsView': 'В этом разделе пока нет эфиров.'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

@@ -7,15 +7,16 @@ import RealtimeStatus from '../../components/realtime/RealtimeStatus'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { resolveLiveStreams, type ResolvedStream } from '../../services/social/liveFeed'
 import { IconLive, IconPlus, IconTrophy, IconUsers } from '../../components/icons'
+import { useT, type StringKey } from '../../i18n'
 
 const roomLink = (r: ResolvedStream): string => `${r.group ? '/live/group' : '/live/room'}?id=${r.stream.id}`
 
 type Filter = 'following' | 'courses' | 'teachers' | 'students'
-const FILTERS: TabItem<Filter>[] = [
-  { id: 'following', label: 'Following' },
-  { id: 'courses', label: 'Courses' },
-  { id: 'teachers', label: 'Teachers' },
-  { id: 'students', label: 'Students' }
+const FILTER_KEYS: { id: Filter; labelKey: StringKey }[] = [
+  { id: 'following', labelKey: 'live.followingTab' },
+  { id: 'courses', labelKey: 'live.coursesTab' },
+  { id: 'teachers', labelKey: 'live.teachersTab' },
+  { id: 'students', labelKey: 'live.studentsTab' }
 ]
 
 function StoryRing({ r, onClick }: { r: ResolvedStream; onClick: () => void }): JSX.Element {
@@ -38,6 +39,7 @@ function StoryRing({ r, onClick }: { r: ResolvedStream; onClick: () => void }): 
 }
 
 function GoLiveRing({ onClick }: { onClick: () => void }): JSX.Element {
+  const t = useT()
   return (
     <button onClick={onClick} className="flex flex-col items-center gap-1.5 shrink-0 w-16">
       <span className="p-0.5 rounded-full bg-white/15">
@@ -45,13 +47,14 @@ function GoLiveRing({ onClick }: { onClick: () => void }): JSX.Element {
           <span className="w-11 h-11 rounded-full bg-white/[0.06] flex items-center justify-center text-slate-300"><IconPlus className="w-5 h-5" /></span>
         </span>
       </span>
-      <span className="text-[11px] text-slate-400 truncate max-w-[60px]">Go live</span>
+      <span className="text-[11px] text-slate-400 truncate max-w-[60px]">{t('live.goLive')}</span>
     </button>
   )
 }
 
 function StreamCard({ r }: { r: ResolvedStream }): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const avatarUrl = (r.host as { avatarUrl?: string } | null)?.avatarUrl
   return (
     <button onClick={() => navigate(roomLink(r))} className="text-left group">
@@ -62,7 +65,7 @@ function StreamCard({ r }: { r: ResolvedStream }): JSX.Element {
           <IconUsers className="w-3 h-3" /> {r.stream.viewerCount.toLocaleString()}
         </span>
         {r.group && (
-          <span className="absolute top-2 right-2 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/90 text-black rounded px-1.5 py-0.5">Group</span>
+          <span className="absolute top-2 right-2 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/90 text-black rounded px-1.5 py-0.5">{t('live.group')}</span>
         )}
       </div>
       <div className="flex gap-2.5 mt-2">
@@ -71,8 +74,8 @@ function StreamCard({ r }: { r: ResolvedStream }): JSX.Element {
           <p className="text-sm font-semibold text-white truncate group-hover:text-brand-300 transition">{r.stream.title}</p>
           <p className="text-xs text-slate-400 truncate">{r.hostName} · {r.stream.category}</p>
           <div className="flex flex-wrap gap-1 mt-1">
-            {r.tags.map((t) => (
-              <span key={t} className="text-[10px] font-medium rounded-full bg-white/[0.06] text-slate-300 px-2 py-0.5">{t}</span>
+            {r.tags.map((tag) => (
+              <span key={tag} className="text-[10px] font-medium rounded-full bg-white/[0.06] text-slate-300 px-2 py-0.5">{tag}</span>
             ))}
           </div>
         </div>
@@ -83,6 +86,8 @@ function StreamCard({ r }: { r: ResolvedStream }): JSX.Element {
 
 export default function LivePage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
+  const FILTERS: TabItem<Filter>[] = FILTER_KEYS.map((f) => ({ id: f.id, label: t(f.labelKey) }))
   const me = backend.currentUserId()
   const profile = useAppStore((s) => s.profile)
   const [filter, setFilter] = useState<Filter>('following')
@@ -132,18 +137,18 @@ export default function LivePage(): JSX.Element {
       <div className="px-6 py-6 w-full flex flex-col gap-6">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Live</h1>
-            <p className="text-sm text-slate-400 mt-1">Watch live lessons, join group streams, or go live.</p>
+            <h1 className="text-2xl font-bold tracking-tight">{t('live.title')}</h1>
+            <p className="text-sm text-slate-400 mt-1">{t('live.subtitle')}</p>
           </div>
           <div className="flex gap-2">
             <button onClick={() => navigate('/quiz/live')} className="btn-ghost px-4 py-2.5 inline-flex items-center gap-2 text-sm">
-              <IconTrophy className="w-4 h-4" /> Live quiz
+              <IconTrophy className="w-4 h-4" /> {t('live.liveQuiz')}
             </button>
             <button onClick={() => void goLive(true)} className="btn-ghost px-4 py-2.5 inline-flex items-center gap-2 text-sm">
-              <IconUsers className="w-4 h-4" /> Group live
+              <IconUsers className="w-4 h-4" /> {t('live.groupLive')}
             </button>
             <button onClick={() => void goLive(false)} className="btn-primary px-5 py-2.5 inline-flex items-center gap-2">
-              <IconLive className="w-4 h-4" /> Go live
+              <IconLive className="w-4 h-4" /> {t('live.goLive')}
             </button>
           </div>
         </div>
@@ -155,15 +160,15 @@ export default function LivePage(): JSX.Element {
           <div className="rounded-card border border-white/10 bg-gradient-to-br from-brand-500/12 to-violet-500/8 p-8 text-center flex flex-col items-center gap-4">
             <span className="w-16 h-16 rounded-3xl bg-white/10 flex items-center justify-center"><IconLive className="w-8 h-8 text-brand-200" /></span>
             <div>
-              <h2 className="text-lg font-bold text-white">No one is live right now</h2>
-              <p className="text-sm text-slate-400 mt-1 max-w-md">Be the first to go live, or pair with a study buddy and practise together.</p>
+              <h2 className="text-lg font-bold text-white">{t('live.noOneLive')}</h2>
+              <p className="text-sm text-slate-400 mt-1 max-w-md">{t('live.beFirst')}</p>
             </div>
             <div className="flex gap-2">
               <button onClick={() => void goLive(false)} className="btn-primary px-5 py-2.5 inline-flex items-center gap-2">
-                <IconLive className="w-4 h-4" /> Go live
+                <IconLive className="w-4 h-4" /> {t('live.goLive')}
               </button>
               <button onClick={() => navigate('/buddy')} className="btn-ghost px-4 py-2.5 inline-flex items-center gap-2 text-sm">
-                <IconUsers className="w-4 h-4" /> Find a buddy
+                <IconUsers className="w-4 h-4" /> {t('live.findBuddy')}
               </button>
             </div>
           </div>
@@ -204,10 +209,10 @@ export default function LivePage(): JSX.Element {
             {/* Grid */}
             <div>
               <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">
-                {filter === 'following' ? 'Live from people you follow' : 'Live channels you might like'}
+                {filter === 'following' ? t('live.fromFollowing') : t('live.mightLike')}
               </p>
               {visible.length === 0 ? (
-                <p className="text-sm text-slate-500 py-6">No live streams in this view yet.</p>
+                <p className="text-sm text-slate-500 py-6">{t('live.noStreamsView')}</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-6">
                   {visible.map((r) => <StreamCard key={r.stream.id} r={r} />)}
