@@ -105,12 +105,6 @@ const EXAMS: ExamDef[] = [
   }
 ]
 
-const RECENT = [
-  { name: 'IELTS Academic', date: '12 May', score: '6.5', tone: 'text-amber-300' },
-  { name: 'CEFR placement', date: '5 May', score: 'B1', tone: 'text-brand-300' },
-  { name: 'IELTS Academic', date: '28 Apr', score: '6.0', tone: 'text-amber-300' }
-]
-
 function ExamCard({ exam }: { exam: ExamDef }): JSX.Element {
   const navigate = useNavigate()
   const t = useT()

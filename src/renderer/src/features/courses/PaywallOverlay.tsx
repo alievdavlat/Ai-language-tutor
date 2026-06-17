@@ -267,7 +267,7 @@ export default function PaywallOverlay({
               </div>
               <button onClick={run} className="btn-primary w-full py-3 text-base font-bold">{ctaLabel}</button>
               <p className="mt-3 text-[11px] text-center text-slate-500">
-                {isSub ? 'Recurring monthly · cancel anytime from this page.' : isFree ? 'No payment needed.' : 'Secure checkout · 14-day refund window.'}
+                {isSub ? 'Recurring monthly · cancel anytime from this page.' : isFree ? 'No payment needed.' : 'Secure checkout · instant lifetime access.'}
               </p>
             </>
           )}

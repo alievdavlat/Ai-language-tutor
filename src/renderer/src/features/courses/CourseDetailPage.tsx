@@ -100,6 +100,17 @@ export default function CourseDetailPage(): JSX.Element {
   const [reviewText, setReviewText] = useState('')
   const [reviewStars, setReviewStars] = useState(5)
 
+  // #B3 — if the user already reviewed, the composer edits that review (the
+  // backend replaces one-per-user). Pre-fill it so they aren't writing blind.
+  const myReview = userId ? reviews.find((r) => r.userId === userId) : undefined
+  useEffect(() => {
+    if (myReview) {
+      setReviewStars(myReview.rating)
+      setReviewText(myReview.text)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myReview?.id])
+
   useEffect(() => {
     if (!userId) return
     backend.isLiked(userId, `course_${courseId}`).then(setLiked).catch(() => {})
@@ -113,6 +124,15 @@ export default function CourseDetailPage(): JSX.Element {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, enrolled, view.progress, courseId])
+
+  // #B5 — courses without a final exam issue the certificate automatically once
+  // every lesson is complete (meta rail promises "Certificate · On completion").
+  useEffect(() => {
+    if (course && view.completed && !view.hasFinal && !view.hasCertificate) {
+      issueCertificate({ courseId, courseTitle: course.title, learnerName: profile?.name ?? 'Learner', score: 100 })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId, view.completed, view.hasFinal, view.hasCertificate])
 
   function openLesson(lesson: Lesson): void {
     const base = lesson.kind === 'rule' ? `/learn/book/${courseId}` : `/learn/${courseId}`
@@ -413,10 +433,10 @@ export default function CourseDetailPage(): JSX.Element {
             {/* Reviews */}
             <section>
               <h2 className="text-base font-bold mb-3">Reviews</h2>
-              {enrolled && (
+              {enrolled && (view.completedCount > 0 || myReview) && (
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 mb-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm text-slate-300">Your rating:</span>
+                    <span className="text-sm text-slate-300">{myReview ? 'Edit your review:' : 'Your rating:'}</span>
                     {Array.from({ length: 5 }).map((_, i) => (
                       <button key={i} onClick={() => setReviewStars(i + 1)} title={`${i + 1} stars`}>
                         <IconStar className={cn('w-5 h-5', i < reviewStars ? 'text-amber-300' : 'text-white/15')} />
@@ -430,8 +450,11 @@ export default function CourseDetailPage(): JSX.Element {
                     className="w-full rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-slate-500 resize-none"
                     rows={2}
                   />
-                  <button onClick={submitReview} disabled={!reviewText.trim()} className="btn-primary mt-2 px-4 py-2 text-sm disabled:opacity-40">Post review</button>
+                  <button onClick={submitReview} disabled={!reviewText.trim()} className="btn-primary mt-2 px-4 py-2 text-sm disabled:opacity-40">{myReview ? 'Update review' : 'Post review'}</button>
                 </div>
+              )}
+              {enrolled && view.completedCount === 0 && !myReview && (
+                <p className="text-xs text-slate-500 mb-4">Complete at least one lesson to leave a review.</p>
               )}
               <div className="flex flex-col gap-3">
                 {reviews.length === 0 && <p className="text-sm text-slate-500">No reviews yet — be the first.</p>}
