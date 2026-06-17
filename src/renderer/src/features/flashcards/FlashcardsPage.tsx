@@ -8,6 +8,7 @@ import { useTargetLanguage } from '../../lib/language'
 import { useVocab } from '../../services/study/useStudy'
 import { ProgressBar, SectionHeading } from '../../components/ui'
 import { IconBolt, IconBook, IconChevronLeft, IconStar, IconTarget } from '../../components/icons'
+import { useT, type StringKey } from '../../i18n'
 
 type Mode = 'menu' | 'learn' | 'test' | 'match' | 'done'
 
@@ -15,9 +16,9 @@ type Mode = 'menu' | 'learn' | 'test' | 'match' | 'done'
 const MATCH_SIZE = 6
 
 const MENU = [
-  { id: 'learn', title: 'Learn', desc: 'Tap to flip, mark known/unknown.', icon: IconBook, tint: 'from-brand-500 to-violet-500' },
-  { id: 'test', title: 'Test', desc: 'Multiple-choice quiz on the deck.', icon: IconTarget, tint: 'from-emerald-500 to-teal-500' },
-  { id: 'match', title: 'Match', desc: 'Tap pairs as fast as you can.', icon: IconBolt, tint: 'from-amber-500 to-rose-500' }
+  { id: 'learn', titleKey: 'flashcards.learn' as StringKey, descKey: 'flashcards.learnDesc' as StringKey, icon: IconBook, tint: 'from-brand-500 to-violet-500' },
+  { id: 'test', titleKey: 'flashcards.test' as StringKey, descKey: 'flashcards.testDesc' as StringKey, icon: IconTarget, tint: 'from-emerald-500 to-teal-500' },
+  { id: 'match', titleKey: 'flashcards.match' as StringKey, descKey: 'flashcards.matchDesc' as StringKey, icon: IconBolt, tint: 'from-amber-500 to-rose-500' }
 ] as const
 
 /** Fisher–Yates shuffle returning a fresh array (never mutates the input). */
@@ -44,6 +45,7 @@ interface MatchTile {
 
 export default function FlashcardsPage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const lang = useTargetLanguage()
   const { cards, loading } = useVocab(lang.code)
 
@@ -211,20 +213,20 @@ export default function FlashcardsPage(): JSX.Element {
             <button onClick={() => { setMode('menu'); reset() }} className="text-slate-400 hover:text-white"><IconChevronLeft className="w-5 h-5" /></button>
           )}
           <div className="flex-1">
-            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">Vocabulary · Flashcards</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">{activeDeck ?? `${lang.name} vocabulary`}</h1>
-            <p className="text-sm text-slate-400 mt-1">{total} {total === 1 ? 'card' : 'cards'}</p>
+            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{t('flashcards.eyebrow')}</p>
+            <h1 className="text-2xl font-bold tracking-tight mt-0.5">{activeDeck ?? t('flashcards.deckTitle', { language: lang.name })}</h1>
+            <p className="text-sm text-slate-400 mt-1">{total} {total === 1 ? t('flashcards.card') : t('flashcards.cards')}</p>
           </div>
         </div>
 
         {mode === 'menu' && (
           <>
             {loading ? (
-              <p className="text-sm text-slate-400 text-center py-10">Loading your deck…</p>
+              <p className="text-sm text-slate-400 text-center py-10">{t('flashcards.loadingDeck')}</p>
             ) : !canPlay ? (
               <div className="rounded-card border border-dashed border-white/12 bg-white/[0.02] p-10 text-center">
-                <p className="text-sm text-slate-400">No words in this deck yet.</p>
-                <button onClick={() => navigate('/vocabulary')} className="btn-primary px-4 py-2 text-sm mt-3">Add words</button>
+                <p className="text-sm text-slate-400">{t('flashcards.noWords')}</p>
+                <button onClick={() => navigate('/vocabulary')} className="btn-primary px-4 py-2 text-sm mt-3">{t('flashcards.addWords')}</button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -235,8 +237,8 @@ export default function FlashcardsPage(): JSX.Element {
                     className={cn('rounded-card p-5 bg-gradient-to-br ring-1 ring-white/10 text-left transition hover:brightness-110', m.tint)}
                   >
                     <m.icon className="w-7 h-7 text-white" />
-                    <h3 className="text-lg font-bold text-white mt-3">{m.title}</h3>
-                    <p className="text-xs text-white/80 mt-1">{m.desc}</p>
+                    <h3 className="text-lg font-bold text-white mt-3">{t(m.titleKey)}</h3>
+                    <p className="text-xs text-white/80 mt-1">{t(m.descKey)}</p>
                   </button>
                 ))}
               </div>
@@ -244,14 +246,14 @@ export default function FlashcardsPage(): JSX.Element {
 
             {decks.length > 0 && (
               <>
-                <SectionHeading title="Your decks" subtitle="Pick a deck to study" />
+                <SectionHeading title={t('flashcards.yourDecks')} subtitle={t('flashcards.yourDecksSub')} />
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <button
                     onClick={() => setActiveDeck(null)}
                     className={cn('rounded-2xl border p-4 text-left transition', activeDeck === null ? 'border-brand-400 bg-brand-500/15' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]')}
                   >
-                    <p className="text-sm font-bold text-white">All words</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{cards.length} {cards.length === 1 ? 'card' : 'cards'}</p>
+                    <p className="text-sm font-bold text-white">{t('flashcards.allWords')}</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{cards.length} {cards.length === 1 ? t('flashcards.card') : t('flashcards.cards')}</p>
                   </button>
                   {decks.map((d) => (
                     <button
@@ -260,7 +262,7 @@ export default function FlashcardsPage(): JSX.Element {
                       className={cn('rounded-2xl border p-4 text-left transition', activeDeck === d.name ? 'border-brand-400 bg-brand-500/15' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]')}
                     >
                       <p className="text-sm font-bold text-white">{d.name}</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{d.count} {d.count === 1 ? 'card' : 'cards'}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">{d.count} {d.count === 1 ? t('flashcards.card') : t('flashcards.cards')}</p>
                     </button>
                   ))}
                 </div>
@@ -281,19 +283,19 @@ export default function FlashcardsPage(): JSX.Element {
                 <>
                   <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{lang.name}</p>
                   <p className="text-3xl font-black text-white mt-2">{answer.term}</p>
-                  <p className="text-xs text-slate-500 mt-4">Tap to reveal</p>
+                  <p className="text-xs text-slate-500 mt-4">{t('flashcards.tapReveal')}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-[10px] uppercase tracking-widest text-brand-300 font-bold">Meaning</p>
+                  <p className="text-[10px] uppercase tracking-widest text-brand-300 font-bold">{t('flashcards.meaning')}</p>
                   <p className="text-2xl font-black text-brand-200 mt-2">{answer.translation}</p>
                   {answer.example && <p className="text-xs text-slate-400 italic mt-3">"{answer.example}"</p>}
                 </>
               )}
             </button>
             <div className="flex items-center gap-3">
-              <button onClick={() => advance(false)} className="rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-200 px-5 py-2.5 text-sm font-bold">Didn't know</button>
-              <button onClick={() => advance(true)} className="rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 px-5 py-2.5 text-sm font-bold">I knew it</button>
+              <button onClick={() => advance(false)} className="rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-200 px-5 py-2.5 text-sm font-bold">{t('flashcards.didntKnow')}</button>
+              <button onClick={() => advance(true)} className="rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 px-5 py-2.5 text-sm font-bold">{t('flashcards.iKnew')}</button>
             </div>
           </div>
         )}
@@ -301,9 +303,9 @@ export default function FlashcardsPage(): JSX.Element {
         {mode === 'test' && answer && (
           <div className="flex flex-col gap-5">
             <ProgressBar value={((idx + 1) / total) * 100} color="brand" />
-            <p className="text-xs text-slate-400">{idx + 1} / {total} · Multiple choice</p>
+            <p className="text-xs text-slate-400">{idx + 1} / {total} · {t('flashcards.multipleChoice')}</p>
             <div className="rounded-card border border-white/10 bg-white/[0.04] p-8 text-center">
-              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Translate:</p>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{t('flashcards.translate')}</p>
               <p className="text-3xl font-black text-white mt-2">{answer.term}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -341,7 +343,7 @@ export default function FlashcardsPage(): JSX.Element {
 
         {mode === 'match' && (
           <div className="flex flex-col gap-4">
-            <p className="text-xs text-slate-400">Tap matching pairs · {matched.size}/{matchPairs.length} pairs · {fmtTime(elapsed)}{mismatches > 0 && ` · ${mismatches} misses`}</p>
+            <p className="text-xs text-slate-400">{t('flashcards.matchHint', { matched: matched.size, total: matchPairs.length, time: fmtTime(elapsed) })}{mismatches > 0 && ` · ${t('flashcards.misses', { n: mismatches })}`}</p>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {matchTiles.map((tile) => {
                 const isMatched = matched.has(tile.cardId)
@@ -371,13 +373,13 @@ export default function FlashcardsPage(): JSX.Element {
         {mode === 'done' && (
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-8 text-center flex flex-col items-center gap-4">
             <span className="text-5xl">🎉</span>
-            <p className="text-xl font-black text-white">Round complete!</p>
-            <p className="text-sm text-slate-400">{results.total} {results.total === 1 ? 'card' : 'cards'} · {results.correct} correct · {accuracy}% accuracy</p>
+            <p className="text-xl font-black text-white">{t('flashcards.roundComplete')}</p>
+            <p className="text-sm text-slate-400">{t('flashcards.roundStats', { total: results.total, correct: results.correct, accuracy })}</p>
             <div className="flex items-center gap-2 text-amber-200 text-sm font-bold"><IconBolt className="w-4 h-4" /> +15 XP <IconStar className="w-4 h-4 ml-2" /> Streak +1</div>
             <div className="flex items-center gap-2 mt-2">
-              <button onClick={() => { reset(); setMode('menu') }} className="btn-ghost text-sm px-4 py-2">Back</button>
-              <button onClick={() => start('learn')} className="btn-primary text-sm px-4 py-2">Again</button>
-              <button onClick={() => navigate('/vocabulary')} className="btn-ghost text-sm px-4 py-2">My vocab</button>
+              <button onClick={() => { reset(); setMode('menu') }} className="btn-ghost text-sm px-4 py-2">{t('common.back')}</button>
+              <button onClick={() => start('learn')} className="btn-primary text-sm px-4 py-2">{t('flashcards.again')}</button>
+              <button onClick={() => navigate('/vocabulary')} className="btn-ghost text-sm px-4 py-2">{t('flashcards.myVocab')}</button>
             </div>
           </div>
         )}

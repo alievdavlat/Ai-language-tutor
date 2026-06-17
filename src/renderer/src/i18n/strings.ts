@@ -187,6 +187,17 @@ export type StringKey =
   // ── Speaking role-play category headers (#A72) ───────────────────────
   | 'speaking.cat.daily' | 'speaking.cat.professional' | 'speaking.cat.educational'
   | 'speaking.cat.travel' | 'speaking.cat.social'
+  // ── Small page gaps ──────────────────────────────────────────────────
+  | 'courses.skillTracksSub' | 'flashcards.yourDecks' | 'flashcards.yourDecksSub'
+  // ── Flashcards page ──────────────────────────────────────────────────
+  | 'flashcards.eyebrow' | 'flashcards.deckTitle' | 'flashcards.card' | 'flashcards.cards'
+  | 'flashcards.loadingDeck' | 'flashcards.noWords' | 'flashcards.addWords'
+  | 'flashcards.allWords' | 'flashcards.learn' | 'flashcards.learnDesc'
+  | 'flashcards.test' | 'flashcards.testDesc' | 'flashcards.match' | 'flashcards.matchDesc'
+  | 'flashcards.tapReveal' | 'flashcards.meaning' | 'flashcards.didntKnow'
+  | 'flashcards.iKnew' | 'flashcards.multipleChoice' | 'flashcards.translate'
+  | 'flashcards.matchHint' | 'flashcards.misses' | 'flashcards.roundComplete'
+  | 'flashcards.roundStats' | 'flashcards.again' | 'flashcards.myVocab'
 
 type Table = Record<StringKey, string>
 
@@ -598,7 +609,37 @@ const en: Table = {
   'speaking.cat.professional': 'Professional settings',
   'speaking.cat.educational': 'Educational settings',
   'speaking.cat.travel': 'Travel',
-  'speaking.cat.social': 'Social'
+  'speaking.cat.social': 'Social',
+  // Small page gaps
+  'courses.skillTracksSub': 'Built-in courses — grammar, writing, speaking & exam prep',
+  'flashcards.yourDecks': 'Your decks',
+  'flashcards.yourDecksSub': 'Pick a deck to study',
+  'flashcards.eyebrow': 'Vocabulary · Flashcards',
+  'flashcards.deckTitle': '{language} vocabulary',
+  'flashcards.card': 'card',
+  'flashcards.cards': 'cards',
+  'flashcards.loadingDeck': 'Loading your deck…',
+  'flashcards.noWords': 'No words in this deck yet.',
+  'flashcards.addWords': 'Add words',
+  'flashcards.allWords': 'All words',
+  'flashcards.learn': 'Learn',
+  'flashcards.learnDesc': 'Tap to flip, mark known/unknown.',
+  'flashcards.test': 'Test',
+  'flashcards.testDesc': 'Multiple-choice quiz on the deck.',
+  'flashcards.match': 'Match',
+  'flashcards.matchDesc': 'Tap pairs as fast as you can.',
+  'flashcards.tapReveal': 'Tap to reveal',
+  'flashcards.meaning': 'Meaning',
+  'flashcards.didntKnow': "Didn't know",
+  'flashcards.iKnew': 'I knew it',
+  'flashcards.multipleChoice': 'Multiple choice',
+  'flashcards.translate': 'Translate:',
+  'flashcards.matchHint': 'Tap matching pairs · {matched}/{total} pairs · {time}',
+  'flashcards.misses': '{n} misses',
+  'flashcards.roundComplete': 'Round complete!',
+  'flashcards.roundStats': '{total} cards · {correct} correct · {accuracy}% accuracy',
+  'flashcards.again': 'Again',
+  'flashcards.myVocab': 'My vocab'
 }
 
 const uz: Table = {
@@ -1009,7 +1050,37 @@ const uz: Table = {
   'speaking.cat.professional': 'Kasbiy vaziyatlar',
   'speaking.cat.educational': 'Ta’lim vaziyatlari',
   'speaking.cat.travel': 'Sayohat',
-  'speaking.cat.social': 'Ijtimoiy'
+  'speaking.cat.social': 'Ijtimoiy',
+  // Small page gaps
+  'courses.skillTracksSub': 'O‘rnatilgan kurslar — grammatika, yozuv, nutq va imtihonga tayyorgarlik',
+  'flashcards.yourDecks': 'Sizning to‘plamlaringiz',
+  'flashcards.yourDecksSub': 'O‘rganish uchun to‘plamni tanlang',
+  'flashcards.eyebrow': 'Lug‘at · Kartochkalar',
+  'flashcards.deckTitle': '{language} lug‘ati',
+  'flashcards.card': 'karta',
+  'flashcards.cards': 'karta',
+  'flashcards.loadingDeck': 'To‘plamingiz yuklanmoqda…',
+  'flashcards.noWords': 'Bu to‘plamda hali so‘z yo‘q.',
+  'flashcards.addWords': 'So‘z qo‘shish',
+  'flashcards.allWords': 'Barcha so‘zlar',
+  'flashcards.learn': 'O‘rganish',
+  'flashcards.learnDesc': 'Ag‘darish uchun bosing, bilgan/bilmaganni belgilang.',
+  'flashcards.test': 'Test',
+  'flashcards.testDesc': 'To‘plam bo‘yicha variantli test.',
+  'flashcards.match': 'Moslashtirish',
+  'flashcards.matchDesc': 'Juftlarni imkon qadar tez bosing.',
+  'flashcards.tapReveal': 'Ochish uchun bosing',
+  'flashcards.meaning': 'Ma’nosi',
+  'flashcards.didntKnow': 'Bilmadim',
+  'flashcards.iKnew': 'Bildim',
+  'flashcards.multipleChoice': 'Variantli',
+  'flashcards.translate': 'Tarjima qiling:',
+  'flashcards.matchHint': 'Mos juftlarni bosing · {matched}/{total} juft · {time}',
+  'flashcards.misses': '{n} xato',
+  'flashcards.roundComplete': 'Bosqich tugadi!',
+  'flashcards.roundStats': '{total} karta · {correct} to‘g‘ri · {accuracy}% aniqlik',
+  'flashcards.again': 'Yana',
+  'flashcards.myVocab': 'Mening lug‘atim'
 }
 
 const ru: Table = {
@@ -1420,7 +1491,37 @@ const ru: Table = {
   'speaking.cat.professional': 'Рабочие ситуации',
   'speaking.cat.educational': 'Учебные ситуации',
   'speaking.cat.travel': 'Путешествия',
-  'speaking.cat.social': 'Общение'
+  'speaking.cat.social': 'Общение',
+  // Small page gaps
+  'courses.skillTracksSub': 'Встроенные курсы — грамматика, письмо, речь и подготовка к экзаменам',
+  'flashcards.yourDecks': 'Ваши наборы',
+  'flashcards.yourDecksSub': 'Выберите набор для изучения',
+  'flashcards.eyebrow': 'Словарь · Карточки',
+  'flashcards.deckTitle': 'Словарь · {language}',
+  'flashcards.card': 'карточка',
+  'flashcards.cards': 'карточек',
+  'flashcards.loadingDeck': 'Загрузка вашего набора…',
+  'flashcards.noWords': 'В этом наборе пока нет слов.',
+  'flashcards.addWords': 'Добавить слова',
+  'flashcards.allWords': 'Все слова',
+  'flashcards.learn': 'Учить',
+  'flashcards.learnDesc': 'Нажмите, чтобы перевернуть; отметьте знаю/не знаю.',
+  'flashcards.test': 'Тест',
+  'flashcards.testDesc': 'Тест с вариантами по набору.',
+  'flashcards.match': 'Пары',
+  'flashcards.matchDesc': 'Соединяйте пары как можно быстрее.',
+  'flashcards.tapReveal': 'Нажмите, чтобы показать',
+  'flashcards.meaning': 'Значение',
+  'flashcards.didntKnow': 'Не знал',
+  'flashcards.iKnew': 'Знал',
+  'flashcards.multipleChoice': 'Выбор варианта',
+  'flashcards.translate': 'Переведите:',
+  'flashcards.matchHint': 'Соединяйте пары · {matched}/{total} пар · {time}',
+  'flashcards.misses': 'ошибок: {n}',
+  'flashcards.roundComplete': 'Раунд завершён!',
+  'flashcards.roundStats': 'карточек: {total} · верно: {correct} · точность {accuracy}%',
+  'flashcards.again': 'Ещё раз',
+  'flashcards.myVocab': 'Мой словарь'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

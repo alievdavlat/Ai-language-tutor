@@ -201,7 +201,7 @@ export default function CoursesPage(): JSX.Element {
                 pulled out of the grid below so no course appears twice). */}
             {showTracks && (
               <div>
-                <SectionHeading title="Skill tracks" subtitle="Built-in courses — grammar, writing, speaking & exam prep" />
+                <SectionHeading title={t('courses.skillTracks')} subtitle={t('courses.skillTracksSub')} />
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {tracks.map((c) => (
                     <CourseCard key={c.id} course={c} progress={progressFor(c.id)} onOpen={() => open(c.id)} />
