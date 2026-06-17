@@ -5,6 +5,7 @@ import { ProgressBar, SectionHeading, Spinner } from '../../components/ui'
 import { IconBook, IconPlay, IconStar, IconTarget } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { useContentState } from '../../services/content/progress'
+import { useLevels } from '../../services/levels/store'
 import { useTargetLanguageCode } from '../../lib/language'
 import { useT } from '../../i18n'
 import { isImageCover } from '../../lib/cover'
@@ -39,7 +40,6 @@ function courseSkill(c: Course): Exclude<Skill, 'all'> {
   if (/business/.test(t)) return 'business'
   return 'speaking'
 }
-const LEVELS = ['All', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 
 function CourseCard({ course, progress, onOpen }: { course: Course; progress: number; onOpen: () => void }): JSX.Element {
   const isBook = course.title.toLowerCase().includes('coursebook') || course.id === 'c_egiu'
@@ -81,6 +81,8 @@ export default function CoursesPage(): JSX.Element {
   const navigate = useNavigate()
   const [skill, setSkill] = useState<Skill>('all')
   const [level, setLevel] = useState<string>('All')
+  const { list: levelDefs } = useLevels()
+  const levelFilters = ['All', ...levelDefs.map((l) => l.code)]
   const lang = useTargetLanguageCode()
   const t = useT()
   const userId = backend.currentUserId()
@@ -140,7 +142,7 @@ export default function CoursesPage(): JSX.Element {
             </button>
           ))}
           <span aria-hidden className="hidden sm:block h-5 w-px bg-white/10 mx-1" />
-          {LEVELS.map((l) => (
+          {levelFilters.map((l) => (
             <button key={l} onClick={() => setLevel(l)} className={cn('rounded-full px-3 py-1.5 text-xs font-bold transition border', level === l ? 'border-brand-400/40 bg-brand-500/20 text-brand-100' : 'border-white/10 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.07]')}>{l}</button>
           ))}
         </div>

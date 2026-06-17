@@ -5,6 +5,7 @@ import { PageHeader, SectionHeading, Tabs, type TabItem } from '../../components
 import { IconBolt, IconPlus } from '../../components/icons'
 import { type Story } from '../../services/content/stories'
 import { useStories } from '../../services/stories/store'
+import { useLevels } from '../../services/levels/store'
 import { useAppStore } from '../../store/useAppStore'
 import { canAuthorContent } from '@shared/constants'
 import StoryEditor from './StoryEditor'
@@ -16,8 +17,6 @@ const TABS: TabItem<Tab>[] = [
   { id: 'reading', label: 'Reading' },
   { id: 'listening', label: 'Listening' }
 ]
-
-const LEVELS = ['All', 'A1', 'A2', 'B1', 'B2', 'C1']
 
 function StoryCard({ s, onOpen }: { s: Story; onOpen: () => void }): JSX.Element {
   const prog = getStoryProgress(s.id)
@@ -54,6 +53,8 @@ export default function StoriesPage(): JSX.Element {
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('mixed')
   const [level, setLevel] = useState('All')
+  const { list: levelDefs } = useLevels()
+  const levelFilters = ['All', ...levelDefs.map((l) => l.code)]
   const role = useAppStore((s) => s.role)
   const canAuthor = canAuthorContent(role)
   const [editing, setEditing] = useState(false)
@@ -96,7 +97,7 @@ export default function StoriesPage(): JSX.Element {
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
           <Tabs items={TABS} active={tab} onChange={setTab} className="self-start" />
           <div className="flex flex-wrap gap-1.5 ml-auto">
-            {LEVELS.map((l) => (
+            {levelFilters.map((l) => (
               <button key={l} onClick={() => setLevel(l)} className={cn('rounded-full text-[11px] font-bold px-3 py-1 transition border', level === l ? 'bg-brand-500/20 border-brand-400/40 text-brand-100' : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]')}>
                 {l}
               </button>

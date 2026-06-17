@@ -7,6 +7,7 @@ import { uploadUrl } from '../../services/backend'
 import { library } from '../../services/library/store'
 import { contentKey, hashFile } from '../../services/dedup'
 import { Input } from '../../components/ui'
+import LevelSelect from '../../components/ui/LevelSelect'
 import { IconBook, IconCheck, IconChevronRight, IconHeadphones, IconPlus, IconX, IconYouTube } from '../../components/icons'
 
 const KINDS: { id: LibraryKind; label: string; sub: string; Icon: (p: { className?: string }) => JSX.Element }[] = [
@@ -14,37 +15,12 @@ const KINDS: { id: LibraryKind; label: string; sub: string; Icon: (p: { classNam
   { id: 'video', label: 'Video', sub: 'YouTube / file', Icon: IconYouTube },
   { id: 'audio', label: 'Audio', sub: 'podcast / track', Icon: IconHeadphones }
 ]
-const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 
 function parseYouTubeId(s: string): string | null {
   const t = s.trim()
   if (/^[\w-]{11}$/.test(t)) return t
   const m = t.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/)
   return m ? m[1] : null
-}
-
-/** Compact styled dropdown (the native <select> looked broken on dark). */
-function LevelSelect({ value, onChange }: { value: string; onChange: (v: string) => void }): JSX.Element {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="relative">
-      <button type="button" onClick={() => setOpen((o) => !o)} onBlur={() => setTimeout(() => setOpen(false), 120)}
-        className="w-full flex items-center justify-between rounded-xl bg-white/[0.05] border border-white/10 px-3 py-2.5 text-sm text-white hover:bg-white/[0.08]">
-        <span>{value}</span>
-        <IconChevronRight className={cn('w-4 h-4 text-slate-400 transition', open && 'rotate-90')} />
-      </button>
-      {open && (
-        <div className="absolute z-10 mt-1 w-full rounded-xl border border-white/10 bg-slate-800 shadow-2xl overflow-hidden">
-          {LEVELS.map((l) => (
-            <button key={l} type="button" onMouseDown={() => { onChange(l); setOpen(false) }}
-              className={cn('w-full text-left px-3 py-2 text-sm hover:bg-brand-500/20', l === value ? 'text-brand-200 font-semibold bg-brand-500/10' : 'text-slate-200')}>
-              {l}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
 }
 
 /** A polished upload dropzone that shows its filled state. */
@@ -197,11 +173,14 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
             </div>
             <div className="flex-1 min-w-0 flex flex-col gap-3">
               <Input value={title} onChange={(e) => { setTitle(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder="Title *" />
-              <div className="grid grid-cols-[1fr_110px] gap-3">
-                <Input value={author} onChange={(e) => { setAuthor(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder="Author / channel" />
-                <LevelSelect value={level} onChange={setLevel} />
-              </div>
+              <Input value={author} onChange={(e) => { setAuthor(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder="Author / channel" />
             </div>
+          </div>
+
+          {/* Level — dynamic registry (custom levels supported) */}
+          <div className="space-y-2">
+            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Level</p>
+            <LevelSelect value={level} onChange={setLevel} />
           </div>
 
           {/* Per-kind fields */}
