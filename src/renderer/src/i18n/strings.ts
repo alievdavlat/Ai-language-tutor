@@ -184,6 +184,9 @@ export type StringKey =
   | 'hero.startSpeakingSub' | 'hero.startSpeakingMeta' | 'hero.startNow'
   | 'featured.featured' | 'featured.featuredSub' | 'featured.sponsored'
   | 'featured.bySponsor' | 'featured.partnerOffer' | 'featured.viewCourse'
+  // ── Speaking role-play category headers (#A72) ───────────────────────
+  | 'speaking.cat.daily' | 'speaking.cat.professional' | 'speaking.cat.educational'
+  | 'speaking.cat.travel' | 'speaking.cat.social'
 
 type Table = Record<StringKey, string>
 
@@ -589,7 +592,13 @@ const en: Table = {
   'featured.sponsored': 'Sponsored',
   'featured.bySponsor': 'By {sponsor}',
   'featured.partnerOffer': 'Partner offer',
-  'featured.viewCourse': 'View course'
+  'featured.viewCourse': 'View course',
+  // Speaking role-play category headers (#A72)
+  'speaking.cat.daily': 'Daily life',
+  'speaking.cat.professional': 'Professional settings',
+  'speaking.cat.educational': 'Educational settings',
+  'speaking.cat.travel': 'Travel',
+  'speaking.cat.social': 'Social'
 }
 
 const uz: Table = {
@@ -994,7 +1003,13 @@ const uz: Table = {
   'featured.sponsored': 'Homiylik',
   'featured.bySponsor': '{sponsor} tomonidan',
   'featured.partnerOffer': 'Hamkor taklifi',
-  'featured.viewCourse': 'Kursni ko‘rish'
+  'featured.viewCourse': 'Kursni ko‘rish',
+  // Speaking role-play category headers (#A72)
+  'speaking.cat.daily': 'Kundalik hayot',
+  'speaking.cat.professional': 'Kasbiy vaziyatlar',
+  'speaking.cat.educational': 'Ta’lim vaziyatlari',
+  'speaking.cat.travel': 'Sayohat',
+  'speaking.cat.social': 'Ijtimoiy'
 }
 
 const ru: Table = {
@@ -1399,7 +1414,13 @@ const ru: Table = {
   'featured.sponsored': 'Реклама',
   'featured.bySponsor': 'От {sponsor}',
   'featured.partnerOffer': 'Партнёрское предложение',
-  'featured.viewCourse': 'Открыть курс'
+  'featured.viewCourse': 'Открыть курс',
+  // Speaking role-play category headers (#A72)
+  'speaking.cat.daily': 'Повседневная жизнь',
+  'speaking.cat.professional': 'Рабочие ситуации',
+  'speaking.cat.educational': 'Учебные ситуации',
+  'speaking.cat.travel': 'Путешествия',
+  'speaking.cat.social': 'Общение'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

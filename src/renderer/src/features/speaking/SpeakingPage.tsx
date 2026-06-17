@@ -17,7 +17,7 @@ import { roleplays, useRoleplays, ROLEPLAY_SECTIONS, type Roleplay, type Rolepla
 import ConversationMode from './modes/ConversationMode'
 import PronunciationPage from '../pronunciation/PronunciationPage'
 import RoleplayEditor from './sections/RoleplayEditor'
-import { useT } from '../../i18n'
+import { useT, type StringKey } from '../../i18n'
 
 type View = 'hub' | 'chat' | 'pronunciation'
 
@@ -122,14 +122,22 @@ export default function SpeakingPage(): JSX.Element {
       { id: 'foryou', label: t('speaking.basedOnActivity'), items: forYou },
       { id: 'trending', label: t('speaking.trendingNow'), items: trending }
     ]
+    const SECTION_KEY: Record<string, StringKey> = {
+      daily: 'speaking.cat.daily',
+      professional: 'speaking.cat.professional',
+      educational: 'speaking.cat.educational',
+      travel: 'speaking.cat.travel',
+      social: 'speaking.cat.social'
+    }
     for (const sec of ROLEPLAY_SECTIONS.filter((s) => s.id !== 'trending')) {
-      base.push({ id: sec.id, label: sec.label, items: bySection.get(sec.id) ?? [] })
+      const key = SECTION_KEY[sec.id]
+      base.push({ id: sec.id, label: key ? t(key) : sec.label, items: bySection.get(sec.id) ?? [] })
     }
     return base.filter((c) => c.items.length > 0)
   }, [forYou, trending, bySection, t])
 
   if (!profile) {
-    return <div className="h-full flex items-center justify-center text-slate-400">Loading…</div>
+    return <div className="h-full flex items-center justify-center text-slate-400">{t('common.loading')}</div>
   }
 
   const startScenario = (rp: Roleplay): void => {
