@@ -222,6 +222,21 @@ export type StringKey =
   | 'teacher.noStudentsEnrolled' | 'teacher.noStudentsMatch' | 'teacher.message'
   | 'teacher.today' | 'teacher.yesterday' | 'teacher.daysAgo'
   | 'teacher.tabAll' | 'teacher.tabActive' | 'teacher.tabFinished' | 'teacher.yourStudents'
+  | 'teacher.analyticsEyebrow' | 'teacher.channelPerformance' | 'teacher.analyticsLiveSub'
+  | 'teacher.totalViews' | 'teacher.subscribers' | 'teacher.avgCompletion' | 'teacher.revenuePaid'
+  | 'teacher.weeklyPlays' | 'teacher.last12Weeks' | 'teacher.noWeeklyPlays'
+  | 'teacher.topCourses' | 'teacher.byViews' | 'teacher.noCoursesPublish'
+  | 'teacher.audience' | 'teacher.byCountry' | 'teacher.noAudience'
+  | 'teacher.latestReviews' | 'teacher.noReviews'
+  | 'teacher.monetEyebrow' | 'teacher.monetSub' | 'teacher.monetization'
+  | 'teacher.availableWithdraw' | 'teacher.clearingLifetime' | 'teacher.requesting'
+  | 'teacher.withdrawAmount' | 'teacher.nothingWithdraw' | 'teacher.lifetime'
+  | 'teacher.payingStudents' | 'teacher.avgPerStudent' | 'teacher.tips'
+  | 'teacher.revenueSources' | 'teacher.fromPaidOrders' | 'teacher.payouts'
+  | 'teacher.payoutsCount' | 'teacher.noPayouts' | 'teacher.downloadReceipt'
+  | 'teacher.referralProgram' | 'teacher.referralSub' | 'teacher.copied' | 'teacher.copy'
+  | 'teacher.yourProducts' | 'teacher.managePricing' | 'teacher.noProducts'
+  | 'teacher.free' | 'teacher.enrolledShort'
 
 type Table = Record<StringKey, string>
 
@@ -742,7 +757,52 @@ const en: Table = {
   'teacher.tabAll': 'All',
   'teacher.tabActive': 'Active',
   'teacher.tabFinished': 'Finished',
-  'teacher.yourStudents': 'Your students'
+  'teacher.yourStudents': 'Your students',
+  'teacher.analyticsEyebrow': 'Teacher · Analytics',
+  'teacher.channelPerformance': 'Channel performance',
+  'teacher.analyticsLiveSub': 'Live · computed from your courses, lessons & sales',
+  'teacher.totalViews': 'Total views',
+  'teacher.subscribers': 'Subscribers',
+  'teacher.avgCompletion': 'Avg. completion',
+  'teacher.revenuePaid': 'Revenue (paid)',
+  'teacher.weeklyPlays': 'Weekly plays',
+  'teacher.last12Weeks': 'Last 12 weeks',
+  'teacher.noWeeklyPlays': 'No weekly play history yet — it appears here once your lessons are played over time.',
+  'teacher.topCourses': 'Top courses',
+  'teacher.byViews': 'By views',
+  'teacher.noCoursesPublish': 'No courses yet — publish one to see analytics.',
+  'teacher.audience': 'Audience',
+  'teacher.byCountry': 'By country',
+  'teacher.noAudience': 'No enrolled students yet — your audience breakdown appears here.',
+  'teacher.latestReviews': 'Latest reviews',
+  'teacher.noReviews': 'No reviews yet. They appear here as students review your courses.',
+  'teacher.monetEyebrow': 'Teacher · Monetization',
+  'teacher.monetization': 'Monetization',
+  'teacher.monetSub': 'Course sales, subscriptions & tips — paid out via Payme / Click / Stripe.',
+  'teacher.availableWithdraw': 'Available to withdraw',
+  'teacher.clearingLifetime': '${pending} clearing · ${lifetime} lifetime',
+  'teacher.requesting': 'Requesting…',
+  'teacher.withdrawAmount': 'Withdraw ${amount}',
+  'teacher.nothingWithdraw': 'Nothing to withdraw',
+  'teacher.lifetime': 'Lifetime',
+  'teacher.payingStudents': 'Paying students',
+  'teacher.avgPerStudent': 'Avg. per student',
+  'teacher.tips': 'Tips',
+  'teacher.revenueSources': 'Revenue sources',
+  'teacher.fromPaidOrders': 'From paid orders',
+  'teacher.payouts': 'Payouts',
+  'teacher.payoutsCount': '{n} requests',
+  'teacher.noPayouts': 'No payouts yet.',
+  'teacher.downloadReceipt': 'Download receipt',
+  'teacher.referralProgram': 'Referral program',
+  'teacher.referralSub': 'Earn ${reward} per signup · {conversions} conversions',
+  'teacher.copied': 'Copied!',
+  'teacher.copy': 'Copy',
+  'teacher.yourProducts': 'Your products',
+  'teacher.managePricing': 'Manage pricing',
+  'teacher.noProducts': 'No products yet.',
+  'teacher.free': 'Free',
+  'teacher.enrolledShort': '{n} enrolled'
 }
 
 const uz: Table = {
@@ -1262,7 +1322,52 @@ const uz: Table = {
   'teacher.tabAll': 'Barchasi',
   'teacher.tabActive': 'Faol',
   'teacher.tabFinished': 'Tugatgan',
-  'teacher.yourStudents': 'Talabalaringiz'
+  'teacher.yourStudents': 'Talabalaringiz',
+  'teacher.analyticsEyebrow': 'O‘qituvchi · Tahlil',
+  'teacher.channelPerformance': 'Kanal ko‘rsatkichlari',
+  'teacher.analyticsLiveSub': 'Jonli · kurslar, darslar va sotuvlar asosida hisoblanadi',
+  'teacher.totalViews': 'Jami ko‘rishlar',
+  'teacher.subscribers': 'Obunachilar',
+  'teacher.avgCompletion': 'O‘rtacha tugatish',
+  'teacher.revenuePaid': 'Daromad (pullik)',
+  'teacher.weeklyPlays': 'Haftalik ijrolar',
+  'teacher.last12Weeks': 'Oxirgi 12 hafta',
+  'teacher.noWeeklyPlays': 'Hali haftalik ijro tarixi yo‘q — darslaringiz ijro etila boshlaganda shu yerda ko‘rinadi.',
+  'teacher.topCourses': 'Eng yaxshi kurslar',
+  'teacher.byViews': 'Ko‘rishlar bo‘yicha',
+  'teacher.noCoursesPublish': 'Hali kurslar yo‘q — tahlilni ko‘rish uchun bittasini nashr qiling.',
+  'teacher.audience': 'Auditoriya',
+  'teacher.byCountry': 'Davlatlar bo‘yicha',
+  'teacher.noAudience': 'Hali yozilgan talabalar yo‘q — auditoriya taqsimoti shu yerda ko‘rinadi.',
+  'teacher.latestReviews': 'So‘nggi sharhlar',
+  'teacher.noReviews': 'Hali sharhlar yo‘q. Talabalar kurslaringizni baholaganda shu yerda ko‘rinadi.',
+  'teacher.monetEyebrow': 'O‘qituvchi · Monetizatsiya',
+  'teacher.monetization': 'Monetizatsiya',
+  'teacher.monetSub': 'Kurs sotuvlari, obunalar va chaqalar — Payme / Click / Stripe orqali to‘lanadi.',
+  'teacher.availableWithdraw': 'Yechib olish mumkin',
+  'teacher.clearingLifetime': '${pending} kutilmoqda · ${lifetime} umumiy',
+  'teacher.requesting': 'So‘ralmoqda…',
+  'teacher.withdrawAmount': '${amount} yechib olish',
+  'teacher.nothingWithdraw': 'Yechib olish uchun hech narsa yo‘q',
+  'teacher.lifetime': 'Umumiy',
+  'teacher.payingStudents': 'To‘lovchi talabalar',
+  'teacher.avgPerStudent': 'Talabaga o‘rtacha',
+  'teacher.tips': 'Chaqalar',
+  'teacher.revenueSources': 'Daromad manbalari',
+  'teacher.fromPaidOrders': 'Pullik buyurtmalardan',
+  'teacher.payouts': 'To‘lovlar',
+  'teacher.payoutsCount': '{n} ta so‘rov',
+  'teacher.noPayouts': 'Hali to‘lovlar yo‘q.',
+  'teacher.downloadReceipt': 'Kvitansiyani yuklab olish',
+  'teacher.referralProgram': 'Referral dasturi',
+  'teacher.referralSub': 'Har ro‘yxatdan o‘tish uchun ${reward} · {conversions} ta konversiya',
+  'teacher.copied': 'Nusxalandi!',
+  'teacher.copy': 'Nusxalash',
+  'teacher.yourProducts': 'Mahsulotlaringiz',
+  'teacher.managePricing': 'Narxlarni boshqarish',
+  'teacher.noProducts': 'Hali mahsulotlar yo‘q.',
+  'teacher.free': 'Bepul',
+  'teacher.enrolledShort': '{n} ta yozilgan'
 }
 
 const ru: Table = {
@@ -1782,7 +1887,52 @@ const ru: Table = {
   'teacher.tabAll': 'Все',
   'teacher.tabActive': 'Активные',
   'teacher.tabFinished': 'Завершившие',
-  'teacher.yourStudents': 'Ваши студенты'
+  'teacher.yourStudents': 'Ваши студенты',
+  'teacher.analyticsEyebrow': 'Преподаватель · Аналитика',
+  'teacher.channelPerformance': 'Показатели канала',
+  'teacher.analyticsLiveSub': 'В реальном времени · на основе курсов, уроков и продаж',
+  'teacher.totalViews': 'Всего просмотров',
+  'teacher.subscribers': 'Подписчики',
+  'teacher.avgCompletion': 'Ср. завершение',
+  'teacher.revenuePaid': 'Доход (платно)',
+  'teacher.weeklyPlays': 'Просмотры за неделю',
+  'teacher.last12Weeks': 'Последние 12 недель',
+  'teacher.noWeeklyPlays': 'Пока нет истории недельных просмотров — она появится, когда уроки начнут воспроизводить.',
+  'teacher.topCourses': 'Топ курсов',
+  'teacher.byViews': 'По просмотрам',
+  'teacher.noCoursesPublish': 'Пока нет курсов — опубликуйте, чтобы увидеть аналитику.',
+  'teacher.audience': 'Аудитория',
+  'teacher.byCountry': 'По странам',
+  'teacher.noAudience': 'Пока нет записанных студентов — разбивка аудитории появится здесь.',
+  'teacher.latestReviews': 'Последние отзывы',
+  'teacher.noReviews': 'Пока нет отзывов. Они появятся, когда студенты оценят ваши курсы.',
+  'teacher.monetEyebrow': 'Преподаватель · Монетизация',
+  'teacher.monetization': 'Монетизация',
+  'teacher.monetSub': 'Продажи курсов, подписки и чаевые — выплаты через Payme / Click / Stripe.',
+  'teacher.availableWithdraw': 'Доступно к выводу',
+  'teacher.clearingLifetime': '${pending} в обработке · ${lifetime} за всё время',
+  'teacher.requesting': 'Запрос…',
+  'teacher.withdrawAmount': 'Вывести ${amount}',
+  'teacher.nothingWithdraw': 'Нечего выводить',
+  'teacher.lifetime': 'За всё время',
+  'teacher.payingStudents': 'Платящие студенты',
+  'teacher.avgPerStudent': 'В среднем на студента',
+  'teacher.tips': 'Чаевые',
+  'teacher.revenueSources': 'Источники дохода',
+  'teacher.fromPaidOrders': 'Из платных заказов',
+  'teacher.payouts': 'Выплаты',
+  'teacher.payoutsCount': '{n} запросов',
+  'teacher.noPayouts': 'Пока нет выплат.',
+  'teacher.downloadReceipt': 'Скачать квитанцию',
+  'teacher.referralProgram': 'Реферальная программа',
+  'teacher.referralSub': '${reward} за регистрацию · {conversions} конверсий',
+  'teacher.copied': 'Скопировано!',
+  'teacher.copy': 'Копировать',
+  'teacher.yourProducts': 'Ваши продукты',
+  'teacher.managePricing': 'Управление ценами',
+  'teacher.noProducts': 'Пока нет продуктов.',
+  'teacher.free': 'Бесплатно',
+  'teacher.enrolledShort': 'Записано: {n}'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

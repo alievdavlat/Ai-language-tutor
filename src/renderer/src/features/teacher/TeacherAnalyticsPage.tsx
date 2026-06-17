@@ -2,8 +2,10 @@ import { PageHeader, ProgressBar, SectionHeading, StatCard, Spinner } from '../.
 import { IconChart, IconStar, IconTrophy, IconUsers } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { studio } from '../../services/studio/store'
+import { useT } from '../../i18n'
 
 export default function TeacherAnalyticsPage(): JSX.Element {
+  const t = useT()
   const me = backend.currentUserId()
   const stats = useBackendQuery(() => studio.teacherStats(me ?? undefined), [me], null)
   // Real reviews across the teacher's courses, newest first.
@@ -40,25 +42,25 @@ export default function TeacherAnalyticsPage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-6">
         <PageHeader
-          eyebrow="Teacher · Analytics"
-          title="Channel performance"
-          subtitle="Live · computed from your courses, lessons & sales"
+          eyebrow={t('teacher.analyticsEyebrow')}
+          title={t('teacher.channelPerformance')}
+          subtitle={t('teacher.analyticsLiveSub')}
           back="/teacher"
-          crumbs={[{ label: 'Teacher', to: '/teacher' }, { label: 'Analytics' }]}
+          crumbs={[{ label: t('teacher.teacher'), to: '/teacher' }, { label: t('teacher.analytics') }]}
         />
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard value={s.views.toLocaleString()} label="Total views" tone="brand" icon={<IconChart />} />
-          <StatCard value={s.subscribers.toLocaleString()} label="Subscribers" tone="emerald" icon={<IconUsers />} />
-          <StatCard value={`${s.avgCompletion}%`} label="Avg. completion" tone="violet" icon={<IconStar />} />
-          <StatCard value={`$${s.revenueUsd.toLocaleString()}`} label="Revenue (paid)" tone="amber" icon={<IconTrophy />} />
+          <StatCard value={s.views.toLocaleString()} label={t('teacher.totalViews')} tone="brand" icon={<IconChart />} />
+          <StatCard value={s.subscribers.toLocaleString()} label={t('teacher.subscribers')} tone="emerald" icon={<IconUsers />} />
+          <StatCard value={`${s.avgCompletion}%`} label={t('teacher.avgCompletion')} tone="violet" icon={<IconStar />} />
+          <StatCard value={`$${s.revenueUsd.toLocaleString()}`} label={t('teacher.revenuePaid')} tone="amber" icon={<IconTrophy />} />
         </div>
 
         {/* Plays chart — only when a real weekly series exists. */}
         <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-          <SectionHeading title="Weekly plays" subtitle="Last 12 weeks" />
+          <SectionHeading title={t('teacher.weeklyPlays')} subtitle={t('teacher.last12Weeks')} />
           {s.weeklyPlays.length === 0 ? (
-            <p className="text-sm text-slate-400 py-8 text-center">No weekly play history yet — it appears here once your lessons are played over time.</p>
+            <p className="text-sm text-slate-400 py-8 text-center">{t('teacher.noWeeklyPlays')}</p>
           ) : (
             <>
               <div className="flex items-end gap-2 h-36">
@@ -76,9 +78,9 @@ export default function TeacherAnalyticsPage(): JSX.Element {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-            <SectionHeading title="Top courses" subtitle="By views" />
+            <SectionHeading title={t('teacher.topCourses')} subtitle={t('teacher.byViews')} />
             {s.topCourses.length === 0 ? (
-              <p className="text-sm text-slate-400 py-6 text-center">No courses yet — publish one to see analytics.</p>
+              <p className="text-sm text-slate-400 py-6 text-center">{t('teacher.noCoursesPublish')}</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {s.topCourses.map((c) => (
@@ -99,9 +101,9 @@ export default function TeacherAnalyticsPage(): JSX.Element {
           </div>
 
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-            <SectionHeading title="Audience" subtitle="By country" />
+            <SectionHeading title={t('teacher.audience')} subtitle={t('teacher.byCountry')} />
             {s.audience.length === 0 && (
-              <p className="text-sm text-slate-400 py-6 text-center">No enrolled students yet — your audience breakdown appears here.</p>
+              <p className="text-sm text-slate-400 py-6 text-center">{t('teacher.noAudience')}</p>
             )}
             <div className="flex flex-col gap-2.5">
               {s.audience.map((a) => (
@@ -118,9 +120,9 @@ export default function TeacherAnalyticsPage(): JSX.Element {
         </div>
 
         <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-          <SectionHeading title="Latest reviews" subtitle={reviewList.length ? `${avgReview} · ${reviewList.length} review${reviewList.length === 1 ? '' : 's'}` : undefined} />
+          <SectionHeading title={t('teacher.latestReviews')} subtitle={reviewList.length ? `${avgReview} · ${reviewList.length}★` : undefined} />
           {reviewList.length === 0 ? (
-            <p className="text-sm text-slate-400 py-6 text-center">No reviews yet. They appear here as students review your courses.</p>
+            <p className="text-sm text-slate-400 py-6 text-center">{t('teacher.noReviews')}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {reviewList.map((r, i) => (
