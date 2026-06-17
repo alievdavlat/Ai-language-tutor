@@ -74,14 +74,20 @@ export function useWhisperSTT(opts: UseWhisperSTTOptions): STTController {
     optsRef.current.onInterim?.(text)
   }, [])
 
-  // Warm up the pipeline when the engine becomes active so the first
-  // transcription doesn't eat a 10-30 s download-and-compile delay.
-  useEffect(() => {
-    if (opts.enabled === false) return
-    loadWhisperPipeline(opts.modelTag).catch((err: unknown) => {
+  // #A104 — Load the model LAZILY on first mic use, not on mount. Mounting the
+  // STT hook on a speaking / level-test page used to eagerly fetch the ONNX
+  // model + WASM at boot (noisy console, wasted fetch, 404s in preview). We now
+  // warm the pipeline the first time the user actually records/listens (see
+  // `start()` below), which keeps the first transcription snappy without paying
+  // the cost just for landing on the page.
+  const warmedRef = useRef(false)
+  const warmPipeline = useCallback((): void => {
+    if (warmedRef.current) return
+    warmedRef.current = true
+    loadWhisperPipeline(optsRef.current.modelTag).catch((err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
     })
-  }, [opts.enabled, opts.modelTag, setError])
+  }, [setError])
 
   // Push-to-talk path — MediaRecorder emits a compressed blob we decode here.
   const ptt = usePTTRecorder({
@@ -129,6 +135,9 @@ export function useWhisperSTT(opts: UseWhisperSTTOptions): STTController {
       }
     },
     onSpeechStart: () => {
+      // First real speech in always-on mode — warm the model now so the
+      // transcribe call below isn't the thing that triggers the cold load.
+      warmPipeline()
       setState((prev) => ({ ...prev, listening: true }))
       // Propagate to the caller for TTS barge-in + LLM abort.
       optsRef.current.onSpeechStart?.()
@@ -143,13 +152,15 @@ export function useWhisperSTT(opts: UseWhisperSTTOptions): STTController {
 
   const start = useCallback(async (): Promise<void> => {
     setError(null)
+    // First actual mic use — warm the Whisper pipeline now (lazy load, #A104).
+    warmPipeline()
     if (optsRef.current.mode === 'push-to-talk') {
       await ptt.start()
       setState((prev) => ({ ...prev, listening: true }))
     } else {
       await vad.start()
     }
-  }, [ptt, vad, setError])
+  }, [ptt, vad, setError, warmPipeline])
 
   const stop = useCallback(async (): Promise<void> => {
     setState((prev) => ({ ...prev, listening: false, interim: '' }))
