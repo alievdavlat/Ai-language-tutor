@@ -273,6 +273,12 @@ export type StringKey =
   | 'tutors.writeReview' | 'tutors.noReviews' | 'tutors.howWasLesson' | 'tutors.postReview'
   | 'tutors.posting' | 'tutors.done' | 'tutors.connecting' | 'tutors.lessonBooked'
   | 'tutors.trialWord' | 'tutors.lessonWord' | 'tutors.talkNowBtn'
+  // ── Downloads ────────────────────────────────────────────────────────
+  | 'downloads.eyebrow' | 'downloads.title' | 'downloads.subtitle' | 'downloads.availableOffline'
+  | 'downloads.storageUsed' | 'downloads.totalItems' | 'downloads.downloaded'
+  | 'downloads.tapToOpen' | 'downloads.noDownloads' | 'downloads.makeOffline'
+  | 'downloads.enrolledCourses' | 'downloads.download' | 'downloads.thisDevice'
+  | 'downloads.thisDeviceTag' | 'downloads.syncSoon' | 'downloads.browseMore'
 
 type Table = Record<StringKey, string>
 
@@ -961,7 +967,24 @@ const en: Table = {
   'tutors.lessonBooked': '{kind} booked for {time}',
   'tutors.trialWord': 'Free trial',
   'tutors.lessonWord': 'Lesson',
-  'tutors.talkNowBtn': 'Talk now'
+  'tutors.talkNowBtn': 'Talk now',
+  // Downloads
+  'downloads.eyebrow': 'Library · Offline',
+  'downloads.title': 'Downloads',
+  'downloads.subtitle': 'Save your enrolled courses to learn offline — on the train, on a flight, anywhere.',
+  'downloads.availableOffline': 'Available offline',
+  'downloads.storageUsed': 'Storage used',
+  'downloads.totalItems': 'Total items',
+  'downloads.downloaded': 'Downloaded',
+  'downloads.tapToOpen': 'Tap to open · expires for rentals',
+  'downloads.noDownloads': 'No downloads yet. Add an enrolled course below.',
+  'downloads.makeOffline': 'Make available offline',
+  'downloads.enrolledCourses': 'Your enrolled courses',
+  'downloads.download': 'Download',
+  'downloads.thisDevice': 'This device',
+  'downloads.thisDeviceTag': '· THIS DEVICE',
+  'downloads.syncSoon': 'Cross-device sync (mirror downloads and progress to your phone or tablet) is coming soon.',
+  'downloads.browseMore': 'Browse more courses to download'
 }
 
 const uz: Table = {
@@ -1649,7 +1672,24 @@ const uz: Table = {
   'tutors.lessonBooked': '{kind} {time} uchun band qilindi',
   'tutors.trialWord': 'Bepul sinov',
   'tutors.lessonWord': 'Dars',
-  'tutors.talkNowBtn': 'Hozir gaplashish'
+  'tutors.talkNowBtn': 'Hozir gaplashish',
+  // Downloads
+  'downloads.eyebrow': 'Kutubxona · Oflayn',
+  'downloads.title': 'Yuklamalar',
+  'downloads.subtitle': 'Yozilgan kurslaringizni oflayn o‘rganish uchun saqlang — poyezdda, samolyotda, istalgan joyda.',
+  'downloads.availableOffline': 'Oflayn mavjud',
+  'downloads.storageUsed': 'Ishlatilgan xotira',
+  'downloads.totalItems': 'Jami elementlar',
+  'downloads.downloaded': 'Yuklab olingan',
+  'downloads.tapToOpen': 'Ochish uchun bosing · ijaralar muddati tugaydi',
+  'downloads.noDownloads': 'Hali yuklamalar yo‘q. Quyida yozilgan kursni qo‘shing.',
+  'downloads.makeOffline': 'Oflayn mavjud qilish',
+  'downloads.enrolledCourses': 'Yozilgan kurslaringiz',
+  'downloads.download': 'Yuklab olish',
+  'downloads.thisDevice': 'Ushbu qurilma',
+  'downloads.thisDeviceTag': '· USHBU QURILMA',
+  'downloads.syncSoon': 'Qurilmalararo sinxronlash (yuklamalar va jarayonni telefon yoki planshetga ko‘chirish) tez orada.',
+  'downloads.browseMore': 'Yuklash uchun boshqa kurslarni ko‘rish'
 }
 
 const ru: Table = {
@@ -2337,7 +2377,24 @@ const ru: Table = {
   'tutors.lessonBooked': '{kind} забронировано на {time}',
   'tutors.trialWord': 'Бесплатный пробный',
   'tutors.lessonWord': 'Урок',
-  'tutors.talkNowBtn': 'Поговорить сейчас'
+  'tutors.talkNowBtn': 'Поговорить сейчас',
+  // Downloads
+  'downloads.eyebrow': 'Библиотека · Офлайн',
+  'downloads.title': 'Загрузки',
+  'downloads.subtitle': 'Сохраняйте свои курсы для офлайн-обучения — в поезде, в самолёте, где угодно.',
+  'downloads.availableOffline': 'Доступно офлайн',
+  'downloads.storageUsed': 'Использовано памяти',
+  'downloads.totalItems': 'Всего элементов',
+  'downloads.downloaded': 'Загружено',
+  'downloads.tapToOpen': 'Нажмите, чтобы открыть · аренда истекает',
+  'downloads.noDownloads': 'Пока нет загрузок. Добавьте курс ниже.',
+  'downloads.makeOffline': 'Сделать доступным офлайн',
+  'downloads.enrolledCourses': 'Ваши курсы',
+  'downloads.download': 'Загрузить',
+  'downloads.thisDevice': 'Это устройство',
+  'downloads.thisDeviceTag': '· ЭТО УСТРОЙСТВО',
+  'downloads.syncSoon': 'Синхронизация между устройствами (загрузки и прогресс на телефон или планшет) скоро появится.',
+  'downloads.browseMore': 'Найти другие курсы для загрузки'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

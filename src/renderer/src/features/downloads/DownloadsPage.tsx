@@ -7,6 +7,7 @@ import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { studio } from '../../services/studio/store'
 import { PageHeader, ProgressBar, SectionHeading, StatCard } from '../../components/ui'
 import { IconCheck, IconDownload, IconX } from '../../components/icons'
+import { useT } from '../../i18n'
 
 const STATUS_TINT: Record<DownloadItem['status'], string> = {
   queued: 'text-slate-400',
@@ -18,6 +19,7 @@ const STATUS_TINT: Record<DownloadItem['status'], string> = {
 
 export default function DownloadsPage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const downloads = useBackendQuery(() => studio.listDownloads(), [], [])
   const sync = useBackendQuery(() => studio.syncState(), [], null)
   const enrolled = useBackendQuery(async () => {
@@ -53,24 +55,24 @@ export default function DownloadsPage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-6">
         <PageHeader
-          eyebrow="Library · Offline"
-          title="Downloads"
-          subtitle="Save your enrolled courses to learn offline — on the train, on a flight, anywhere."
+          eyebrow={t('downloads.eyebrow')}
+          title={t('downloads.title')}
+          subtitle={t('downloads.subtitle')}
           back="/home"
-          crumbs={[{ label: 'Home', to: '/home' }, { label: 'Downloads' }]}
+          crumbs={[{ label: t('nav.home'), to: '/home' }, { label: t('downloads.title') }]}
         />
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <StatCard value={readyCount.toString()} label="Available offline" tone="emerald" icon={<IconDownload />} />
-          <StatCard value={`${(totalMb / 1024).toFixed(1)} GB`} label="Storage used" tone="brand" />
-          <StatCard value={downloads.data.length.toString()} label="Total items" tone="violet" icon={<IconDownload />} />
+          <StatCard value={readyCount.toString()} label={t('downloads.availableOffline')} tone="emerald" icon={<IconDownload />} />
+          <StatCard value={`${(totalMb / 1024).toFixed(1)} GB`} label={t('downloads.storageUsed')} tone="brand" />
+          <StatCard value={downloads.data.length.toString()} label={t('downloads.totalItems')} tone="violet" icon={<IconDownload />} />
         </div>
 
         {/* Downloads list */}
         <div>
-          <SectionHeading title="Downloaded" subtitle="Tap to open · expires for rentals" />
+          <SectionHeading title={t('downloads.downloaded')} subtitle={t('downloads.tapToOpen')} />
           <div className="flex flex-col gap-2">
-            {downloads.data.length === 0 && <p className="text-sm text-slate-400 py-6 text-center">No downloads yet. Add an enrolled course below.</p>}
+            {downloads.data.length === 0 && <p className="text-sm text-slate-400 py-6 text-center">{t('downloads.noDownloads')}</p>}
             {downloads.data.map((d) => (
               <div key={d.id} className="rounded-2xl border border-white/10 bg-white/[0.025] p-3.5 flex items-center gap-3">
                 <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', d.status === 'ready' ? 'bg-emerald-500/15' : 'bg-white/[0.06]')}>
@@ -98,7 +100,7 @@ export default function DownloadsPage(): JSX.Element {
         {/* Add downloads */}
         {notDownloaded.length > 0 && (
           <div>
-            <SectionHeading title="Make available offline" subtitle="Your enrolled courses" />
+            <SectionHeading title={t('downloads.makeOffline')} subtitle={t('downloads.enrolledCourses')} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {notDownloaded.map((c) => (
                 <div key={c.id} className="rounded-2xl border border-white/10 bg-white/[0.025] p-3 flex items-center gap-3">
@@ -107,7 +109,7 @@ export default function DownloadsPage(): JSX.Element {
                     <p className="text-sm font-semibold text-white truncate">{c.title}</p>
                     <p className="text-[11px] text-slate-500">~{Math.round(c.hours * 22)} MB</p>
                   </div>
-                  <button onClick={() => void addCourse(c)} className="btn-ghost text-xs px-3 py-1.5 inline-flex items-center gap-1"><IconDownload className="w-3.5 h-3.5" /> Download</button>
+                  <button onClick={() => void addCourse(c)} className="btn-ghost text-xs px-3 py-1.5 inline-flex items-center gap-1"><IconDownload className="w-3.5 h-3.5" /> {t('downloads.download')}</button>
                 </div>
               ))}
             </div>
@@ -117,23 +119,23 @@ export default function DownloadsPage(): JSX.Element {
         {/* Cross-device sync — not available offline-only; honest placeholder. */}
         {sync.data && (
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-            <SectionHeading title="This device" />
+            <SectionHeading title={t('downloads.thisDevice')} />
             <div className="flex flex-col gap-2 mt-2">
               {sync.data.devices.map((dv) => (
                 <div key={dv.id} className="flex items-center gap-3 py-2 border-b border-white/[0.05] last:border-0">
                   <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white">{dv.name} <span className="text-[10px] font-bold text-emerald-300">· THIS DEVICE</span></p>
+                    <p className="text-sm font-semibold text-white">{dv.name} <span className="text-[10px] font-bold text-emerald-300">{t('downloads.thisDeviceTag')}</span></p>
                     <p className="text-[11px] text-slate-500">{dv.platform}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-slate-500 mt-3">Cross-device sync (mirror downloads and progress to your phone or tablet) is coming soon.</p>
+            <p className="text-[11px] text-slate-500 mt-3">{t('downloads.syncSoon')}</p>
           </div>
         )}
 
-        <button onClick={() => navigate('/courses')} className="btn-ghost text-sm px-4 py-2 self-center">Browse more courses to download</button>
+        <button onClick={() => navigate('/courses')} className="btn-ghost text-sm px-4 py-2 self-center">{t('downloads.browseMore')}</button>
       </div>
     </div>
   )
