@@ -248,6 +248,18 @@ export type StringKey =
   | 'live.noOneLive' | 'live.beFirst' | 'live.findBuddy' | 'live.followingTab'
   | 'live.coursesTab' | 'live.teachersTab' | 'live.studentsTab' | 'live.group'
   | 'live.fromFollowing' | 'live.mightLike' | 'live.noStreamsView'
+  // ── Study buddy ──────────────────────────────────────────────────────
+  | 'buddy.matchPct' | 'buddy.levelLearning' | 'buddy.pairUp' | 'buddy.xpPerWk'
+  | 'buddy.findTitle' | 'buddy.findSub' | 'buddy.crumbStudyBuddy' | 'buddy.practice2x'
+  | 'buddy.pickSomeone' | 'buddy.suggested' | 'buddy.findingMatches' | 'buddy.matchesForLevel'
+  | 'buddy.loadingBuddy' | 'buddy.yourBuddy' | 'buddy.partnersFor' | 'buddy.unpair'
+  | 'buddy.dayStreak' | 'buddy.xpThisWeek' | 'buddy.sent' | 'buddy.sendPoke'
+  | 'buddy.sharedWeekly' | 'buddy.youXp' | 'buddy.recentActivity' | 'buddy.bothUpTo'
+  | 'buddy.noActivity'
+  | 'buddy.act.lesson' | 'buddy.act.word' | 'buddy.act.practice' | 'buddy.act.speaking'
+  | 'buddy.act.exam' | 'buddy.act.streak' | 'buddy.act.achievement' | 'buddy.act.enroll'
+  | 'buddy.act.default' | 'buddy.you'
+  | 'buddy.pokeMsg' | 'buddy.pokeNotifTitle' | 'buddy.pokeNotifBody' | 'buddy.yourBuddyWord'
 
 type Table = Record<StringKey, string>
 
@@ -850,7 +862,47 @@ const en: Table = {
   'live.group': 'Group',
   'live.fromFollowing': 'Live from people you follow',
   'live.mightLike': 'Live channels you might like',
-  'live.noStreamsView': 'No live streams in this view yet.'
+  'live.noStreamsView': 'No live streams in this view yet.',
+  // Study buddy
+  'buddy.matchPct': '{pct}% match',
+  'buddy.levelLearning': 'Level {level} · learning {lang}',
+  'buddy.pairUp': 'Pair up',
+  'buddy.xpPerWk': '{xp} XP/wk',
+  'buddy.findTitle': 'Find a study buddy',
+  'buddy.findSub': 'Matched by your level, goals and language. Keep each other accountable.',
+  'buddy.crumbStudyBuddy': 'Study buddy',
+  'buddy.practice2x': 'Learners with a buddy practice 2× more',
+  'buddy.pickSomeone': "Pick someone at your level — you'll share a weekly goal and see each other's activity.",
+  'buddy.suggested': 'Suggested buddies',
+  'buddy.findingMatches': 'Finding matches…',
+  'buddy.matchesForLevel': '{count} matches for level {level}',
+  'buddy.loadingBuddy': 'Loading your buddy…',
+  'buddy.yourBuddy': 'Your study buddy',
+  'buddy.partnersFor': 'Partners for {days} days · keep each other going.',
+  'buddy.unpair': 'Unpair',
+  'buddy.dayStreak': '{n}-day streak',
+  'buddy.xpThisWeek': '{xp} XP this week',
+  'buddy.sent': 'Sent',
+  'buddy.sendPoke': 'Send a poke',
+  'buddy.sharedWeekly': 'Shared weekly goal',
+  'buddy.youXp': 'You: {xp} XP',
+  'buddy.recentActivity': 'Recent activity',
+  'buddy.bothUpTo': "What you've both been up to",
+  'buddy.noActivity': 'No activity yet — complete a lesson or a speaking session and it will show up here.',
+  'buddy.act.lesson': 'completed a lesson',
+  'buddy.act.word': 'learned new words',
+  'buddy.act.practice': 'finished a practice session',
+  'buddy.act.speaking': 'completed a speaking session',
+  'buddy.act.exam': 'took an exam',
+  'buddy.act.streak': 'kept the streak alive',
+  'buddy.act.achievement': 'unlocked an achievement',
+  'buddy.act.enroll': 'enrolled in a course',
+  'buddy.act.default': 'was active',
+  'buddy.you': 'You',
+  'buddy.pokeMsg': '👋 Poke! Keep the streak going — let’s practice today!',
+  'buddy.pokeNotifTitle': 'Your study buddy poked you',
+  'buddy.pokeNotifBody': '{name} wants to practice together today.',
+  'buddy.yourBuddyWord': 'Your buddy'
 }
 
 const uz: Table = {
@@ -1452,7 +1504,47 @@ const uz: Table = {
   'live.group': 'Guruh',
   'live.fromFollowing': 'Siz kuzatayotganlardan jonli efir',
   'live.mightLike': 'Sizga yoqishi mumkin bo‘lgan efirlar',
-  'live.noStreamsView': 'Bu ko‘rinishda hali jonli efirlar yo‘q.'
+  'live.noStreamsView': 'Bu ko‘rinishda hali jonli efirlar yo‘q.',
+  // Study buddy
+  'buddy.matchPct': '{pct}% moslik',
+  'buddy.levelLearning': '{level} daraja · {lang} o‘rganmoqda',
+  'buddy.pairUp': 'Juftlashish',
+  'buddy.xpPerWk': '{xp} XP/hafta',
+  'buddy.findTitle': 'O‘qish sherigini topish',
+  'buddy.findSub': 'Darajangiz, maqsadlaringiz va tilingiz bo‘yicha moslashtiriladi. Bir-biringizni qo‘llab-quvvatlang.',
+  'buddy.crumbStudyBuddy': 'O‘qish sherigi',
+  'buddy.practice2x': 'Sherigi bor o‘quvchilar 2 baravar ko‘proq mashq qiladi',
+  'buddy.pickSomeone': 'O‘z darajangizdagi birovni tanlang — haftalik maqsadni baham ko‘rasiz va bir-biringizning faolligingizni ko‘rasiz.',
+  'buddy.suggested': 'Tavsiya etilgan sheriklar',
+  'buddy.findingMatches': 'Mosliklar qidirilmoqda…',
+  'buddy.matchesForLevel': '{level} daraja uchun {count} ta moslik',
+  'buddy.loadingBuddy': 'Sherigingiz yuklanmoqda…',
+  'buddy.yourBuddy': 'Sizning o‘qish sherigingiz',
+  'buddy.partnersFor': '{days} kundan beri sherik · bir-biringizni davom ettiring.',
+  'buddy.unpair': 'Ajratish',
+  'buddy.dayStreak': '{n} kunlik seriya',
+  'buddy.xpThisWeek': 'Bu hafta {xp} XP',
+  'buddy.sent': 'Yuborildi',
+  'buddy.sendPoke': 'Turtki yuborish',
+  'buddy.sharedWeekly': 'Umumiy haftalik maqsad',
+  'buddy.youXp': 'Siz: {xp} XP',
+  'buddy.recentActivity': 'So‘nggi faollik',
+  'buddy.bothUpTo': 'Ikkalangiz nima qilganingiz',
+  'buddy.noActivity': 'Hali faollik yo‘q — dars yoki nutq mashg‘ulotini tugating va u shu yerda ko‘rinadi.',
+  'buddy.act.lesson': 'darsni tugatdi',
+  'buddy.act.word': 'yangi so‘zlarni o‘rgandi',
+  'buddy.act.practice': 'mashq mashg‘ulotini tugatdi',
+  'buddy.act.speaking': 'nutq mashg‘ulotini tugatdi',
+  'buddy.act.exam': 'imtihon topshirdi',
+  'buddy.act.streak': 'seriyani saqlab qoldi',
+  'buddy.act.achievement': 'yutuqni ochdi',
+  'buddy.act.enroll': 'kursga yozildi',
+  'buddy.act.default': 'faol edi',
+  'buddy.you': 'Siz',
+  'buddy.pokeMsg': '👋 Turtki! Seriyani davom ettiring — bugun mashq qilaylik!',
+  'buddy.pokeNotifTitle': 'O‘qish sherigingiz sizga turtki yubordi',
+  'buddy.pokeNotifBody': '{name} bugun birga mashq qilmoqchi.',
+  'buddy.yourBuddyWord': 'Sherigingiz'
 }
 
 const ru: Table = {
@@ -2054,7 +2146,47 @@ const ru: Table = {
   'live.group': 'Группа',
   'live.fromFollowing': 'Эфиры тех, на кого вы подписаны',
   'live.mightLike': 'Эфиры, которые могут понравиться',
-  'live.noStreamsView': 'В этом разделе пока нет эфиров.'
+  'live.noStreamsView': 'В этом разделе пока нет эфиров.',
+  // Study buddy
+  'buddy.matchPct': 'совпадение {pct}%',
+  'buddy.levelLearning': 'Уровень {level} · учит {lang}',
+  'buddy.pairUp': 'Объединиться',
+  'buddy.xpPerWk': '{xp} XP/нед',
+  'buddy.findTitle': 'Найти напарника',
+  'buddy.findSub': 'Подбор по уровню, целям и языку. Поддерживайте друг друга.',
+  'buddy.crumbStudyBuddy': 'Напарник',
+  'buddy.practice2x': 'Ученики с напарником занимаются в 2 раза больше',
+  'buddy.pickSomeone': 'Выберите кого-то своего уровня — у вас будет общая недельная цель и вы будете видеть активность друг друга.',
+  'buddy.suggested': 'Рекомендуемые напарники',
+  'buddy.findingMatches': 'Поиск совпадений…',
+  'buddy.matchesForLevel': '{count} совпадений для уровня {level}',
+  'buddy.loadingBuddy': 'Загрузка напарника…',
+  'buddy.yourBuddy': 'Ваш напарник',
+  'buddy.partnersFor': 'Вместе уже {days} дн. · поддерживайте друг друга.',
+  'buddy.unpair': 'Разъединить',
+  'buddy.dayStreak': 'серия {n} дн.',
+  'buddy.xpThisWeek': '{xp} XP на этой неделе',
+  'buddy.sent': 'Отправлено',
+  'buddy.sendPoke': 'Подтолкнуть',
+  'buddy.sharedWeekly': 'Общая недельная цель',
+  'buddy.youXp': 'Вы: {xp} XP',
+  'buddy.recentActivity': 'Недавняя активность',
+  'buddy.bothUpTo': 'Чем вы оба занимались',
+  'buddy.noActivity': 'Пока нет активности — завершите урок или речевую сессию, и она появится здесь.',
+  'buddy.act.lesson': 'завершил(а) урок',
+  'buddy.act.word': 'выучил(а) новые слова',
+  'buddy.act.practice': 'закончил(а) тренировку',
+  'buddy.act.speaking': 'завершил(а) речевую сессию',
+  'buddy.act.exam': 'прошёл(ла) экзамен',
+  'buddy.act.streak': 'сохранил(а) серию',
+  'buddy.act.achievement': 'получил(а) достижение',
+  'buddy.act.enroll': 'записался(ась) на курс',
+  'buddy.act.default': 'был(а) активен',
+  'buddy.you': 'Вы',
+  'buddy.pokeMsg': '👋 Привет! Не теряй серию — давай позанимаемся сегодня!',
+  'buddy.pokeNotifTitle': 'Ваш напарник вас подтолкнул',
+  'buddy.pokeNotifBody': '{name} хочет позаниматься вместе сегодня.',
+  'buddy.yourBuddyWord': 'Ваш напарник'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────
