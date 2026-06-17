@@ -6,6 +6,7 @@ import { useProgressStore } from '../../services/progress'
 import { usePresence } from '../../services/social/presence'
 import { loadAudience, type AudienceMember } from '../../services/social/liveFeed'
 import { IconPlus, IconUsers, IconHeart } from '../../components/icons'
+import { useT } from '../../i18n'
 
 /** Initials from a name, for the avatar rings (no emoji — Instagram-style). */
 function initials(name: string): string {
@@ -66,6 +67,7 @@ function Fill({ user, gradient }: { user: AudienceMember['user']; gradient: stri
  */
 export default function NowBar(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const me = backend.currentUserId()
   const profile = useAppStore((s) => s.profile)
   const buddyId = useProgressStore((s) => s.buddyId)
@@ -90,11 +92,11 @@ export default function NowBar(): JSX.Element {
   return (
     <div className="px-6 pb-3 border-b border-white/[0.06]">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Now</span>
+        <span className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">{t('nowbar.now')}</span>
         <button onClick={() => navigate('/live')} className="text-[11px] font-bold inline-flex items-center gap-1.5 text-slate-400 hover:text-white transition">
-          {live.length > 0 && <span className="inline-flex items-center gap-1 text-rose-400"><span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> {live.length} live</span>}
-          {onlineCount > 0 && <span className="inline-flex items-center gap-1 text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> {onlineCount} online</span>}
-          <span>See all</span>
+          {live.length > 0 && <span className="inline-flex items-center gap-1 text-rose-400"><span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> {t('nowbar.live', { n: live.length })}</span>}
+          {onlineCount > 0 && <span className="inline-flex items-center gap-1 text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> {t('nowbar.online', { n: onlineCount })}</span>}
+          <span>{t('nowbar.seeAll')}</span>
           <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
         </button>
       </div>
@@ -102,18 +104,18 @@ export default function NowBar(): JSX.Element {
       {isEmpty ? (
         <div className="flex items-center gap-3 py-1">
           <button onClick={() => navigate('/live/room?host=1')} className="flex-1 rounded-xl border border-white/10 bg-gradient-to-br from-brand-500/15 to-violet-500/10 px-4 py-3 text-left transition hover:border-brand-400/40">
-            <p className="text-sm font-bold text-white inline-flex items-center gap-2"><IconPlus className="w-4 h-4 text-brand-300" /> Go live</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Start a room and invite the community</p>
+            <p className="text-sm font-bold text-white inline-flex items-center gap-2"><IconPlus className="w-4 h-4 text-brand-300" /> {t('nowbar.goLive')}</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">{t('nowbar.goLiveSub')}</p>
           </button>
           <button onClick={() => navigate('/buddy')} className="flex-1 rounded-xl border border-white/10 bg-gradient-to-br from-emerald-500/15 to-teal-500/10 px-4 py-3 text-left transition hover:border-emerald-400/40">
-            <p className="text-sm font-bold text-white inline-flex items-center gap-2"><IconUsers className="w-4 h-4 text-emerald-300" /> Find a study buddy</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Match by level &amp; language, practise together</p>
+            <p className="text-sm font-bold text-white inline-flex items-center gap-2"><IconUsers className="w-4 h-4 text-emerald-300" /> {t('nowbar.findBuddy')}</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">{t('nowbar.findBuddySub')}</p>
           </button>
         </div>
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-1">
           {/* Go live */}
-          <Ring ringCls="bg-gradient-to-tr from-brand-500 to-violet-500" label="Go live" onClick={() => navigate('/live/room?host=1')}>
+          <Ring ringCls="bg-gradient-to-tr from-brand-500 to-violet-500" label={t('nowbar.goLive')} onClick={() => navigate('/live/room?host=1')}>
             <div className="w-full h-full bg-canvas-soft flex items-center justify-center"><IconPlus className="w-6 h-6 text-brand-300" /></div>
           </Ring>
 
@@ -123,7 +125,7 @@ export default function NowBar(): JSX.Element {
               key={s.id}
               ringCls="bg-gradient-to-tr from-rose-500 to-amber-500 animate-pulse"
               label={s.title}
-              badge={<span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black bg-rose-600 text-white px-1.5 py-px rounded">LIVE</span>}
+              badge={<span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black bg-rose-600 text-white px-1.5 py-px rounded">{t('nowbar.liveTag')}</span>}
               onClick={() => navigate(`/live/room?id=${s.id}`)}
             >
               <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center text-white font-bold relative overflow-hidden', s.cover)}>
@@ -144,7 +146,7 @@ export default function NowBar(): JSX.Element {
                   isBuddy ? 'from-amber-400 to-rose-500' : isOnline ? 'from-emerald-400 to-teal-500' : 'from-white/15 to-white/10'
                 )}
                 label={m.user.name.split(' ')[0]}
-                sub={isBuddy ? 'Buddy' : m.reason === 'match' ? 'Suggested' : undefined}
+                sub={isBuddy ? t('nowbar.buddy') : m.reason === 'match' ? t('nowbar.suggested') : undefined}
                 badge={
                   isBuddy ? (
                     <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-rose-500 ring-2 ring-canvas flex items-center justify-center">
@@ -163,7 +165,7 @@ export default function NowBar(): JSX.Element {
 
           {/* Find a buddy (only if not already paired) */}
           {!hasBuddy && (
-            <Ring ringCls="bg-gradient-to-tr from-emerald-400/60 to-teal-500/60" label="Find buddy" onClick={() => navigate('/buddy')}>
+            <Ring ringCls="bg-gradient-to-tr from-emerald-400/60 to-teal-500/60" label={t('nowbar.findBuddyShort')} onClick={() => navigate('/buddy')}>
               <div className="w-full h-full bg-canvas-soft flex items-center justify-center"><IconUsers className="w-5 h-5 text-emerald-300" /></div>
             </Ring>
           )}

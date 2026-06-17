@@ -300,6 +300,12 @@ export type StringKey =
   | 'writing.guidePurpleLabel' | 'writing.guidePurpleTip' | 'writing.guideBlueLabel' | 'writing.guideBlueTip'
   | 'writing.guideGreenLabel' | 'writing.guideGreenTip'
   | 'writing.legVeryHard' | 'writing.legHard' | 'writing.legComplex' | 'writing.legAdverb' | 'writing.legPassive'
+  // ── Now bar (social) ─────────────────────────────────────────────────
+  | 'nowbar.now' | 'nowbar.live' | 'nowbar.online' | 'nowbar.seeAll' | 'nowbar.goLive'
+  | 'nowbar.goLiveSub' | 'nowbar.findBuddy' | 'nowbar.findBuddySub' | 'nowbar.findBuddyShort'
+  | 'nowbar.liveTag' | 'nowbar.buddy' | 'nowbar.suggested'
+  // ── Social hub ───────────────────────────────────────────────────────
+  | 'social.explore' | 'social.feed' | 'social.groups' | 'social.challenges' | 'social.discover'
 
 type Table = Record<StringKey, string>
 
@@ -1075,7 +1081,24 @@ const en: Table = {
   'writing.legHard': '{n} sentences hard to read',
   'writing.legComplex': '{n} words with a simpler alternative',
   'writing.legAdverb': '{n} adverbs & weakeners',
-  'writing.legPassive': '{n} uses of passive voice'
+  'writing.legPassive': '{n} uses of passive voice',
+  'nowbar.now': 'Now',
+  'nowbar.live': '{n} live',
+  'nowbar.online': '{n} online',
+  'nowbar.seeAll': 'See all',
+  'nowbar.goLive': 'Go live',
+  'nowbar.goLiveSub': 'Start a room and invite the community',
+  'nowbar.findBuddy': 'Find a study buddy',
+  'nowbar.findBuddySub': 'Match by level & language, practise together',
+  'nowbar.findBuddyShort': 'Find buddy',
+  'nowbar.liveTag': 'LIVE',
+  'nowbar.buddy': 'Buddy',
+  'nowbar.suggested': 'Suggested',
+  'social.explore': 'Explore',
+  'social.feed': 'Feed',
+  'social.groups': 'Groups & Clubs',
+  'social.challenges': 'Challenges',
+  'social.discover': 'Discover'
 }
 
 const uz: Table = {
@@ -1850,7 +1873,24 @@ const uz: Table = {
   'writing.legHard': '{n} ta o‘qish qiyin jumla',
   'writing.legComplex': '{n} ta soddaroq muqobili bor so‘z',
   'writing.legAdverb': '{n} ta ravish va zaiflashtiruvchi',
-  'writing.legPassive': '{n} marta majhul nisbat ishlatilgan'
+  'writing.legPassive': '{n} marta majhul nisbat ishlatilgan',
+  'nowbar.now': 'Hozir',
+  'nowbar.live': '{n} jonli',
+  'nowbar.online': '{n} onlayn',
+  'nowbar.seeAll': 'Hammasini ko‘rish',
+  'nowbar.goLive': 'Jonli efir',
+  'nowbar.goLiveSub': 'Xona boshlang va hamjamiyatni taklif qiling',
+  'nowbar.findBuddy': 'O‘qish hamrohi topish',
+  'nowbar.findBuddySub': 'Daraja va til bo‘yicha moslang, birga mashq qiling',
+  'nowbar.findBuddyShort': 'Hamroh topish',
+  'nowbar.liveTag': 'JONLI',
+  'nowbar.buddy': 'Hamroh',
+  'nowbar.suggested': 'Tavsiya',
+  'social.explore': 'Kashf etish',
+  'social.feed': 'Lenta',
+  'social.groups': 'Guruh va klublar',
+  'social.challenges': 'Sinovlar',
+  'social.discover': 'Topish'
 }
 
 const ru: Table = {
@@ -2625,7 +2665,24 @@ const ru: Table = {
   'writing.legHard': '{n} предложений трудно читать',
   'writing.legComplex': '{n} слов с более простым вариантом',
   'writing.legAdverb': '{n} наречий и усилителей',
-  'writing.legPassive': '{n} употреблений страдательного залога'
+  'writing.legPassive': '{n} употреблений страдательного залога',
+  'nowbar.now': 'Сейчас',
+  'nowbar.live': '{n} в эфире',
+  'nowbar.online': '{n} онлайн',
+  'nowbar.seeAll': 'Все',
+  'nowbar.goLive': 'В эфир',
+  'nowbar.goLiveSub': 'Создайте комнату и пригласите сообщество',
+  'nowbar.findBuddy': 'Найти напарника',
+  'nowbar.findBuddySub': 'Подбор по уровню и языку, практикуйтесь вместе',
+  'nowbar.findBuddyShort': 'Найти напарника',
+  'nowbar.liveTag': 'В ЭФИРЕ',
+  'nowbar.buddy': 'Напарник',
+  'nowbar.suggested': 'Рекомендуется',
+  'social.explore': 'Обзор',
+  'social.feed': 'Лента',
+  'social.groups': 'Группы и клубы',
+  'social.challenges': 'Челленджи',
+  'social.discover': 'Открыть'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────
