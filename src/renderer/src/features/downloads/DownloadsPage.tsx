@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Course } from '@shared/types'
 import type { DownloadItem } from '@shared/types/studio.types'
@@ -6,7 +6,7 @@ import { cn } from '../../lib/classnames'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { studio } from '../../services/studio/store'
 import { PageHeader, ProgressBar, SectionHeading, StatCard } from '../../components/ui'
-import { IconCheck, IconDownload, IconRefresh, IconX } from '../../components/icons'
+import { IconCheck, IconDownload, IconX } from '../../components/icons'
 
 const STATUS_TINT: Record<DownloadItem['status'], string> = {
   queued: 'text-slate-400',
@@ -14,14 +14,6 @@ const STATUS_TINT: Record<DownloadItem['status'], string> = {
   ready: 'text-emerald-300',
   error: 'text-rose-300',
   expired: 'text-amber-300'
-}
-
-function relTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  const h = Math.round(diff / 3_600_000)
-  if (h < 1) return 'just now'
-  if (h < 24) return `${h}h ago`
-  return `${Math.round(h / 24)}d ago`
 }
 
 export default function DownloadsPage(): JSX.Element {
@@ -35,7 +27,6 @@ export default function DownloadsPage(): JSX.Element {
     const cs = await Promise.all(ens.map((e) => backend.getCourse(e.courseId)))
     return cs.filter((c): c is Course => !!c)
   }, [], [] as Course[])
-  const [syncing, setSyncing] = useState(false)
 
   // Animate in-flight downloads.
   useEffect(() => {
@@ -53,12 +44,6 @@ export default function DownloadsPage(): JSX.Element {
     await studio.addDownload('course', c.id, c.title, Math.round(c.hours * 22))
     downloads.refresh()
   }
-  const doSync = async (): Promise<void> => {
-    setSyncing(true)
-    await studio.syncNow()
-    setSyncing(false)
-    sync.refresh()
-  }
 
   const readyCount = downloads.data.filter((d) => d.status === 'ready').length
   const totalMb = downloads.data.reduce((a, d) => a + (d.status === 'ready' ? d.sizeMb : 0), 0)
@@ -69,17 +54,16 @@ export default function DownloadsPage(): JSX.Element {
       <div className="px-6 py-6 w-full flex flex-col gap-6">
         <PageHeader
           eyebrow="Library · Offline"
-          title="Downloads & sync"
-          subtitle="Learn offline on the train, sync your progress across devices."
+          title="Downloads"
+          subtitle="Save your enrolled courses to learn offline — on the train, on a flight, anywhere."
           back="/home"
           crumbs={[{ label: 'Home', to: '/home' }, { label: 'Downloads' }]}
         />
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <StatCard value={readyCount.toString()} label="Available offline" tone="emerald" icon={<IconDownload />} />
           <StatCard value={`${(totalMb / 1024).toFixed(1)} GB`} label="Storage used" tone="brand" />
-          <StatCard value={(sync.data?.devices.length ?? 1).toString()} label="Synced devices" tone="violet" icon={<IconRefresh />} />
-          <StatCard value={sync.data?.lastSyncedAt ? relTime(sync.data.lastSyncedAt) : 'never'} label="Last sync" tone="amber" />
+          <StatCard value={downloads.data.length.toString()} label="Total items" tone="violet" icon={<IconDownload />} />
         </div>
 
         {/* Downloads list */}
@@ -130,27 +114,22 @@ export default function DownloadsPage(): JSX.Element {
           </div>
         )}
 
-        {/* Sync */}
+        {/* Cross-device sync — not available offline-only; honest placeholder. */}
         {sync.data && (
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-            <div className="flex items-center justify-between">
-              <SectionHeading title="Cross-device sync" subtitle={`${sync.data.pendingChanges} items ready to mirror`} />
-              <button onClick={() => void doSync()} disabled={syncing} className="btn-primary text-xs px-4 py-2 inline-flex items-center gap-1.5 disabled:opacity-50">
-                <IconRefresh className={cn('w-3.5 h-3.5', syncing && 'animate-spin')} /> {syncing ? 'Syncing…' : 'Sync now'}
-              </button>
-            </div>
+            <SectionHeading title="This device" />
             <div className="flex flex-col gap-2 mt-2">
               {sync.data.devices.map((dv) => (
                 <div key={dv.id} className="flex items-center gap-3 py-2 border-b border-white/[0.05] last:border-0">
-                  <span className={cn('w-2 h-2 rounded-full', dv.current ? 'bg-emerald-400' : 'bg-slate-500')} />
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white">{dv.name} {dv.current && <span className="text-[10px] font-bold text-emerald-300">· THIS DEVICE</span>}</p>
+                    <p className="text-sm font-semibold text-white">{dv.name} <span className="text-[10px] font-bold text-emerald-300">· THIS DEVICE</span></p>
                     <p className="text-[11px] text-slate-500">{dv.platform}</p>
                   </div>
-                  <span className="text-[11px] text-slate-500">{relTime(dv.lastSeenAt)}</span>
                 </div>
               ))}
             </div>
+            <p className="text-[11px] text-slate-500 mt-3">Cross-device sync (mirror downloads and progress to your phone or tablet) is coming soon.</p>
           </div>
         )}
 
