@@ -198,6 +198,23 @@ export type StringKey =
   | 'flashcards.iKnew' | 'flashcards.multipleChoice' | 'flashcards.translate'
   | 'flashcards.matchHint' | 'flashcards.misses' | 'flashcards.roundComplete'
   | 'flashcards.roundStats' | 'flashcards.again' | 'flashcards.myVocab'
+  // ── Teacher tier (#A24.1 dispatch 2) ─────────────────────────────────
+  | 'teacher.newLesson' | 'teacher.newCourse' | 'teacher.goLive' | 'teacher.youtube'
+  | 'teacher.students' | 'teacher.analytics' | 'teacher.earnings' | 'teacher.liveClips'
+  | 'teacher.clipsComposer' | 'teacher.viewChannel' | 'teacher.yourCourses' | 'teacher.new'
+  | 'teacher.noCourses' | 'teacher.createFirstCourse' | 'teacher.draft' | 'teacher.manage'
+  | 'teacher.recentActivity' | 'teacher.noActivity' | 'teacher.manageChannel'
+  | 'teacher.announceToStudents' | 'teacher.announceHint' | 'teacher.newAnnouncement'
+  | 'teacher.posting' | 'teacher.postAnnouncement' | 'teacher.recentAnnouncements'
+  | 'teacher.bannerImage' | 'teacher.uploadBanner' | 'teacher.remove' | 'teacher.when'
+  | 'teacher.coverGradient' | 'teacher.teacher' | 'teacher.studentsTitle'
+  | 'teacher.studentsSub' | 'teacher.noStudents' | 'teacher.analyticsTitle'
+  | 'teacher.analyticsSub' | 'teacher.earningsTitle' | 'teacher.earningsSub'
+  | 'teacher.liveHostTitle' | 'teacher.liveHostSub' | 'teacher.channelTitle'
+  | 'teacher.courseAuthoring' | 'teacher.lessonBuilder' | 'teacher.lessonPlayer'
+  | 'teacher.clipsComposerTitle' | 'teacher.publish' | 'teacher.save' | 'teacher.preview'
+  | 'teacher.untitled' | 'teacher.search' | 'teacher.allCourses' | 'teacher.export'
+  | 'teacher.avgRating' | 'teacher.welcomeBack' | 'teacher.courseStudentLine'
 
 type Table = Record<StringKey, string>
 
@@ -639,7 +656,63 @@ const en: Table = {
   'flashcards.roundComplete': 'Round complete!',
   'flashcards.roundStats': '{total} cards · {correct} correct · {accuracy}% accuracy',
   'flashcards.again': 'Again',
-  'flashcards.myVocab': 'My vocab'
+  'flashcards.myVocab': 'My vocab',
+  // Teacher tier
+  'teacher.newLesson': 'New lesson',
+  'teacher.newCourse': 'New course',
+  'teacher.goLive': 'Go live',
+  'teacher.youtube': 'YouTube',
+  'teacher.students': 'Students',
+  'teacher.analytics': 'Analytics',
+  'teacher.earnings': 'Earnings',
+  'teacher.liveClips': 'Live & clips',
+  'teacher.clipsComposer': 'Clips composer',
+  'teacher.viewChannel': 'View channel',
+  'teacher.yourCourses': 'Your courses',
+  'teacher.new': 'New',
+  'teacher.noCourses': 'No courses yet.',
+  'teacher.createFirstCourse': 'Create your first course',
+  'teacher.draft': 'Draft',
+  'teacher.manage': 'Manage',
+  'teacher.recentActivity': 'Recent activity',
+  'teacher.noActivity': 'No recent activity yet. As students enrol and review your courses, it appears here.',
+  'teacher.manageChannel': 'Manage channel',
+  'teacher.announceToStudents': 'Announce to your students',
+  'teacher.announceHint': "Posts appear in every learner's Home hero carousel.",
+  'teacher.newAnnouncement': 'New announcement',
+  'teacher.posting': 'Posting…',
+  'teacher.postAnnouncement': 'Post announcement',
+  'teacher.recentAnnouncements': 'Your recent announcements',
+  'teacher.bannerImage': 'Banner image',
+  'teacher.uploadBanner': '🖼️ Upload a banner image (optional)',
+  'teacher.remove': 'Remove',
+  'teacher.when': 'When',
+  'teacher.coverGradient': 'Cover gradient (fallback)',
+  'teacher.teacher': 'Teacher',
+  'teacher.studentsTitle': 'Students',
+  'teacher.studentsSub': 'Everyone enrolled in your courses.',
+  'teacher.noStudents': 'No students yet.',
+  'teacher.analyticsTitle': 'Analytics',
+  'teacher.analyticsSub': 'How your courses and lessons are performing.',
+  'teacher.earningsTitle': 'Earnings',
+  'teacher.earningsSub': 'Your revenue, payouts and pricing.',
+  'teacher.liveHostTitle': 'Live & clips',
+  'teacher.liveHostSub': 'Host live sessions and turn them into clips.',
+  'teacher.channelTitle': 'My channel',
+  'teacher.courseAuthoring': 'Course authoring',
+  'teacher.lessonBuilder': 'Lesson builder',
+  'teacher.lessonPlayer': 'Lesson player',
+  'teacher.clipsComposerTitle': 'Clips composer',
+  'teacher.publish': 'Publish',
+  'teacher.save': 'Save',
+  'teacher.preview': 'Preview',
+  'teacher.untitled': 'Untitled',
+  'teacher.search': 'Search students…',
+  'teacher.allCourses': 'All courses',
+  'teacher.export': 'Export',
+  'teacher.avgRating': 'Avg rating',
+  'teacher.welcomeBack': 'Welcome back, {name}',
+  'teacher.courseStudentLine': '{courses} courses · {students} students enrolled'
 }
 
 const uz: Table = {
@@ -1080,7 +1153,63 @@ const uz: Table = {
   'flashcards.roundComplete': 'Bosqich tugadi!',
   'flashcards.roundStats': '{total} karta · {correct} to‘g‘ri · {accuracy}% aniqlik',
   'flashcards.again': 'Yana',
-  'flashcards.myVocab': 'Mening lug‘atim'
+  'flashcards.myVocab': 'Mening lug‘atim',
+  // Teacher tier
+  'teacher.newLesson': 'Yangi dars',
+  'teacher.newCourse': 'Yangi kurs',
+  'teacher.goLive': 'Jonli efir',
+  'teacher.youtube': 'YouTube',
+  'teacher.students': 'Talabalar',
+  'teacher.analytics': 'Tahlil',
+  'teacher.earnings': 'Daromad',
+  'teacher.liveClips': 'Jonli efir va kliplar',
+  'teacher.clipsComposer': 'Klip yaratuvchi',
+  'teacher.viewChannel': 'Kanalni ko‘rish',
+  'teacher.yourCourses': 'Kurslaringiz',
+  'teacher.new': 'Yangi',
+  'teacher.noCourses': 'Hali kurslar yo‘q.',
+  'teacher.createFirstCourse': 'Birinchi kursingizni yarating',
+  'teacher.draft': 'Qoralama',
+  'teacher.manage': 'Boshqarish',
+  'teacher.recentActivity': 'So‘nggi faollik',
+  'teacher.noActivity': 'Hali faollik yo‘q. Talabalar kurslaringizga yozilganda va sharh qoldirganda shu yerda ko‘rinadi.',
+  'teacher.manageChannel': 'Kanalni boshqarish',
+  'teacher.announceToStudents': 'Talabalaringizga e’lon qiling',
+  'teacher.announceHint': 'E’lonlar har bir o‘quvchining Bosh sahifa karuselida ko‘rinadi.',
+  'teacher.newAnnouncement': 'Yangi e’lon',
+  'teacher.posting': 'Joylanmoqda…',
+  'teacher.postAnnouncement': 'E’lon joylash',
+  'teacher.recentAnnouncements': 'So‘nggi e’lonlaringiz',
+  'teacher.bannerImage': 'Banner rasmi',
+  'teacher.uploadBanner': '🖼️ Banner rasmini yuklang (ixtiyoriy)',
+  'teacher.remove': 'O‘chirish',
+  'teacher.when': 'Qachon',
+  'teacher.coverGradient': 'Muqova gradienti (zaxira)',
+  'teacher.teacher': 'O‘qituvchi',
+  'teacher.studentsTitle': 'Talabalar',
+  'teacher.studentsSub': 'Kurslaringizga yozilgan barcha talabalar.',
+  'teacher.noStudents': 'Hali talabalar yo‘q.',
+  'teacher.analyticsTitle': 'Tahlil',
+  'teacher.analyticsSub': 'Kurslaringiz va darslaringiz qanday ishlayotgani.',
+  'teacher.earningsTitle': 'Daromad',
+  'teacher.earningsSub': 'Daromadingiz, to‘lovlar va narxlar.',
+  'teacher.liveHostTitle': 'Jonli efir va kliplar',
+  'teacher.liveHostSub': 'Jonli efirlar o‘tkazing va ularni kliplarga aylantiring.',
+  'teacher.channelTitle': 'Mening kanalim',
+  'teacher.courseAuthoring': 'Kurs yaratish',
+  'teacher.lessonBuilder': 'Dars yaratuvchi',
+  'teacher.lessonPlayer': 'Dars pleyeri',
+  'teacher.clipsComposerTitle': 'Klip yaratuvchi',
+  'teacher.publish': 'Nashr qilish',
+  'teacher.save': 'Saqlash',
+  'teacher.preview': 'Ko‘rib chiqish',
+  'teacher.untitled': 'Nomsiz',
+  'teacher.search': 'Talabalarni qidirish…',
+  'teacher.allCourses': 'Barcha kurslar',
+  'teacher.export': 'Eksport',
+  'teacher.avgRating': 'O‘rtacha reyting',
+  'teacher.welcomeBack': 'Xush kelibsiz, {name}',
+  'teacher.courseStudentLine': '{courses} ta kurs · {students} ta talaba yozilgan'
 }
 
 const ru: Table = {
@@ -1521,7 +1650,63 @@ const ru: Table = {
   'flashcards.roundComplete': 'Раунд завершён!',
   'flashcards.roundStats': 'карточек: {total} · верно: {correct} · точность {accuracy}%',
   'flashcards.again': 'Ещё раз',
-  'flashcards.myVocab': 'Мой словарь'
+  'flashcards.myVocab': 'Мой словарь',
+  // Teacher tier
+  'teacher.newLesson': 'Новый урок',
+  'teacher.newCourse': 'Новый курс',
+  'teacher.goLive': 'Начать эфир',
+  'teacher.youtube': 'YouTube',
+  'teacher.students': 'Студенты',
+  'teacher.analytics': 'Аналитика',
+  'teacher.earnings': 'Доход',
+  'teacher.liveClips': 'Эфир и клипы',
+  'teacher.clipsComposer': 'Редактор клипов',
+  'teacher.viewChannel': 'Открыть канал',
+  'teacher.yourCourses': 'Ваши курсы',
+  'teacher.new': 'Новый',
+  'teacher.noCourses': 'Пока нет курсов.',
+  'teacher.createFirstCourse': 'Создайте свой первый курс',
+  'teacher.draft': 'Черновик',
+  'teacher.manage': 'Управлять',
+  'teacher.recentActivity': 'Недавняя активность',
+  'teacher.noActivity': 'Пока нет активности. Когда студенты записываются и оставляют отзывы, они появятся здесь.',
+  'teacher.manageChannel': 'Управление каналом',
+  'teacher.announceToStudents': 'Объявите своим студентам',
+  'teacher.announceHint': 'Объявления появляются в карусели на главной у каждого ученика.',
+  'teacher.newAnnouncement': 'Новое объявление',
+  'teacher.posting': 'Публикация…',
+  'teacher.postAnnouncement': 'Опубликовать объявление',
+  'teacher.recentAnnouncements': 'Ваши недавние объявления',
+  'teacher.bannerImage': 'Изображение баннера',
+  'teacher.uploadBanner': '🖼️ Загрузите изображение баннера (необязательно)',
+  'teacher.remove': 'Удалить',
+  'teacher.when': 'Когда',
+  'teacher.coverGradient': 'Градиент обложки (запасной)',
+  'teacher.teacher': 'Преподаватель',
+  'teacher.studentsTitle': 'Студенты',
+  'teacher.studentsSub': 'Все, кто записан на ваши курсы.',
+  'teacher.noStudents': 'Пока нет студентов.',
+  'teacher.analyticsTitle': 'Аналитика',
+  'teacher.analyticsSub': 'Как проходят ваши курсы и уроки.',
+  'teacher.earningsTitle': 'Доход',
+  'teacher.earningsSub': 'Ваш доход, выплаты и цены.',
+  'teacher.liveHostTitle': 'Эфир и клипы',
+  'teacher.liveHostSub': 'Проводите эфиры и превращайте их в клипы.',
+  'teacher.channelTitle': 'Мой канал',
+  'teacher.courseAuthoring': 'Создание курса',
+  'teacher.lessonBuilder': 'Конструктор урока',
+  'teacher.lessonPlayer': 'Плеер урока',
+  'teacher.clipsComposerTitle': 'Редактор клипов',
+  'teacher.publish': 'Опубликовать',
+  'teacher.save': 'Сохранить',
+  'teacher.preview': 'Предпросмотр',
+  'teacher.untitled': 'Без названия',
+  'teacher.search': 'Поиск студентов…',
+  'teacher.allCourses': 'Все курсы',
+  'teacher.export': 'Экспорт',
+  'teacher.avgRating': 'Средний рейтинг',
+  'teacher.welcomeBack': 'С возвращением, {name}',
+  'teacher.courseStudentLine': 'Курсов: {courses} · Записано студентов: {students}'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

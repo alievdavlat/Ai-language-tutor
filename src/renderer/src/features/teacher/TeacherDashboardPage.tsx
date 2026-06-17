@@ -21,26 +21,29 @@ import {
   type IconProps
 } from '../../components/icons'
 
-const ACTIONS: { label: string; Icon: (p: IconProps) => JSX.Element; to: string; tone: string }[] = [
-  { label: 'New lesson', Icon: IconPlus, to: '/teacher/new', tone: 'bg-grad-brand text-white' },
-  { label: 'New course', Icon: IconBook, to: '/teacher/course/new', tone: 'bg-white/[0.06] text-slate-200 border border-white/10' },
-  { label: 'Go live', Icon: IconLive, to: '/teacher/live', tone: 'bg-rose-500/15 text-rose-300 border border-rose-400/30' },
-  { label: 'YouTube', Icon: IconYouTube, to: '/teacher/youtube', tone: 'bg-red-500/15 text-red-300 border border-red-400/30' }
+import { useT, type StringKey } from '../../i18n'
+
+const ACTIONS: { labelKey: StringKey; Icon: (p: IconProps) => JSX.Element; to: string; tone: string }[] = [
+  { labelKey: 'teacher.newLesson', Icon: IconPlus, to: '/teacher/new', tone: 'bg-grad-brand text-white' },
+  { labelKey: 'teacher.newCourse', Icon: IconBook, to: '/teacher/course/new', tone: 'bg-white/[0.06] text-slate-200 border border-white/10' },
+  { labelKey: 'teacher.goLive', Icon: IconLive, to: '/teacher/live', tone: 'bg-rose-500/15 text-rose-300 border border-rose-400/30' },
+  { labelKey: 'teacher.youtube', Icon: IconYouTube, to: '/teacher/youtube', tone: 'bg-red-500/15 text-red-300 border border-red-400/30' }
 ]
 
-const SECONDARY_NAV: { label: string; to: string; Icon: (p: IconProps) => JSX.Element }[] = [
-  { label: 'Students', to: '/teacher/students', Icon: IconUsers },
-  { label: 'Analytics', to: '/teacher/analytics', Icon: IconChart },
-  { label: 'Earnings', to: '/teacher/monetization', Icon: IconTrophy },
-  { label: 'Live & clips', to: '/teacher/live', Icon: IconLive },
-  { label: 'Clips composer', to: '/teacher/clips', Icon: IconYouTube }
+const SECONDARY_NAV: { labelKey: StringKey; to: string; Icon: (p: IconProps) => JSX.Element }[] = [
+  { labelKey: 'teacher.students', to: '/teacher/students', Icon: IconUsers },
+  { labelKey: 'teacher.analytics', to: '/teacher/analytics', Icon: IconChart },
+  { labelKey: 'teacher.earnings', to: '/teacher/monetization', Icon: IconTrophy },
+  { labelKey: 'teacher.liveClips', to: '/teacher/live', Icon: IconLive },
+  { labelKey: 'teacher.clipsComposer', to: '/teacher/clips', Icon: IconYouTube }
 ]
 
 export default function TeacherDashboardPage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const profile = useAppStore((s) => s.profile)
   const me = backend.currentUserId()
-  const myName = profile?.name?.trim() || 'Teacher'
+  const myName = profile?.name?.trim() || t('teacher.teacher')
   // Real course list for the signed-in teacher. The dashboard cards still keep
   // their gradient covers because the underlying Course has a `cover` field.
   const myCourses = useBackendQuery(
@@ -93,10 +96,10 @@ export default function TeacherDashboardPage(): JSX.Element {
     ? (ratedCourses.reduce((a, c) => a + c.rating, 0) / ratedCourses.length).toFixed(1)
     : '—'
   const STATS = [
-    { value: students.data.length.toLocaleString(), label: 'Students', tone: 'brand' as const },
-    { value: followers.data.toLocaleString(), label: 'Followers', tone: 'violet' as const },
-    { value: String(myCourses.data.length), label: 'Courses', tone: 'emerald' as const },
-    { value: avgRating, label: 'Avg rating', tone: 'amber' as const }
+    { value: students.data.length.toLocaleString(), label: t('teacher.students'), tone: 'brand' as const },
+    { value: followers.data.toLocaleString(), label: t('account.followers'), tone: 'violet' as const },
+    { value: String(myCourses.data.length), label: t('nav.courses'), tone: 'emerald' as const },
+    { value: avgRating, label: t('teacher.avgRating'), tone: 'amber' as const }
   ]
 
   return (
@@ -106,20 +109,20 @@ export default function TeacherDashboardPage(): JSX.Element {
         <div className="flex items-center gap-3">
           <AvatarCircle name={myName} size="md" />
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight">Welcome back, {myName.split(' ')[0]}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t('teacher.welcomeBack', { name: myName.split(' ')[0] })}</h1>
             <p className="text-sm text-slate-400">
-              {myCourses.data.length} course{myCourses.data.length === 1 ? '' : 's'} · {students.data.length} student{students.data.length === 1 ? '' : 's'} enrolled
+              {t('teacher.courseStudentLine', { courses: myCourses.data.length, students: students.data.length })}
             </p>
           </div>
-          <button onClick={() => navigate('/channel')} className="btn-ghost px-4 py-2 text-sm shrink-0">View channel</button>
+          <button onClick={() => navigate('/channel')} className="btn-ghost px-4 py-2 text-sm shrink-0">{t('teacher.viewChannel')}</button>
         </div>
 
         {/* Quick actions */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {ACTIONS.map((a) => (
-            <button key={a.label} onClick={() => navigate(a.to)} className={cn('rounded-2xl px-4 py-4 flex flex-col items-center gap-2 text-sm font-semibold transition hover:brightness-110', a.tone)}>
+            <button key={a.labelKey} onClick={() => navigate(a.to)} className={cn('rounded-2xl px-4 py-4 flex flex-col items-center gap-2 text-sm font-semibold transition hover:brightness-110', a.tone)}>
               <a.Icon className="w-6 h-6" />
-              {a.label}
+              {t(a.labelKey)}
             </button>
           ))}
         </div>
@@ -137,7 +140,7 @@ export default function TeacherDashboardPage(): JSX.Element {
               onClick={() => navigate(s.to)}
               className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/[0.08]"
             >
-              <s.Icon className="w-3.5 h-3.5 text-brand-300" /> {s.label}
+              <s.Icon className="w-3.5 h-3.5 text-brand-300" /> {t(s.labelKey)}
             </button>
           ))}
         </div>
@@ -155,15 +158,15 @@ export default function TeacherDashboardPage(): JSX.Element {
           {/* Courses */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold">Your courses</h2>
+              <h2 className="text-base font-bold">{t('teacher.yourCourses')}</h2>
               <button onClick={() => navigate('/teacher/new')} className="text-xs font-semibold text-brand-300 hover:text-brand-200 inline-flex items-center gap-1">
-                <IconPlus className="w-3.5 h-3.5" /> New
+                <IconPlus className="w-3.5 h-3.5" /> {t('teacher.new')}
               </button>
             </div>
             {myCourses.data.length === 0 && !myCourses.loading ? (
               <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-6 text-center">
-                <p className="text-sm text-slate-300">No courses yet.</p>
-                <button onClick={() => navigate('/teacher/new')} className="btn-primary text-xs px-4 py-2 mt-3">Create your first course</button>
+                <p className="text-sm text-slate-300">{t('teacher.noCourses')}</p>
+                <button onClick={() => navigate('/teacher/new')} className="btn-primary text-xs px-4 py-2 mt-3">{t('teacher.createFirstCourse')}</button>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -175,10 +178,10 @@ export default function TeacherDashboardPage(): JSX.Element {
                       <p className="text-xs text-slate-500 inline-flex items-center gap-2">
                         <span className="inline-flex items-center gap-1"><IconUsers className="w-3 h-3" /> {c.enrollmentCount.toLocaleString()}</span>
                         <span className="inline-flex items-center gap-1 text-amber-300"><IconStar className="w-3 h-3" /> {c.rating.toFixed(1)}</span>
-                        {!c.publishedAt && <span className="text-amber-300/80">· Draft</span>}
+                        {!c.publishedAt && <span className="text-amber-300/80">· {t('teacher.draft')}</span>}
                       </p>
                     </div>
-                    <button onClick={() => navigate('/course')} className="text-xs font-semibold text-brand-300 shrink-0">Manage →</button>
+                    <button onClick={() => navigate('/course')} className="text-xs font-semibold text-brand-300 shrink-0">{t('teacher.manage')} →</button>
                   </div>
                 ))}
               </div>
@@ -187,9 +190,9 @@ export default function TeacherDashboardPage(): JSX.Element {
 
           {/* Activity */}
           <aside className="lg:border-l lg:border-white/10 lg:pl-6">
-            <h2 className="text-base font-bold mb-3">Recent activity</h2>
+            <h2 className="text-base font-bold mb-3">{t('teacher.recentActivity')}</h2>
             {activity.data.length === 0 ? (
-              <p className="text-sm text-slate-400">No recent activity yet. As students enrol and review your courses, it appears here.</p>
+              <p className="text-sm text-slate-400">{t('teacher.noActivity')}</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {activity.data.map((a, i) => (
@@ -204,7 +207,7 @@ export default function TeacherDashboardPage(): JSX.Element {
               </div>
             )}
             <button onClick={() => navigate('/channel')} className="mt-4 w-full btn-ghost py-2 text-sm inline-flex items-center justify-center gap-1">
-              Manage channel <IconArrowRight className="w-4 h-4" />
+              {t('teacher.manageChannel')} <IconArrowRight className="w-4 h-4" />
             </button>
           </aside>
         </div>
@@ -229,6 +232,7 @@ function AnnouncementComposer({
   recent: { id: string; title: string; body: string; whenISO: string }[]
   onPosted: () => void
 }): JSX.Element {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -271,11 +275,11 @@ function AnnouncementComposer({
       <div className="flex items-center gap-3">
         <span className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-300 flex items-center justify-center">📣</span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white">Announce to your students</p>
-          <p className="text-xs text-slate-400">Posts appear in every learner's Home hero carousel.</p>
+          <p className="text-sm font-bold text-white">{t('teacher.announceToStudents')}</p>
+          <p className="text-xs text-slate-400">{t('teacher.announceHint')}</p>
         </div>
         <button onClick={() => setOpen((v) => !v)} className="btn-primary text-xs px-4 py-2 shrink-0">
-          {open ? 'Close' : 'New announcement'}
+          {open ? t('common.close') : t('teacher.newAnnouncement')}
         </button>
       </div>
 
@@ -285,11 +289,11 @@ function AnnouncementComposer({
           <textarea value={body} onChange={(e) => setBody(e.target.value)} className="input text-sm min-h-[70px] resize-none" placeholder="Details students will see…" />
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
-              <label className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">When</label>
+              <label className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">{t('teacher.when')}</label>
               <input type="datetime-local" value={whenISO} onChange={(e) => setWhenISO(e.target.value)} className="input text-sm mt-1" />
             </div>
             <div className="flex-1">
-              <label className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Cover gradient (fallback)</label>
+              <label className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">{t('teacher.coverGradient')}</label>
               <div className="flex gap-2 mt-1.5">
                 {HERO_COVERS.map((c, i) => (
                   <button key={c} onClick={() => setCoverIdx(i)} className={cn('h-9 flex-1 rounded-lg bg-gradient-to-br transition', c, coverIdx === i ? 'ring-2 ring-white' : 'opacity-70 hover:opacity-100')} />
@@ -299,26 +303,26 @@ function AnnouncementComposer({
           </div>
           {/* Banner image (shown on the Home hero instead of the gradient) */}
           <div>
-            <label className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Banner image</label>
+            <label className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">{t('teacher.bannerImage')}</label>
             <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={(e) => void pickImage(e.target.files?.[0])} />
             {isImageCover(image) ? (
               <div className="relative mt-1.5 rounded-xl overflow-hidden aspect-[3/1] ring-1 ring-white/10">
                 <img src={image} alt="banner" className="w-full h-full object-cover" />
-                <button onClick={() => setImage('')} className="absolute top-2 right-2 text-[11px] font-semibold bg-black/60 text-white rounded-full px-2.5 py-1">Remove</button>
+                <button onClick={() => setImage('')} className="absolute top-2 right-2 text-[11px] font-semibold bg-black/60 text-white rounded-full px-2.5 py-1">{t('teacher.remove')}</button>
               </div>
             ) : (
-              <button onClick={() => imgRef.current?.click()} className="mt-1.5 w-full rounded-xl border border-dashed border-white/15 bg-white/[0.02] py-4 text-sm text-slate-400 hover:bg-white/[0.04]">🖼️ Upload a banner image (optional)</button>
+              <button onClick={() => imgRef.current?.click()} className="mt-1.5 w-full rounded-xl border border-dashed border-white/15 bg-white/[0.02] py-4 text-sm text-slate-400 hover:bg-white/[0.04]">{t('teacher.uploadBanner')}</button>
             )}
           </div>
           <button onClick={() => void post()} disabled={title.trim().length < 3 || saving} className="btn-primary text-sm px-5 py-2 self-end">
-            {saving ? 'Posting…' : 'Post announcement'}
+            {saving ? t('teacher.posting') : t('teacher.postAnnouncement')}
           </button>
         </div>
       )}
 
       {recent.length > 0 && (
         <div className="mt-4 border-t border-white/[0.06] pt-3 flex flex-col gap-2">
-          <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Your recent announcements</p>
+          <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">{t('teacher.recentAnnouncements')}</p>
           {recent.slice(0, 3).map((a) => (
             <div key={a.id} className="flex items-center gap-2 text-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
