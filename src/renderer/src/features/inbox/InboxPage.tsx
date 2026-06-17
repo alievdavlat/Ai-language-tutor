@@ -8,6 +8,7 @@ import { meId, ensureDmSeed } from '../../services/backend/social'
 import { subscribeTable, emitLocalChange } from '../../services/backend/realtime'
 import type { DmMessage, DmThread, PlatformUser } from '@shared/types'
 import { clockTime, timeAgo } from '../../lib/time'
+import { useT } from '../../i18n'
 
 interface ThreadView {
   thread: DmThread
@@ -19,6 +20,7 @@ interface ThreadView {
 
 export default function InboxPage(): JSX.Element {
   const navigate = useNavigate()
+  const tr = useT()
   const me = meId()
   const [threads, setThreads] = useState<ThreadView[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -43,13 +45,14 @@ export default function InboxPage(): JSX.Element {
         return {
           thread,
           other,
-          lastText: last?.text ?? thread.lastMessageText ?? 'Say hello 👋',
+          lastText: last?.text ?? thread.lastMessageText ?? tr('inbox.sayHello'),
           lastAt: last?.createdAt ?? thread.lastMessageAt,
           unread
         }
       })
     )
     return views.sort((a, b) => b.lastAt.localeCompare(a.lastAt))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me])
 
   const refreshThreads = useCallback(async () => {
@@ -133,7 +136,7 @@ export default function InboxPage(): JSX.Element {
       if (params.get('greet')) {
         const existing = await backend.listMessages(thread.id)
         if (existing.length === 0) {
-          const saved = await backend.sendMessage({ threadId: thread.id, senderId: me, text: 'Hi! 👋 Want to practice together?' })
+          const saved = await backend.sendMessage({ threadId: thread.id, senderId: me, text: tr('inbox.greetMessage') })
           emitLocalChange({ event: 'INSERT', table: 'messages', new: saved as unknown as Record<string, unknown>, old: null })
         }
       }
@@ -177,7 +180,7 @@ export default function InboxPage(): JSX.Element {
   }
 
   const active = threads.find((t) => t.thread.id === activeId) ?? null
-  const otherName = active?.other?.name ?? 'Conversation'
+  const otherName = active?.other?.name ?? tr('inbox.conversation')
   const filteredThreads = threads.filter((t) =>
     !search.trim() || (t.other?.name ?? '').toLowerCase().includes(search.trim().toLowerCase())
   )
@@ -190,17 +193,17 @@ export default function InboxPage(): JSX.Element {
           <div className="flex items-center gap-2 mb-1">
             <button
               onClick={() => navigate('/home')}
-              title="Back"
+              title={tr('inbox.back')}
               className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white flex items-center justify-center"
             >
               <IconChevronLeft className="w-4 h-4" />
             </button>
-            <h1 className="text-xl font-bold tracking-tight">Inbox</h1>
+            <h1 className="text-xl font-bold tracking-tight">{tr('inbox.title')}</h1>
             <button
               onClick={() => setComposing((v) => !v)}
               className="ml-auto text-xs font-semibold rounded-lg bg-brand-500/15 text-brand-200 hover:bg-brand-500/25 px-2.5 py-1.5"
             >
-              {composing ? 'Cancel' : '+ New'}
+              {composing ? tr('inbox.cancel') : tr('inbox.new')}
             </button>
           </div>
           <div className="relative mt-3">
@@ -209,7 +212,7 @@ export default function InboxPage(): JSX.Element {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={composing ? 'Search people to message' : 'Search conversations'}
+              placeholder={composing ? tr('inbox.searchPeople') : tr('inbox.searchConversations')}
               className="input pl-9 text-xs"
             />
           </div>
@@ -219,7 +222,7 @@ export default function InboxPage(): JSX.Element {
           {/* Compose mode: pick someone to message. */}
           {composing ? (
             people.length === 0 ? (
-              <p className="p-4 text-xs text-slate-500">No people found.</p>
+              <p className="p-4 text-xs text-slate-500">{tr('inbox.noPeople')}</p>
             ) : (
               people.map((u) => (
                 <button
@@ -235,16 +238,16 @@ export default function InboxPage(): JSX.Element {
                         <span className="text-[9px] uppercase font-bold tracking-wider bg-violet-500/20 text-violet-200 rounded px-1 py-0.5">T</span>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400 truncate">{u.bio ?? (u.role === 'teacher' ? 'Teacher' : 'Learner')}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{u.bio ?? (u.role === 'teacher' ? tr('inbox.teacher') : tr('inbox.learner'))}</p>
                   </div>
                 </button>
               ))
             )
           ) : loading ? (
-            <p className="p-4 text-xs text-slate-500">Loading…</p>
+            <p className="p-4 text-xs text-slate-500">{tr('inbox.loading')}</p>
           ) : filteredThreads.length === 0 ? (
             <div className="p-4 text-xs text-slate-500">
-              No conversations yet. Tap <span className="text-brand-200 font-semibold">+ New</span> to message a tutor or buddy.
+              {tr('inbox.noConversations')} <span className="text-brand-200 font-semibold">{tr('inbox.new')}</span> {tr('inbox.toMessage')}
             </div>
           ) : (
             filteredThreads.map((t) => (
@@ -261,7 +264,7 @@ export default function InboxPage(): JSX.Element {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-semibold text-white truncate">{t.other?.name ?? 'Unknown'}</p>
+                    <p className="text-sm font-semibold text-white truncate">{t.other?.name ?? tr('inbox.unknown')}</p>{/* t = thread row */}
                     {t.other?.role === 'teacher' && (
                       <span className="text-[9px] uppercase font-bold tracking-wider bg-violet-500/20 text-violet-200 rounded px-1 py-0.5">T</span>
                     )}
@@ -291,22 +294,22 @@ export default function InboxPage(): JSX.Element {
               <div className="flex-1">
                 <p className="text-sm font-bold text-white">{otherName}</p>
                 <p className="text-[11px] text-slate-400">
-                  {active.other?.role === 'teacher' ? 'Tutor' : 'Learner'}
+                  {active.other?.role === 'teacher' ? tr('inbox.tutor') : tr('inbox.learner')}
                   {active.other?.country ? ` · ${active.other.country}` : ''}
                 </p>
               </div>
               <button
                 onClick={() => navigate('/meet')}
                 className="btn-ghost text-xs px-3 py-1.5"
-                title="Start a video call"
+                title={tr('inbox.startVideoCall')}
               >
-                Video call
+                {tr('inbox.videoCall')}
               </button>
             </header>
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2.5">
               {messages.length === 0 ? (
-                <p className="m-auto text-xs text-slate-500">No messages yet — say hello 👋</p>
+                <p className="m-auto text-xs text-slate-500">{tr('inbox.noMessages')}</p>
               ) : (
                 messages.map((m) => {
                   const mine = m.senderId === me
@@ -341,11 +344,11 @@ export default function InboxPage(): JSX.Element {
                       void send()
                     }
                   }}
-                  placeholder={`Message ${otherName.split(' ')[0]}…`}
+                  placeholder={tr('inbox.messagePh', { name: otherName.split(' ')[0] })}
                   className="input flex-1 text-sm"
                 />
                 <button onClick={() => void send()} className="btn-primary px-4 py-2.5 text-sm" disabled={draft.trim().length === 0 || sending}>
-                  Send
+                  {tr('inbox.send')}
                 </button>
               </div>
             </footer>
@@ -353,9 +356,9 @@ export default function InboxPage(): JSX.Element {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
             <div className="w-16 h-16 rounded-2xl bg-white/[0.04] flex items-center justify-center text-3xl mb-4">💬</div>
-            <p className="text-slate-300 font-semibold">Your messages</p>
+            <p className="text-slate-300 font-semibold">{tr('inbox.yourMessages')}</p>
             <p className="text-sm text-slate-500 max-w-xs mt-1">
-              Pick a conversation, or tap <span className="text-brand-200 font-semibold">+ New</span> to message a tutor or study buddy.
+              {tr('inbox.pickConversation')} <span className="text-brand-200 font-semibold">{tr('inbox.new')}</span> {tr('inbox.toMessage')}
             </p>
           </div>
         )}

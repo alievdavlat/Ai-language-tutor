@@ -39,27 +39,28 @@ import { social, meId, ensureSocialBootstrap } from '../../services/backend/soci
 import { uploadUrl } from '../../services/backend/storage'
 import CommentsSection from '../../components/CommentsSection'
 import { daysUntil, timeAgo } from '../../lib/time'
+import { useT, type StringKey } from '../../i18n'
 
 type Filter = 'recent' | 'popular' | 'following'
-const FILTERS: TabItem<Filter>[] = [
-  { id: 'recent', label: 'Recent' },
-  { id: 'popular', label: 'Popular' },
-  { id: 'following', label: 'Following' }
+const FILTER_KEYS: { id: Filter; labelKey: StringKey }[] = [
+  { id: 'recent', labelKey: 'community.filterRecent' },
+  { id: 'popular', labelKey: 'community.filterPopular' },
+  { id: 'following', labelKey: 'community.filterFollowing' }
 ]
 
 interface KindMeta {
-  label: string
+  labelKey: StringKey
   Icon: (p: IconProps) => JSX.Element
   tint: string
 }
 const KIND: Record<PostKind, KindMeta> = {
-  text: { label: 'Post', Icon: IconChat, tint: 'bg-white/10 text-slate-300' },
-  question: { label: 'Question', Icon: IconChat, tint: 'bg-sky-500/15 text-sky-300' },
-  resource: { label: 'Resource', Icon: IconBook, tint: 'bg-violet-500/15 text-violet-300' },
-  achievement: { label: 'Achievement', Icon: IconTrophy, tint: 'bg-amber-500/15 text-amber-300' },
-  poll: { label: 'Poll', Icon: IconChart, tint: 'bg-emerald-500/15 text-emerald-300' },
-  'study-session': { label: 'Study session', Icon: IconUsers, tint: 'bg-rose-500/15 text-rose-300' },
-  voice: { label: 'Voice clip', Icon: IconMic, tint: 'bg-pink-500/15 text-pink-300' }
+  text: { labelKey: 'community.kindText', Icon: IconChat, tint: 'bg-white/10 text-slate-300' },
+  question: { labelKey: 'community.kindQuestion', Icon: IconChat, tint: 'bg-sky-500/15 text-sky-300' },
+  resource: { labelKey: 'community.kindResource', Icon: IconBook, tint: 'bg-violet-500/15 text-violet-300' },
+  achievement: { labelKey: 'community.kindAchievement', Icon: IconTrophy, tint: 'bg-amber-500/15 text-amber-300' },
+  poll: { labelKey: 'community.kindPoll', Icon: IconChart, tint: 'bg-emerald-500/15 text-emerald-300' },
+  'study-session': { labelKey: 'community.kindStudy', Icon: IconUsers, tint: 'bg-rose-500/15 text-rose-300' },
+  voice: { labelKey: 'community.kindVoice', Icon: IconMic, tint: 'bg-pink-500/15 text-pink-300' }
 }
 
 const REACTION_EMOJI = ['❤️', '👍', '🔥', '🎯', '👏', '🤔', '🧠'] as const
@@ -73,33 +74,36 @@ const GROUP_COVERS = [
   'from-emerald-500 to-teal-700'
 ]
 
-function relTime(iso: string): string {
+type TFn = (key: StringKey, vars?: Record<string, string | number>) => string
+
+function relTime(iso: string, t: TFn): string {
   const diff = Math.max(0, Date.now() - new Date(iso).getTime())
   const m = Math.floor(diff / 60_000)
-  if (m < 1) return 'just now'
-  if (m < 60) return `${m}m`
+  if (m < 1) return t('community.justNow')
+  if (m < 60) return t('community.minutesAbbr', { n: m })
   const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h`
-  return `${Math.floor(h / 24)}d`
+  if (h < 24) return t('community.hoursAbbr', { n: h })
+  return t('community.daysAbbr', { n: Math.floor(h / 24) })
 }
 
-function relUntil(iso: string): string {
+function relUntil(iso: string, t: TFn): string {
   const diff = new Date(iso).getTime() - Date.now()
-  if (diff < 0) return 'started'
+  if (diff < 0) return t('community.started')
   const m = Math.floor(diff / 60_000)
-  if (m < 60) return `in ${m}m`
+  if (m < 60) return t('community.inTime', { time: t('community.minutesAbbr', { n: m }) })
   const h = Math.floor(m / 60)
-  if (h < 24) return `in ${h}h`
-  return `in ${Math.floor(h / 24)}d`
+  if (h < 24) return t('community.inTime', { time: t('community.hoursAbbr', { n: h }) })
+  return t('community.inTime', { time: t('community.daysAbbr', { n: Math.floor(h / 24) }) })
 }
 
 // ─── Body renderers per kind ───────────────────────────────────────────────
 
 function Attachment({ resource }: { resource: NonNullable<Post['resource']> }): JSX.Element {
+  const t = useT()
   if (resource.kind === 'image') {
     return (
       <div className="mt-3 rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black/20">
-        <img src={resource.url} alt={resource.title ?? 'Image'} className="w-full max-h-[28rem] object-contain" />
+        <img src={resource.url} alt={resource.title ?? t('community.attImage')} className="w-full max-h-[28rem] object-contain" />
       </div>
     )
   }
@@ -115,7 +119,7 @@ function Attachment({ resource }: { resource: NonNullable<Post['resource']> }): 
       <div className="relative rounded-2xl bg-gradient-to-br from-sky-600 to-blue-800 h-40 flex items-center justify-center ring-1 ring-white/10 mt-3">
         <span className="w-12 h-12 rounded-full bg-white/25 backdrop-blur flex items-center justify-center"><IconPlay className="w-5 h-5 text-white ml-0.5" /></span>
         <span className="absolute top-2 left-2"><IconYouTube className="w-5 h-5 text-red-500" /></span>
-        <span className="absolute bottom-2 left-3 text-sm font-semibold text-white">{resource.title ?? 'Video'}</span>
+        <span className="absolute bottom-2 left-3 text-sm font-semibold text-white">{resource.title ?? t('community.attVideo')}</span>
       </div>
     )
   }
@@ -124,8 +128,8 @@ function Attachment({ resource }: { resource: NonNullable<Post['resource']> }): 
       <div className="mt-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 flex items-center gap-3">
         <span className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-300 flex items-center justify-center"><IconBook className="w-5 h-5" /></span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{resource.title ?? 'PDF'}</p>
-          <p className="text-[11px] text-slate-400">PDF · tap to read</p>
+          <p className="text-sm font-semibold text-white truncate">{resource.title ?? t('community.attPdf')}</p>
+          <p className="text-[11px] text-slate-400">{t('community.attPdfHint')}</p>
         </div>
       </div>
     )
@@ -134,8 +138,8 @@ function Attachment({ resource }: { resource: NonNullable<Post['resource']> }): 
     <div className="mt-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 flex items-center gap-3">
       <span className="w-10 h-10 rounded-xl bg-brand-500/15 text-brand-300 flex items-center justify-center"><IconVolume className="w-5 h-5" /></span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-white truncate">{resource.title ?? 'Audio'}</p>
-        <p className="text-[11px] text-slate-400">Audio · tap to play</p>
+        <p className="text-sm font-semibold text-white truncate">{resource.title ?? t('community.attAudio')}</p>
+        <p className="text-[11px] text-slate-400">{t('community.attAudioHint')}</p>
       </div>
     </div>
   )
@@ -144,6 +148,7 @@ function Attachment({ resource }: { resource: NonNullable<Post['resource']> }): 
 function PollBody({ poll: initialPoll, postId }: { poll: NonNullable<Post['poll']>; postId: string }): JSX.Element {
   // Real, persisted voting via the Backend (poll_votes table / local store).
   // Tallies survive reload; the viewer can change or withdraw their vote.
+  const t = useT()
   const me = backend.currentUserId()
   const [poll, setPoll] = useState<NonNullable<Post['poll']>>(initialPoll)
   const [voted, setVoted] = useState<string | null>(null)
@@ -200,9 +205,9 @@ function PollBody({ poll: initialPoll, postId }: { poll: NonNullable<Post['poll'
         )
       })}
       <p className="text-[10px] text-slate-500 mt-0.5">
-        {total.toLocaleString()} vote{total === 1 ? '' : 's'}
-        {showResults && ' · tap your choice again to undo'}
-        {!me && ' · sign in to vote'}
+        {t('community.votes', { n: total.toLocaleString() })}
+        {showResults && ` · ${t('community.undoHint')}`}
+        {!me && ` · ${t('community.signInToVote')}`}
       </p>
     </div>
   )
@@ -210,6 +215,7 @@ function PollBody({ poll: initialPoll, postId }: { poll: NonNullable<Post['poll'
 
 function StudySessionBody({ s, postId }: { s: NonNullable<Post['studySession']>; postId: string }): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const me = backend.currentUserId()
   const [joinedIds, setJoinedIds] = useState<string[]>(s.joinedIds)
   const [busy, setBusy] = useState(false)
@@ -235,11 +241,11 @@ function StudySessionBody({ s, postId }: { s: NonNullable<Post['studySession']>;
   return (
     <div className="mt-3 rounded-2xl border border-rose-400/30 bg-gradient-to-br from-rose-500/10 to-amber-500/10 p-4">
       <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center rounded-full bg-rose-500/30 text-rose-100 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">Live session</span>
-        <span className="text-[11px] text-rose-200">{relUntil(s.whenISO)} · {s.durationMin} min</span>
+        <span className="inline-flex items-center rounded-full bg-rose-500/30 text-rose-100 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">{t('community.liveSessionTag')}</span>
+        <span className="text-[11px] text-rose-200">{relUntil(s.whenISO, t)} · {s.durationMin} {t('community.minSuffix')}</span>
       </div>
       <p className="text-base font-bold text-white">{s.topic}</p>
-      <p className="text-xs text-slate-300 mt-1">{s.language.toUpperCase()} · {s.level} · {joinedIds.length}/{s.capacity} joined · {seatsLeft} seat{seatsLeft === 1 ? '' : 's'} left</p>
+      <p className="text-xs text-slate-300 mt-1">{t('community.sessionMeta', { lang: s.language.toUpperCase(), level: s.level, joined: joinedIds.length, cap: s.capacity, left: seatsLeft })}</p>
       <button
         onClick={() => void toggle()}
         disabled={busy || !me || full}
@@ -248,18 +254,19 @@ function StudySessionBody({ s, postId }: { s: NonNullable<Post['studySession']>;
           joined ? 'bg-white/[0.08] text-rose-100 hover:bg-white/[0.12] ring-1 ring-rose-400/40' : 'btn-primary'
         )}
       >
-        {!me ? 'Sign in to join' : full ? 'Session full' : joined ? 'Joined ✓ · Open room' : 'Join session'}
+        {!me ? t('community.signInToJoin') : full ? t('community.sessionFull') : joined ? t('community.joinedOpenRoom') : t('community.joinSession')}
       </button>
     </div>
   )
 }
 
 function AchievementBody({ a }: { a: NonNullable<Post['achievement']> }): JSX.Element {
+  const t = useT()
   return (
     <div className="mt-3 rounded-2xl bg-gradient-to-br from-amber-500/15 to-orange-500/15 border border-amber-400/30 p-4 flex items-center gap-4">
       <div className="text-5xl shrink-0">{a.emoji}</div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] uppercase tracking-widest text-amber-200/80 font-bold">Achievement unlocked</p>
+        <p className="text-[10px] uppercase tracking-widest text-amber-200/80 font-bold">{t('community.achievementUnlocked')}</p>
         <p className="text-sm font-bold text-white">{a.title}</p>
         <p className="text-xs text-slate-300 mt-0.5">{a.description}</p>
       </div>
@@ -313,6 +320,7 @@ function VoiceBody({ v }: { v: NonNullable<Post['voice']> }): JSX.Element {
 
 function PostCard({ post, author, onAfterChange }: { post: Post; author: PlatformUser | null; onAfterChange: () => void }): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const me = backend.currentUserId()
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(post.likeCount)
@@ -363,16 +371,16 @@ function PostCard({ post, author, onAfterChange }: { post: Post; author: Platfor
         <button onClick={() => author && navigate(`/channel?id=${author.id}`)}><AvatarCircle name={author?.name ?? '?'} src={(author as { avatarUrl?: string } | null)?.avatarUrl} size="sm" /></button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-white">{author?.name ?? 'Unknown'}</span>
+            <span className="text-sm font-semibold text-white">{author?.name ?? t('community.unknownAuthor')}</span>
             <span className={cn('text-[9px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5',
               author?.role === 'teacher' ? 'bg-brand-500/20 text-brand-300' : 'bg-white/10 text-slate-400')}>
-              {author?.role ?? 'user'}
+              {author?.role ?? t('community.roleUser')}
             </span>
             <span className={cn('inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest rounded-full px-2 py-0.5', meta.tint)}>
-              <meta.Icon className="w-3 h-3" /> {meta.label}
+              <meta.Icon className="w-3 h-3" /> {t(meta.labelKey)}
             </span>
           </div>
-          <span className="text-xs text-slate-500">{relTime(post.createdAt)} ago</span>
+          <span className="text-xs text-slate-500">{t('community.timeAgo', { time: relTime(post.createdAt, t) })}</span>
         </div>
       </div>
 
@@ -418,7 +426,7 @@ function PostCard({ post, author, onAfterChange }: { post: Post; author: Platfor
         </button>
         <div className="relative">
           <button onClick={() => setShowReactions((v) => !v)} className="inline-flex items-center gap-1.5 text-sm hover:text-white hover:bg-white/[0.04] rounded-full px-2 py-1">
-            <IconBolt className="w-4 h-4" /> React
+            <IconBolt className="w-4 h-4" /> {t('community.react')}
           </button>
           {showReactions && (
             <div className="absolute bottom-full mb-1.5 left-0 z-10 rounded-full bg-canvas-soft border border-white/15 shadow-xl shadow-black/40 flex gap-0.5 px-1.5 py-1.5">
@@ -436,7 +444,7 @@ function PostCard({ post, author, onAfterChange }: { post: Post; author: Platfor
           ↗ <span>{post.shareCount ?? 0}</span>
         </button>
         <button onClick={() => void toggleSave()} className={cn('inline-flex items-center gap-1.5 text-sm transition ml-auto rounded-full px-2 py-1', saved ? 'text-amber-300' : 'hover:text-white hover:bg-white/[0.04]')}>
-          <IconBookmark className="w-4 h-4" /> {saved ? 'Saved' : 'Save'}
+          <IconBookmark className="w-4 h-4" /> {saved ? t('community.saved') : t('community.save')}
         </button>
       </div>
 
@@ -459,6 +467,7 @@ function VoiceRecorder({
   value: { audioUrl: string; durationSec: number } | null
   onChange: (v: { audioUrl: string; durationSec: number } | null) => void
 }): JSX.Element {
+  const t = useT()
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [uploading, setUploading] = useState(false)
@@ -480,7 +489,7 @@ function VoiceRecorder({
   const start = async (): Promise<void> => {
     setError(null)
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      setError('Recording is not supported here.')
+      setError(t('community.recNotSupported'))
       return
     }
     try {
@@ -497,7 +506,7 @@ function VoiceRecorder({
         setUploading(true)
         void uploadUrl(file, 'posts')
           .then((url) => onChange({ audioUrl: url, durationSec }))
-          .catch((e) => setError(e instanceof Error ? e.message : 'Upload failed'))
+          .catch((e) => setError(e instanceof Error ? e.message : t('community.uploadFailed')))
           .finally(() => setUploading(false))
       }
       recorderRef.current = rec
@@ -507,7 +516,7 @@ function VoiceRecorder({
       setElapsed(0)
       timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000)
     } catch {
-      setError('Microphone permission denied.')
+      setError(t('community.micDenied'))
     }
   }
 
@@ -525,7 +534,7 @@ function VoiceRecorder({
         <span className="w-9 h-9 rounded-full bg-pink-500/80 text-white flex items-center justify-center shrink-0"><IconMic className="w-4 h-4" /></span>
         <audio src={value.audioUrl} controls className="flex-1 h-9" />
         <span className="text-[11px] text-pink-200 font-mono shrink-0">{fmt(value.durationSec)}</span>
-        <button onClick={() => onChange(null)} className="text-slate-400 hover:text-rose-300 shrink-0" title="Re-record"><IconX className="w-4 h-4" /></button>
+        <button onClick={() => onChange(null)} className="text-slate-400 hover:text-rose-300 shrink-0" title={t('community.reRecord')}><IconX className="w-4 h-4" /></button>
       </div>
     )
   }
@@ -540,8 +549,8 @@ function VoiceRecorder({
         {recording ? <IconStop className="w-4 h-4" /> : <IconMic className="w-5 h-5" />}
       </button>
       <div className="flex-1">
-        <p className="text-sm font-semibold text-white">{uploading ? 'Saving clip…' : recording ? 'Recording…' : 'Record a voice clip'}</p>
-        <p className="text-[11px] text-slate-400 font-mono">{recording ? fmt(elapsed) : error ?? 'Tap the mic to start'}</p>
+        <p className="text-sm font-semibold text-white">{uploading ? t('community.savingClip') : recording ? t('community.recording') : t('community.recordClip')}</p>
+        <p className="text-[11px] text-slate-400 font-mono">{recording ? fmt(elapsed) : error ?? t('community.tapMicStart')}</p>
       </div>
     </div>
   )
@@ -550,6 +559,7 @@ function VoiceRecorder({
 // ─── Composer with type picker ─────────────────────────────────────────────
 
 function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
+  const t = useT()
   const profile = useAppStore((s) => s.profile)
   const [text, setText] = useState('')
   const [kind, setKind] = useState<PostKind>('text')
@@ -606,7 +616,7 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
       const url = await uploadUrl(file, 'posts')
       setMedia({ kind: mediaKind, url, name: file.name })
     } catch (e) {
-      setUploadError(e instanceof Error ? e.message : 'Upload failed')
+      setUploadError(e instanceof Error ? e.message : t('community.uploadFailed'))
     } finally {
       setUploading(false)
       if (photoInput.current) photoInput.current.value = ''
@@ -672,13 +682,13 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
   }
 
   const placeholder: Record<PostKind, string> = {
-    text: 'Share a thought, tip, or update…',
-    question: 'Ask a question (e.g. "When do I use \'have been\'?")',
-    resource: 'Title + describe the resource you\'re sharing…',
-    achievement: 'What did you just achieve? (e.g. "First 30-day streak!")',
-    poll: 'Ask a question — options come next…',
-    'study-session': 'Topic for the live study session…',
-    voice: 'Caption your voice clip…'
+    text: t('community.phText'),
+    question: t('community.phQuestion'),
+    resource: t('community.phResource'),
+    achievement: t('community.phAchievement'),
+    poll: t('community.phPoll'),
+    'study-session': t('community.phStudy'),
+    voice: t('community.phVoice')
   }
 
   return (
@@ -704,16 +714,16 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
               <input
                 value={opt}
                 onChange={(e) => setPollOptions((prev) => prev.map((o, j) => (j === i ? e.target.value : o)))}
-                placeholder={`Option ${i + 1}`}
+                placeholder={t('community.optionN', { n: i + 1 })}
                 className="flex-1 rounded-xl bg-white/[0.05] border border-white/10 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:outline-none"
               />
               {pollOptions.length > 2 && (
-                <button onClick={() => setPollOptions((prev) => prev.filter((_, j) => j !== i))} className="text-slate-500 hover:text-rose-300 text-lg leading-none px-1" title="Remove">×</button>
+                <button onClick={() => setPollOptions((prev) => prev.filter((_, j) => j !== i))} className="text-slate-500 hover:text-rose-300 text-lg leading-none px-1" title={t('community.removeOption')}>×</button>
               )}
             </div>
           ))}
           {pollOptions.length < 6 && (
-            <button onClick={() => setPollOptions((prev) => [...prev, ''])} className="self-start text-xs font-semibold text-brand-300 hover:text-brand-200 pl-6">+ Add option</button>
+            <button onClick={() => setPollOptions((prev) => [...prev, ''])} className="self-start text-xs font-semibold text-brand-300 hover:text-brand-200 pl-6">{t('community.addOption')}</button>
           )}
         </div>
       )}
@@ -724,7 +734,7 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
           <input
             value={resourceUrl}
             onChange={(e) => setResourceUrl(e.target.value)}
-            placeholder="Paste a YouTube, PDF or audio link…"
+            placeholder={t('community.pasteResource')}
             className="w-full rounded-xl bg-white/[0.05] border border-white/10 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:outline-none"
           />
         </div>
@@ -745,7 +755,7 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
           <input
             value={achTitle}
             onChange={(e) => setAchTitle(e.target.value)}
-            placeholder="Achievement title (e.g. 30-day streak)"
+            placeholder={t('community.achTitlePh')}
             className="w-full rounded-xl bg-white/[0.05] border border-white/10 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:outline-none"
           />
         </div>
@@ -768,7 +778,7 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
             <button
               onClick={() => setMedia(null)}
               className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
-              title="Remove"
+              title={t('community.removeMedia')}
             ><IconX className="w-4 h-4" /></button>
           </div>
         </div>
@@ -784,17 +794,17 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
           onClick={() => photoInput.current?.click()}
           disabled={uploading}
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition border bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08] disabled:opacity-50"
-          title="Attach a photo"
+          title={t('community.attachPhoto')}
         >
-          <IconImage className="w-3.5 h-3.5" /> Photo
+          <IconImage className="w-3.5 h-3.5" /> {t('community.photo')}
         </button>
         <button
           onClick={() => videoInput.current?.click()}
           disabled={uploading}
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition border bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08] disabled:opacity-50"
-          title="Attach a video"
+          title={t('community.attachVideo')}
         >
-          <IconFilm className="w-3.5 h-3.5" /> {uploading ? 'Uploading…' : 'Video'}
+          <IconFilm className="w-3.5 h-3.5" /> {uploading ? t('community.uploading') : t('community.video')}
         </button>
         <span className="w-px h-5 bg-white/10 mx-0.5" />
         {/* Primary kinds always visible; the rest behind "More" (#A80). */}
@@ -810,7 +820,7 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
                 active ? 'bg-brand-500/20 border-brand-400/40 text-brand-100' : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]'
               )}
             >
-              <m.Icon className="w-3.5 h-3.5" /> {m.label}
+              <m.Icon className="w-3.5 h-3.5" /> {t(m.labelKey)}
             </button>
           )
         })}
@@ -827,23 +837,23 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
                   active ? 'bg-brand-500/20 border-brand-400/40 text-brand-100' : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]'
                 )}
               >
-                <m.Icon className="w-3.5 h-3.5" /> {m.label}
+                <m.Icon className="w-3.5 h-3.5" /> {t(m.labelKey)}
               </button>
             )
           })}
         <button
           onClick={() => setShowMore((v) => !v)}
           className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold transition border bg-white/[0.04] border-white/10 text-slate-400 hover:bg-white/[0.08]"
-          title={showMore ? 'Show fewer post types' : 'More post types'}
+          title={showMore ? t('community.showFewer') : t('community.moreTypes')}
         >
-          {showMore ? '− Less' : '+ More'}
+          {showMore ? t('community.less') : t('community.more')}
         </button>
         <button
           onClick={() => void submit()}
           disabled={posting || !canSubmit}
           className="btn-primary text-xs px-4 py-1.5 ml-auto disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {posting ? 'Posting…' : 'Post'}
+          {posting ? t('community.posting') : t('community.post')}
         </button>
       </div>
     </div>
@@ -854,6 +864,7 @@ function Composer({ onPosted }: { onPosted: () => void }): JSX.Element {
 
 function MegaSearch(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const [q, setQ] = useState('')
   const [results, setResults] = useState<SearchResults | null>(null)
   const [open, setOpen] = useState(false)
@@ -889,18 +900,18 @@ function MegaSearch(): JSX.Element {
         onChange={(e) => setQ(e.target.value)}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Search courses, clips, lessons, people, groups…"
+        placeholder={t('community.searchAll')}
         className="input pl-9 text-sm w-full"
       />
       {open && q.trim().length >= 2 && (
         <div className="absolute z-30 mt-2 w-full max-h-[70vh] overflow-y-auto rounded-card border border-white/12 bg-canvas-soft shadow-2xl shadow-black/50 p-2">
           {busy && !results ? (
-            <p className="px-3 py-4 text-xs text-slate-500">Searching…</p>
+            <p className="px-3 py-4 text-xs text-slate-500">{t('community.searching')}</p>
           ) : results && results.total === 0 ? (
-            <p className="px-3 py-4 text-xs text-slate-500">No results for “{results.query}”.</p>
+            <p className="px-3 py-4 text-xs text-slate-500">{t('community.noResults', { q: results.query })}</p>
           ) : results ? (
             <div className="flex flex-col gap-1">
-              <SearchGroup title="People" show={results.users.length > 0}>
+              <SearchGroup title={t('community.grpPeople')} show={results.users.length > 0}>
                 {results.users.map((u) => (
                   <button key={u.id} onMouseDown={() => go('/explore')} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
                     <AvatarCircle name={u.name} size="sm" />
@@ -909,7 +920,7 @@ function MegaSearch(): JSX.Element {
                   </button>
                 ))}
               </SearchGroup>
-              <SearchGroup title="Courses" show={results.courses.length > 0}>
+              <SearchGroup title={t('community.grpCourses')} show={results.courses.length > 0}>
                 {results.courses.map((c) => (
                   <button key={c.id} onMouseDown={() => go('/courses')} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
                     <span className={cn('w-7 h-7 rounded-lg bg-gradient-to-br shrink-0', c.cover)} />
@@ -918,7 +929,7 @@ function MegaSearch(): JSX.Element {
                   </button>
                 ))}
               </SearchGroup>
-              <SearchGroup title="Clips" show={results.clips.length > 0}>
+              <SearchGroup title={t('community.grpClips')} show={results.clips.length > 0}>
                 {results.clips.map((c) => (
                   <button key={c.id} onMouseDown={() => go('/clips')} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
                     <span className={cn('w-7 h-7 rounded-lg bg-gradient-to-br shrink-0', c.cover)} />
@@ -927,7 +938,7 @@ function MegaSearch(): JSX.Element {
                   </button>
                 ))}
               </SearchGroup>
-              <SearchGroup title="Lessons" show={results.lessons.length > 0}>
+              <SearchGroup title={t('community.grpLessons')} show={results.lessons.length > 0}>
                 {results.lessons.map((l) => (
                   <button key={l.lessonId} onMouseDown={() => go('/courses')} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
                     <IconBook className="w-4 h-4 text-violet-300 shrink-0" />
@@ -936,7 +947,7 @@ function MegaSearch(): JSX.Element {
                   </button>
                 ))}
               </SearchGroup>
-              <SearchGroup title="Groups" show={results.groups.length > 0}>
+              <SearchGroup title={t('community.grpGroups')} show={results.groups.length > 0}>
                 {results.groups.map((g) => (
                   <button key={g.id} onMouseDown={() => go(`/group/${g.id}`)} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05] text-left">
                     <span className="w-7 h-7 rounded-lg bg-grad-brand flex items-center justify-center text-white text-[11px] font-bold shrink-0">{g.name[0]}</span>
@@ -944,7 +955,7 @@ function MegaSearch(): JSX.Element {
                   </button>
                 ))}
               </SearchGroup>
-              <SearchGroup title="Posts" show={results.posts.length > 0}>
+              <SearchGroup title={t('community.grpPosts')} show={results.posts.length > 0}>
                 {results.posts.map((p) => (
                   <div key={p.id} className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-white/[0.05]">
                     <IconChat className="w-4 h-4 text-slate-400 shrink-0" />
@@ -975,6 +986,7 @@ function SearchGroup({ title, show, children }: { title: string; show: boolean; 
 function GroupsView(): JSX.Element {
   const me = meId()
   const navigate = useNavigate()
+  const t = useT()
   const profile = useAppStore((s) => s.profile)
   const [groups, setGroups] = useState<Group[]>([])
   const [myIds, setMyIds] = useState<Set<string>>(new Set())
@@ -1004,10 +1016,10 @@ function GroupsView(): JSX.Element {
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search groups & clubs" className="input pl-9 text-sm" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('community.searchGroups')} className="input pl-9 text-sm" />
         </div>
         <button onClick={() => setCreating(true)} className="btn-primary text-xs px-4 py-2 inline-flex items-center gap-1.5 shrink-0">
-          <IconPlus className="w-4 h-4" /> Create
+          <IconPlus className="w-4 h-4" /> {t('community.create')}
         </button>
       </div>
 
@@ -1028,7 +1040,7 @@ function GroupsView(): JSX.Element {
                 <p className="text-xs text-slate-400 line-clamp-2 mt-1 min-h-[2.4em]">{g.description}</p>
                 <div className="flex items-center justify-between mt-3">
                   <span className="text-[11px] text-slate-500 inline-flex items-center gap-1">
-                    <IconUsers className="w-3.5 h-3.5" /> {g.memberCount.toLocaleString()} {g.memberCount === 1 ? 'member' : 'members'}
+                    <IconUsers className="w-3.5 h-3.5" /> {g.memberCount.toLocaleString()} {g.memberCount === 1 ? t('community.member') : t('community.members')}
                   </span>
                   <button
                     onClick={(e) => { e.stopPropagation(); void toggle(g) }}
@@ -1037,7 +1049,7 @@ function GroupsView(): JSX.Element {
                       joined ? 'bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]' : 'bg-grad-brand text-white hover:brightness-110'
                     )}
                   >
-                    {joined ? 'Joined ✓' : 'Join'}
+                    {joined ? t('community.joinedCheck') : t('community.join')}
                   </button>
                 </div>
               </div>
@@ -1072,6 +1084,7 @@ function CreateGroupModal({
   onClose: () => void
   onCreated: () => Promise<void>
 }): JSX.Element {
+  const t = useT()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [coverIdx, setCoverIdx] = useState(0)
@@ -1084,7 +1097,7 @@ function CreateGroupModal({
       await backend.upsertGroup({
         id: `g_${Math.random().toString(36).slice(2, 9)}`,
         name: name.trim(),
-        description: description.trim() || 'A new community group.',
+        description: description.trim() || t('community.defaultGroupDesc'),
         language: defaultLanguage,
         ownerId,
         cover: GROUP_COVERS[coverIdx],
@@ -1102,12 +1115,12 @@ function CreateGroupModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
       <div className="relative w-full max-w-md rounded-card border border-white/12 bg-canvas-soft p-5 shadow-2xl">
-        <h3 className="text-lg font-bold text-white mb-4">Create a group or club</h3>
+        <h3 className="text-lg font-bold text-white mb-4">{t('community.createGroupTitle')}</h3>
         <div className="flex flex-col gap-3">
-          <input value={name} onChange={(e) => setName(e.target.value)} className="input text-sm" placeholder="Group name (e.g. Morning Speaking Crew)" />
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="input text-sm min-h-[80px] resize-none" placeholder="What's this group about?" />
+          <input value={name} onChange={(e) => setName(e.target.value)} className="input text-sm" placeholder={t('community.groupNamePh')} />
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="input text-sm min-h-[80px] resize-none" placeholder={t('community.groupDescPh')} />
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Cover</p>
+            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">{t('community.cover')}</p>
             <div className="flex gap-2">
               {GROUP_COVERS.map((c, i) => (
                 <button
@@ -1120,9 +1133,9 @@ function CreateGroupModal({
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 mt-5">
-          <button onClick={onClose} className="btn-ghost text-xs px-4 py-2">Cancel</button>
+          <button onClick={onClose} className="btn-ghost text-xs px-4 py-2">{t('common.cancel')}</button>
           <button onClick={() => void create()} disabled={name.trim().length < 3 || saving} className="btn-primary text-xs px-4 py-2">
-            {saving ? 'Creating…' : 'Create group'}
+            {saving ? t('community.creating') : t('community.createGroup')}
           </button>
         </div>
       </div>
@@ -1134,6 +1147,7 @@ function CreateGroupModal({
 
 function ChallengesView(): JSX.Element {
   const me = meId()
+  const t = useT()
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [joined, setJoined] = useState<Set<string>>(new Set())
   const [leaderboard, setLeaderboard] = useState<{ challenge: Challenge; rows: LeaderboardRow[] } | null>(null)
@@ -1161,7 +1175,7 @@ function ChallengesView(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-3">
-      {challenges.length === 0 && <p className="text-sm text-slate-500">No active challenges right now.</p>}
+      {challenges.length === 0 && <p className="text-sm text-slate-500">{t('community.noChallenges')}</p>}
       {challenges.map((c) => {
         const left = daysUntil(c.endsAt)
         const isJoined = joined.has(c.id)
@@ -1184,7 +1198,7 @@ function ChallengesView(): JSX.Element {
                     </div>
                     <p className="text-xs text-slate-400 mt-1">{c.description}</p>
                     <p className="text-[11px] text-slate-500 mt-2">
-                      🎯 Goal {c.goal} · 👥 {c.participantCount.toLocaleString()} joined · ⏳ {left > 0 ? `${left}d left` : 'ended'}
+                      {t('community.goalLabel', { goal: c.goal, n: c.participantCount.toLocaleString(), left: left > 0 ? t('community.daysLeft', { n: left }) : t('community.ended') })}
                     </p>
                   </div>
                 </div>
@@ -1196,10 +1210,10 @@ function ChallengesView(): JSX.Element {
                       isJoined ? 'bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]' : 'bg-grad-brand text-white hover:brightness-110'
                     )}
                   >
-                    {isJoined ? 'Joined ✓' : 'Join challenge'}
+                    {isJoined ? t('community.joinedCheck') : t('community.joinChallenge')}
                   </button>
                   <button onClick={() => void openBoard(c)} className="text-xs font-semibold rounded-lg px-3 py-1.5 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 inline-flex items-center gap-1.5">
-                    <IconTrophy className="w-3.5 h-3.5" /> Leaderboard
+                    <IconTrophy className="w-3.5 h-3.5" /> {t('community.leaderboard')}
                   </button>
                 </div>
               </div>
@@ -1224,6 +1238,7 @@ function LeaderboardModal({
   data: { challenge: Challenge; rows: LeaderboardRow[] }
   onClose: () => void
 }): JSX.Element {
+  const t = useT()
   const { challenge, rows } = data
   const medal = ['🥇', '🥈', '🥉']
   return (
@@ -1231,12 +1246,12 @@ function LeaderboardModal({
       <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
       <div className="relative w-full max-w-md rounded-card border border-white/12 bg-canvas-soft p-5 shadow-2xl max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-lg font-bold text-white inline-flex items-center gap-2"><IconTrophy className="w-5 h-5 text-amber-300" /> Leaderboard</h3>
+          <h3 className="text-lg font-bold text-white inline-flex items-center gap-2"><IconTrophy className="w-5 h-5 text-amber-300" /> {t('community.leaderboard')}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
         </div>
-        <p className="text-xs text-slate-400 mb-4">{challenge.title} · goal {challenge.goal}</p>
+        <p className="text-xs text-slate-400 mb-4">{t('community.goalShort', { title: challenge.title, goal: challenge.goal })}</p>
         {rows.length === 0 ? (
-          <p className="text-sm text-slate-500">No participants yet — be the first to join.</p>
+          <p className="text-sm text-slate-500">{t('community.noParticipants')}</p>
         ) : (
           <div className="flex flex-col gap-1.5">
             {rows.map((r, i) => (
@@ -1251,7 +1266,7 @@ function LeaderboardModal({
                 <AvatarCircle name={r.name} size="sm" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-white truncate">
-                    {r.name} {r.userId === me && <span className="text-[10px] text-brand-300">· you</span>}
+                    {r.name} {r.userId === me && <span className="text-[10px] text-brand-300">{t('community.you')}</span>}
                   </p>
                   <div className="h-1.5 rounded-full bg-white/[0.06] mt-1 overflow-hidden">
                     <span className={cn('block h-full rounded-full bg-gradient-to-r', challenge.cover)} style={{ width: `${r.pct}%` }} />
@@ -1259,7 +1274,7 @@ function LeaderboardModal({
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-white">{r.progress}</p>
-                  {r.completed && <p className="text-[10px] text-emerald-300">done ✓</p>}
+                  {r.completed && <p className="text-[10px] text-emerald-300">{t('community.done')}</p>}
                 </div>
               </div>
             ))}
@@ -1274,6 +1289,7 @@ function LeaderboardModal({
 
 function RightRail({ onSeeGroups, onSeeChallenges }: { onSeeGroups: () => void; onSeeChallenges: () => void }): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const challenges = useBackendQuery(() => backend.listChallenges({ active: true }), [], [])
   const groups = useBackendQuery(() => backend.listGroups(), [], [])
   const live = useBackendQuery(() => backend.listLiveNow(), [], [])
@@ -1282,23 +1298,23 @@ function RightRail({ onSeeGroups, onSeeChallenges }: { onSeeGroups: () => void; 
     <aside className="flex flex-col gap-5">
       <div>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Active challenges</p>
-          <button onClick={onSeeChallenges} className="text-[11px] text-brand-300 hover:text-brand-200 font-semibold">See all</button>
+          <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">{t('community.activeChallenges')}</p>
+          <button onClick={onSeeChallenges} className="text-[11px] text-brand-300 hover:text-brand-200 font-semibold">{t('community.seeAll')}</button>
         </div>
         <div className="flex flex-col gap-2">
           {challenges.data.slice(0, 2).map((c) => (
             <button key={c.id} onClick={onSeeChallenges} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 text-left hover:bg-white/[0.05]">
               <p className="text-sm font-semibold text-white">{c.title}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{c.participantCount.toLocaleString()} joined · {daysUntil(c.endsAt)}d left</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('community.joinedCount', { n: c.participantCount.toLocaleString() })} · {t('community.daysLeft', { n: daysUntil(c.endsAt) })}</p>
             </button>
           ))}
-          {challenges.data.length === 0 && <p className="text-xs text-slate-500">No active challenges.</p>}
+          {challenges.data.length === 0 && <p className="text-xs text-slate-500">{t('community.noActiveChallenges')}</p>}
         </div>
       </div>
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Popular groups</p>
+          <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">{t('community.popularGroups')}</p>
           <button onClick={onSeeGroups} className="text-brand-300 hover:text-brand-200"><IconPlus className="w-4 h-4" /></button>
         </div>
         <div className="flex flex-col gap-2">
@@ -1309,18 +1325,18 @@ function RightRail({ onSeeGroups, onSeeChallenges }: { onSeeGroups: () => void; 
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-white truncate">{g.name}</p>
-                <p className="text-xs text-slate-500">{g.memberCount.toLocaleString()} members</p>
+                <p className="text-xs text-slate-500">{g.memberCount.toLocaleString()} {t('community.members')}</p>
               </div>
             </button>
           ))}
-          {groups.data.length === 0 && <p className="text-xs text-slate-500">No groups yet.</p>}
+          {groups.data.length === 0 && <p className="text-xs text-slate-500">{t('community.noGroups')}</p>}
         </div>
       </div>
 
       <div>
-        <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">Now live</p>
+        <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">{t('community.nowLive')}</p>
         {live.data.length === 0 ? (
-          <p className="text-xs text-slate-500">No streams live right now.</p>
+          <p className="text-xs text-slate-500">{t('community.noStreams')}</p>
         ) : (
           <button onClick={() => navigate('/live')} className="block w-full text-left rounded-2xl border border-rose-400/30 bg-gradient-to-br from-rose-500/10 to-pink-500/10 overflow-hidden hover:brightness-110">
             {live.data[0].imageUrl && (
@@ -1331,10 +1347,10 @@ function RightRail({ onSeeGroups, onSeeChallenges }: { onSeeGroups: () => void; 
             )}
             <div className="p-3">
               <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-rose-300">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" /> {live.data.length} stream{live.data.length === 1 ? '' : 's'} live
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" /> {t('community.streamsLive', { n: live.data.length })}
               </p>
               <p className="text-sm font-semibold text-white mt-1">{live.data[0].title}</p>
-              <p className="text-[11px] text-slate-400">{live.data[0].viewerCount} watching</p>
+              <p className="text-[11px] text-slate-400">{t('community.watching', { n: live.data[0].viewerCount })}</p>
             </div>
           </button>
         )}
@@ -1347,12 +1363,11 @@ function RightRail({ onSeeGroups, onSeeChallenges }: { onSeeGroups: () => void; 
 
 export type CommunityView = 'feed' | 'groups' | 'challenges'
 type View = CommunityView
-export const COMMUNITY_VIEWS: TabItem<View>[] = [
-  { id: 'feed', label: 'Feed' },
-  { id: 'groups', label: 'Groups & Clubs' },
-  { id: 'challenges', label: 'Challenges & Events' }
+const VIEW_KEYS: { id: View; labelKey: StringKey }[] = [
+  { id: 'feed', labelKey: 'community.tabFeed' },
+  { id: 'groups', labelKey: 'community.tabGroups' },
+  { id: 'challenges', labelKey: 'community.tabChallenges' }
 ]
-const VIEWS = COMMUNITY_VIEWS
 
 interface CommunityPageProps {
   /** Controlled view — when set, the parent owns the section nav (embedded). */
@@ -1364,6 +1379,9 @@ interface CommunityPageProps {
 
 export default function CommunityPage({ view: viewProp, onViewChange, embedded }: CommunityPageProps = {}): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
+  const views: TabItem<View>[] = VIEW_KEYS.map((v) => ({ id: v.id, label: t(v.labelKey) }))
+  const filters: TabItem<Filter>[] = FILTER_KEYS.map((f) => ({ id: f.id, label: t(f.labelKey) }))
   const [viewState, setViewState] = useState<View>('feed')
   const view = viewProp ?? viewState
   const setView = (v: View): void => { onViewChange ? onViewChange(v) : setViewState(v) }
@@ -1403,28 +1421,28 @@ export default function CommunityPage({ view: viewProp, onViewChange, embedded }
         {!embedded && (
           <div className="mb-5 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Community</h1>
-              <p className="text-sm text-slate-400 mt-1">Share resources, join groups, compete in challenges, search everything.</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t('community.title')}</h1>
+              <p className="text-sm text-slate-400 mt-1">{t('community.subtitle')}</p>
             </div>
             <MegaSearch />
           </div>
         )}
 
-        {!embedded && <Tabs items={VIEWS} active={view} onChange={setView} className="self-start mb-5" />}
+        {!embedded && <Tabs items={views} active={view} onChange={setView} className="self-start mb-5" />}
 
         {view === 'feed' && (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6">
             <div className="flex flex-col gap-4">
               <Composer onPosted={feed.refresh} />
-              <Tabs items={FILTERS} active={filter} onChange={setFilter} className="self-start" />
+              <Tabs items={filters} active={filter} onChange={setFilter} className="self-start" />
               {filter === 'following' && following.data.length === 0 && (
                 <div className="rounded-card border border-white/10 bg-white/[0.025] p-6 text-center text-sm text-slate-400">
-                  You're not following anyone yet. Find people on <button onClick={() => navigate('/explore')} className="text-brand-300">Explore</button>.
+                  {t('community.notFollowing')} <button onClick={() => navigate('/explore')} className="text-brand-300">{t('community.findOnExplore')}</button>.
                 </div>
               )}
               {sorted.length === 0 && !feed.loading && filter !== 'following' && (
                 <div className="rounded-card border border-white/10 bg-white/[0.025] p-6 text-center text-sm text-slate-400">
-                  No posts yet — be the first.
+                  {t('community.noPostsYet')}
                 </div>
               )}
               {sorted.map((p) => (
