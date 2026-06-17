@@ -4,6 +4,7 @@ import { useVocab } from '../../services/study/useStudy'
 import { useStats } from '../../services/progress/useProgress'
 import { useAppStore } from '../../store/useAppStore'
 import { IconFlame, IconSearch, IconVolume } from '../../components/icons'
+import { useT } from '../../i18n'
 
 /**
  * Desktop widget (#37) — a tiny always-on-top window (loaded at #/widget by the
@@ -13,6 +14,7 @@ import { IconFlame, IconSearch, IconVolume } from '../../components/icons'
 const FALLBACK = { term: 'serendipity', translation: 'finding something good without looking for it', example: undefined as string | undefined }
 
 export default function WidgetPage(): JSX.Element {
+  const t = useT()
   const targetLanguage = useAppStore((s) => s.profile?.targetLanguage) ?? 'en'
   const { cards } = useVocab(targetLanguage)
   const { streak } = useStats()
@@ -30,15 +32,15 @@ export default function WidgetPage(): JSX.Element {
     <div className="w-full h-screen p-2 select-none" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
       <div className="w-full h-full rounded-2xl border border-white/12 bg-[#0f1424]/95 backdrop-blur-xl shadow-2xl p-4 flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <p className="text-[10px] uppercase tracking-widest text-brand-300 font-bold">Word of the day</p>
+          <p className="text-[10px] uppercase tracking-widest text-brand-300 font-bold">{t('widget.wordOfDay')}</p>
           <span className="inline-flex items-center gap-1 text-amber-300 text-xs font-bold"><IconFlame className="w-3.5 h-3.5" /> {streak}</span>
         </div>
 
         {result ? (
           <div className="flex-1 overflow-y-auto" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             <p className="text-lg font-bold text-white">{result.word}</p>
-            <p className="text-xs text-slate-300 mt-1">{result.senses[0]?.definition ?? 'No definition found.'}</p>
-            <button onClick={() => setResult(null)} className="text-[11px] text-brand-300 mt-2">← word of the day</button>
+            <p className="text-xs text-slate-300 mt-1">{result.senses[0]?.definition ?? t('widget.noDefinition')}</p>
+            <button onClick={() => setResult(null)} className="text-[11px] text-brand-300 mt-2">{t('widget.backToWod')}</button>
           </div>
         ) : (
           <div className="flex-1">
@@ -58,7 +60,7 @@ export default function WidgetPage(): JSX.Element {
           className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1.5"
         >
           <IconSearch className="w-3.5 h-3.5 text-slate-400" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Quick lookup…" className="flex-1 bg-transparent text-xs text-white placeholder:text-slate-500 focus:outline-none" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('widget.quickLookup')} className="flex-1 bg-transparent text-xs text-white placeholder:text-slate-500 focus:outline-none" />
         </form>
       </div>
     </div>

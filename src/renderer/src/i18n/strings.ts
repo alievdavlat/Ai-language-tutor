@@ -279,6 +279,8 @@ export type StringKey =
   | 'downloads.tapToOpen' | 'downloads.noDownloads' | 'downloads.makeOffline'
   | 'downloads.enrolledCourses' | 'downloads.download' | 'downloads.thisDevice'
   | 'downloads.thisDeviceTag' | 'downloads.syncSoon' | 'downloads.browseMore'
+  // ── Widget ───────────────────────────────────────────────────────────
+  | 'widget.wordOfDay' | 'widget.noDefinition' | 'widget.backToWod' | 'widget.quickLookup'
 
 type Table = Record<StringKey, string>
 
@@ -984,7 +986,12 @@ const en: Table = {
   'downloads.thisDevice': 'This device',
   'downloads.thisDeviceTag': '· THIS DEVICE',
   'downloads.syncSoon': 'Cross-device sync (mirror downloads and progress to your phone or tablet) is coming soon.',
-  'downloads.browseMore': 'Browse more courses to download'
+  'downloads.browseMore': 'Browse more courses to download',
+  // Widget
+  'widget.wordOfDay': 'Word of the day',
+  'widget.noDefinition': 'No definition found.',
+  'widget.backToWod': '← word of the day',
+  'widget.quickLookup': 'Quick lookup…'
 }
 
 const uz: Table = {
@@ -1689,7 +1696,12 @@ const uz: Table = {
   'downloads.thisDevice': 'Ushbu qurilma',
   'downloads.thisDeviceTag': '· USHBU QURILMA',
   'downloads.syncSoon': 'Qurilmalararo sinxronlash (yuklamalar va jarayonni telefon yoki planshetga ko‘chirish) tez orada.',
-  'downloads.browseMore': 'Yuklash uchun boshqa kurslarni ko‘rish'
+  'downloads.browseMore': 'Yuklash uchun boshqa kurslarni ko‘rish',
+  // Widget
+  'widget.wordOfDay': 'Kun so‘zi',
+  'widget.noDefinition': 'Ta’rif topilmadi.',
+  'widget.backToWod': '← kun so‘ziga',
+  'widget.quickLookup': 'Tezkor qidiruv…'
 }
 
 const ru: Table = {
@@ -2394,7 +2406,12 @@ const ru: Table = {
   'downloads.thisDevice': 'Это устройство',
   'downloads.thisDeviceTag': '· ЭТО УСТРОЙСТВО',
   'downloads.syncSoon': 'Синхронизация между устройствами (загрузки и прогресс на телефон или планшет) скоро появится.',
-  'downloads.browseMore': 'Найти другие курсы для загрузки'
+  'downloads.browseMore': 'Найти другие курсы для загрузки',
+  // Widget
+  'widget.wordOfDay': 'Слово дня',
+  'widget.noDefinition': 'Определение не найдено.',
+  'widget.backToWod': '← слово дня',
+  'widget.quickLookup': 'Быстрый поиск…'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────
