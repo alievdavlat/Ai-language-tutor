@@ -39,13 +39,17 @@ export default function VocabReviewPage(): JSX.Element {
   const [revealed, setRevealed] = useState(false)
   const [reviewedCount, setReviewedCount] = useState(0)
   const [gradeTally, setGradeTally] = useState<Record<ReviewGrade, number>>({ 1: 0, 2: 0, 3: 0, 4: 0 })
+  // #B11 — cards re-queued within the session ("Again"): after grading they
+  // leave `due` (rescheduled to tomorrow), so we keep a snapshot to re-render
+  // them when they come back around in this session.
+  const [requeued, setRequeued] = useState<Record<string, VocabItem>>({})
 
   // Initialise the session queue once cards have loaded.
   const activeQueue = useMemo(() => {
     if (queueIds === null) return due
     const byId = new Map(due.map((c) => [c.id, c] as const))
-    return queueIds.map((id) => byId.get(id)).filter(Boolean) as VocabItem[]
-  }, [queueIds, due])
+    return queueIds.map((id) => byId.get(id) ?? requeued[id]).filter(Boolean) as VocabItem[]
+  }, [queueIds, due, requeued])
 
   if (loading) {
     return (
@@ -99,9 +103,16 @@ export default function VocabReviewPage(): JSX.Element {
   const progress = (pos / total) * 100
 
   const grade = async (g: ReviewGrade): Promise<void> => {
-    await review(card, g)
+    const updated = await review(card, g)
     setGradeTally((t) => ({ ...t, [g]: t[g] + 1 }))
     setReviewedCount((c) => c + 1)
+    // #B11 — "Again" (grade 1) puts the card back at the END of the session so
+    // the learner re-tests it before finishing, rather than it disappearing
+    // until tomorrow. A later success commits the day-scale interval.
+    if (g === 1) {
+      setRequeued((r) => ({ ...r, [updated.id]: updated }))
+      setQueueIds((ids) => (ids ? [...ids, updated.id] : [updated.id]))
+    }
     setRevealed(false)
     setPos((p) => p + 1)
   }
