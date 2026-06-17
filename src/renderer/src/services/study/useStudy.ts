@@ -195,13 +195,10 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
         source: 'created' as const
       }
       const saved = await backend.upsertVocab(item)
-      await logActivity({
-        userId,
-        kind: 'word_learned',
-        language,
-        xp: 2,
-        meta: { word: saved.term, deck: saved.deck ?? '' }
-      })
+      // #B8 — adding a word is NOT "learning" it. A word counts as learned on
+      // its first successful review (see `review()`), which is when FSRS proves
+      // exposure. Adding earns no XP and no "words learned" credit, so dumping
+      // junk words can't farm the daily/weekly word quests.
       setCards((prev) => [saved, ...prev])
       return saved
     },
@@ -212,13 +209,15 @@ export function useVocab(language: TargetLanguage): UseVocabResult {
     async (card, grade) => {
       const { card: updated } = schedule(card, grade, Date.now())
       const saved = await backend.upsertVocab(updated)
-      await logActivity({
-        userId,
-        kind: 'practice_session',
-        language,
-        xp: grade >= 3 ? 3 : 1,
-        meta: { word: saved.term, grade }
-      })
+      // #B8 — a new card answered correctly (grade ≥ 3) is the moment the word
+      // is genuinely learned; that's what feeds the "words learned" counter and
+      // word quests. Subsequent reviews log as practice instead.
+      const justLearned = card.state === 'new' && grade >= 3
+      await logActivity(
+        justLearned
+          ? { userId, kind: 'word_learned', language, xp: 2, meta: { word: saved.term, grade } }
+          : { userId, kind: 'practice_session', language, xp: grade >= 3 ? 3 : 1, meta: { word: saved.term, grade } }
+      )
       setCards((prev) => prev.map((c) => (c.id === saved.id ? saved : c)))
       return saved
     },
