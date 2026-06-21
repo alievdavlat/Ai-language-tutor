@@ -732,6 +732,23 @@ export const supabaseBackend: Backend = {
       const { data: post } = await sb.from('posts').select('comment_count').eq('id', input.targetId).maybeSingle()
       await sb.from('posts').update({ comment_count: ((post?.comment_count as number) ?? 0) + 1 }).eq('id', input.targetId)
     }
+    // #B25 — notify the person whose content was engaged with (never self).
+    let recipient: string | undefined
+    if (input.parentId) {
+      const { data: parent } = await sb.from('comments').select('author_id').eq('id', input.parentId).maybeSingle()
+      recipient = parent?.author_id as string | undefined
+    } else if (input.targetKind === 'post') {
+      const { data: post } = await sb.from('posts').select('author_id').eq('id', input.targetId).maybeSingle()
+      recipient = post?.author_id as string | undefined
+    }
+    if (recipient && recipient !== input.authorId) {
+      const link = input.targetKind === 'post' ? '/community' : input.targetKind === 'course' ? `/course/${input.targetId}` : null
+      void sb.from('notifications').insert({
+        id: newId('n'), user_id: recipient, type: 'social', kind: 'comment-reply',
+        title: input.parentId ? 'New reply' : 'New comment',
+        body: row.text.slice(0, 120), link, read: false, created_at: now()
+      }).then(() => undefined, () => undefined)
+    }
     return {
       id: data.id as string,
       targetKind: data.target_kind as Comment['targetKind'],

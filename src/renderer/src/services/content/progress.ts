@@ -163,8 +163,19 @@ export function getFinalExam(courseId: string): ExamResult | undefined {
 // ─── Certificates ────────────────────────────────────────────────────────────
 
 export function issueCertificate(c: Omit<Certificate, 'issuedAt'>): Certificate {
+  const already = load().certificates[c.courseId]
   const cert: Certificate = { ...c, issuedAt: now() }
   update((s) => ({ ...s, certificates: { ...s.certificates, [c.courseId]: cert } }))
+  // #B25 — celebrate a newly-earned certificate (first issue only). Lazy imports
+  // keep this foundational store free of a static backend/notify dependency.
+  if (!already) {
+    void import('../notifications/notify').then(({ notify }) =>
+      import('../backend').then(({ backend }) => {
+        const uid = backend.currentUserId()
+        if (uid) void notify({ userId: uid, kind: 'certificate', title: 'Certificate earned 🎓', body: `You completed ${c.courseTitle}.`, link: '/profile' })
+      })
+    ).catch(() => undefined)
+  }
   return cert
 }
 

@@ -596,6 +596,20 @@ export const localBackend: Backend = {
       const pi = db().posts.findIndex((p) => p.id === input.targetId)
       if (pi >= 0) db().posts[pi] = { ...db().posts[pi], commentCount: db().posts[pi].commentCount + 1 }
     }
+    // #B25 — tell the person whose content was engaged with (never self).
+    const recipient = input.parentId
+      ? db().comments.find((x) => x.id === input.parentId)?.authorId
+      : input.targetKind === 'post'
+        ? db().posts.find((p) => p.id === input.targetId)?.authorId
+        : undefined
+    if (recipient && recipient !== input.authorId) {
+      const link = input.targetKind === 'post' ? '/community' : input.targetKind === 'course' ? `/course/${input.targetId}` : undefined
+      db().notifs.unshift({
+        id: newId('n'), userId: recipient, type: 'social', kind: 'comment-reply',
+        title: input.parentId ? 'New reply' : 'New comment',
+        body: c.text.slice(0, 120), link, read: false, createdAt: now()
+      })
+    }
     persist()
     return c
   },
