@@ -43,3 +43,22 @@ describe('addComment notification producer', () => {
     expect(forBob.some((n) => n.kind === 'comment-reply')).toBe(false)
   })
 })
+
+describe('follow notification producer', () => {
+  it('notifies the followed user on a new follow', async () => {
+    await localBackend.follow('carol', 'dave')
+    const forDave = await localBackend.listNotifs('dave')
+    expect(forDave.some((n) => n.kind === 'follow')).toBe(true)
+  })
+
+  it('unfollowing does not raise a notification, and you cannot follow yourself', async () => {
+    await localBackend.follow('erin', 'erin') // self — no-op
+    const forErin = await localBackend.listNotifs('erin')
+    expect(forErin.some((n) => n.kind === 'follow')).toBe(false)
+
+    await localBackend.follow('frank', 'grace') // follow → 1 notif
+    await localBackend.follow('frank', 'grace') // toggle off → no extra notif
+    const forGrace = await localBackend.listNotifs('grace')
+    expect(forGrace.filter((n) => n.kind === 'follow')).toHaveLength(1)
+  })
+})

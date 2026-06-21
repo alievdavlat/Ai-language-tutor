@@ -265,6 +265,7 @@ export type NotifKind =
   | 'peer-review'
   | 'certificate'
   | 'challenge'
+  | 'follow'
 
 export interface Notif {
   id: ID

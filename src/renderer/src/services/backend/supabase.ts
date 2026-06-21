@@ -799,6 +799,13 @@ export const supabaseBackend: Backend = {
       return { following: false }
     }
     await sb.from('follows').insert({ follower_id: followerId, following_id: followingId, created_at: now() })
+    // #B25 — tell the followed user (the actor is never themselves: guarded above).
+    const { data: follower } = await sb.from('users').select('name').eq('id', followerId).maybeSingle()
+    void sb.from('notifications').insert({
+      id: newId('n'), user_id: followingId, type: 'social', kind: 'follow',
+      title: 'New follower', body: `${(follower?.name as string) ?? 'Someone'} started following you.`,
+      link: '/explore', read: false, created_at: now()
+    }).then(() => undefined, () => undefined)
     return { following: true }
   },
   async isFollowing(followerId, followingId): Promise<boolean> {

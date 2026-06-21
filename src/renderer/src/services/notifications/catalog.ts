@@ -116,6 +116,11 @@ export const NOTIF_CATALOG: Record<NotifKind, NotifKindMeta> = {
     kind: 'challenge', label: 'Challenge', category: 'social', group: 'social',
     Icon: IconTrophy, tint: 'bg-amber-500/15 text-amber-300', defaultLink: '/community',
     hint: 'Progress and completion of community challenges you joined.'
+  },
+  follow: {
+    kind: 'follow', label: 'New followers', category: 'social', group: 'social',
+    Icon: IconUsers, tint: 'bg-fuchsia-500/15 text-fuchsia-300', defaultLink: '/explore',
+    hint: 'Someone started following you.'
   }
 }
 

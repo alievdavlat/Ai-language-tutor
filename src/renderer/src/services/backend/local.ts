@@ -643,6 +643,13 @@ export const localBackend: Backend = {
     const i = db().follows.findIndex((f) => f.followerId === followerId && f.followingId === followingId)
     if (i >= 0) { db().follows.splice(i, 1); persist(); return { following: false } }
     db().follows.push({ followerId, followingId, createdAt: now() })
+    // #B25 — tell the followed user (the actor is never themselves: guarded above).
+    const follower = db().users.find((u) => u.id === followerId)
+    db().notifs.unshift({
+      id: newId('n'), userId: followingId, type: 'social', kind: 'follow',
+      title: 'New follower', body: `${follower?.name ?? 'Someone'} started following you.`,
+      link: '/explore', read: false, createdAt: now()
+    })
     persist()
     return { following: true }
   },
