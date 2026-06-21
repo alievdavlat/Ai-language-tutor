@@ -5,6 +5,7 @@ import { cn } from '../../lib/classnames'
 import { PageHeader, StatCard, Tabs, type TabItem } from '../../components/ui'
 import { backend } from '../../services/backend'
 import { useBackendQuery } from '../../services/backend/useBackend'
+import { useAppStore } from '../../store/useAppStore'
 import { exams } from '../../services/exams/store'
 import { BANKS, type ExamSection } from './banks'
 import {
@@ -83,6 +84,9 @@ export default function ExamPracticeHub({ examId }: { examId: ExamId }): JSX.Ele
   // answers + explanations inline. Carried into the engine via ?mode=.
   const [mode, setMode] = useState<'exam' | 'practice'>('exam')
   const bank = BANKS[examId]
+  // Surface the weak areas the placement test found — previously saved to the
+  // profile and never shown anywhere.
+  const weakAreas = useAppStore((s) => s.profile?.weakAreas ?? [])
 
   // Append the current mode to a run route.
   const withMode = (base: string): string => {
@@ -132,6 +136,20 @@ export default function ExamPracticeHub({ examId }: { examId: ExamId }): JSX.Ele
           <StatCard value={studyTime} label="Study time" tone="amber" />
           <StatCard value="AI" label="Examiner feedback" tone="violet" />
         </div>
+
+        {/* Focus areas — the weak spots the level test identified */}
+        {weakAreas.length > 0 && (
+          <div className="rounded-2xl border border-amber-400/20 bg-amber-500/[0.06] px-4 py-3">
+            <p className="text-[11px] uppercase tracking-widest text-amber-300/80 font-semibold mb-1.5">
+              Focus areas — from your level test
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {weakAreas.map((a) => (
+                <span key={a} className="text-xs rounded-full bg-amber-500/15 text-amber-200 px-2.5 py-1 capitalize">{a}</span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Section / exam-mode toggle */}
         <div className="flex items-center gap-3 flex-wrap">
