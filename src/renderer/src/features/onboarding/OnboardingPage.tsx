@@ -20,7 +20,11 @@ import LanguageStep from './sections/LanguageStep'
 import NativeLanguageStep from './sections/NativeLanguageStep'
 import GoalsStep from './sections/GoalsStep'
 import InterestsStep from './sections/InterestsStep'
+import DailyGoalStep from './sections/DailyGoalStep'
 import CompleteStep from './sections/CompleteStep'
+import { useProgressStore } from '../../services/progress/store'
+import { DEFAULT_GOAL_ID } from '../../services/progress/catalog'
+import type { DailyGoalId } from '../../services/progress/types'
 import AdaptiveQuiz from '../leveltest/AdaptiveQuiz'
 import type { LevelEstimate } from '../leveltest/engine'
 
@@ -33,7 +37,10 @@ export default function OnboardingPage(): JSX.Element {
   // sense for them, so drop it from their onboarding flow.
   const skipsPlacement = canAuthorContent(role)
   const steps = useMemo(
-    () => (skipsPlacement ? ONBOARDING_STEPS.filter((s) => s !== 'placement') : ONBOARDING_STEPS),
+    () =>
+      skipsPlacement
+        ? ONBOARDING_STEPS.filter((s) => s !== 'placement' && s !== 'dailyGoal')
+        : ONBOARDING_STEPS,
     [skipsPlacement]
   )
   const flow = useOnboardingFlow('welcome', steps)
@@ -49,6 +56,7 @@ export default function OnboardingPage(): JSX.Element {
   const toUILang = (c: string): UILanguage => (c === 'uz' || c === 'ru' || c === 'en' ? c : 'en')
   const [goals, setGoals] = useState<LearningGoal[]>([])
   const [interests, setInterests] = useState<Interest[]>([])
+  const [dailyGoal, setDailyGoal] = useState<DailyGoalId>(DEFAULT_GOAL_ID)
   const [placementResult, setPlacementResult] = useState<PlacementResult | null>(null)
 
   // The adaptive engine produces the level client-side (no LLM / no local model).
@@ -81,6 +89,9 @@ export default function OnboardingPage(): JSX.Element {
     }
     await window.api.profile.save(profile)
     setProfile(profile)
+    // Learners pick a daily goal; persisting it also honestly grants the
+    // "Committed" (goal_set) achievement instead of leaving it to be discovered.
+    if (!skipsPlacement) useProgressStore.getState().setDailyGoal(dailyGoal)
     setUILang(toUILang(nativeLanguage))
     setOnboardingComplete(true)
     navigate(homeForRole(role), { replace: true })
@@ -124,6 +135,14 @@ export default function OnboardingPage(): JSX.Element {
           <InterestsStep
             interests={interests}
             onChange={setInterests}
+            onNext={flow.next}
+            onBack={flow.back}
+          />
+        )}
+        {flow.step === 'dailyGoal' && (
+          <DailyGoalStep
+            value={dailyGoal}
+            onChange={setDailyGoal}
             onNext={flow.next}
             onBack={flow.back}
           />
