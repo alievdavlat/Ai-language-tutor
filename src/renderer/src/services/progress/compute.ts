@@ -108,7 +108,8 @@ export function computeStreak(activeDayKeys: Set<string>, now: Date): { current:
   let prev: number | null = null
   for (const k of sorted) {
     const t = new Date(k + 'T00:00:00').getTime()
-    if (prev !== null && t - prev === 86400000) run += 1
+    // Round the day-gap: consecutive local day-keys differ by 23h/25h across DST, not exactly 24h.
+    if (prev !== null && Math.round((t - prev) / 86400000) === 1) run += 1
     else run = 1
     longest = Math.max(longest, run)
     prev = t

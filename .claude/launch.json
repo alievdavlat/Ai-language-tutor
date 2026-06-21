@@ -6,6 +6,12 @@
       "runtimeExecutable": "cmd",
       "runtimeArgs": ["/c", "cd src\\renderer && npx vite --port 5175"],
       "port": 5175
+    },
+    {
+      "name": "enterprise-admin",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d C:\\Users\\ACER\\Desktop\\enterprise\\packages\\admin && npm run dev"],
+      "port": 3000
     }
   ]
 }

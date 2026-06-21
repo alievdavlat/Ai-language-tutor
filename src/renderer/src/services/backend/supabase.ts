@@ -497,10 +497,13 @@ export const supabaseBackend: Backend = {
   },
 
   async enroll(userId, courseId): Promise<Enrollment> {
+    // Idempotent: re-enrolling must not re-bump the course counter (matches local backend).
+    const { data: existing } = await sb
+      .from('enrollments').select().eq('user_id', userId).eq('course_id', courseId).maybeSingle()
+    if (existing) return e2e(existing)
     const row = { user_id: userId, course_id: courseId, progress: 0, last_active_at: now(), enrolled_at: now() }
-    const { data, error } = await sb.from('enrollments').upsert(row).select().single()
+    const { data, error } = await sb.from('enrollments').insert(row).select().single()
     if (error) throw error
-    // Bump enrollment_count atomically — using an RPC would be safer, this is best-effort.
     await sb.rpc('increment_course_enrollment', { p_course_id: courseId }).then(() => undefined, () => undefined)
     return e2e(data)
   },
