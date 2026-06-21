@@ -11,20 +11,23 @@ interface OnboardingFlow {
   goTo: (step: OnboardingStep) => void
 }
 
-export function useOnboardingFlow(initial: OnboardingStep = 'welcome'): OnboardingFlow {
+export function useOnboardingFlow(
+  initial: OnboardingStep = 'welcome',
+  steps: readonly OnboardingStep[] = ONBOARDING_STEPS
+): OnboardingFlow {
   const [step, setStep] = useState<OnboardingStep>(initial)
-  const index = ONBOARDING_STEPS.indexOf(step)
-  const total = ONBOARDING_STEPS.length
+  const index = steps.indexOf(step)
+  const total = steps.length
 
   const next = useCallback(() => {
-    const current = ONBOARDING_STEPS.indexOf(step)
-    if (current < total - 1) setStep(ONBOARDING_STEPS[current + 1])
-  }, [step, total])
+    const current = steps.indexOf(step)
+    if (current < total - 1) setStep(steps[current + 1])
+  }, [step, total, steps])
 
   const back = useCallback(() => {
-    const current = ONBOARDING_STEPS.indexOf(step)
-    if (current > 0) setStep(ONBOARDING_STEPS[current - 1])
-  }, [step])
+    const current = steps.indexOf(step)
+    if (current > 0) setStep(steps[current - 1])
+  }, [step, steps])
 
   const goTo = useCallback((target: OnboardingStep) => setStep(target), [])
 

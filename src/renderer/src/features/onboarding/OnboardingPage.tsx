@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type {
   CEFRLevel,
@@ -9,7 +9,8 @@ import type {
   UserProfile
 } from '@shared/types'
 import { useAppStore } from '../../store/useAppStore'
-import { homeForRole } from '@shared/constants'
+import { homeForRole, canAuthorContent } from '@shared/constants'
+import { ONBOARDING_STEPS } from './constants/steps'
 import { ProgressBar } from '../../components/ui'
 import { useOnboardingFlow } from './hooks/useOnboardingFlow'
 import { buildEmptyProfile } from './constants/defaultProfile'
@@ -28,7 +29,14 @@ export default function OnboardingPage(): JSX.Element {
   const { rec, setProfile, profile } = useAppStore()
   const setOnboardingComplete = useAppStore((s) => s.setOnboardingComplete)
   const role = useAppStore((s) => s.role)
-  const flow = useOnboardingFlow('welcome')
+  // Teachers/admins author content — the learner CEFR placement test makes no
+  // sense for them, so drop it from their onboarding flow.
+  const skipsPlacement = canAuthorContent(role)
+  const steps = useMemo(
+    () => (skipsPlacement ? ONBOARDING_STEPS.filter((s) => s !== 'placement') : ONBOARDING_STEPS),
+    [skipsPlacement]
+  )
+  const flow = useOnboardingFlow('welcome', steps)
   const [uiLang, setUILang] = useUILanguage()
 
   // Seed from existing profile so a returning user (e.g. coming back via
@@ -54,7 +62,7 @@ export default function OnboardingPage(): JSX.Element {
     flow.goTo('complete')
   }
 
-  const saveAndEnter = async (finalLevel: CEFRLevel): Promise<void> => {
+  const saveAndEnter = async (finalLevel?: CEFRLevel): Promise<void> => {
     const base = buildEmptyProfile()
     const profile: UserProfile = {
       ...base,
@@ -63,7 +71,7 @@ export default function OnboardingPage(): JSX.Element {
       nativeLanguage,
       goals,
       interests,
-      level: finalLevel,
+      level: finalLevel ?? base.level,
       weakAreas: placementResult?.weakAreas ?? [],
       settings: {
         ...base.settings,
@@ -136,6 +144,21 @@ export default function OnboardingPage(): JSX.Element {
             result={placementResult}
             onConfirm={(lvl) => void saveAndEnter(lvl)}
           />
+        )}
+        {flow.step === 'complete' && !placementResult && (
+          <div className="text-center py-8">
+            <div className="text-5xl mb-4">🎓</div>
+            <h2 className="text-2xl font-bold">You're all set{name ? `, ${name}` : ''}!</h2>
+            <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
+              Your teaching workspace is ready. Set up your channel, create a course, and reach learners.
+            </p>
+            <button
+              className="mt-6 px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 font-medium"
+              onClick={() => void saveAndEnter()}
+            >
+              Go to my dashboard
+            </button>
+          </div>
         )}
       </div>
     </div>
