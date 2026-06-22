@@ -40,7 +40,11 @@ export default function ClipPlayPage(): JSX.Element {
   )
   useEffect(() => {
     const ac = new AbortController()
-    setLyricsState('loading')
+    // Only show the loading banner when there's nothing to display yet. If the
+    // clip already ships authored lyrics, keep them on screen (state stays
+    // 'ready') and upgrade to LRCLIB synced timings silently in the background —
+    // so a slow/unreachable LRCLIB never blocks a playable clip.
+    if (!clip.lines?.length) setLyricsState('loading')
     void fetchSyncedLyrics(clip.title, clip.artist, ac.signal)
       .then((fetched) => {
         if (ac.signal.aborted) return
