@@ -23,3 +23,7 @@ txt.txt
 # scratch: STT validation
 test-stt/
 capture-speaking.mjs
+
+# Planning / feature docs stay local — only the app README is published
+*.md
+!/README.md
