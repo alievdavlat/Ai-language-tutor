@@ -1,6 +1,7 @@
 import type { CourseView, LessonView } from '../../services/content/courseModel'
 import { cn } from '../../lib/classnames'
 import { IconBook, IconCheck, IconLock, IconPlay, IconStar, IconTarget, IconTrophy } from '../../components/icons'
+import { useT } from '../../i18n'
 
 /**
  * Englify × Duolingo course path. The curriculum renders as a winding,
@@ -37,21 +38,22 @@ function Node({ lesson, offset, locked, previewable, tone, onOpen }: {
   tone: (typeof UNIT_TONES)[number]
   onOpen: () => void
 }): JSX.Element {
+  const t = useT()
   const done = lesson.state === 'done'
   const current = !locked && !previewable && lesson.state === 'current'
   const Icon = done ? IconCheck : locked ? IconLock : kindIcon(lesson.kind)
   return (
     <div className="relative flex flex-col items-center" style={{ transform: `translateX(${offset}px)` }}>
       {current && (
-        <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-widest text-brand-200 bg-brand-500/20 border border-brand-400/40 rounded-full px-2 py-0.5 animate-bounce">Start</span>
+        <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-widest text-brand-200 bg-brand-500/20 border border-brand-400/40 rounded-full px-2 py-0.5 animate-bounce">{t('crs.start')}</span>
       )}
       {previewable && (
-        <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-widest text-emerald-200 bg-emerald-500/20 border border-emerald-400/40 rounded-full px-2 py-0.5 whitespace-nowrap">Free preview</span>
+        <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-widest text-emerald-200 bg-emerald-500/20 border border-emerald-400/40 rounded-full px-2 py-0.5 whitespace-nowrap">{t('crs.freePreview')}</span>
       )}
       {/* Locked nodes stay clickable — tapping opens the "buy to unlock" prompt. */}
       <button
         onClick={onOpen}
-        title={locked ? `${lesson.title} · buy to unlock` : lesson.title}
+        title={locked ? `${lesson.title} · ${t('crs.buyToUnlock')}` : lesson.title}
         className={cn(
           'w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition ring-4',
           done && 'bg-gradient-to-b from-emerald-400 to-emerald-600 ring-emerald-400/30 text-white',
@@ -76,6 +78,7 @@ export default function CoursePath({ view, unlocked, onOpenLesson, onOpenFinal, 
   /** Tapped a locked node / the final while not unlocked — open the paywall. */
   onLocked: () => void
 }): JSX.Element {
+  const t = useT()
   let nodeIdx = 0
   return (
     <div className="relative flex flex-col items-center gap-2 py-2">
@@ -85,7 +88,7 @@ export default function CoursePath({ view, unlocked, onOpenLesson, onOpenFinal, 
           <div key={unit.id} className="w-full flex flex-col items-center gap-6 mb-6">
             {/* Section banner */}
             <div className={cn('w-full max-w-md rounded-2xl border bg-gradient-to-r px-4 py-3 text-center', tone.banner)}>
-              <p className="text-[10px] uppercase tracking-widest font-bold opacity-80">Unit {ui + 1}{unit.about ? '' : ''}</p>
+              <p className="text-[10px] uppercase tracking-widest font-bold opacity-80">{t('crs.unit')} {ui + 1}{unit.about ? '' : ''}</p>
               <p className="text-sm font-black text-white">{unit.title}</p>
             </div>
             {lessons.map((l) => {
@@ -114,7 +117,7 @@ export default function CoursePath({ view, unlocked, onOpenLesson, onOpenFinal, 
         <div className="flex flex-col items-center gap-2 mt-2">
           <button
             onClick={() => (!unlocked ? onLocked() : view.finalUnlocked && onOpenFinal())}
-            title="Final exam"
+            title={t('crs.finalExam')}
             className={cn(
               'w-20 h-20 rounded-full flex items-center justify-center shadow-xl ring-4 transition',
               view.finalPassed ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 ring-emerald-400/30 text-white'
@@ -124,14 +127,14 @@ export default function CoursePath({ view, unlocked, onOpenLesson, onOpenFinal, 
           >
             {view.finalPassed ? <IconCheck className="w-9 h-9" /> : view.finalUnlocked && unlocked ? <IconTrophy className="w-9 h-9" /> : <IconLock className="w-8 h-8" />}
           </button>
-          <p className="text-xs font-bold text-white">Final exam{view.finalPassed ? ' · passed' : ''}</p>
-          <p className="text-[11px] text-slate-500">Pass to earn your certificate 🏆</p>
+          <p className="text-xs font-bold text-white">{t('crs.finalExam')}{view.finalPassed ? ` · ${t('crs.passed')}` : ''}</p>
+          <p className="text-[11px] text-slate-500">{t('crs.passToEarn')} 🏆</p>
         </div>
       )}
 
       {!unlocked && (
         <button onClick={onLocked} className="text-xs text-brand-300 hover:text-brand-200 mt-4 inline-flex items-center gap-1.5 font-semibold">
-          <IconLock className="w-3.5 h-3.5" /> Buy to unlock the full path →
+          <IconLock className="w-3.5 h-3.5" /> {t('crs.buyToUnlockPath')} →
         </button>
       )}
     </div>

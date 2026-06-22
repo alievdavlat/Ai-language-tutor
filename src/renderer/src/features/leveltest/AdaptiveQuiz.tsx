@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { cn } from '../../lib/classnames'
 import { ProgressBar } from '../../components/ui'
 import { IconX } from '../../components/icons'
+import { useT } from '../../i18n'
 import {
   ITEM_BANK,
   MAX_ITEMS,
@@ -30,6 +31,7 @@ interface AdaptiveQuizProps {
  * No LLM / network: leveling is a pure algorithm.
  */
 export default function AdaptiveQuiz({ onComplete, onExit }: AdaptiveQuizProps): JSX.Element {
+  const t = useT()
   const [session, setSession] = useState<Session>(() => createSession())
   const [current, setCurrent] = useState<Item | null>(() => selectNext(ITEM_BANK, createSession()))
   const [selected, setSelected] = useState<number | null>(null)
@@ -61,7 +63,7 @@ export default function AdaptiveQuiz({ onComplete, onExit }: AdaptiveQuizProps):
 
   if (!current) {
     return (
-      <div className="text-center text-slate-400 py-12">Preparing your test…</div>
+      <div className="text-center text-slate-400 py-12">{t('spk.preparingTest')}</div>
     )
   }
 
@@ -69,7 +71,7 @@ export default function AdaptiveQuiz({ onComplete, onExit }: AdaptiveQuizProps):
     <div className="flex flex-col w-full">
       <div className="flex items-center gap-4 mb-8">
         {onExit && (
-          <button onClick={onExit} className="text-slate-500 hover:text-white transition shrink-0" title="Exit test">
+          <button onClick={onExit} className="text-slate-500 hover:text-white transition shrink-0" title={t('spk.exitTest')}>
             <IconX className="w-6 h-6" />
           </button>
         )}
@@ -81,7 +83,7 @@ export default function AdaptiveQuiz({ onComplete, onExit }: AdaptiveQuizProps):
 
       <div className="flex-1">
         <p className="text-[11px] uppercase tracking-widest text-brand-300 font-semibold mb-2">
-          {current.skill} · adaptive
+          {current.skill} · {t('spk.adaptive')}
         </p>
         <h2 className="text-2xl font-bold leading-snug mb-8">{current.prompt}</h2>
 
@@ -111,13 +113,13 @@ export default function AdaptiveQuiz({ onComplete, onExit }: AdaptiveQuizProps):
               : 'border-white/15 bg-transparent text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
           )}
         >
-          🤔 I don't know — skip this one
+          🤔 {t('spk.idkSkip')}
         </button>
       </div>
 
       <div className="mt-6">
         <button onClick={submit} disabled={selected === null} className="btn-primary w-full py-3 disabled:opacity-40">
-          {answered + 1 >= MAX_ITEMS ? 'Finish & see result' : 'Next'}
+          {answered + 1 >= MAX_ITEMS ? t('spk.finishSeeResult') : t('spk.next')}
         </button>
       </div>
     </div>

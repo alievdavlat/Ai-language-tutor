@@ -5,11 +5,13 @@ import { AvatarCircle } from '../../../components/ui'
 import { backend, useBackendQuery } from '../../../services/backend/useBackend'
 import { library } from '../../../services/library/store'
 import { useTargetLanguageCode } from '../../../lib/language'
+import { useT } from '../../../i18n'
 
 interface Hit { id: string; kind: 'course' | 'book' | 'video' | 'audio' | 'person'; title: string; sub: string; img?: string; go: () => void }
 
 export default function MegaSearch(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const lang = useTargetLanguageCode()
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
@@ -27,18 +29,18 @@ export default function MegaSearch(): JSX.Element {
     if (!n) return []
     const out: Hit[] = []
     for (const c of courses.data) {
-      if (c.title.toLowerCase().includes(n)) out.push({ id: `c_${c.id}`, kind: 'course', title: c.title, sub: `Course · ${c.level}`, img: c.thumbnailUrl, go: () => navigate(`/course/${c.id}`) })
+      if (c.title.toLowerCase().includes(n)) out.push({ id: `c_${c.id}`, kind: 'course', title: c.title, sub: `${t('soc.course')} · ${c.level}`, img: c.thumbnailUrl, go: () => navigate(`/course/${c.id}`) })
     }
     for (const it of lib.data) {
       if (it.title.toLowerCase().includes(n) || (it.author ?? '').toLowerCase().includes(n)) {
-        out.push({ id: `l_${it.id}`, kind: it.kind, title: it.title, sub: it.kind === 'book' ? 'Book' : it.kind === 'video' ? 'Video' : 'Audio', img: it.thumbnailUrl, go: () => navigate(it.kind === 'book' ? `/library/book/${it.id}` : '/library') })
+        out.push({ id: `l_${it.id}`, kind: it.kind, title: it.title, sub: it.kind === 'book' ? t('soc.book') : it.kind === 'video' ? t('soc.video') : t('soc.audio'), img: it.thumbnailUrl, go: () => navigate(it.kind === 'book' ? `/library/book/${it.id}` : '/library') })
       }
     }
     for (const u of people.data) {
-      if (u.name.toLowerCase().includes(n)) out.push({ id: `u_${u.id}`, kind: 'person', title: u.name, sub: u.role === 'teacher' ? 'Teacher' : 'Learner', img: (u as { avatarUrl?: string }).avatarUrl, go: () => navigate(`/channel?id=${u.id}`) })
+      if (u.name.toLowerCase().includes(n)) out.push({ id: `u_${u.id}`, kind: 'person', title: u.name, sub: u.role === 'teacher' ? t('soc.teacher') : t('soc.learner'), img: (u as { avatarUrl?: string }).avatarUrl, go: () => navigate(`/channel?id=${u.id}`) })
     }
     return out.slice(0, 7)
-  }, [q, courses.data, lib.data, people.data, navigate])
+  }, [q, courses.data, lib.data, people.data, navigate, t])
 
   const submit = (e: React.FormEvent): void => {
     e.preventDefault()
@@ -63,17 +65,17 @@ export default function MegaSearch(): JSX.Element {
         onChange={(e) => { setQ(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Search courses, books, teachers…"
+        placeholder={t('soc.megaSearchPlaceholder')}
         className="w-full rounded-pill bg-white/[0.05] border border-white/10 pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:bg-white/[0.07] focus:outline-none transition"
       />
       {open && q.trim() && (
         <div className="absolute z-40 mt-2 w-full rounded-2xl border border-white/12 bg-[#0d1120] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden ring-1 ring-black/40">
           {hits.length > 0 && (
-            <p className="px-4 pt-3 pb-1.5 text-[10px] uppercase tracking-widest text-slate-500 font-bold">Results</p>
+            <p className="px-4 pt-3 pb-1.5 text-[10px] uppercase tracking-widest text-slate-500 font-bold">{t('soc.results')}</p>
           )}
           <div className="max-h-[22rem] overflow-y-auto">
             {hits.length === 0 ? (
-              <p className="px-4 py-4 text-sm text-slate-400">No matches yet. Press Enter to search everything.</p>
+              <p className="px-4 py-4 text-sm text-slate-400">{t('soc.noMatchesYet')}</p>
             ) : (
               hits.map((h) => (
                 <button key={h.id} type="button" onMouseDown={() => { h.go(); setOpen(false) }} className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-brand-500/10 transition group">
@@ -92,7 +94,7 @@ export default function MegaSearch(): JSX.Element {
             )}
           </div>
           <button type="submit" className="w-full text-center px-4 py-2.5 text-xs font-semibold text-brand-300 hover:bg-brand-500/10 border-t border-white/[0.08] transition">
-            See all results for “{q.trim()}” →
+            {t('soc.seeAllResultsFor')} “{q.trim()}” →
           </button>
         </div>
       )}

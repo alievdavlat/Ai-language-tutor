@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useT } from '../../i18n'
 import { cn } from '../../lib/classnames'
 import { ProgressBar } from '../../components/ui'
 import { IconBolt, IconCheck, IconHeart, IconX } from '../../components/icons'
@@ -52,6 +53,7 @@ interface LoadedSession {
 }
 
 export default function ExercisePlayer(): JSX.Element {
+  const t = useT()
   const navigate = useNavigate()
   const [params] = useSearchParams()
 
@@ -210,14 +212,14 @@ export default function ExercisePlayer(): JSX.Element {
     return (
       <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-6 py-6">
         <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => navigate(session.back)} className="text-slate-500 hover:text-white transition shrink-0" title="Exit">
+          <button onClick={() => navigate(session.back)} className="text-slate-500 hover:text-white transition shrink-0" title={t('gr.exit')}>
             <IconX className="w-6 h-6" />
           </button>
           <p className="text-sm font-bold">{session.title}</p>
         </div>
         <div className="flex-1">
           <p className="text-[11px] uppercase tracking-widest text-brand-300 font-semibold mb-2">{session.subtitle}</p>
-          <h2 className="text-2xl font-bold leading-snug mb-6">How it works</h2>
+          <h2 className="text-2xl font-bold leading-snug mb-6">{t('gr.howItWorks')}</h2>
           <div className="flex flex-col gap-3">
             {session.rule.map((r, i) => (
               <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300 leading-relaxed">
@@ -227,7 +229,7 @@ export default function ExercisePlayer(): JSX.Element {
           </div>
         </div>
         <button onClick={() => setShowRule(false)} className="btn-primary w-full py-3 mt-6">
-          Start practice →
+          {t('gr.startPractice')} →
         </button>
       </div>
     )
@@ -242,20 +244,20 @@ export default function ExercisePlayer(): JSX.Element {
           <IconBolt className="w-12 h-12 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Lesson complete!</h1>
-          <p className="text-slate-400 mt-2">{correctCount} / {exercises.length} correct</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('gr.lessonComplete')}</h1>
+          <p className="text-slate-400 mt-2">{correctCount} / {exercises.length} {t('gr.correctLower')}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-center">
             <p className="text-2xl font-bold text-brand-300">+{xp}</p>
-            <p className="text-xs text-slate-400">XP earned</p>
+            <p className="text-xs text-slate-400">{t('gr.xpEarned')}</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-center">
             <p className="text-2xl font-bold text-amber-300">{hearts}</p>
-            <p className="text-xs text-slate-400">Hearts left</p>
+            <p className="text-xs text-slate-400">{t('gr.heartsLeft')}</p>
           </div>
         </div>
-        <button onClick={() => navigate(session.back)} className="btn-primary px-8 mt-2">Continue</button>
+        <button onClick={() => navigate(session.back)} className="btn-primary px-8 mt-2">{t('gr.continue')}</button>
       </div>
     )
   }
@@ -267,7 +269,7 @@ export default function ExercisePlayer(): JSX.Element {
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-6 py-6">
       {/* Top bar */}
       <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => navigate(session.back)} className="text-slate-500 hover:text-white transition shrink-0" title="Exit lesson">
+        <button onClick={() => navigate(session.back)} className="text-slate-500 hover:text-white transition shrink-0" title={t('gr.exitLesson')}>
           <IconX className="w-6 h-6" />
         </button>
         <ProgressBar value={progress} className="h-2.5" />
@@ -319,13 +321,13 @@ export default function ExercisePlayer(): JSX.Element {
               disabled={checked}
               onChange={(e) => setTyped(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') (checked ? onContinue() : onCheck()) }}
-              placeholder={q.kind === 'write' ? 'Rewrite the full sentence…' : 'Type the missing word…'}
+              placeholder={q.kind === 'write' ? t('gr.rewriteSentence') : t('gr.typeMissingWord')}
               className={cn(
                 'w-full rounded-2xl bg-white/[0.04] border px-4 py-4 text-base text-slate-100 placeholder:text-slate-500 focus:outline-none transition',
                 checked ? (isCorrect ? 'border-emerald-400/60' : 'border-rose-400/60') : 'border-white/10 focus:border-brand-400/70'
               )}
             />
-            {q.kind === 'write' && <p className="text-[11px] text-slate-500 mt-2">Tip: write the complete sentence; minor punctuation is ignored.</p>}
+            {q.kind === 'write' && <p className="text-[11px] text-slate-500 mt-2">{t('gr.writeTip')}</p>}
           </div>
         )}
       </div>
@@ -336,16 +338,16 @@ export default function ExercisePlayer(): JSX.Element {
           <div className={cn('rounded-xl px-4 py-3 mb-3 text-sm font-semibold', isCorrect ? 'bg-emerald-500/10 text-emerald-300' : 'bg-rose-500/10 text-rose-300')}>
             <div className="flex items-center gap-2">
               <IconCheck className="w-4 h-4" />
-              {isCorrect ? 'Correct!' : `Answer: ${modelAnswer ?? ''}`}
+              {isCorrect ? t('gr.correctExclaim') : `${t('gr.answerLabel')}: ${modelAnswer ?? ''}`}
             </div>
             {q.explanation && <p className="text-[12px] font-normal text-slate-400 mt-1.5 pl-6">{q.explanation}</p>}
           </div>
         )}
         {!checked ? (
-          <button onClick={onCheck} disabled={!canCheck} className="btn-primary w-full py-3 disabled:opacity-40">Check</button>
+          <button onClick={onCheck} disabled={!canCheck} className="btn-primary w-full py-3 disabled:opacity-40">{t('gr.check')}</button>
         ) : (
           <button onClick={onContinue} className="btn-primary w-full py-3">
-            {index + 1 >= exercises.length ? 'Finish' : 'Continue'}
+            {index + 1 >= exercises.length ? t('gr.finish') : t('gr.continue')}
           </button>
         )}
       </div>

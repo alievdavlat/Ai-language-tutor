@@ -1,19 +1,21 @@
 import { useBackendQuery } from '../../../services/backend/useBackend'
 import { studio } from '../../../services/studio/store'
 import { cn } from '../../../lib/classnames'
+import { useT } from '../../../i18n'
 
 export default function AuditPage(): JSX.Element {
+  const t = useT()
   const log = useBackendQuery(() => studio.listModerationLog(), [], [])
 
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-white">Audit log</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Every moderation action, newest first. {log.data.length} entr{log.data.length === 1 ? 'y' : 'ies'}.</p>
+        <h1 className="text-xl font-bold tracking-tight text-white">{t('adm.auditLogTitle')}</h1>
+        <p className="text-sm text-slate-500 mt-0.5">{t('adm.auditLogSubtitle')} {log.data.length} {log.data.length === 1 ? t('adm.entrySingular') : t('adm.entryPlural')}.</p>
       </div>
 
       {log.data.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.015] py-16 text-center text-sm text-slate-500">No actions recorded yet.</div>
+        <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.015] py-16 text-center text-sm text-slate-500">{t('adm.noActionsYet')}</div>
       ) : (
         <div className="rounded-xl border border-white/[0.07] divide-y divide-white/[0.05] bg-white/[0.015]">
           {log.data.map((e) => (

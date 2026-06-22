@@ -7,12 +7,14 @@ import type { ResourceDef } from '../resources'
 import DataTable from '../components/DataTable'
 import Drawer from '../components/Drawer'
 import BulkImportModal from '../components/BulkImportModal'
+import { useT } from '../../../i18n'
 
 interface EditState {
   row: any | null
 }
 
 export default function ResourcePage({ def }: { def: ResourceDef }): JSX.Element {
+  const t = useT()
   const [rows, setRows] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
@@ -59,7 +61,7 @@ export default function ResourcePage({ def }: { def: ResourceDef }): JSX.Element
       close()
       refresh()
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : 'Save failed')
+      window.alert(e instanceof Error ? e.message : t('adm.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -70,7 +72,7 @@ export default function ResourcePage({ def }: { def: ResourceDef }): JSX.Element
     try {
       await def.remove(row)
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : 'Delete failed')
+      window.alert(e instanceof Error ? e.message : t('adm.deleteFailed'))
     }
     setConfirmId(null)
     refresh()
@@ -91,11 +93,11 @@ export default function ResourcePage({ def }: { def: ResourceDef }): JSX.Element
         <div className="flex items-center gap-2">
           {def.bulkImport && (
             <button onClick={() => setBulk(true)} className="rounded-lg border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-3 py-2 text-xs font-semibold text-slate-200 inline-flex items-center gap-1.5">
-              <IconDownload className="w-3.5 h-3.5" /> Bulk import
+              <IconDownload className="w-3.5 h-3.5" /> {t('adm.bulkImport')}
             </button>
           )}
           <button onClick={openNew} className="rounded-lg bg-brand-500 hover:bg-brand-400 px-3.5 py-2 text-xs font-bold text-white inline-flex items-center gap-1.5">
-            <IconPlus className="w-3.5 h-3.5" /> New {def.singular}
+            <IconPlus className="w-3.5 h-3.5" /> {t('adm.newEntity', { entity: def.singular })}
           </button>
         </div>
       </div>
@@ -107,13 +109,13 @@ export default function ResourcePage({ def }: { def: ResourceDef }): JSX.Element
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={`Search ${def.label.toLowerCase()}…`}
+            placeholder={t('adm.searchEntity', { entity: def.label.toLowerCase() })}
             className="w-full rounded-lg bg-white/[0.04] border border-white/10 pl-9 pr-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-brand-400 focus:outline-none"
           />
         </div>
         <span className="text-xs text-slate-500 tabular-nums">
-          {loading ? 'Loading…' : `${filtered.length} of ${rows.length}`}
-          {builtInCount > 0 && <span className="text-slate-600"> · {builtInCount} built-in</span>}
+          {loading ? t('adm.loading') : `${filtered.length} ${t('adm.ofCount')} ${rows.length}`}
+          {builtInCount > 0 && <span className="text-slate-600"> · {builtInCount} {t('adm.builtIn')}</span>}
         </span>
       </div>
 
@@ -122,20 +124,20 @@ export default function ResourcePage({ def }: { def: ResourceDef }): JSX.Element
         rows={filtered}
         rowId={def.rowId}
         onRowClick={openEdit}
-        empty={`No ${def.label.toLowerCase()} yet. Create the first one.`}
+        empty={t('adm.noEntityYet', { entity: def.label.toLowerCase() })}
         actions={(row) => (
           <>
-            <button onClick={() => openEdit(row)} title="Edit" className="w-7 h-7 rounded-md hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white">
+            <button onClick={() => openEdit(row)} title={t('adm.edit')} className="w-7 h-7 rounded-md hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white">
               <IconPencil className="w-3.5 h-3.5" />
             </button>
             {def.remove && (
               confirmId === def.rowId(row) ? (
                 <span className="inline-flex items-center gap-1">
-                  <button onClick={() => void doDelete(row)} className="rounded-md bg-rose-500/20 text-rose-200 px-2 py-1 text-[11px] font-bold">Delete</button>
+                  <button onClick={() => void doDelete(row)} className="rounded-md bg-rose-500/20 text-rose-200 px-2 py-1 text-[11px] font-bold">{t('adm.delete')}</button>
                   <button onClick={() => setConfirmId(null)} className="w-6 h-6 rounded-md hover:bg-white/10 flex items-center justify-center text-slate-400"><IconX className="w-3.5 h-3.5" /></button>
                 </span>
               ) : (
-                <button onClick={() => setConfirmId(def.rowId(row))} title="Delete" className="w-7 h-7 rounded-md hover:bg-rose-500/15 flex items-center justify-center text-slate-400 hover:text-rose-300">
+                <button onClick={() => setConfirmId(def.rowId(row))} title={t('adm.delete')} className="w-7 h-7 rounded-md hover:bg-rose-500/15 flex items-center justify-center text-slate-400 hover:text-rose-300">
                   <IconX className="w-3.5 h-3.5" />
                 </button>
               )
@@ -146,7 +148,7 @@ export default function ResourcePage({ def }: { def: ResourceDef }): JSX.Element
 
       {def.isBuiltIn && builtInCount > 0 && (
         <p className="text-[11px] text-slate-600">
-          Built-in seed {def.label.toLowerCase()} re-appear after a reload even if deleted — edit them instead to customize.
+          {t('adm.builtInSeedNote', { entity: def.label.toLowerCase() })}
         </p>
       )}
 
@@ -155,15 +157,15 @@ export default function ResourcePage({ def }: { def: ResourceDef }): JSX.Element
       {edit && !def.customEditor && def.fields && (
         <Drawer
           open
-          title={edit.row ? `Edit ${def.singular}` : `New ${def.singular}`}
+          title={edit.row ? t('adm.editEntity', { entity: def.singular }) : t('adm.newEntity', { entity: def.singular })}
           subtitle={def.blurb}
           onClose={close}
           width="lg"
           footer={
             <>
-              <button onClick={close} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-white/[0.06]">Cancel</button>
+              <button onClick={close} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-white/[0.06]">{t('adm.cancel')}</button>
               <button onClick={() => void submit()} disabled={!requiredOk || saving} className={cn('rounded-lg px-5 py-2 text-sm font-bold bg-brand-500 text-white hover:bg-brand-400 disabled:opacity-50')}>
-                {saving ? 'Saving…' : edit.row ? 'Save changes' : `Create ${def.singular}`}
+                {saving ? t('adm.saving') : edit.row ? t('adm.saveChanges') : t('adm.createEntity', { entity: def.singular })}
               </button>
             </>
           }

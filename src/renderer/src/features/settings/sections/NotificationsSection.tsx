@@ -4,6 +4,8 @@
  * via the notification prefs store; the {@link notify} pipeline reads them.
  */
 import { cn } from '../../../lib/classnames'
+import { useT } from '../../../i18n'
+import type { StringKey } from '../../../i18n/strings'
 import { IconBell, IconMoon } from '../../../components/icons'
 import {
   NOTIF_CATALOG,
@@ -14,11 +16,18 @@ import {
 } from '../../../services/notifications'
 import type { NotifKind } from '@shared/types'
 
-const GROUPS: { id: NotifGroup; label: string }[] = [
-  { id: 'learning', label: 'Learning' },
-  { id: 'social', label: 'Social' },
-  { id: 'system', label: 'System' }
+const GROUPS: { id: NotifGroup }[] = [
+  { id: 'learning' },
+  { id: 'social' },
+  { id: 'system' }
 ]
+
+const groupLabelKey = (id: NotifGroup): StringKey =>
+  ({
+    learning: 'setb.notifGroupLearning',
+    social: 'setb.notifGroupSocial',
+    system: 'setb.notifGroupSystem'
+  }[id] as StringKey)
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h)
 const hourLabel = (h: number): string => {
@@ -62,6 +71,7 @@ function Switch({ on, onToggle, label, hint, Icon, tint }: {
 }
 
 export default function NotificationsSection(): JSX.Element {
+  const t = useT()
   const { perKind, systemDelivery, quietHours, setKind, setAllKinds, setSystemDelivery, setQuietHours } = useNotifPrefs()
 
   const enabled = (k: NotifKind): boolean => perKind[k] !== false
@@ -76,26 +86,26 @@ export default function NotificationsSection(): JSX.Element {
     <div className="grid grid-cols-1 gap-6 max-w-2xl">
       {/* Delivery */}
       <section className="grid grid-cols-1 gap-2">
-        <h2 className="text-sm font-bold text-white mb-1">Delivery</h2>
+        <h2 className="text-sm font-bold text-white mb-1">{t('setb.notifDelivery')}</h2>
         <Switch
-          label="Desktop notifications"
-          hint="Mirror notifications to your operating system's notification centre."
+          label={t('setb.desktopNotifications')}
+          hint={t('setb.desktopNotificationsHint')}
           Icon={IconBell}
           tint="bg-brand-500/15 text-brand-300"
           on={systemDelivery}
           onToggle={handleSystemToggle}
         />
         <p className="text-[11px] text-slate-500 px-1">
-          In-app notifications always appear in the bell — desktop delivery is the extra OS pop-up.
+          {t('setb.notifDeliveryNote')}
         </p>
       </section>
 
       {/* Quiet hours */}
       <section className="grid grid-cols-1 gap-2">
-        <h2 className="text-sm font-bold text-white mb-1">Quiet hours</h2>
+        <h2 className="text-sm font-bold text-white mb-1">{t('setb.quietHours')}</h2>
         <Switch
-          label="Mute desktop pop-ups overnight"
-          hint="Notifications still collect in the bell — only the OS pop-up is silenced."
+          label={t('setb.quietHoursLabel')}
+          hint={t('setb.quietHoursHint')}
           Icon={IconMoon}
           tint="bg-indigo-500/15 text-indigo-300"
           on={quietHours.enabled}
@@ -104,7 +114,7 @@ export default function NotificationsSection(): JSX.Element {
         {quietHours.enabled && (
           <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3">
             <label className="flex items-center gap-2 text-xs text-slate-300">
-              From
+              {t('setb.from')}
               <select
                 value={quietHours.start}
                 onChange={(e) => setQuietHours({ start: Number(e.target.value) })}
@@ -114,7 +124,7 @@ export default function NotificationsSection(): JSX.Element {
               </select>
             </label>
             <label className="flex items-center gap-2 text-xs text-slate-300">
-              to
+              {t('setb.to')}
               <select
                 value={quietHours.end}
                 onChange={(e) => setQuietHours({ end: Number(e.target.value) })}
@@ -130,12 +140,12 @@ export default function NotificationsSection(): JSX.Element {
       {/* Per-type toggles */}
       <section className="grid grid-cols-1 gap-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-white">What you get notified about</h2>
+          <h2 className="text-sm font-bold text-white">{t('setb.notifWhatTitle')}</h2>
           <button
             onClick={() => setAllKinds(!allOn)}
             className="text-[11px] font-semibold text-brand-300 hover:text-brand-200"
           >
-            {allOn ? 'Turn all off' : 'Turn all on'}
+            {allOn ? t('setb.turnAllOff') : t('setb.turnAllOn')}
           </button>
         </div>
         {GROUPS.map((g) => {
@@ -143,7 +153,7 @@ export default function NotificationsSection(): JSX.Element {
           if (kinds.length === 0) return null
           return (
             <div key={g.id} className="grid grid-cols-1 gap-2">
-              <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mt-1">{g.label}</p>
+              <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mt-1">{t(groupLabelKey(g.id))}</p>
               {kinds.map((k) => {
                 const meta = NOTIF_CATALOG[k]
                 return (

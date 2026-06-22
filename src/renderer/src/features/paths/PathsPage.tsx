@@ -6,6 +6,7 @@ import { PageHeader, ProgressBar, SectionHeading } from '../../components/ui'
 import { IconBook, IconCheck, IconClipboard, IconStar, IconTrophy, IconUsers } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import { useTargetLanguageCode } from '../../lib/language'
+import { useT } from '../../i18n'
 import {
   paths as pathStore,
   pathCourses,
@@ -27,6 +28,7 @@ interface CardProps {
 }
 
 function PathCard({ path, byId, enrollments, enrolled, recommended, onEnroll, onContinue }: CardProps): JSX.Element {
+  const t = useT()
   const stats = pathStats(path, byId)
   const progress = enrolled ? pathProgress(path, byId, enrollments) : null
   const enrolledCount = pathStore.enrolledCount(path.id)
@@ -45,12 +47,12 @@ function PathCard({ path, byId, enrollments, enrolled, recommended, onEnroll, on
         )}
         <div className="absolute inset-0 bg-black/25" />
         {recommended && (
-          <span className="absolute top-3 right-3 rounded-full bg-brand-500 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 shadow-lg">★ For you</span>
+          <span className="absolute top-3 right-3 rounded-full bg-brand-500 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 shadow-lg">★ {t('misc.forYou')}</span>
         )}
-        <span className="absolute top-3 left-3 rounded-full bg-white/15 backdrop-blur text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1">Specialization</span>
+        <span className="absolute top-3 left-3 rounded-full bg-white/15 backdrop-blur text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1">{t('misc.specialization')}</span>
         <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 text-white">
           <IconBook className="w-3.5 h-3.5" />
-          <span className="text-xs font-bold">{stats.courses} {stats.courses === 1 ? 'course' : 'courses'} · {stats.hours}h</span>
+          <span className="text-xs font-bold">{stats.courses} {stats.courses === 1 ? t('misc.course') : t('misc.courses')} · {stats.hours}h</span>
         </span>
         <span className="absolute bottom-3 right-3 rounded-full bg-black/30 backdrop-blur text-white text-[10px] font-bold px-2 py-0.5">{stats.levelSpan}</span>
       </div>
@@ -63,7 +65,7 @@ function PathCard({ path, byId, enrollments, enrolled, recommended, onEnroll, on
             <span className="inline-flex items-center gap-1 text-amber-300"><IconStar className="w-3.5 h-3.5" /> <b className="text-white">{stats.rating}</b></span>
           )}
           <span className="inline-flex items-center gap-1">
-            <IconUsers className="w-3.5 h-3.5" /> {enrolledCount > 0 ? `${enrolledCount.toLocaleString()} enrolled` : 'Be the first'}
+            <IconUsers className="w-3.5 h-3.5" /> {enrolledCount > 0 ? `${enrolledCount.toLocaleString()} ${t('misc.enrolled')}` : t('misc.beTheFirst')}
           </span>
         </div>
 
@@ -85,7 +87,7 @@ function PathCard({ path, byId, enrollments, enrolled, recommended, onEnroll, on
         {progress != null && (
           <div className="mt-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Your progress</span>
+              <span className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">{t('misc.yourProgress')}</span>
               <span className="text-[11px] font-bold text-brand-200">{progress}%</span>
             </div>
             <ProgressBar value={progress} color="brand" />
@@ -95,7 +97,7 @@ function PathCard({ path, byId, enrollments, enrolled, recommended, onEnroll, on
         <div className="mt-3 rounded-xl bg-white/[0.03] border border-white/10 p-3 flex items-start gap-2.5">
           <IconTrophy className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-widest text-amber-300/80 font-bold">Capstone</p>
+            <p className="text-[10px] uppercase tracking-widest text-amber-300/80 font-bold">{t('misc.capstone')}</p>
             <p className="text-xs text-slate-200 mt-0.5 leading-snug">{path.capstone}</p>
           </div>
         </div>

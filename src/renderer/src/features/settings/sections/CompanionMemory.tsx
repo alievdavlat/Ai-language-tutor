@@ -3,6 +3,7 @@ import type { CharacterInfo, MemoryNote, UserProfile } from '@shared/types'
 import { Button, Card, Input } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 import { createId } from '../../../lib/ids'
+import { useT } from '../../../i18n'
 
 interface CompanionMemoryProps {
   profile: UserProfile
@@ -18,11 +19,12 @@ interface CompanionMemoryProps {
  */
 export default function CompanionMemory({ profile, character, onChange }: CompanionMemoryProps): JSX.Element {
   const [draft, setDraft] = useState('')
+  const t = useT()
 
   if (!character) {
     return (
       <Card>
-        <p className="text-sm text-slate-400">Pick a companion first.</p>
+        <p className="text-sm text-slate-400">{t('setb.pickCompanionFirst')}</p>
       </Card>
     )
   }
@@ -54,18 +56,17 @@ export default function CompanionMemory({ profile, character, onChange }: Compan
   return (
     <Card>
       <div className="flex items-baseline justify-between mb-1">
-        <h2 className="font-semibold text-base">What {character.name} remembers</h2>
-        <span className="text-[11px] text-slate-500">{notes.length} note{notes.length === 1 ? '' : 's'}</span>
+        <h2 className="font-semibold text-base">{t('setb.whatRemembers', { name: character.name })}</h2>
+        <span className="text-[11px] text-slate-500">{notes.length} {notes.length === 1 ? t('setb.noteSingular') : t('setb.notePlural')}</span>
       </div>
       <p className="text-xs text-slate-400 mb-4">
-        Facts {character.name} keeps in mind about you — your name, job, goals, what you talked about.
-        Pinned notes are always remembered; up to 6 reach the AI each chat.
+        {t('setb.memoryHint', { name: character.name })}
       </p>
 
       <div className="flex gap-2 mb-4">
         <Input
           value={draft}
-          placeholder="e.g. Works as a nurse · preparing for IELTS · has a dog named Rex"
+          placeholder={t('setb.memoryPlaceholder')}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -75,12 +76,12 @@ export default function CompanionMemory({ profile, character, onChange }: Compan
           }}
         />
         <Button type="button" onClick={add} disabled={!draft.trim()}>
-          Add
+          {t('setb.add')}
         </Button>
       </div>
 
       {ordered.length === 0 ? (
-        <p className="text-sm text-slate-500 italic">No memories yet. Add a few so the AI feels like it knows you.</p>
+        <p className="text-sm text-slate-500 italic">{t('setb.noMemories')}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {ordered.map((n) => (
@@ -95,7 +96,7 @@ export default function CompanionMemory({ profile, character, onChange }: Compan
               <button
                 type="button"
                 onClick={() => togglePin(n.id)}
-                title={n.pinned ? 'Unpin' : 'Pin (always remembered)'}
+                title={n.pinned ? t('setb.unpin') : t('setb.pin')}
                 className={cn('text-sm px-1.5', n.pinned ? 'text-amber-300' : 'text-slate-500 hover:text-slate-300')}
               >
                 {n.pinned ? '📌' : '📍'}
@@ -103,7 +104,7 @@ export default function CompanionMemory({ profile, character, onChange }: Compan
               <button
                 type="button"
                 onClick={() => remove(n.id)}
-                title="Forget this"
+                title={t('setb.forgetThis')}
                 className="text-xs text-red-300 hover:text-red-200 px-1"
               >
                 ✕

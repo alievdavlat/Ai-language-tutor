@@ -27,6 +27,8 @@ import YouTubeEmbed from '../../components/content/YouTubeEmbed'
 import { RichTextView } from '../../components/forms'
 import ExamRunner from './ExamRunner'
 import type { Lesson } from '@shared/types'
+import { useT } from '../../i18n'
+import type { StringKey } from '../../i18n/strings'
 
 function ytId(url?: string): string | null {
   if (!url) return null
@@ -37,6 +39,7 @@ function ytId(url?: string): string | null {
 type Tab = 'materials' | 'transcript' | 'about'
 
 function MaterialRow({ m }: { m: LessonMaterial }): JSX.Element {
+  const t = useT()
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
   const isAudio = m.kind === 'audio'
@@ -54,17 +57,17 @@ function MaterialRow({ m }: { m: LessonMaterial }): JSX.Element {
       </span>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-white truncate">{m.name}</p>
-        <p className="text-xs text-slate-500">{isAudio ? 'Audio' : 'PDF'} · {m.size}</p>
+        <p className="text-xs text-slate-500">{isAudio ? t('crs.audio') : 'PDF'} · {m.size}</p>
       </div>
       {isAudio ? (
         <>
           <audio ref={audioRef} src={m.url} onEnded={() => setPlaying(false)} preload="none" />
-          <button onClick={toggleAudio} className="w-9 h-9 rounded-full bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/10 flex items-center justify-center transition" title={playing ? 'Pause' : 'Play'}>
+          <button onClick={toggleAudio} className="w-9 h-9 rounded-full bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/10 flex items-center justify-center transition" title={playing ? t('crs.pause') : t('crs.play')}>
             <IconPlay className="w-[18px] h-[18px]" />
           </button>
         </>
       ) : (
-        <a href={m.url} target="_blank" rel="noreferrer" download className="w-9 h-9 rounded-full bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/10 flex items-center justify-center transition" title="Download">
+        <a href={m.url} target="_blank" rel="noreferrer" download className="w-9 h-9 rounded-full bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/10 flex items-center justify-center transition" title={t('crs.download')}>
           <IconDownload className="w-[18px] h-[18px]" />
         </a>
       )}
@@ -74,6 +77,7 @@ function MaterialRow({ m }: { m: LessonMaterial }): JSX.Element {
 
 export default function ClassroomPage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const { courseId = '', lessonId = '' } = useParams()
   const userId = backend.currentUserId()
   const content = useContentState()
@@ -170,7 +174,7 @@ export default function ClassroomPage(): JSX.Element {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3">
         <Spinner />
-        <button onClick={() => navigate(`/course/${courseId}`)} className="btn-ghost px-4 py-2 text-sm">Back to course</button>
+        <button onClick={() => navigate(`/course/${courseId}`)} className="btn-ghost px-4 py-2 text-sm">{t('crs.backToCourse')}</button>
       </div>
     )
   }
@@ -182,7 +186,7 @@ export default function ClassroomPage(): JSX.Element {
     <div className="h-full flex flex-col">
       {/* Top bar */}
       <div className="px-6 py-3 border-b border-white/10 flex items-center gap-3 backdrop-blur-xl bg-canvas-soft/40 shrink-0">
-        <button onClick={() => navigate(`/course/${courseId}`)} className="text-slate-400 hover:text-white transition" title="Back to course">
+        <button onClick={() => navigate(`/course/${courseId}`)} className="text-slate-400 hover:text-white transition" title={t('crs.backToCourse')}>
           <IconChevronLeft className="w-5 h-5" />
         </button>
         <div className="min-w-0">
@@ -198,7 +202,7 @@ export default function ClassroomPage(): JSX.Element {
             {lesson.kind === 'exam' ? (
               <ExamRunner
                 title={lesson.title}
-                subtitle="Pass this checkpoint to unlock the next unit."
+                subtitle={t('crs.checkpointSubtitle')}
                 questions={getCheckpointQuiz(lesson.id)}
                 passMark={60}
                 onComplete={onCheckpoint}
@@ -214,7 +218,7 @@ export default function ClassroomPage(): JSX.Element {
                 ) : (
                   <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
                     <span className="inline-flex w-14 h-14 rounded-2xl bg-brand-500/15 text-brand-300 items-center justify-center mb-3"><IconBolt className="w-7 h-7" /></span>
-                    <p className="text-sm text-slate-300">This is a practice lesson. Try the interactive exercises, then mark it complete.</p>
+                    <p className="text-sm text-slate-300">{t('crs.practiceLessonHint')}</p>
                   </div>
                 )}
 
@@ -231,7 +235,7 @@ export default function ClassroomPage(): JSX.Element {
                       </div>
                     )}
                   </div>
-                  {done && <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-300 bg-emerald-500/15 rounded-full px-3 py-1"><IconCheck className="w-3.5 h-3.5" /> Completed</span>}
+                  {done && <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-300 bg-emerald-500/15 rounded-full px-3 py-1"><IconCheck className="w-3.5 h-3.5" /> {t('crs.completed')}</span>}
                 </div>
 
                 {/* Teacher-authored rich material */}
@@ -243,9 +247,9 @@ export default function ClassroomPage(): JSX.Element {
 
                 {/* Tabs */}
                 <div className="flex items-center gap-1 border-b border-white/10">
-                  {(['materials', 'transcript', 'about'] as Tab[]).map((t) => (
-                    <button key={t} onClick={() => setTab(t)} className={cn('px-4 py-2.5 text-sm font-medium capitalize border-b-2 -mb-px transition', tab === t ? 'border-brand-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200')}>
-                      {t}
+                  {(['materials', 'transcript', 'about'] as Tab[]).map((tabKey) => (
+                    <button key={tabKey} onClick={() => setTab(tabKey)} className={cn('px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition', tab === tabKey ? 'border-brand-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200')}>
+                      {t(`crs.tab_${tabKey}` as StringKey)}
                     </button>
                   ))}
                 </div>
@@ -261,10 +265,10 @@ export default function ClassroomPage(): JSX.Element {
                 {/* Footer actions */}
                 <div className="flex items-center gap-3 pt-2">
                   <button onClick={complete} className={cn('px-5 py-2.5 inline-flex items-center gap-2 rounded-pill font-semibold transition', done ? 'bg-emerald-500/15 text-emerald-300' : 'btn-ghost')}>
-                    <IconCheck className="w-4 h-4" /> {done ? (nextLesson ? 'Completed · Next' : 'Completed') : 'Mark complete'}
+                    <IconCheck className="w-4 h-4" /> {done ? (nextLesson ? t('crs.completedNext') : t('crs.completed')) : t('crs.markComplete')}
                   </button>
                   <button onClick={() => navigate('/learn/exercise')} className="btn-primary flex-1 py-2.5 inline-flex items-center justify-center gap-2">
-                    <IconBolt className="w-4 h-4" /> Practice exercises <IconArrowRight className="w-4 h-4" />
+                    <IconBolt className="w-4 h-4" /> {t('crs.practiceExercises')} <IconArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </>

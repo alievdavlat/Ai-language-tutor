@@ -16,6 +16,7 @@ import { useContentState, isLessonComplete, markLessonComplete } from '../../ser
 import { logActivity } from '../../services/activity'
 import { courseAccess } from '../../services/access/entitlement'
 import type { Lesson } from '@shared/types'
+import { useT } from '../../i18n'
 
 function Block({ block }: { block: BookBlock }): JSX.Element {
   switch (block.kind) {
@@ -45,6 +46,7 @@ function Block({ block }: { block: BookBlock }): JSX.Element {
 
 export default function BookReaderPage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const { courseId = '', lessonId = '' } = useParams()
   const userId = backend.currentUserId()
   const content = useContentState()
@@ -91,7 +93,7 @@ export default function BookReaderPage(): JSX.Element {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3">
         <Spinner />
-        <button onClick={() => navigate(`/course/${courseId}`)} className="btn-ghost px-4 py-2 text-sm">Back to course</button>
+        <button onClick={() => navigate(`/course/${courseId}`)} className="btn-ghost px-4 py-2 text-sm">{t('crs.backToCourse')}</button>
       </div>
     )
   }
@@ -124,14 +126,14 @@ export default function BookReaderPage(): JSX.Element {
     <div className="h-full flex flex-col">
       {/* Top bar */}
       <div className="px-6 py-3 border-b border-white/10 flex items-center gap-3 backdrop-blur-xl bg-canvas-soft/40 shrink-0">
-        <button onClick={() => navigate(`/course/${courseId}`)} className="text-slate-400 hover:text-white transition" title="Back to course">
+        <button onClick={() => navigate(`/course/${courseId}`)} className="text-slate-400 hover:text-white transition" title={t('crs.backToCourse')}>
           <IconChevronLeft className="w-5 h-5" />
         </button>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold truncate">{course?.title}</p>
           <p className="text-[11px] text-slate-400">{unit?.title} · {lesson.title}</p>
         </div>
-        {done && <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300 bg-emerald-500/15 rounded-full px-2.5 py-1"><IconCheck className="w-3.5 h-3.5" /> Done</span>}
+        {done && <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300 bg-emerald-500/15 rounded-full px-2.5 py-1"><IconCheck className="w-3.5 h-3.5" /> {t('crs.done')}</span>}
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -155,22 +157,22 @@ export default function BookReaderPage(): JSX.Element {
           {/* Page nav */}
           <div className="flex items-center justify-between">
             <button onClick={() => setPage((i) => Math.max(0, i - 1))} disabled={page === 0} className="btn-ghost px-4 py-2 inline-flex items-center gap-1.5 disabled:opacity-40">
-              <IconChevronLeft className="w-4 h-4" /> Prev
+              <IconChevronLeft className="w-4 h-4" /> {t('crs.prev')}
             </button>
-            <span className="text-xs text-slate-400">Page {page + 1} of {pages.length}</span>
+            <span className="text-xs text-slate-400">{t('crs.page')} {page + 1} {t('crs.of')} {pages.length}</span>
             {page + 1 < pages.length ? (
               <button onClick={() => setPage((i) => i + 1)} className="btn-ghost px-4 py-2 inline-flex items-center gap-1.5">
-                Next <IconChevronRight className="w-4 h-4" />
+                {t('crs.next')} <IconChevronRight className="w-4 h-4" />
               </button>
             ) : (
               <button onClick={finish} className="btn-primary px-4 py-2 inline-flex items-center gap-1.5">
-                <IconCheck className="w-4 h-4" /> {done ? 'Next lesson' : 'Mark complete'} <IconArrowRight className="w-4 h-4" />
+                <IconCheck className="w-4 h-4" /> {done ? t('crs.nextLesson') : t('crs.markComplete')} <IconArrowRight className="w-4 h-4" />
               </button>
             )}
           </div>
 
           <button onClick={() => navigate('/learn/exercise')} className="self-center inline-flex items-center gap-1.5 text-xs font-semibold text-brand-300 hover:text-brand-200">
-            <IconBolt className="w-3.5 h-3.5" /> Practice these exercises interactively
+            <IconBolt className="w-3.5 h-3.5" /> {t('crs.practiceInteractively')}
           </button>
         </div>
       </div>

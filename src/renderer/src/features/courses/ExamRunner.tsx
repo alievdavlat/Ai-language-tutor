@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { cn } from '../../lib/classnames'
 import { IconCheck, IconTrophy, IconX } from '../../components/icons'
 import type { MCQ } from '../../services/content/exams'
+import { useT } from '../../i18n'
 
 /**
  * Self-contained multiple-choice quiz used by both unit checkpoints and the
@@ -18,6 +19,7 @@ interface ExamRunnerProps {
 }
 
 export default function ExamRunner({ title, subtitle, questions, passMark, onComplete, onExit }: ExamRunnerProps): JSX.Element {
+  const t = useT()
   const [idx, setIdx] = useState(0)
   const [answers, setAnswers] = useState<number[]>([])
   const [picked, setPicked] = useState<number | null>(null)
@@ -47,13 +49,13 @@ export default function ExamRunner({ title, subtitle, questions, passMark, onCom
         <div className={cn('w-16 h-16 mx-auto rounded-full flex items-center justify-center', passed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300')}>
           {passed ? <IconTrophy className="w-8 h-8" /> : <IconX className="w-8 h-8" />}
         </div>
-        <h3 className="text-2xl font-bold text-white mt-4">{passed ? 'Passed!' : 'Not quite'}</h3>
+        <h3 className="text-2xl font-bold text-white mt-4">{passed ? t('crs.examPassed') : t('crs.examNotQuite')}</h3>
         <p className="text-4xl font-extrabold text-white mt-2">{score}%</p>
         <p className="text-sm text-slate-400 mt-2">
-          {passed ? 'Great work — this unlocks the next step.' : `You need ${passMark}% to pass. Review and try again.`}
+          {passed ? t('crs.examPassMsg') : `${t('crs.examNeed')} ${passMark}% ${t('crs.examNeedTail')}`}
         </p>
         {onExit && (
-          <button onClick={onExit} className="btn-primary mt-5 px-6 py-2.5">Continue</button>
+          <button onClick={onExit} className="btn-primary mt-5 px-6 py-2.5">{t('crs.continue')}</button>
         )}
       </div>
     )
@@ -66,7 +68,7 @@ export default function ExamRunner({ title, subtitle, questions, passMark, onCom
           <p className="text-[11px] uppercase tracking-widest text-amber-300 font-bold">{title}</p>
           {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
         </div>
-        <span className="text-xs text-slate-400">Question {idx + 1} / {questions.length}</span>
+        <span className="text-xs text-slate-400">{t('crs.question')} {idx + 1} / {questions.length}</span>
       </div>
 
       <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden mb-5">
@@ -93,7 +95,7 @@ export default function ExamRunner({ title, subtitle, questions, passMark, onCom
       </div>
 
       <button onClick={next} disabled={picked === null} className="btn-primary mt-5 w-full py-3 disabled:opacity-40">
-        {idx + 1 < questions.length ? 'Next question' : 'Finish'}
+        {idx + 1 < questions.length ? t('crs.nextQuestion') : t('crs.finish')}
       </button>
     </div>
   )

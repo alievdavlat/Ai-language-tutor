@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { SectionHeading } from '../../../components/ui'
 import { IconBolt, IconCheck, IconSearch, IconX } from '../../../components/icons'
+import { useT } from '../../../i18n'
 
 interface ProductivityApi {
   toggleWidget: () => Promise<boolean>
@@ -13,6 +14,7 @@ function getApi(): ProductivityApi | null {
 /** Productivity tools, moved into Settings: global lookup hotkey, desktop
  *  widget, browser extension. */
 export default function ProductivitySection(): JSX.Element {
+  const t = useT()
   const api = getApi()
   const [shortcutOk, setShortcutOk] = useState<boolean | null>(null)
   const [widgetOn, setWidgetOn] = useState(false)
@@ -33,52 +35,52 @@ export default function ProductivitySection(): JSX.Element {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="text-lg font-bold text-white">Productivity</h2>
-        <p className="text-sm text-slate-400">A global lookup hotkey, a desktop widget, and a browser extension.</p>
+        <h2 className="text-lg font-bold text-white">{t('setb.productivityTitle')}</h2>
+        <p className="text-sm text-slate-400">{t('setb.productivitySubtitle')}</p>
       </div>
 
       {/* Quick lookup */}
       <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-        <SectionHeading title="Global quick-lookup" subtitle="Look up any word from anywhere on your computer" />
+        <SectionHeading title={t('setb.quickLookupTitle')} subtitle={t('setb.quickLookupSubtitle')} />
         <div className="flex items-center gap-3 mt-1">
           <span className="w-12 h-12 rounded-2xl bg-brand-500/15 text-brand-300 flex items-center justify-center shrink-0"><IconSearch className="w-6 h-6" /></span>
           <div className="flex-1">
-            <p className="text-sm text-slate-200">Press <kbd className="font-mono text-xs bg-white/10 border border-white/15 rounded px-1.5 py-0.5">Ctrl/⌘ + Shift + Space</kbd> any time — even while the app is in the background.</p>
-            <p className="text-xs text-slate-500 mt-1">Inside the app you can also use <kbd className="font-mono text-[11px] bg-white/10 border border-white/15 rounded px-1 py-0.5">Ctrl/⌘ + K</kbd>.</p>
+            <p className="text-sm text-slate-200">{t('setb.quickLookupPressPre')} <kbd className="font-mono text-xs bg-white/10 border border-white/15 rounded px-1.5 py-0.5">Ctrl/⌘ + Shift + Space</kbd> {t('setb.quickLookupPressPost')}</p>
+            <p className="text-xs text-slate-500 mt-1">{t('setb.quickLookupInAppPre')} <kbd className="font-mono text-[11px] bg-white/10 border border-white/15 rounded px-1 py-0.5">Ctrl/⌘ + K</kbd>.</p>
           </div>
-          <button onClick={openLookup} className="btn-primary text-xs px-4 py-2 shrink-0">Try it</button>
+          <button onClick={openLookup} className="btn-primary text-xs px-4 py-2 shrink-0">{t('setb.tryIt')}</button>
         </div>
         {shortcutOk !== null && (
           <p className={`text-[11px] mt-3 inline-flex items-center gap-1.5 ${shortcutOk ? 'text-emerald-300' : 'text-amber-300'}`}>
             {shortcutOk ? <IconCheck className="w-3.5 h-3.5" /> : <IconX className="w-3.5 h-3.5" />}
-            {shortcutOk ? 'Global shortcut is registered.' : 'Global shortcut could not register (another app may own it).'}
+            {shortcutOk ? t('setb.shortcutRegistered') : t('setb.shortcutFailed')}
           </p>
         )}
-        {shortcutOk === null && <p className="text-[11px] mt-3 text-slate-500">Global shortcut runs in the desktop app (not the browser preview).</p>}
+        {shortcutOk === null && <p className="text-[11px] mt-3 text-slate-500">{t('setb.shortcutDesktopOnly')}</p>}
       </div>
 
       {/* Widget */}
       <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-        <SectionHeading title="Desktop widget" subtitle="A floating word-of-the-day + lookup that stays on top" />
+        <SectionHeading title={t('setb.widgetTitle')} subtitle={t('setb.widgetSubtitle')} />
         <div className="flex items-center gap-3 mt-1">
           <span className="w-12 h-12 rounded-2xl bg-violet-500/15 text-violet-300 flex items-center justify-center shrink-0"><IconBolt className="w-6 h-6" /></span>
-          <p className="text-sm text-slate-200 flex-1">Pin a small always-on-top widget to a corner of your screen.</p>
+          <p className="text-sm text-slate-200 flex-1">{t('setb.widgetDesc')}</p>
           <button onClick={() => void toggleWidget()} disabled={!api} className="btn-ghost text-xs px-4 py-2 shrink-0 disabled:opacity-50">
-            {widgetOn ? 'Hide widget' : 'Show widget'}
+            {widgetOn ? t('setb.hideWidget') : t('setb.showWidget')}
           </button>
         </div>
-        {!api && <p className="text-[11px] mt-3 text-slate-500">Available in the desktop app.</p>}
+        {!api && <p className="text-[11px] mt-3 text-slate-500">{t('setb.availableInDesktop')}</p>}
       </div>
 
       {/* Browser extension */}
       <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-        <SectionHeading title="Browser extension" subtitle="Look up & save words on any website" />
+        <SectionHeading title={t('setb.extensionTitle')} subtitle={t('setb.extensionSubtitle')} />
         <ol className="text-sm text-slate-300 flex flex-col gap-1.5 mt-1 list-decimal pl-5">
-          <li>Open your browser's extensions page (<code className="text-xs">chrome://extensions</code>) and enable <b>Developer mode</b>.</li>
-          <li>Click <b>Load unpacked</b> and select the <code className="text-xs">extension/</code> folder in this project.</li>
-          <li>Select any word on a page → right-click → <b>Look up in SpeakAI</b>, or click the toolbar icon.</li>
+          <li>{t('setb.extStep1Pre')} (<code className="text-xs">chrome://extensions</code>) {t('setb.extStep1Mid')} <b>{t('setb.extDeveloperMode')}</b>.</li>
+          <li>{t('setb.extStep2Pre')} <b>{t('setb.extLoadUnpacked')}</b> {t('setb.extStep2Mid')} <code className="text-xs">extension/</code> {t('setb.extStep2Post')}</li>
+          <li>{t('setb.extStep3Pre')} <b>{t('setb.extLookUpAction')}</b>{t('setb.extStep3Post')}</li>
         </ol>
-        <p className="text-xs text-slate-500 mt-2">The extension uses the same free dictionary source and deep-links saved words back into the app.</p>
+        <p className="text-xs text-slate-500 mt-2">{t('setb.extensionNote')}</p>
       </div>
     </div>
   )

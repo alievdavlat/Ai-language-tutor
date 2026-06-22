@@ -12,6 +12,7 @@
  */
 import type { ReactNode } from 'react'
 import type { Course, Group, Challenge, TargetLanguage, LibraryItem } from '@shared/types'
+import { useI18n, translate } from '../../i18n'
 import { backend } from '../../services/backend/useBackend'
 import { createId } from '../../lib/ids'
 import { SUPPORTED_LANGUAGES, getLanguage } from '@shared/constants'
@@ -136,7 +137,7 @@ export const RESOURCES: ResourceDef[] = [
       { key: 'level', label: 'Level', render: (c) => <Tag>{c.level}</Tag>, cls: 'w-24' },
       { key: 'lang', label: 'Language', render: (c) => <span className="text-slate-300">{langCell(c.targetLanguage)}</span>, cls: 'w-32' },
       { key: 'price', label: 'Pricing', render: (c) => (
-        !c.pricing || c.pricing.kind === 'free' ? <Tag tone="sky">Free</Tag>
+        !c.pricing || c.pricing.kind === 'free' ? <Tag tone="sky">{translate(useI18n.getState().lang, 'admc.free')}</Tag>
           : c.pricing.kind === 'one-off' ? <span className="text-slate-200 tabular-nums">${c.pricing.usd}</span>
           : <span className="text-slate-200 tabular-nums">${c.pricing.usdPerMo}/mo</span>
       ), cls: 'w-24' },

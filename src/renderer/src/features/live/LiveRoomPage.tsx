@@ -6,6 +6,7 @@ import { backend, useBackendQuery } from '../../services/backend/useBackend'
 import VideoTile from '../../components/realtime/VideoTile'
 import { IconHeart, IconMic, IconUsers, IconX } from '../../components/icons'
 import { useMediaRoom } from '../../hooks/realtime/useMediaRoom'
+import { useT } from '../../i18n'
 
 interface ChatMsg {
   id: string
@@ -28,6 +29,7 @@ const GROUP_TONES = [
 const REACTIONS = ['❤️', '🔥', '👏', '🎉']
 
 export default function LiveRoomPage({ group = false }: { group?: boolean }): JSX.Element {
+  const t = useT()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const name = useAppStore((s) => s.profile?.name) ?? 'You'
@@ -142,8 +144,8 @@ export default function LiveRoomPage({ group = false }: { group?: boolean }): JS
   if (kicked) {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-black gap-3">
-        <p className="text-white font-semibold">You were removed from the room.</p>
-        <p className="text-slate-400 text-sm">Returning to Live…</p>
+        <p className="text-white font-semibold">{t('lib.removedFromRoom')}</p>
+        <p className="text-slate-400 text-sm">{t('lib.returningToLive')}</p>
       </div>
     )
   }
@@ -159,7 +161,7 @@ export default function LiveRoomPage({ group = false }: { group?: boolean }): JS
               <VideoTile
                 stream={room.localStream}
                 name={name}
-                label={`${name} · you${role === 'host' ? ' · host' : ''}`}
+                label={`${name} · ${t('lib.you')}${role === 'host' ? ` · ${t('lib.host')}` : ''}`}
                 mirror
                 muted
                 micOff={!room.micOn}
@@ -171,15 +173,15 @@ export default function LiveRoomPage({ group = false }: { group?: boolean }): JS
               <div key={p.peerId} className="relative">
                 <VideoTile
                   stream={room.remoteStreams[p.peerId]}
-                  name={(p.name as string) ?? 'Guest'}
-                  label={`${(p.name as string) ?? 'Guest'}${p.role === 'host' ? ' · host' : ''}`}
+                  name={(p.name as string) ?? t('lib.guest')}
+                  label={`${(p.name as string) ?? t('lib.guest')}${p.role === 'host' ? ` · ${t('lib.host')}` : ''}`}
                   tone={GROUP_TONES[(i + 1) % GROUP_TONES.length]}
                   className="aspect-video"
                 />
                 {isHost && (
                   <button
                     onClick={() => kick(p.peerId)}
-                    title="Remove from room"
+                    title={t('lib.removeFromRoom')}
                     className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center"
                   >
                     <IconX className="w-3.5 h-3.5" />
@@ -188,18 +190,18 @@ export default function LiveRoomPage({ group = false }: { group?: boolean }): JS
               </div>
             ))}
             {publishers.length === 0 && !publish && (
-              <div className="col-span-2 text-center text-slate-400 text-sm py-10">Waiting for co-hosts to go live…</div>
+              <div className="col-span-2 text-center text-slate-400 text-sm py-10">{t('lib.waitingCohosts')}</div>
             )}
           </div>
         ) : isHost ? (
           // Single-stream host: show own camera big.
-          <VideoTile stream={room.localStream} name={name} label={`${name} · you`} mirror muted micOff={!room.micOn} tone="from-brand-700 to-indigo-900" className="absolute inset-4" />
+          <VideoTile stream={room.localStream} name={name} label={`${name} · ${t('lib.you')}`} mirror muted micOff={!room.micOn} tone="from-brand-700 to-indigo-900" className="absolute inset-4" />
         ) : (
           // Single-stream viewer: show the host's video.
           <VideoTile
             stream={publishers[0] ? room.remoteStreams[publishers[0].peerId] : null}
-            name={(publishers[0]?.name as string) ?? 'Host'}
-            label={(publishers[0]?.name as string) ?? 'Host'}
+            name={(publishers[0]?.name as string) ?? t('lib.hostCap')}
+            label={(publishers[0]?.name as string) ?? t('lib.hostCap')}
             tone="from-rose-700 to-pink-900"
             className="absolute inset-4"
           />
@@ -207,13 +209,13 @@ export default function LiveRoomPage({ group = false }: { group?: boolean }): JS
 
         {!isHost && !group && publishers.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-            <p className="text-white font-semibold">The host hasn&apos;t started the camera yet</p>
-            <p className="text-slate-400 text-sm mt-1">You&apos;ll see them as soon as they go live.</p>
+            <p className="text-white font-semibold">{t('lib.hostNotStarted')}</p>
+            <p className="text-slate-400 text-sm mt-1">{t('lib.seeWhenLive')}</p>
           </div>
         )}
 
         <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest bg-rose-600 text-white rounded-full px-2.5 py-1 z-20">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {group ? 'Group live' : 'Live'}
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {group ? t('lib.groupLive') : t('lib.live')}
         </span>
         <span className="absolute top-4 right-4 inline-flex items-center gap-1 text-xs text-white bg-black/50 rounded-full px-3 py-1.5 z-20">
           <IconUsers className="w-3.5 h-3.5" /> {totalInRoom}
@@ -225,12 +227,12 @@ export default function LiveRoomPage({ group = false }: { group?: boolean }): JS
         {/* Controls */}
         <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
           {publish && (
-            <button onClick={room.toggleMic} className={cn('w-10 h-10 rounded-full text-white flex items-center justify-center transition', room.micOn ? 'bg-white/10 hover:bg-white/20' : 'bg-rose-600 hover:bg-rose-500')} title={room.micOn ? 'Mute' : 'Unmute'}>
+            <button onClick={room.toggleMic} className={cn('w-10 h-10 rounded-full text-white flex items-center justify-center transition', room.micOn ? 'bg-white/10 hover:bg-white/20' : 'bg-rose-600 hover:bg-rose-500')} title={room.micOn ? t('lib.mute') : t('lib.unmute')}>
               <IconMic className="w-4 h-4" />
             </button>
           )}
           <button onClick={() => navigate('/live')} className="inline-flex items-center gap-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm px-4 py-2 transition">
-            <IconX className="w-4 h-4" /> Leave
+            <IconX className="w-4 h-4" /> {t('lib.leave')}
           </button>
         </div>
 
@@ -251,12 +253,12 @@ export default function LiveRoomPage({ group = false }: { group?: boolean }): JS
       <aside className="w-full lg:w-80 shrink-0 border-t lg:border-t-0 lg:border-l border-white/10 bg-canvas-soft/60 flex flex-col">
         <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
           <IconHeart className="w-4 h-4 text-rose-400" />
-          <span className="text-sm font-semibold text-white">Live chat</span>
-          <span className="ml-auto text-[11px] text-slate-400">{totalInRoom} here</span>
+          <span className="text-sm font-semibold text-white">{t('lib.liveChat')}</span>
+          <span className="ml-auto text-[11px] text-slate-400">{totalInRoom} {t('lib.here')}</span>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
           {messages.length === 0 && (
-            <p className="text-xs text-slate-500">Say hi to start the conversation 👋</p>
+            <p className="text-xs text-slate-500">{t('lib.sayHi')} 👋</p>
           )}
           {messages.map((c) => (
             <div key={c.id} className="text-sm">
@@ -271,7 +273,7 @@ export default function LiveRoomPage({ group = false }: { group?: boolean }): JS
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') sendChat() }}
-            placeholder="Say something…"
+            placeholder={t('lib.saySomething')}
             className="w-full rounded-pill bg-white/[0.05] border border-white/10 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-400/60 focus:outline-none"
           />
         </div>

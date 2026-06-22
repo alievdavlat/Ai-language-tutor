@@ -8,10 +8,12 @@ import { backend } from '../../services/backend/useBackend'
 import { IconTarget } from '../../components/icons'
 import { CEFR_ORDER, MIN_ITEMS, MAX_ITEMS, type LevelEstimate } from './engine'
 import AdaptiveQuiz from './AdaptiveQuiz'
+import { useT } from '../../i18n'
 
 type Phase = 'intro' | 'quiz' | 'result'
 
 export default function LevelTestPage(): JSX.Element {
+  const t = useT()
   const navigate = useNavigate()
   const profile = useAppStore((s) => s.profile)
   const setProfile = useAppStore((s) => s.setProfile)
@@ -56,22 +58,20 @@ export default function LevelTestPage(): JSX.Element {
         <div className="w-20 h-20 rounded-full bg-grad-brand flex items-center justify-center shadow-glow mb-6">
           <IconTarget className="w-10 h-10 text-white" />
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">English level test</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('spk.levelTestTitle')}</h1>
         <p className="text-slate-400 mt-3 leading-relaxed">
-          An adaptive test that adjusts to you — questions get harder or easier
-          based on your answers, so it finds your CEFR level (A1–C2) in fewer
-          questions. You can retake it any time.
+          {t('spk.levelTestIntro')}
         </p>
         <div className="flex items-center gap-6 mt-6 text-sm text-slate-400">
-          <span><b className="text-white">{MIN_ITEMS}–{MAX_ITEMS}</b> questions</span>
-          <span><b className="text-white">~5</b> min</span>
-          <span><b className="text-white">A1–C2</b> result</span>
+          <span><b className="text-white">{MIN_ITEMS}–{MAX_ITEMS}</b> {t('spk.questions')}</span>
+          <span><b className="text-white">~5</b> {t('spk.min')}</span>
+          <span><b className="text-white">A1–C2</b> {t('spk.result')}</span>
         </div>
         <button onClick={() => setPhase('quiz')} className="btn-primary px-10 py-3 mt-8">
-          Start test
+          {t('spk.startTest')}
         </button>
         <button onClick={() => navigate(-1)} className="text-xs text-slate-500 hover:text-slate-300 mt-4">
-          Maybe later
+          {t('spk.maybeLater')}
         </button>
       </div>
     )
@@ -82,7 +82,7 @@ export default function LevelTestPage(): JSX.Element {
     return (
       <div className="h-full overflow-y-auto">
         <div className="min-h-full flex flex-col items-center justify-center px-6 py-10 max-w-lg mx-auto text-center">
-          <p className="text-xs uppercase tracking-widest text-brand-300 font-semibold">Your level</p>
+          <p className="text-xs uppercase tracking-widest text-brand-300 font-semibold">{t('spk.yourLevel')}</p>
           <div className="text-6xl font-bold tracking-tight mt-2 bg-grad-brand bg-clip-text text-transparent">
             {estimate.level}
           </div>
@@ -114,17 +114,17 @@ export default function LevelTestPage(): JSX.Element {
           <div className="flex items-center gap-3 mt-7 w-full">
             <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.04] py-3">
               <p className="text-2xl font-bold text-white">{estimate.correct}/{estimate.total}</p>
-              <p className="text-xs text-slate-400">Correct</p>
+              <p className="text-xs text-slate-400">{t('spk.correct')}</p>
             </div>
             <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.04] py-3">
               <p className="text-2xl font-bold text-brand-300">{estimate.ielts}</p>
-              <p className="text-xs text-slate-400">IELTS estimate</p>
+              <p className="text-xs text-slate-400">{t('spk.ieltsEstimate')}</p>
             </div>
           </div>
 
           {estimate.weakAreas.length > 0 && (
             <div className="mt-5 w-full rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left">
-              <p className="text-xs font-semibold text-slate-400 mb-2">Areas to focus on</p>
+              <p className="text-xs font-semibold text-slate-400 mb-2">{t('spk.areasToFocus')}</p>
               <div className="flex flex-wrap gap-1.5">
                 {estimate.weakAreas.map((a) => (
                   <span key={a} className="text-xs rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-slate-200">
@@ -140,17 +140,17 @@ export default function LevelTestPage(): JSX.Element {
             disabled={saved}
             className="btn-primary w-full py-3 mt-7 disabled:opacity-60"
           >
-            {saved ? '✓ Saved as your level' : 'Use this as my level'}
+            {saved ? t('spk.savedAsLevel') : t('spk.useAsLevel')}
           </button>
           <div className="flex items-center gap-4 mt-3">
             <button
               onClick={() => { setEstimate(null); setSaved(false); setPhase('intro') }}
               className="text-sm text-slate-400 hover:text-white"
             >
-              Retake
+              {t('spk.retake')}
             </button>
             <button onClick={() => navigate('/home')} className="text-sm text-slate-400 hover:text-white">
-              Done
+              {t('spk.done')}
             </button>
           </div>
         </div>

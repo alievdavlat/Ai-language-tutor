@@ -1,10 +1,12 @@
 import { useParams } from 'react-router-dom'
+import { useT } from '../../i18n'
 import { PageHeader } from '../../components/ui'
 import { IconDownload } from '../../components/icons'
 import { GUIDES, type GuideId } from './curriculum'
 import { downloadCheatsheet } from './cheatsheet'
 
 export default function GrammarGuidePage(): JSX.Element {
+  const t = useT()
   const { topic } = useParams<{ topic: string }>()
   const guide = topic && (topic in GUIDES) ? GUIDES[topic as GuideId] : undefined
 
@@ -12,8 +14,8 @@ export default function GrammarGuidePage(): JSX.Element {
     return (
       <div className="h-full overflow-y-auto">
         <div className="px-6 py-6 w-full">
-          <PageHeader eyebrow="Guide" title="Guide not found" back="/grammar" crumbs={[{ label: 'Grammar', to: '/grammar' }, { label: 'Guide' }]} />
-          <p className="text-sm text-slate-400 mt-4">That guide doesn’t exist. Pick one from the Grammar page.</p>
+          <PageHeader eyebrow={t('gr.guideEyebrow')} title={t('gr.guideNotFound')} back="/grammar" crumbs={[{ label: t('gr.grammar'), to: '/grammar' }, { label: t('gr.guideEyebrow') }]} />
+          <p className="text-sm text-slate-400 mt-4">{t('gr.guideNotFoundBody')}</p>
         </div>
       </div>
     )
@@ -23,14 +25,14 @@ export default function GrammarGuidePage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full max-w-3xl flex flex-col gap-6">
         <PageHeader
-          eyebrow="Deep-dive guide"
+          eyebrow={t('gr.deepDiveGuide')}
           title={guide.title}
           subtitle={guide.summary}
           back="/grammar"
-          crumbs={[{ label: 'Grammar', to: '/grammar' }, { label: guide.title }]}
+          crumbs={[{ label: t('gr.grammar'), to: '/grammar' }, { label: guide.title }]}
           action={
             <button onClick={() => downloadCheatsheet(guide)} className="btn-primary text-xs px-3 py-2 inline-flex items-center gap-1.5">
-              <IconDownload className="w-3.5 h-3.5" /> Download PDF
+              <IconDownload className="w-3.5 h-3.5" /> {t('gr.downloadPdf')}
             </button>
           }
         />
@@ -38,7 +40,7 @@ export default function GrammarGuidePage(): JSX.Element {
         {/* Quick-reference table */}
         <div className="rounded-card border border-white/10 bg-white/[0.025] overflow-hidden">
           <div className="px-4 py-2.5 bg-brand-500/10 border-b border-brand-400/20">
-            <p className="text-[11px] uppercase tracking-widest text-brand-200 font-bold">Quick reference · CEFR {guide.level}</p>
+            <p className="text-[11px] uppercase tracking-widest text-brand-200 font-bold">{t('gr.quickReference')} · CEFR {guide.level}</p>
           </div>
           <div className="divide-y divide-white/[0.06]">
             {guide.cheatRows.map((r) => (
@@ -75,7 +77,7 @@ export default function GrammarGuidePage(): JSX.Element {
         </div>
 
         <button onClick={() => downloadCheatsheet(guide)} className="btn-ghost w-full py-3 inline-flex items-center justify-center gap-2">
-          <IconDownload className="w-4 h-4" /> Download the {guide.title} cheatsheet (PDF)
+          <IconDownload className="w-4 h-4" /> {t('gr.downloadThe')} {guide.title} {t('gr.cheatsheetPdf')}
         </button>
       </div>
     </div>

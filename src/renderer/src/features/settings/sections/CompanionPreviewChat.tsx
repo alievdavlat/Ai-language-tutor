@@ -7,6 +7,7 @@ import { cn } from '../../../lib/classnames'
 import { useChatStream } from '../../../hooks/useChatStream'
 import { buildSystemPrompt } from '../../../services/prompts/buildSystemPrompt'
 import { useActiveAI } from '../../../lib/ai'
+import { useT } from '../../../i18n'
 
 interface Msg {
   role: 'user' | 'assistant'
@@ -20,6 +21,7 @@ interface Msg {
  * Speaking page, so what you see here is what you get there.
  */
 export default function CompanionPreviewChat({ profile }: { profile: UserProfile }): JSX.Element {
+  const t = useT()
   const character = resolveCharacter(profile, profile.settings.characterId)
   const activeAI = useActiveAI()
   const { send, streaming } = useChatStream(profile.settings.llmModel ?? '')
@@ -64,21 +66,21 @@ export default function CompanionPreviewChat({ profile }: { profile: UserProfile
           <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center text-xl">{character?.emoji ?? '🙂'}</div>
         )}
         <div>
-          <h2 className="font-semibold text-base">Preview chat — {character?.name ?? 'companion'}</h2>
-          <p className="text-xs text-slate-500">Try the persona before a voice call. Same prompt + model as Speaking.</p>
+          <h2 className="font-semibold text-base">{t('setb.previewChatTitle', { name: character?.name ?? t('setb.companion') })}</h2>
+          <p className="text-xs text-slate-500">{t('setb.previewChatSubtitle')}</p>
         </div>
       </div>
 
       {!activeAI && (
         <p className="text-xs text-amber-300/90 mb-3">
-          Tip: configure a provider in the AI tab (or run Ollama) for live replies.
+          {t('setb.previewProviderTip')}
         </p>
       )}
 
       <div ref={scrollRef} className="h-56 overflow-y-auto rounded-xl bg-black/20 border border-white/10 p-3 flex flex-col gap-2">
         {msgs.length === 0 && (
           <p className="text-xs text-slate-500 m-auto text-center px-6">
-            Say hello to {character?.name ?? 'your companion'} — their tone reflects the persona sliders + speaking style.
+            {t('setb.previewSayHello', { name: character?.name ?? t('setb.yourCompanion') })}
           </p>
         )}
         {msgs.map((m, i) => (
@@ -99,12 +101,12 @@ export default function CompanionPreviewChat({ profile }: { profile: UserProfile
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void sendMsg() }}
-          placeholder={`Message ${character?.name ?? 'companion'}…`}
+          placeholder={t('setb.messagePlaceholder', { name: character?.name ?? t('setb.companion') })}
           className="input flex-1"
           disabled={streaming}
         />
         <button onClick={() => void sendMsg()} disabled={streaming || !draft.trim()} className="btn-primary px-4 py-2 text-sm">
-          {streaming ? '…' : 'Send'}
+          {streaming ? '…' : t('setb.send')}
         </button>
       </div>
     </Card>

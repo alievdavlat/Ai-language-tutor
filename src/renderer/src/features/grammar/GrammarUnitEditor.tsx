@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useT } from '../../i18n'
 import { cn } from '../../lib/classnames'
 import { IconPlus, IconX } from '../../components/icons'
 import LevelSelect from '../../components/ui/LevelSelect'
@@ -42,6 +43,7 @@ export default function GrammarUnitEditor({
   onClose: () => void
   onSaved: () => void
 }): JSX.Element {
+  const t = useT()
   const [draft, setDraft] = useState<GrammarUnit>(() =>
     unit
       ? (JSON.parse(JSON.stringify(unit)) as GrammarUnit)
@@ -110,8 +112,8 @@ export default function GrammarUnitEditor({
       >
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold text-white">{unit ? 'Edit unit' : 'New grammar unit'}</h3>
-            {editingSeed && <p className="text-[11px] text-amber-300 mt-0.5">Editing a built-in unit — your version overrides it (delete to restore).</p>}
+            <h3 className="text-base font-bold text-white">{unit ? t('gr.editUnit') : t('gr.newGrammarUnit')}</h3>
+            {editingSeed && <p className="text-[11px] text-amber-300 mt-0.5">{t('gr.editingBuiltIn')}</p>}
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 flex items-center justify-center">
             <IconX className="w-4 h-4" />
@@ -121,46 +123,46 @@ export default function GrammarUnitEditor({
         {/* Unit basics */}
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
           <label className="flex flex-col gap-1.5">
-            <span className={labelCls}>Unit title</span>
-            <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="e.g. Present perfect" className={inputCls} />
+            <span className={labelCls}>{t('gr.unitTitle')}</span>
+            <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder={t('gr.unitTitlePlaceholder')} className={inputCls} />
           </label>
           <div className="flex flex-col gap-1.5">
-            <span className={labelCls}>Level</span>
+            <span className={labelCls}>{t('gr.levelLabel')}</span>
             <LevelSelect value={draft.level} onChange={(level) => setDraft({ ...draft, level: level as CEFRLevel })} />
           </div>
         </div>
         <label className="flex flex-col gap-1.5">
-          <span className={labelCls}>About</span>
-          <input value={draft.about} onChange={(e) => setDraft({ ...draft, about: e.target.value })} placeholder="One-line description" className={inputCls} />
+          <span className={labelCls}>{t('gr.aboutLabel')}</span>
+          <input value={draft.about} onChange={(e) => setDraft({ ...draft, about: e.target.value })} placeholder={t('gr.aboutPlaceholder')} className={inputCls} />
         </label>
 
         {/* Lessons */}
         {draft.lessons.map((lesson, li) => (
           <div key={lesson.id} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-brand-300 uppercase tracking-widest">Lesson {li + 1}</p>
+              <p className="text-xs font-bold text-brand-300 uppercase tracking-widest">{t('gr.lessonWord')} {li + 1}</p>
               {draft.lessons.length > 1 && (
                 <button onClick={() => setDraft((d) => ({ ...d, lessons: d.lessons.filter((_, i) => i !== li) }))} className="text-[11px] text-rose-300 hover:text-rose-200 font-semibold">
-                  Remove lesson
+                  {t('gr.removeLesson')}
                 </button>
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3">
-              <input value={lesson.title} onChange={(e) => patchLesson(li, { title: e.target.value })} placeholder="Lesson title" className={inputCls} />
+              <input value={lesson.title} onChange={(e) => patchLesson(li, { title: e.target.value })} placeholder={t('gr.lessonTitlePlaceholder')} className={inputCls} />
               <select
                 value={lesson.kind}
                 onChange={(e) => patchLesson(li, { kind: e.target.value as GrammarLesson['kind'] })}
                 className={cn(inputCls, '[color-scheme:dark] w-auto')}
               >
-                <option value="rule">Rule</option>
-                <option value="practice">Practice</option>
-                <option value="quiz">Quiz</option>
+                <option value="rule">{t('gr.kindRule')}</option>
+                <option value="practice">{t('gr.kindPractice')}</option>
+                <option value="quiz">{t('gr.kindQuiz')}</option>
               </select>
-              <input value={lesson.duration} onChange={(e) => patchLesson(li, { duration: e.target.value })} placeholder="5 min" className={cn(inputCls, 'w-24')} />
+              <input value={lesson.duration} onChange={(e) => patchLesson(li, { duration: e.target.value })} placeholder={t('gr.durationPlaceholder')} className={cn(inputCls, 'w-24')} />
             </div>
             {lesson.kind === 'rule' && (
               <label className="flex flex-col gap-1.5">
-                <span className={labelCls}>Rule bullets (one per line)</span>
+                <span className={labelCls}>{t('gr.ruleBullets')}</span>
                 <textarea
                   value={(lesson.rule ?? []).join('\n')}
                   onChange={(e) => patchLesson(li, { rule: e.target.value.split('\n') })}
@@ -179,23 +181,23 @@ export default function GrammarUnitEditor({
                     onChange={(e) => patchExercise(li, ei, { kind: e.target.value as ExerciseKind })}
                     className={cn(inputCls, '[color-scheme:dark] w-auto py-1.5 text-xs')}
                   >
-                    <option value="mcq">Multiple choice</option>
-                    <option value="fill">Fill in the blank</option>
-                    <option value="write">Rewrite / open answer</option>
+                    <option value="mcq">{t('gr.kindMcq')}</option>
+                    <option value="fill">{t('gr.kindFill')}</option>
+                    <option value="write">{t('gr.kindWrite')}</option>
                   </select>
                   {lesson.exercises.length > 1 && (
                     <button
                       onClick={() => patchLesson(li, { exercises: lesson.exercises.filter((_, j) => j !== ei) })}
                       className="text-[11px] text-rose-300 hover:text-rose-200 font-semibold"
                     >
-                      Remove
+                      {t('gr.removeWord')}
                     </button>
                   )}
                 </div>
                 <input
                   value={ex.prompt}
                   onChange={(e) => patchExercise(li, ei, { prompt: e.target.value })}
-                  placeholder={ex.kind === 'mcq' ? 'Prompt — use ___ for the gap' : 'Prompt with ___ for the blank'}
+                  placeholder={ex.kind === 'mcq' ? t('gr.promptMcqPlaceholder') : t('gr.promptBlankPlaceholder')}
                   className={inputCls}
                 />
                 {ex.kind === 'mcq' ? (
@@ -206,7 +208,7 @@ export default function GrammarUnitEditor({
                           type="radio"
                           checked={ex.correct === oi}
                           onChange={() => patchExercise(li, ei, { correct: oi })}
-                          title="Correct answer"
+                          title={t('gr.correctAnswer')}
                           className="accent-emerald-400 shrink-0"
                         />
                         <input
@@ -216,7 +218,7 @@ export default function GrammarUnitEditor({
                             options[oi] = e.target.value
                             patchExercise(li, ei, { options })
                           }}
-                          placeholder={`Option ${oi + 1}`}
+                          placeholder={`${t('gr.optionWord')} ${oi + 1}`}
                           className={cn(inputCls, 'py-1.5 text-xs')}
                         />
                       </div>
@@ -226,14 +228,14 @@ export default function GrammarUnitEditor({
                   <input
                     value={(ex.answers ?? []).join(', ')}
                     onChange={(e) => patchExercise(li, ei, { answers: e.target.value.split(',').map((a) => a.trimStart()) })}
-                    placeholder="Accepted answers, comma-separated"
+                    placeholder={t('gr.acceptedAnswers')}
                     className={cn(inputCls, 'text-xs')}
                   />
                 )}
                 <input
                   value={ex.explanation ?? ''}
                   onChange={(e) => patchExercise(li, ei, { explanation: e.target.value })}
-                  placeholder="Explanation shown after answering (optional)"
+                  placeholder={t('gr.explanationPlaceholder')}
                   className={cn(inputCls, 'py-1.5 text-xs')}
                 />
               </div>
@@ -242,7 +244,7 @@ export default function GrammarUnitEditor({
               onClick={() => patchLesson(li, { exercises: [...lesson.exercises, blankExercise()] })}
               className="self-start inline-flex items-center gap-1.5 text-xs font-semibold text-brand-300 hover:text-brand-200"
             >
-              <IconPlus className="w-3.5 h-3.5" /> Add exercise
+              <IconPlus className="w-3.5 h-3.5" /> {t('gr.addExercise')}
             </button>
           </div>
         ))}
@@ -250,24 +252,24 @@ export default function GrammarUnitEditor({
           onClick={() => setDraft((d) => ({ ...d, lessons: [...d.lessons, blankLesson(d.lessons.length)] }))}
           className="self-start inline-flex items-center gap-1.5 text-sm font-semibold text-brand-300 hover:text-brand-200"
         >
-          <IconPlus className="w-4 h-4" /> Add lesson
+          <IconPlus className="w-4 h-4" /> {t('gr.addLesson')}
         </button>
 
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/[0.06]">
           {unit && !editingSeed ? (
             <button onClick={() => { removeCustomUnit(unit.id); onSaved() }} className="text-xs font-semibold text-rose-300 hover:text-rose-200">
-              Delete unit
+              {t('gr.deleteUnit')}
             </button>
           ) : unit && editingSeed ? (
             <button onClick={() => { removeCustomUnit(unit.id); onSaved() }} className="text-xs font-semibold text-amber-300 hover:text-amber-200">
-              Restore built-in version
+              {t('gr.restoreBuiltIn')}
             </button>
           ) : (
             <span />
           )}
           <div className="flex items-center gap-2">
-            <button onClick={onClose} className="btn-ghost text-xs px-4 py-2">Cancel</button>
-            <button onClick={save} disabled={!valid} className="btn-primary text-xs px-5 py-2 disabled:opacity-40">Save unit</button>
+            <button onClick={onClose} className="btn-ghost text-xs px-4 py-2">{t('gr.cancel')}</button>
+            <button onClick={save} disabled={!valid} className="btn-primary text-xs px-5 py-2 disabled:opacity-40">{t('gr.saveUnit')}</button>
           </div>
         </div>
       </div>

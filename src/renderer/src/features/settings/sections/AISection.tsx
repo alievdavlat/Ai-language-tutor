@@ -6,6 +6,8 @@ import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 import { IconArrowRight, IconCheck, IconLock } from '../../../components/icons'
 import { testProvider, type TestResult } from '../../../services/ai/test'
+import { useT } from '../../../i18n'
+import type { StringKey } from '../../../i18n/strings'
 
 interface AISectionProps {
   ai: AIConfig | undefined
@@ -21,10 +23,14 @@ const TIER_TINT: Record<string, string> = {
   free: 'bg-sky-500/20 text-sky-200'
 }
 
-function pricingLabel(input: number | null, output: number | null): string {
-  if (input === 0 && output === 0) return 'Free'
+function pricingLabel(
+  t: ReturnType<typeof useT>,
+  input: number | null,
+  output: number | null
+): string {
+  if (input === 0 && output === 0) return t('seta.free')
   if (input == null || output == null) return '—'
-  return `$${input.toFixed(2)} / $${output.toFixed(2)} per 1M tokens`
+  return `$${input.toFixed(2)} / $${output.toFixed(2)} ${t('seta.per1mTokens')}`
 }
 
 interface CardProps {
@@ -37,6 +43,7 @@ interface CardProps {
 }
 
 function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Element {
+  const t = useT()
   const isActive = ai.activeProviderId === p.id
   const persistedToken = ai.tokens?.[p.id] ?? ''
   const modelId = ai.models?.[p.id] ?? p.defaultModelId ?? p.models[0].id
@@ -85,8 +92,8 @@ function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Ele
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="text-base font-black text-white">{p.name}</h3>
-            {p.hasFreeTier && <span className="inline-flex items-center rounded-full bg-emerald-500/80 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">Free</span>}
-            {isActive && <span className="inline-flex items-center rounded-full bg-white/30 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">Active</span>}
+            {p.hasFreeTier && <span className="inline-flex items-center rounded-full bg-emerald-500/80 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">{t('seta.free')}</span>}
+            {isActive && <span className="inline-flex items-center rounded-full bg-white/30 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">{t('seta.active')}</span>}
           </div>
           <p className="text-xs text-white/90 mt-0.5 line-clamp-1">{p.tagline}</p>
         </div>
@@ -99,7 +106,7 @@ function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Ele
           {/* Strengths / weaknesses */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-emerald-300 font-bold">Strengths</p>
+              <p className="text-[10px] uppercase tracking-widest text-emerald-300 font-bold">{t('seta.strengths')}</p>
               <ul className="text-xs text-slate-300 mt-1.5 flex flex-col gap-1">
                 {p.strengths.map((s) => (
                   <li key={s} className="flex items-start gap-1.5"><span className="text-emerald-400 mt-0.5">✓</span><span>{s}</span></li>
@@ -107,7 +114,7 @@ function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Ele
               </ul>
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-rose-300 font-bold">Watch out for</p>
+              <p className="text-[10px] uppercase tracking-widest text-rose-300 font-bold">{t('seta.watchOutFor')}</p>
               <ul className="text-xs text-slate-300 mt-1.5 flex flex-col gap-1">
                 {p.weaknesses.map((s) => (
                   <li key={s} className="flex items-start gap-1.5"><span className="text-rose-400 mt-0.5">•</span><span>{s}</span></li>
@@ -118,7 +125,7 @@ function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Ele
 
           {/* Pricing table */}
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Models & pricing · verified {p.verifiedOn}</p>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">{t('seta.modelsPricing')} · {t('seta.verified')} {p.verifiedOn}</p>
             <div className="rounded-xl border border-white/10 bg-white/[0.025] overflow-hidden">
               {p.models.map((m) => (
                 <label
@@ -137,12 +144,12 @@ function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Ele
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-white">{m.label}</p>
-                    <p className="text-[11px] text-slate-400">{m.contextK}K context</p>
+                    <p className="text-[11px] text-slate-400">{m.contextK}K {t('seta.context')}</p>
                   </div>
                   <span className={cn('text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full', TIER_TINT[m.tier])}>
-                    {m.tier}
+                    {t(`seta.tier_${m.tier}` as StringKey)}
                   </span>
-                  <span className="text-xs text-slate-300 font-mono shrink-0">{pricingLabel(m.inputUsdPerM, m.outputUsdPerM)}</span>
+                  <span className="text-xs text-slate-300 font-mono shrink-0">{pricingLabel(t, m.inputUsdPerM, m.outputUsdPerM)}</span>
                 </label>
               ))}
             </div>
@@ -153,7 +160,7 @@ function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Ele
 
           {/* Token steps */}
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">How to get a token</p>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">{t('seta.howToGetToken')}</p>
             <ol className="flex flex-col gap-1.5 text-sm text-slate-200">
               {p.tokenSteps.map((step, i) => (
                 <li key={i} className="flex items-start gap-2">
@@ -178,7 +185,7 @@ function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Ele
                 type="password"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder="Paste your API key here…"
+                placeholder={t('seta.pasteApiKey')}
                 className="input flex-1 font-mono text-xs"
               />
               {hasToken && (
@@ -188,7 +195,7 @@ function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Ele
                     disabled={testing}
                     className="rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-xs px-3 py-2.5 text-slate-200 disabled:opacity-60"
                   >
-                    {testing ? 'Testing…' : 'Test'}
+                    {testing ? t('seta.testing') : t('seta.test')}
                   </button>
                   <button
                     onClick={setActive}
@@ -198,7 +205,7 @@ function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Ele
                       isActive && '!bg-white/[0.06] !text-emerald-300 !shadow-none'
                     )}
                   >
-                    {isActive ? '✓ Active' : 'Use this AI'}
+                    {isActive ? `✓ ${t('seta.active')}` : t('seta.useThisAi')}
                   </button>
                 </>
               )}
@@ -211,7 +218,7 @@ function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Ele
                 {result.ok ? '✓' : '✗'} {result.detail} <span className="text-slate-500">· {result.ms}ms</span>
               </p>
             )}
-            <p className="text-[10px] text-slate-500 mt-1.5">Stored locally on this device · never uploaded.</p>
+            <p className="text-[10px] text-slate-500 mt-1.5">{t('seta.storedLocally')}</p>
           </div>
         </div>
       )}
@@ -220,6 +227,7 @@ function ProviderCard({ p, ai, open, onToggleOpen, mutate }: CardProps): JSX.Ele
 }
 
 export default function AISection({ ai, onChange }: AISectionProps): JSX.Element {
+  const t = useT()
   const cfg = ai ?? { activeProviderId: null, tokens: {}, models: {} }
   const [tier, setTier] = useState<TierFilter>('all')
   const [openId, setOpenId] = useState<AIProviderId | null>(cfg.activeProviderId as AIProviderId | null)
@@ -249,10 +257,9 @@ export default function AISection({ ai, onChange }: AISectionProps): JSX.Element
               <IconLock className="w-5 h-5" />
             </span>
             <div className="flex-1">
-              <p className="text-sm font-bold text-white">AI features are locked</p>
+              <p className="text-sm font-bold text-white">{t('seta.aiLocked')}</p>
               <p className="text-xs text-slate-400 mt-0.5">
-                Speaking practice, IELTS examiner, writing rubric and pronunciation feedback all need a cloud AI.
-                Pick a provider below, paste an API token, and tap "Use this AI" to activate.
+                {t('seta.aiLockedDesc')}
               </p>
             </div>
           </div>
@@ -264,10 +271,10 @@ export default function AISection({ ai, onChange }: AISectionProps): JSX.Element
               <IconCheck className="w-5 h-5" />
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-white">AI features unlocked</p>
+              <p className="text-sm font-bold text-white">{t('seta.aiUnlocked')}</p>
               <p className="text-xs text-slate-400 mt-0.5">
-                Active provider: <b className="text-white">{AI_PROVIDERS.find((p) => p.id === cfg.activeProviderId)?.name}</b>
-                {' · '}Model: <span className="font-mono text-slate-300">{cfg.models?.[cfg.activeProviderId!] ?? AI_PROVIDERS.find((p) => p.id === cfg.activeProviderId)?.defaultModelId}</span>
+                {t('seta.activeProvider')} <b className="text-white">{AI_PROVIDERS.find((p) => p.id === cfg.activeProviderId)?.name}</b>
+                {' · '}{t('seta.model')} <span className="font-mono text-slate-300">{cfg.models?.[cfg.activeProviderId!] ?? AI_PROVIDERS.find((p) => p.id === cfg.activeProviderId)?.defaultModelId}</span>
               </p>
             </div>
           </div>
@@ -276,19 +283,23 @@ export default function AISection({ ai, onChange }: AISectionProps): JSX.Element
 
       {/* Filter chips */}
       <div className="flex items-center gap-2">
-        {(['all', 'free', 'paid'] as TierFilter[]).map((t) => (
+        {(['all', 'free', 'paid'] as TierFilter[]).map((tt) => (
           <button
-            key={t}
-            onClick={() => setTier(t)}
+            key={tt}
+            onClick={() => setTier(tt)}
             className={cn(
               'rounded-full px-4 py-1.5 text-xs font-bold capitalize transition border',
-              tier === t ? 'bg-brand-500/20 border-brand-400/40 text-brand-100' : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]'
+              tier === tt ? 'bg-brand-500/20 border-brand-400/40 text-brand-100' : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]'
             )}
           >
-            {t === 'all' ? 'All providers' : t === 'free' ? '🎁 Free tier available' : '💳 Paid only'}
+            {tt === 'all'
+              ? t('seta.allProviders')
+              : tt === 'free'
+                ? `🎁 ${t('seta.freeTierAvailable')}`
+                : `💳 ${t('seta.paidOnly')}`}
           </button>
         ))}
-        <span className="ml-auto text-[11px] text-slate-500">{filtered.length} of {AI_PROVIDERS.length} shown</span>
+        <span className="ml-auto text-[11px] text-slate-500">{filtered.length} {t('seta.ofWord')} {AI_PROVIDERS.length} {t('seta.shown')}</span>
       </div>
 
       {/* Provider cards */}
@@ -306,7 +317,7 @@ export default function AISection({ ai, onChange }: AISectionProps): JSX.Element
       </div>
 
       <p className="text-[11px] text-slate-500 text-center">
-        Tokens are stored on this device only · never sent to our servers · revoke any time from the provider's dashboard.
+        {t('seta.tokensFooter')}
       </p>
     </div>
   )

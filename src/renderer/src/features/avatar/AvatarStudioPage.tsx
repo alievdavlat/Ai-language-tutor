@@ -16,6 +16,8 @@ import {
 } from '@shared/types'
 import { ACCENTS, ACCENT_LABELS, resolveCharacter } from '@shared/constants'
 import { characterAvatarUrl } from '@shared/utils/avatar'
+import { useT } from '../../i18n'
+import type { StringKey } from '../../i18n/strings'
 import { useAppStore } from '../../store/useAppStore'
 import { cn } from '../../lib/classnames'
 import PageHeader from '../../components/layout/PageHeader'
@@ -89,6 +91,7 @@ function Swatches({ colors, value, onPick }: { colors: string[]; value: string; 
 }
 
 function Chips({ values, placeholder, onChange }: { values: readonly string[]; placeholder: string; onChange: (n: string[]) => void }): JSX.Element {
+  const t = useT()
   const [draft, setDraft] = useState('')
   const add = (): void => {
     const v = draft.trim()
@@ -104,18 +107,19 @@ function Chips({ values, placeholder, onChange }: { values: readonly string[]; p
             {v}<span aria-hidden className="text-brand-200/70">×</span>
           </button>
         ))}
-        {values.length === 0 && <span className="text-xs text-slate-500 italic">None yet.</span>}
+        {values.length === 0 && <span className="text-xs text-slate-500 italic">{t('avatarStudio.noneYet')}</span>}
       </div>
       <div className="flex gap-2">
         <Input placeholder={placeholder} value={draft} onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
-        <Button variant="ghost" type="button" onClick={add}>Add</Button>
+        <Button variant="ghost" type="button" onClick={add}>{t('avatarStudio.add')}</Button>
       </div>
     </div>
   )
 }
 
 export default function AvatarStudioPage(): JSX.Element {
+  const t = useT()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const editId = params.get('id') || undefined
@@ -240,22 +244,26 @@ export default function AvatarStudioPage(): JSX.Element {
     <div className="h-full overflow-y-auto bg-slate-950">
       <PageHeader
         left={<BackButton to="/settings" />}
-        title={isEditing ? `Edit ${form.name || 'companion'}` : 'Create a companion'}
-        subtitle="Pick an avatar type, upload a model or use a portrait, and set the personality."
+        title={isEditing ? `${t('avatarStudio.editTitle')} ${form.name || t('avatarStudio.companion')}` : t('avatarStudio.createTitle')}
+        subtitle={t('avatarStudio.subtitle')}
         right={
           <div className="flex items-center gap-2">
             {isEditing && existing?.isCustom && (
-              <button onClick={() => void del()} className="btn-ghost text-xs px-3 py-2 text-rose-300">Delete</button>
+              <button onClick={() => void del()} className="btn-ghost text-xs px-3 py-2 text-rose-300">{t('avatarStudio.delete')}</button>
             )}
             <button onClick={() => void save()} disabled={!canSave || saving} className="btn-primary px-4 py-2 text-sm disabled:opacity-60">
-              {saving ? 'Saving…' : isEditing ? 'Save companion' : 'Create companion'}
+              {saving ? t('avatarStudio.saving') : isEditing ? t('avatarStudio.saveCompanion') : t('avatarStudio.createCompanion')}
             </button>
           </div>
         }
       />
 
       <div className="w-full px-6 pt-5">
-        <Tabs items={STUDIO_TABS} active={studioTab} onChange={setStudioTab} />
+        <Tabs
+          items={STUDIO_TABS.map((tab) => ({ ...tab, label: t(`avatarStudio.tab_${tab.id}` as StringKey) }))}
+          active={studioTab}
+          onChange={setStudioTab}
+        />
       </div>
 
       {studioTab === 'persona' && (
@@ -265,13 +273,13 @@ export default function AvatarStudioPage(): JSX.Element {
           {kind === '3d' ? (
             <AvatarStudioCanvas config={cfg} />
           ) : kind === 'vrm' ? (
-            <Avatar mode="3d" mouthOpen={0} name={form.name || 'Preview'} vrmUrl={vrmUrl || undefined} />
+            <Avatar mode="3d" mouthOpen={0} name={form.name || t('avatarStudio.preview')} vrmUrl={vrmUrl || undefined} />
           ) : (
             <div className="flex flex-col items-center gap-3">
               <div className="w-56 h-56 rounded-3xl overflow-hidden ring-1 ring-white/10" style={{ background: form.cardTint ? `#${form.cardTint}` : 'rgba(255,255,255,0.05)' }}>
                 <img src={characterAvatarUrl({ ...form, avatarSeed: previewSeed }, 320)} alt="preview" className="w-full h-full p-2" referrerPolicy="no-referrer" />
               </div>
-              <p className="text-sm text-slate-400">{form.name || 'New companion'}</p>
+              <p className="text-sm text-slate-400">{form.name || t('avatarStudio.newCompanion')}</p>
             </div>
           )}
         </div>
@@ -279,17 +287,17 @@ export default function AvatarStudioPage(): JSX.Element {
         {/* Builder */}
         <div className="flex flex-col gap-5">
           {/* Avatar type */}
-          <Field label="Avatar type">
+          <Field label={t('avatarStudio.avatarType')}>
             <div className="grid grid-cols-3 gap-2">
               {([
-                { k: '2d', label: '2D portrait', emoji: '🖼️' },
-                { k: '3d', label: '3D stylized', emoji: '🧊' },
-                { k: 'vrm', label: '3D realistic (VRM)', emoji: '🧑‍🎤' }
-              ] as const).map((t) => (
-                <button key={t.k} onClick={() => update('avatarKind', t.k)}
-                  className={cn('rounded-xl border p-3 text-center transition', kind === t.k ? 'border-brand-400 bg-brand-500/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.07]')}>
-                  <div className="text-2xl">{t.emoji}</div>
-                  <div className="text-[11px] font-semibold mt-1">{t.label}</div>
+                { k: '2d', label: t('avatarStudio.kind2d'), emoji: '🖼️' },
+                { k: '3d', label: t('avatarStudio.kind3d'), emoji: '🧊' },
+                { k: 'vrm', label: t('avatarStudio.kindVrm'), emoji: '🧑‍🎤' }
+              ] as const).map((opt) => (
+                <button key={opt.k} onClick={() => update('avatarKind', opt.k)}
+                  className={cn('rounded-xl border p-3 text-center transition', kind === opt.k ? 'border-brand-400 bg-brand-500/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.07]')}>
+                  <div className="text-2xl">{opt.emoji}</div>
+                  <div className="text-[11px] font-semibold mt-1">{opt.label}</div>
                 </button>
               ))}
             </div>
@@ -298,7 +306,7 @@ export default function AvatarStudioPage(): JSX.Element {
           {/* Source per type */}
           {kind === '2d' && (
             <>
-              <Field label="Portrait style">
+              <Field label={t('avatarStudio.portraitStyle')}>
                 <div className="flex flex-wrap gap-2">
                   {DICEBEAR_STYLES.map((st) => (
                     <button key={st} onClick={() => update('avatarStyle', st)}
@@ -308,37 +316,37 @@ export default function AvatarStudioPage(): JSX.Element {
                   ))}
                 </div>
               </Field>
-              <Field label="Portrait seed" hint="Any text — changes the generated face. Free DiceBear art (CC0).">
-                <Input value={form.avatarSeed ?? ''} placeholder="e.g. my-coach-01" onChange={(e) => update('avatarSeed', e.target.value)} />
+              <Field label={t('avatarStudio.portraitSeed')} hint={t('avatarStudio.portraitSeedHint')}>
+                <Input value={form.avatarSeed ?? ''} placeholder={t('avatarStudio.portraitSeedPlaceholder')} onChange={(e) => update('avatarSeed', e.target.value)} />
               </Field>
             </>
           )}
 
           {kind === '3d' && (
             <>
-              <Field label="Skin tone"><Swatches colors={SKIN_TONES} value={cfg.skinTone} onPick={(skinTone) => setCfg((c) => ({ ...c, skinTone }))} /></Field>
-              <Field label="Hair style">
+              <Field label={t('avatarStudio.skinTone')}><Swatches colors={SKIN_TONES} value={cfg.skinTone} onPick={(skinTone) => setCfg((c) => ({ ...c, skinTone }))} /></Field>
+              <Field label={t('avatarStudio.hairStyle')}>
                 <div className="flex flex-wrap gap-2">
                   {HAIR_STYLES.map((h) => (
                     <button key={h.id} onClick={() => setCfg((c) => ({ ...c, hairStyle: h.id }))}
                       className={cn('rounded-full px-4 py-1.5 text-xs font-bold border transition', cfg.hairStyle === h.id ? 'bg-brand-500/20 border-brand-400/40 text-brand-100' : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]')}>
-                      {h.label}
+                      {t(`avatarStudio.hair_${h.id}` as StringKey)}
                     </button>
                   ))}
                 </div>
               </Field>
-              <Field label="Hair color"><Swatches colors={HAIR_COLORS} value={cfg.hairColor} onPick={(hairColor) => setCfg((c) => ({ ...c, hairColor }))} /></Field>
-              <Field label="Eye color"><Swatches colors={EYE_COLORS} value={cfg.eyeColor} onPick={(eyeColor) => setCfg((c) => ({ ...c, eyeColor }))} /></Field>
-              <Field label="Outfit color"><Swatches colors={OUTFIT_COLORS} value={cfg.outfitColor} onPick={(outfitColor) => setCfg((c) => ({ ...c, outfitColor }))} /></Field>
-              <Field label="Background"><Swatches colors={BACKGROUNDS} value={cfg.background} onPick={(background) => setCfg((c) => ({ ...c, background }))} /></Field>
+              <Field label={t('avatarStudio.hairColor')}><Swatches colors={HAIR_COLORS} value={cfg.hairColor} onPick={(hairColor) => setCfg((c) => ({ ...c, hairColor }))} /></Field>
+              <Field label={t('avatarStudio.eyeColor')}><Swatches colors={EYE_COLORS} value={cfg.eyeColor} onPick={(eyeColor) => setCfg((c) => ({ ...c, eyeColor }))} /></Field>
+              <Field label={t('avatarStudio.outfitColor')}><Swatches colors={OUTFIT_COLORS} value={cfg.outfitColor} onPick={(outfitColor) => setCfg((c) => ({ ...c, outfitColor }))} /></Field>
+              <Field label={t('avatarStudio.background')}><Swatches colors={BACKGROUNDS} value={cfg.background} onPick={(background) => setCfg((c) => ({ ...c, background }))} /></Field>
             </>
           )}
 
           {kind === 'vrm' && (
-            <Field label="VRM model" hint="Upload a .vrm file or paste a link (free models on VRoid Hub). Lip-sync + expressions work in chat.">
+            <Field label={t('avatarStudio.vrmModel')} hint={t('avatarStudio.vrmModelHint')}>
               <div className="flex gap-2">
-                <Input value={vrmUrl.startsWith('data:') ? '(uploaded file)' : vrmUrl} placeholder="https://…/model.vrm" onChange={(e) => setVrmUrl(e.target.value)} />
-                <Button variant="ghost" type="button" onClick={() => fileRef.current?.click()}>Upload</Button>
+                <Input value={vrmUrl.startsWith('data:') ? t('avatarStudio.uploadedFile') : vrmUrl} placeholder="https://…/model.vrm" onChange={(e) => setVrmUrl(e.target.value)} />
+                <Button variant="ghost" type="button" onClick={() => fileRef.current?.click()}>{t('avatarStudio.upload')}</Button>
               </div>
               <input ref={fileRef} type="file" accept=".vrm,model/gltf-binary" className="hidden"
                 onChange={(e) => onUploadVrm(e.target.files?.[0])} />
@@ -347,14 +355,14 @@ export default function AvatarStudioPage(): JSX.Element {
 
           {/* Identity */}
           <div className="border-t border-white/10 pt-4 grid grid-cols-[64px_1fr] gap-3">
-            <Field label="Emoji"><Input value={form.emoji} maxLength={4} className="text-center text-xl" onChange={(e) => update('emoji', e.target.value)} /></Field>
-            <Field label="Name *"><Input value={form.name} placeholder="Aziz" onChange={(e) => update('name', e.target.value)} /></Field>
+            <Field label={t('avatarStudio.emoji')}><Input value={form.emoji} maxLength={4} className="text-center text-xl" onChange={(e) => update('emoji', e.target.value)} /></Field>
+            <Field label={t('avatarStudio.name')}><Input value={form.name} placeholder="Aziz" onChange={(e) => update('name', e.target.value)} /></Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Age"><Input type="number" min={14} max={120} value={form.age} onChange={(e) => update('age', parseInt(e.target.value, 10) || 0)} /></Field>
-            <Field label="Origin"><Input value={form.origin} placeholder="Tashkent, Uzbekistan" onChange={(e) => update('origin', e.target.value)} /></Field>
+            <Field label={t('avatarStudio.age')}><Input type="number" min={14} max={120} value={form.age} onChange={(e) => update('age', parseInt(e.target.value, 10) || 0)} /></Field>
+            <Field label={t('avatarStudio.origin')}><Input value={form.origin} placeholder="Tashkent, Uzbekistan" onChange={(e) => update('origin', e.target.value)} /></Field>
           </div>
-          <Field label="Accent">
+          <Field label={t('avatarStudio.accent')}>
             <div className="flex flex-wrap gap-2">
               {ACCENTS.map((a: Accent) => (
                 <button key={a} onClick={() => update('accent', a)}
@@ -364,22 +372,22 @@ export default function AvatarStudioPage(): JSX.Element {
               ))}
             </div>
           </Field>
-          <Field label="Headline"><Input value={form.headline} placeholder="Cheerful conversation partner" onChange={(e) => update('headline', e.target.value)} /></Field>
-          <Field label="Greeting" hint="First message when a chat opens.">
-            <TextArea rows={2} value={form.greeting ?? ''} placeholder="Hey! Great to see you — how's your day?" onChange={(e) => update('greeting', e.target.value)} />
+          <Field label={t('avatarStudio.headline')}><Input value={form.headline} placeholder={t('avatarStudio.headlinePlaceholder')} onChange={(e) => update('headline', e.target.value)} /></Field>
+          <Field label={t('avatarStudio.greeting')} hint={t('avatarStudio.greetingHint')}>
+            <TextArea rows={2} value={form.greeting ?? ''} placeholder={t('avatarStudio.greetingPlaceholder')} onChange={(e) => update('greeting', e.target.value)} />
           </Field>
-          <Field label="Custom instructions (persona)" hint="Appended to the AI's system prompt.">
-            <TextArea rows={2} value={form.personaHint} placeholder="Speak warmly, use simple words, gently correct mistakes." onChange={(e) => update('personaHint', e.target.value)} />
+          <Field label={t('avatarStudio.customInstructions')} hint={t('avatarStudio.customInstructionsHint')}>
+            <TextArea rows={2} value={form.personaHint} placeholder={t('avatarStudio.customInstructionsPlaceholder')} onChange={(e) => update('personaHint', e.target.value)} />
           </Field>
 
           {/* Personality */}
           {(['formality', 'playfulness', 'energy'] as const).map((axis) => (
-            <Field key={axis} label={`${axis} · ${form.personality?.[axis] ?? 50}`}>
+            <Field key={axis} label={`${t(`avatarStudio.axis_${axis}` as StringKey)} · ${form.personality?.[axis] ?? 50}`}>
               <input type="range" min={0} max={100} value={form.personality?.[axis] ?? 50} className="w-full accent-brand-500"
                 onChange={(e) => update('personality', { ...(form.personality ?? DEFAULT_PERSONALITY), [axis]: parseInt(e.target.value, 10) })} />
             </Field>
           ))}
-          <Field label="Speaking style">
+          <Field label={t('avatarStudio.speakingStyle')}>
             <div className="grid grid-cols-2 gap-2">
               {SPEAKING_STYLES.map((s) => (
                 <button key={s.id} onClick={() => update('speakingStyle', s.id as SpeakingStyle)}
@@ -389,22 +397,22 @@ export default function AvatarStudioPage(): JSX.Element {
               ))}
             </div>
           </Field>
-          <Field label="Corrections" hint="How this companion handles your mistakes.">
+          <Field label={t('avatarStudio.corrections')} hint={t('avatarStudio.correctionsHint')}>
             <div className="grid grid-cols-2 gap-2">
               {CORRECTION_STYLES.map((cs) => (
                 <button key={cs.id} onClick={() => update('correctionStyle', cs.id)}
                   className={cn('text-left rounded-lg border p-2 transition', (form.correctionStyle ?? 'gentle') === cs.id ? 'border-brand-400 bg-brand-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10')}>
-                  <div className="text-xs font-semibold">{cs.label}</div>
-                  <div className="text-[10px] text-slate-400">{cs.desc}</div>
+                  <div className="text-xs font-semibold">{t(`avatarStudio.correction_${cs.id}` as StringKey)}</div>
+                  <div className="text-[10px] text-slate-400">{t(`avatarStudio.correctionDesc_${cs.id}` as StringKey)}</div>
                 </button>
               ))}
             </div>
           </Field>
-          <Field label="Interests"><Chips values={form.interests ?? []} placeholder="hiking, jazz…" onChange={(n) => update('interests', n)} /></Field>
-          <Field label="Card tags"><Chips values={form.traits ?? []} placeholder="Warm, Patient…" onChange={(n) => update('traits', n)} /></Field>
+          <Field label={t('avatarStudio.interests')}><Chips values={form.interests ?? []} placeholder={t('avatarStudio.interestsPlaceholder')} onChange={(n) => update('interests', n)} /></Field>
+          <Field label={t('avatarStudio.cardTags')}><Chips values={form.traits ?? []} placeholder={t('avatarStudio.cardTagsPlaceholder')} onChange={(n) => update('traits', n)} /></Field>
 
           {isEditingPreset && (
-            <p className="text-[10px] text-amber-300/80">Editing a preset saves your own copy (same name) — the original stays available.</p>
+            <p className="text-[10px] text-amber-300/80">{t('avatarStudio.presetNote')}</p>
           )}
         </div>
       </div>
@@ -415,7 +423,7 @@ export default function AvatarStudioPage(): JSX.Element {
           {hasName ? (
             <CompanionMemory profile={profile} character={normalized()} onChange={patchMemory} />
           ) : (
-            <p className="text-sm text-slate-400 px-1">Add a name on the <b>Persona</b> tab first — then you can give this companion memories.</p>
+            <p className="text-sm text-slate-400 px-1">{t('avatarStudio.memoryNeedNameBefore')}<b>{t('avatarStudio.tab_persona')}</b>{t('avatarStudio.memoryNeedNameAfter')}</p>
           )}
         </div>
       )}
@@ -433,7 +441,7 @@ export default function AvatarStudioPage(): JSX.Element {
           {hasName && previewProfile ? (
             <CompanionPreviewChat profile={previewProfile} />
           ) : (
-            <p className="text-sm text-slate-400 px-1">Add a name on the <b>Persona</b> tab to preview a chat with this companion.</p>
+            <p className="text-sm text-slate-400 px-1">{t('avatarStudio.previewNeedNameBefore')}<b>{t('avatarStudio.tab_persona')}</b>{t('avatarStudio.previewNeedNameAfter')}</p>
           )}
         </div>
       )}

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from '../../lib/classnames'
+import { useT } from '../../i18n'
+import type { StringKey } from '../../i18n/strings'
 import { AvatarCircle, ListRow, Tabs, type TabItem } from '../../components/ui'
 import { IconBook, IconDownload, IconPencil, IconPlay, IconPlus, IconStar, IconVolume, IconX, IconYouTube } from '../../components/icons'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
@@ -23,6 +25,7 @@ const coverFor = (seed: string): string => COVERS[Math.abs([...seed].reduce((a, 
 
 /** Owner-only upload tile shown at the top of a media grid/list. */
 function UploadTile({ label, accept, onFile, busy }: { label: string; accept: string; onFile: (f: File) => void; busy: boolean }): JSX.Element {
+  const t = useT()
   const input = useRef<HTMLInputElement>(null)
   return (
     <>

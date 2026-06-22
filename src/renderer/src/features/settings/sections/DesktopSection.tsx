@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react'
 import { SectionHeading } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
 import { IconBolt, IconCheck } from '../../../components/icons'
+import { useT } from '../../../i18n'
 
 interface DesktopSettings {
   showTrayIcon: boolean
@@ -75,6 +76,7 @@ function ToggleRow({
 
 export default function DesktopSection(): JSX.Element {
   const api = getApi()
+  const t = useT()
   const [settings, setSettings] = useState<DesktopSettings | null>(null)
   const [saved, setSaved] = useState(false)
 
@@ -93,16 +95,16 @@ export default function DesktopSection(): JSX.Element {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="text-lg font-bold text-white">Desktop</h2>
+        <h2 className="text-lg font-bold text-white">{t('seta.desktop')}</h2>
         <p className="text-sm text-slate-400">
-          Tray icon, minimize-to-tray, and starting SpeakAI when you log in.
+          {t('seta.desktopDesc')}
         </p>
       </div>
 
       {!api && (
         <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
           <p className="text-sm text-slate-300">
-            These options run in the desktop app — they aren’t available in the browser preview.
+            {t('seta.desktopBrowserNote')}
           </p>
         </div>
       )}
@@ -111,35 +113,34 @@ export default function DesktopSection(): JSX.Element {
         <>
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
             <SectionHeading
-              title="System tray"
-              subtitle="A SpeakAI icon in your notification area for quick access"
+              title={t('seta.systemTray')}
+              subtitle={t('seta.systemTraySub')}
             />
             <div className="flex items-center gap-3 mb-4 mt-1">
               <span className="w-12 h-12 rounded-2xl bg-brand-500/15 text-brand-300 flex items-center justify-center shrink-0">
                 <IconBolt className="w-6 h-6" />
               </span>
               <p className="text-sm text-slate-300 flex-1">
-                Right-click the tray icon to jump straight into speaking, vocabulary review, or
-                your progress — or to quit the app completely.
+                {t('seta.trayHint')}
               </p>
             </div>
             <div className="flex flex-col gap-3">
               <ToggleRow
-                label="Show tray icon"
-                hint="A persistent icon in the system tray / notification area."
+                label={t('seta.showTrayIcon')}
+                hint={t('seta.showTrayIconHint')}
                 on={settings.showTrayIcon}
                 onToggle={() => void update({ showTrayIcon: !settings.showTrayIcon })}
               />
               <ToggleRow
-                label="Minimize to tray"
-                hint="Minimizing hides the window to the tray instead of the taskbar."
+                label={t('seta.minimizeToTray')}
+                hint={t('seta.minimizeToTrayHint')}
                 on={settings.minimizeToTray}
                 disabled={!settings.showTrayIcon}
                 onToggle={() => void update({ minimizeToTray: !settings.minimizeToTray })}
               />
               <ToggleRow
-                label="Close to tray"
-                hint="The X button hides the window to the tray instead of quitting."
+                label={t('seta.closeToTray')}
+                hint={t('seta.closeToTrayHint')}
                 on={settings.closeToTray}
                 disabled={!settings.showTrayIcon}
                 onToggle={() => void update({ closeToTray: !settings.closeToTray })}
@@ -148,17 +149,17 @@ export default function DesktopSection(): JSX.Element {
           </div>
 
           <div className="rounded-card border border-white/10 bg-white/[0.025] p-5">
-            <SectionHeading title="Launch on login" subtitle="Open SpeakAI automatically when you sign in to your computer" />
+            <SectionHeading title={t('seta.launchOnLogin')} subtitle={t('seta.launchOnLoginSub')} />
             <div className="flex flex-col gap-3 mt-1">
               <ToggleRow
-                label="Start SpeakAI at login"
-                hint="Adds SpeakAI to your startup apps."
+                label={t('seta.startAtLogin')}
+                hint={t('seta.startAtLoginHint')}
                 on={settings.launchOnStartup}
                 onToggle={() => void update({ launchOnStartup: !settings.launchOnStartup })}
               />
               <ToggleRow
-                label="Start minimized"
-                hint="When launched at login, start hidden in the tray (no window flash)."
+                label={t('seta.startMinimized')}
+                hint={t('seta.startMinimizedHint')}
                 on={settings.startMinimized}
                 disabled={!settings.launchOnStartup}
                 onToggle={() => void update({ startMinimized: !settings.startMinimized })}
@@ -168,7 +169,7 @@ export default function DesktopSection(): JSX.Element {
 
           {saved && (
             <p className="text-[11px] text-emerald-300 inline-flex items-center gap-1.5">
-              <IconCheck className="w-3.5 h-3.5" /> Saved.
+              <IconCheck className="w-3.5 h-3.5" /> {t('seta.saved')}
             </p>
           )}
         </>

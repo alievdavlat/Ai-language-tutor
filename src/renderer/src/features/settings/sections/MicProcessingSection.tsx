@@ -1,5 +1,7 @@
 import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
+import { useT } from '../../../i18n'
+import type { StringKey } from '../../../i18n/strings'
 
 interface MicProcessingSectionProps {
   noiseSuppression: boolean
@@ -12,29 +14,31 @@ interface MicProcessingSectionProps {
   }>) => void
 }
 
+type ToggleKey = 'noiseSuppression' | 'echoCancellation' | 'autoGainControl'
+
 interface Toggle {
-  key: 'noiseSuppression' | 'echoCancellation' | 'autoGainControl'
-  label: string
-  desc: string
+  key: ToggleKey
+  emoji: string
 }
 
 const TOGGLES: readonly Toggle[] = [
-  {
-    key: 'noiseSuppression',
-    label: '🔇 Noise suppression',
-    desc: 'Strips background noise (keyboard clicks, fans, traffic) from the mic before the AI hears it.'
-  },
-  {
-    key: 'echoCancellation',
-    label: '🔄 Echo cancellation',
-    desc: "Stops the AI's voice coming out of your speakers from feeding back into the mic."
-  },
-  {
-    key: 'autoGainControl',
-    label: '📶 Auto gain control',
-    desc: 'Evens out your mic volume — whispers get boosted, shouts get tamed.'
-  }
+  { key: 'noiseSuppression', emoji: '🔇' },
+  { key: 'echoCancellation', emoji: '🔄' },
+  { key: 'autoGainControl', emoji: '📶' }
 ] as const
+
+const toggleLabelKey = (key: ToggleKey): StringKey =>
+  ({
+    noiseSuppression: 'setb.noiseSuppressionLabel',
+    echoCancellation: 'setb.echoCancellationLabel',
+    autoGainControl: 'setb.autoGainControlLabel'
+  }[key] as StringKey)
+const toggleDescKey = (key: ToggleKey): StringKey =>
+  ({
+    noiseSuppression: 'setb.noiseSuppressionDesc',
+    echoCancellation: 'setb.echoCancellationDesc',
+    autoGainControl: 'setb.autoGainControlDesc'
+  }[key] as StringKey)
 
 function SwitchRow({
   label,
@@ -85,27 +89,27 @@ export default function MicProcessingSection({
   autoGainControl,
   onChange
 }: MicProcessingSectionProps): JSX.Element {
+  const t = useT()
   const values = { noiseSuppression, echoCancellation, autoGainControl }
   return (
     <Card>
-      <h2 className="font-semibold mb-1">Microphone processing</h2>
+      <h2 className="font-semibold mb-1">{t('setb.micProcessingTitle')}</h2>
       <p className="text-xs text-slate-500 mb-3 leading-relaxed">
-        Built-in WebRTC filters applied to your mic stream. Safe defaults are on. Turn off
-        individual filters if your mic already has hardware DSP or you want raw audio.
+        {t('setb.micProcessingHint')}
       </p>
       <div className="space-y-2">
-        {TOGGLES.map((t) => (
+        {TOGGLES.map((tg) => (
           <SwitchRow
-            key={t.key}
-            label={t.label}
-            desc={t.desc}
-            value={values[t.key]}
-            onToggle={() => onChange({ [t.key]: !values[t.key] })}
+            key={tg.key}
+            label={`${tg.emoji} ${t(toggleLabelKey(tg.key))}`}
+            desc={t(toggleDescKey(tg.key))}
+            value={values[tg.key]}
+            onToggle={() => onChange({ [tg.key]: !values[tg.key] })}
           />
         ))}
       </div>
       <p className="text-[11px] text-slate-500 mt-3">
-        Toggle changes take effect the next time you start speaking (mic stream is re-acquired).
+        {t('setb.micProcessingNote')}
       </p>
     </Card>
   )

@@ -27,6 +27,7 @@ import { useChatStream } from '../../hooks/useChatStream'
 import { micPrefsFromSettings } from '../../lib/audio'
 import { scoreIeltsSpeaking, type IeltsScoreResult } from './scoring'
 import { IconChat, IconMic, IconStar, IconX } from '../../components/icons'
+import { useT } from '../../i18n'
 
 type Phase = 'intro' | 'part1' | 'part2-prep' | 'part2-talk' | 'part2-followup' | 'part3' | 'done'
 
@@ -129,6 +130,7 @@ function CountdownTimer({ seconds, onElapsed, color = 'amber' }: { seconds: numb
 // ─── Inner sim ─────────────────────────────────────────────────────────────
 
 function InnerSim({ onRetry }: { onRetry: () => void }): JSX.Element {
+  const t = useT()
   const navigate = useNavigate()
   const ai = useActiveAI()
   const profile = useAppStore((s) => s.profile)
@@ -337,8 +339,8 @@ function InnerSim({ onRetry }: { onRetry: () => void }): JSX.Element {
       return (
         <div className="h-full w-full flex flex-col items-center justify-center gap-5 bg-slate-950">
           <ParticleOrb state="thinking" size={220} audioLevel={0.5} />
-          <p className="text-sm font-bold text-slate-200 uppercase tracking-widest">Grading your interview…</p>
-          <p className="text-xs text-slate-500">The examiner is scoring your four IELTS criteria.</p>
+          <p className="text-sm font-bold text-slate-200 uppercase tracking-widest">{t('spk.gradingInterview')}</p>
+          <p className="text-xs text-slate-500">{t('spk.gradingInterviewSub')}</p>
         </div>
       )
     }
@@ -352,7 +354,7 @@ function InnerSim({ onRetry }: { onRetry: () => void }): JSX.Element {
        *  any trademark friction.
        */}
       <header className="absolute top-5 left-6 z-10">
-        <p className="text-sm font-bold text-white tracking-wide">SpeakAI <span className="font-light text-white/60">· Speaking exam</span></p>
+        <p className="text-sm font-bold text-white tracking-wide">SpeakAI <span className="font-light text-white/60">· {t('spk.speakingExam')}</span></p>
         <p className="text-xs text-white/60 mt-0.5 font-mono tabular-nums">{fmtTime(elapsed)} / {fmtTime(TOTAL_BUDGET_SEC)}</p>
       </header>
 
@@ -360,7 +362,7 @@ function InnerSim({ onRetry }: { onRetry: () => void }): JSX.Element {
       <div className="absolute top-5 right-6 z-10 flex items-center gap-2">
         <button
           onClick={() => setShowTranscript((v) => !v)}
-          title="Toggle transcript"
+          title={t('spk.toggleTranscript')}
           className={cn(
             'w-9 h-9 rounded-full backdrop-blur flex items-center justify-center transition border',
             showTranscript ? 'bg-white/20 border-white/30 text-white' : 'bg-white/[0.06] border-white/10 text-white/70 hover:bg-white/[0.12]'
@@ -370,7 +372,7 @@ function InnerSim({ onRetry }: { onRetry: () => void }): JSX.Element {
         </button>
         <button
           onClick={() => navigate('/exams/ielts')}
-          title="End"
+          title={t('spk.end')}
           className="w-9 h-9 rounded-full bg-white/[0.06] hover:bg-white/[0.12] backdrop-blur text-white/70 hover:text-white flex items-center justify-center border border-white/10"
         >
           <IconX className="w-4 h-4" />
@@ -386,7 +388,7 @@ function InnerSim({ onRetry }: { onRetry: () => void }): JSX.Element {
       {phase === 'part2-prep' && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-[min(90vw,28rem)] rounded-card border border-amber-400/30 bg-black/60 backdrop-blur-xl p-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] uppercase tracking-widest text-amber-300 font-bold">Part 2 · cue card</p>
+            <p className="text-[10px] uppercase tracking-widest text-amber-300 font-bold">{t('spk.part2CueCard')}</p>
             <CountdownTimer seconds={60} onElapsed={endPart2Prep} color="amber" />
           </div>
           <p className="text-lg font-bold text-white">{card.cue}</p>
@@ -395,21 +397,21 @@ function InnerSim({ onRetry }: { onRetry: () => void }): JSX.Element {
               <li key={b} className="flex items-start gap-2"><span className="text-amber-300">·</span>{b}</li>
             ))}
           </ul>
-          <button onClick={endPart2Prep} className="btn-primary text-xs px-4 py-2 self-end">I'm ready — start talking</button>
+          <button onClick={endPart2Prep} className="btn-primary text-xs px-4 py-2 self-end">{t('spk.readyStartTalking')}</button>
         </div>
       )}
 
       {/* Part 2 talk timer — overlay during the 2-min slot */}
       {phase === 'part2-talk' && (
         <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2">
-          <p className="text-[10px] uppercase tracking-widest text-brand-300 font-bold">Part 2 · your 2 minutes</p>
+          <p className="text-[10px] uppercase tracking-widest text-brand-300 font-bold">{t('spk.part2YourMinutes')}</p>
           <CountdownTimer seconds={120} onElapsed={endPart2Talk} color="brand" />
           <p className="text-sm font-bold text-white max-w-md text-center">{card.cue}</p>
           <button
             onClick={endPart2Talk}
             className="mt-1 rounded-full bg-white/[0.08] hover:bg-white/[0.14] backdrop-blur text-white/80 text-xs font-semibold px-4 py-2 border border-white/10"
           >
-            I'm finished
+            {t('spk.imFinished')}
           </button>
         </div>
       )}
@@ -424,14 +426,14 @@ function InnerSim({ onRetry }: { onRetry: () => void }): JSX.Element {
       {/* Transcript drawer (accessibility opt-in) */}
       {showTranscript && (
         <aside className="absolute top-20 right-6 bottom-28 w-80 z-10 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-4 overflow-y-auto">
-          <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-2">Transcript · {transcript.length} turns</p>
+          <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-2">{t('spk.transcript')} · {transcript.length} {t('spk.turns')}</p>
           <div className="flex flex-col gap-3">
-            {transcript.map((t, i) => (
+            {transcript.map((turn, i) => (
               <div key={i}>
-                <p className={cn('text-[9px] uppercase tracking-widest font-bold', t.who === 'examiner' ? 'text-brand-300' : 'text-emerald-300')}>
-                  {t.who === 'examiner' ? 'Examiner' : 'You'}
+                <p className={cn('text-[9px] uppercase tracking-widest font-bold', turn.who === 'examiner' ? 'text-brand-300' : 'text-emerald-300')}>
+                  {turn.who === 'examiner' ? t('spk.examiner') : t('spk.you')}
                 </p>
-                <p className="text-sm text-slate-200 leading-snug">{t.text}</p>
+                <p className="text-sm text-slate-200 leading-snug">{turn.text}</p>
               </div>
             ))}
           </div>
@@ -445,7 +447,7 @@ function InnerSim({ onRetry }: { onRetry: () => void }): JSX.Element {
             if (recording) { setRecording(false); void stt.stop() }
             else { if (speaking) cancelTTS(); setRecording(true); void stt.start() }
           }}
-          title={recording ? 'Stop' : 'Talk'}
+          title={recording ? t('spk.stop') : t('spk.talk')}
           className={cn(
             'w-16 h-16 rounded-full flex items-center justify-center text-white shadow-2xl transition',
             recording ? 'bg-rose-500 ring-4 ring-rose-400/40 animate-pulse' : 'bg-grad-brand ring-4 ring-brand-400/30 hover:brightness-110'
@@ -466,22 +468,23 @@ function InnerSim({ onRetry }: { onRetry: () => void }): JSX.Element {
 // ─── Result screen (same data shape, lifted into its own component) ─────
 
 function ResultScreen({ scoring, transcript, onRetry }: { scoring: IeltsScoreResult; transcript: Turn[]; onRetry: () => void }): JSX.Element {
+  const t = useT()
   const navigate = useNavigate()
   return (
     <div className="h-full w-full overflow-y-auto bg-slate-950">
       <div className="w-full px-6 py-10 flex flex-col gap-6">
         <div className="rounded-card border border-emerald-400/30 bg-gradient-to-br from-emerald-500/15 to-brand-500/15 p-8 text-center">
-          <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold">Mock complete</p>
-          <p className="text-6xl font-black text-white mt-2">Band {scoring.overall.toFixed(1)}</p>
-          <p className="text-sm text-slate-300 mt-1">Estimated overall band score</p>
+          <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold">{t('spk.mockComplete')}</p>
+          <p className="text-6xl font-black text-white mt-2">{t('spk.band')} {scoring.overall.toFixed(1)}</p>
+          <p className="text-sm text-slate-300 mt-1">{t('spk.estimatedBand')}</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Fluency & coherence', v: scoring.fluency },
-            { label: 'Lexical resource', v: scoring.lexical },
-            { label: 'Grammar', v: scoring.grammar },
-            { label: 'Pronunciation', v: scoring.pronunciation }
+            { label: t('spk.fluencyCoherence'), v: scoring.fluency },
+            { label: t('spk.lexicalResource'), v: scoring.lexical },
+            { label: t('spk.grammar'), v: scoring.grammar },
+            { label: t('spk.pronunciationCriterion'), v: scoring.pronunciation }
           ].map((c) => (
             <div key={c.label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center">
               <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{c.label}</p>
@@ -491,7 +494,7 @@ function ResultScreen({ scoring, transcript, onRetry }: { scoring: IeltsScoreRes
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
-          <SectionHeading title="Examiner feedback" subtitle="From your responses" />
+          <SectionHeading title={t('spk.examinerFeedback')} subtitle={t('spk.fromYourResponses')} />
           <ul className="text-sm text-slate-200 flex flex-col gap-2">
             {scoring.feedback.map((f, i) => {
               const positive = f.trimStart().startsWith('✓')
@@ -507,14 +510,14 @@ function ResultScreen({ scoring, transcript, onRetry }: { scoring: IeltsScoreRes
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
-          <SectionHeading title="Full transcript" subtitle={`${transcript.length} turns`} />
+          <SectionHeading title={t('spk.fullTranscript')} subtitle={`${transcript.length} ${t('spk.turns')}`} />
           <div className="flex flex-col gap-2 max-h-72 overflow-y-auto">
-            {transcript.map((t, i) => (
+            {transcript.map((turn, i) => (
               <div key={i} className="text-sm">
-                <span className={cn('text-[10px] uppercase tracking-widest font-bold mr-1.5', t.who === 'examiner' ? 'text-brand-300' : 'text-emerald-300')}>
-                  {t.who === 'examiner' ? 'Examiner' : 'You'}:
+                <span className={cn('text-[10px] uppercase tracking-widest font-bold mr-1.5', turn.who === 'examiner' ? 'text-brand-300' : 'text-emerald-300')}>
+                  {turn.who === 'examiner' ? t('spk.examiner') : t('spk.you')}:
                 </span>
-                <span className="text-slate-200">{t.text}</span>
+                <span className="text-slate-200">{turn.text}</span>
               </div>
             ))}
           </div>

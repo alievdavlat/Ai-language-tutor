@@ -4,6 +4,8 @@ import { cn } from '../../lib/classnames'
 import { backend } from '../../services/backend'
 import { NOTIF_EVENT } from '../../services/notifications'
 import { IconX } from '../../components/icons'
+import { useT } from '../../i18n'
+import type { StringKey } from '../../i18n/strings'
 
 type Audience = 'all' | 'students' | 'teachers'
 type NType = 'system' | 'learning' | 'social'
@@ -28,6 +30,7 @@ interface ComposerProps {
 
 /** Broadcast a notification to a real audience (admin) or to students (teacher). #A34 */
 export default function NotificationComposer({ teacherOnly, onClose, onSent }: ComposerProps): JSX.Element {
+  const t = useT()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [type, setType] = useState<NType>('system')
@@ -62,15 +65,15 @@ export default function NotificationComposer({ teacherOnly, onClose, onSent }: C
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4" onClick={onClose}>
       <div className="border border-white/10 rounded-3xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()} style={{ background: 'linear-gradient(to bottom, #14182a, #0c0f1a)' }}>
         <header className="px-6 py-4 border-b border-white/[0.07] flex items-center justify-between">
-          <h2 className="text-lg font-black tracking-tight text-white">Send a notification</h2>
+          <h2 className="text-lg font-black tracking-tight text-white">{t('soc.sendNotification')}</h2>
           <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-slate-400"><IconX className="w-5 h-5" /></button>
         </header>
 
         {sent !== null ? (
           <div className="px-6 py-8 text-center">
             <p className="text-3xl">📣</p>
-            <p className="text-sm text-white font-bold mt-2">Sent to {sent} {sent === 1 ? 'person' : 'people'}.</p>
-            <button onClick={onClose} className="btn-primary px-5 py-2 text-sm mt-4">Done</button>
+            <p className="text-sm text-white font-bold mt-2">{t('soc.sentTo')} {sent} {sent === 1 ? t('soc.personOne') : t('soc.personMany')}.</p>
+            <button onClick={onClose} className="btn-primary px-5 py-2 text-sm mt-4">{t('soc.done')}</button>
           </div>
         ) : (
           <>

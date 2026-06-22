@@ -8,8 +8,10 @@ import { isImageCover } from '../../lib/cover'
 import { uploadUrl } from '../../services/backend'
 import { library } from '../../services/library/store'
 import { backend, useBackendQuery } from '../../services/backend/useBackend'
+import { useT } from '../../i18n'
 
 export default function LibraryBookPage(): JSX.Element {
+  const t = useT()
   const navigate = useNavigate()
   const { id = '' } = useParams()
   const { data: book, loading, refresh } = useBackendQuery(() => library.get(id), [id], null)
@@ -24,8 +26,8 @@ export default function LibraryBookPage(): JSX.Element {
   if (!book || book.kind !== 'book') {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3">
-        <p className="text-slate-400">Book not found.</p>
-        <button onClick={() => navigate('/library')} className="btn-primary px-5 py-2">Back to Library</button>
+        <p className="text-slate-400">{t('lib.bookNotFound')}</p>
+        <button onClick={() => navigate('/library')} className="btn-primary px-5 py-2">{t('lib.backToLibrary')}</button>
       </div>
     )
   }
@@ -67,14 +69,14 @@ export default function LibraryBookPage(): JSX.Element {
           </button>
           {isImageCover(book.thumbnailUrl) && <img src={book.thumbnailUrl} alt="" className="w-12 h-12 rounded-xl object-cover ring-1 ring-white/10" />}
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{book.level ?? ''} · Book</p>
+            <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{book.level ?? ''} · {t('lib.book')}</p>
             <h1 className="text-xl font-black tracking-tight text-white truncate">{book.title}</h1>
             {book.author && <p className="text-sm text-slate-400">{book.author}</p>}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button onClick={async () => setLiked(await library.toggleLike(id))} className={cn('w-10 h-10 rounded-full border flex items-center justify-center transition', liked ? 'bg-rose-500/15 border-rose-400/40 text-rose-300' : 'border-white/15 text-slate-300 hover:bg-white/5')} title="Like"><IconHeart className="w-5 h-5" /></button>
-            <button onClick={async () => setSaved(await library.toggleSave(id))} className={cn('w-10 h-10 rounded-full border flex items-center justify-center transition', saved ? 'bg-brand-500/15 border-brand-400/40 text-brand-300' : 'border-white/15 text-slate-300 hover:bg-white/5')} title="Save"><IconBookmark className="w-5 h-5" /></button>
-            {book.pdfUrl && <a href={book.pdfUrl} download className="w-10 h-10 rounded-full border border-white/15 text-slate-300 hover:bg-white/5 flex items-center justify-center" title="Download"><IconDownload className="w-5 h-5" /></a>}
+            <button onClick={async () => setLiked(await library.toggleLike(id))} className={cn('w-10 h-10 rounded-full border flex items-center justify-center transition', liked ? 'bg-rose-500/15 border-rose-400/40 text-rose-300' : 'border-white/15 text-slate-300 hover:bg-white/5')} title={t('lib.like')}><IconHeart className="w-5 h-5" /></button>
+            <button onClick={async () => setSaved(await library.toggleSave(id))} className={cn('w-10 h-10 rounded-full border flex items-center justify-center transition', saved ? 'bg-brand-500/15 border-brand-400/40 text-brand-300' : 'border-white/15 text-slate-300 hover:bg-white/5')} title={t('lib.save')}><IconBookmark className="w-5 h-5" /></button>
+            {book.pdfUrl && <a href={book.pdfUrl} download className="w-10 h-10 rounded-full border border-white/15 text-slate-300 hover:bg-white/5 flex items-center justify-center" title={t('lib.download')}><IconDownload className="w-5 h-5" /></a>}
           </div>
         </div>
 
@@ -84,14 +86,14 @@ export default function LibraryBookPage(): JSX.Element {
           <div className="min-w-0">
             {book.pdfUrl
               ? <PdfViewer url={book.pdfUrl} page={page} onNumPages={setNumPages} />
-              : <div className="rounded-xl ring-1 ring-white/10 bg-white/[0.02] h-[60vh] flex items-center justify-center text-slate-500 text-sm">No PDF attached.</div>}
+              : <div className="rounded-xl ring-1 ring-white/10 bg-white/[0.02] h-[60vh] flex items-center justify-center text-slate-500 text-sm">{t('lib.noPdf')}</div>}
 
             {/* Page nav */}
             {book.pdfUrl && numPages > 1 && (
               <div className="flex items-center justify-between mt-3">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="btn-ghost px-4 py-2 text-sm disabled:opacity-40 inline-flex items-center gap-1.5"><IconChevronLeft className="w-4 h-4" /> Prev</button>
-                <span className="text-xs text-slate-400">Page {page} / {numPages}</span>
-                <button onClick={() => setPage((p) => Math.min(numPages, p + 1))} disabled={page >= numPages} className="btn-primary px-4 py-2 text-sm disabled:opacity-40 inline-flex items-center gap-1.5">Next <IconChevronRight className="w-4 h-4" /></button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="btn-ghost px-4 py-2 text-sm disabled:opacity-40 inline-flex items-center gap-1.5"><IconChevronLeft className="w-4 h-4" /> {t('lib.prev')}</button>
+                <span className="text-xs text-slate-400">{t('lib.page')} {page} / {numPages}</span>
+                <button onClick={() => setPage((p) => Math.min(numPages, p + 1))} disabled={page >= numPages} className="btn-primary px-4 py-2 text-sm disabled:opacity-40 inline-flex items-center gap-1.5">{t('lib.next')} <IconChevronRight className="w-4 h-4" /></button>
               </div>
             )}
           </div>
@@ -103,7 +105,7 @@ export default function LibraryBookPage(): JSX.Element {
             {/* Video for this page (per-page override or full-book) */}
             {videoUrl && (
               <div>
-                <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">{pm?.videoUrl ? `Video · page ${page}` : 'Video'}</p>
+                <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">{pm?.videoUrl ? `${t('lib.video')} · ${t('lib.pageLower')} ${page}` : t('lib.video')}</p>
                 <div className="rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black aspect-video">
                   {/^[\w-]{11}$/.test(videoUrl)
                     ? <iframe title="video" src={`https://www.youtube.com/embed/${videoUrl}`} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
@@ -115,7 +117,7 @@ export default function LibraryBookPage(): JSX.Element {
             {/* Audio for this page */}
             {audioUrl && (
               <div className="rounded-2xl ring-1 ring-white/10 bg-white/[0.03] p-3">
-                <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-1.5 flex items-center gap-1.5"><IconVolume className="w-3.5 h-3.5 text-brand-300" /> {pm?.audioUrl ? `Audio · page ${page}` : 'Read-along audio'}</p>
+                <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-1.5 flex items-center gap-1.5"><IconVolume className="w-3.5 h-3.5 text-brand-300" /> {pm?.audioUrl ? `${t('lib.audio')} · ${t('lib.pageLower')} ${page}` : t('lib.readAlongAudio')}</p>
                 <audio key={audioUrl} src={audioUrl} controls className="w-full h-9" />
               </div>
             )}
@@ -123,19 +125,19 @@ export default function LibraryBookPage(): JSX.Element {
             {/* Creator: attach media to THIS page */}
             {isOwner && (
               <div className="rounded-2xl border border-brand-400/25 bg-brand-500/[0.07] p-4">
-                <p className="text-xs font-bold text-brand-200 flex items-center gap-1.5"><IconPlus className="w-3.5 h-3.5" /> Page {page} media</p>
-                <p className="text-[11px] text-slate-400 mt-0.5 mb-3">Attach audio/video to <b>this exact page</b>. It overrides the whole-book media here.</p>
+                <p className="text-xs font-bold text-brand-200 flex items-center gap-1.5"><IconPlus className="w-3.5 h-3.5" /> {t('lib.page')} {page} {t('lib.media')}</p>
+                <p className="text-[11px] text-slate-400 mt-0.5 mb-3">{t('lib.attachMediaPre')} <b>{t('lib.attachMediaBold')}</b>. {t('lib.attachMediaPost')}</p>
                 <input ref={audioRef} type="file" accept="audio/*" className="hidden" onChange={(e) => void attach('audio', e.target.files?.[0])} />
                 <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={(e) => void attach('video', e.target.files?.[0])} />
                 <div className="flex gap-2">
-                  <button onClick={() => audioRef.current?.click()} className={cn('flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg border px-3 py-2 transition', pm?.audioUrl ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/[0.05] text-slate-200 hover:bg-white/10')}><IconVolume className="w-3.5 h-3.5" /> {pm?.audioUrl ? 'Audio ✓' : 'Audio'}</button>
-                  <button onClick={() => videoRef.current?.click()} className={cn('flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg border px-3 py-2 transition', pm?.videoUrl ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/[0.05] text-slate-200 hover:bg-white/10')}><IconYouTube className="w-3.5 h-3.5" /> {pm?.videoUrl ? 'Video ✓' : 'Video'}</button>
+                  <button onClick={() => audioRef.current?.click()} className={cn('flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg border px-3 py-2 transition', pm?.audioUrl ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/[0.05] text-slate-200 hover:bg-white/10')}><IconVolume className="w-3.5 h-3.5" /> {pm?.audioUrl ? `${t('lib.audio')} ✓` : t('lib.audio')}</button>
+                  <button onClick={() => videoRef.current?.click()} className={cn('flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg border px-3 py-2 transition', pm?.videoUrl ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/[0.05] text-slate-200 hover:bg-white/10')}><IconYouTube className="w-3.5 h-3.5" /> {pm?.videoUrl ? `${t('lib.video')} ✓` : t('lib.video')}</button>
                 </div>
                 {pm && (pm.audioUrl || pm.videoUrl) && (
-                  <button onClick={() => void clearPageMedia()} className="text-[11px] text-rose-300 hover:text-rose-200 mt-2">Remove page {page} media</button>
+                  <button onClick={() => void clearPageMedia()} className="text-[11px] text-rose-300 hover:text-rose-200 mt-2">{t('lib.removePageMediaPre')} {page} {t('lib.media')}</button>
                 )}
                 {pagesWithMedia.length > 0 && (
-                  <p className="text-[10px] text-slate-500 mt-3">Pages with their own media: {pagesWithMedia.join(', ')}</p>
+                  <p className="text-[10px] text-slate-500 mt-3">{t('lib.pagesWithMedia')} {pagesWithMedia.join(', ')}</p>
                 )}
               </div>
             )}

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ReactNode } from 'react'
+import { useT } from '../../../i18n'
 import { cn } from '../../../lib/classnames'
 
 export interface Column {
@@ -24,8 +25,9 @@ interface DataTableProps {
  * highlight, hover-revealed actions. Built for scanning hundreds of rows.
  */
 export default function DataTable({ columns, rows, rowId, actions, onRowClick, empty }: DataTableProps): JSX.Element {
+  const t = useT()
   if (rows.length === 0) {
-    return <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.015] py-16 text-center text-sm text-slate-500">{empty ?? 'No records.'}</div>
+    return <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.015] py-16 text-center text-sm text-slate-500">{empty ?? t('admc.noRecords')}</div>
   }
   return (
     <div className="rounded-xl border border-white/[0.07] overflow-hidden bg-white/[0.015]">

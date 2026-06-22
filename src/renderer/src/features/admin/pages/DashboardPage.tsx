@@ -9,6 +9,8 @@ import { paths } from '../../../services/paths/store'
 import { RESOURCES } from '../resources'
 import { cn } from '../../../lib/classnames'
 import { IconUsers, IconBook, IconChart, IconStar } from '../../../components/icons'
+import { useT } from '../../../i18n'
+import type { StringKey } from '../../../i18n/strings'
 
 interface Props {
   go: (view: string) => void
@@ -27,6 +29,7 @@ function Kpi({ value, label, tone, icon }: { value: string | number; label: stri
 }
 
 export default function DashboardPage({ go }: Props): JSX.Element {
+  const t = useT()
   const teachers = useBackendQuery(() => backend.listUsers({ role: 'teacher' }), [], [])
   const students = useBackendQuery(() => backend.listUsers({ role: 'student' }), [], [])
   const courses = useBackendQuery(() => backend.listCourses(), [], [])
@@ -59,20 +62,20 @@ export default function DashboardPage({ go }: Props): JSX.Element {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-white">Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Live platform health — every figure is read from the backend, nothing hardcoded.</p>
+        <h1 className="text-xl font-bold tracking-tight text-white">{t('adm.dashboardTitle')}</h1>
+        <p className="text-sm text-slate-500 mt-0.5">{t('adm.dashboardSubtitle')}</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Kpi value={users.length.toLocaleString()} label="Total users" tone="bg-brand-500/15 text-brand-200" icon={<IconUsers className="w-4 h-4" />} />
-        <Kpi value={live} label="Courses live" tone="bg-emerald-500/15 text-emerald-200" icon={<IconBook className="w-4 h-4" />} />
-        <Kpi value={reports.data.length} label="Open reports" tone="bg-rose-500/15 text-rose-200" icon={<IconChart className="w-4 h-4" />} />
-        <Kpi value={`+${newThisWeek}`} label="New signups · 7d" tone="bg-amber-500/15 text-amber-200" icon={<IconStar className="w-4 h-4" />} />
+        <Kpi value={users.length.toLocaleString()} label={t('adm.kpiTotalUsers')} tone="bg-brand-500/15 text-brand-200" icon={<IconUsers className="w-4 h-4" />} />
+        <Kpi value={live} label={t('adm.kpiCoursesLive')} tone="bg-emerald-500/15 text-emerald-200" icon={<IconBook className="w-4 h-4" />} />
+        <Kpi value={reports.data.length} label={t('adm.kpiOpenReports')} tone="bg-rose-500/15 text-rose-200" icon={<IconChart className="w-4 h-4" />} />
+        <Kpi value={`+${newThisWeek}`} label={t('adm.kpiNewSignups')} tone="bg-amber-500/15 text-amber-200" icon={<IconStar className="w-4 h-4" />} />
       </div>
 
       {/* Content inventory — click through to manage each entity */}
       <section>
-        <h2 className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-2">Content inventory</h2>
+        <h2 className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-2">{t('adm.contentInventory')}</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {RESOURCES.map((r) => (
             <button
@@ -82,7 +85,7 @@ export default function DashboardPage({ go }: Props): JSX.Element {
             >
               <span className="text-slate-400">{r.icon}</span>
               <p className="text-xl font-bold text-white tabular-nums mt-2">{counts[r.key] ?? 0}</p>
-              <p className="text-[11px] text-slate-500 font-semibold">{r.label}</p>
+              <p className="text-[11px] text-slate-500 font-semibold">{t(`adm.res_${r.key}` as StringKey)}</p>
             </button>
           ))}
         </div>
@@ -92,8 +95,8 @@ export default function DashboardPage({ go }: Props): JSX.Element {
         {/* Newest users */}
         <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold text-white">Newest members</h2>
-            <button onClick={() => go('users')} className="text-[11px] font-bold text-brand-300 hover:text-brand-200">Open CRM →</button>
+            <h2 className="text-sm font-bold text-white">{t('adm.newestMembers')}</h2>
+            <button onClick={() => go('users')} className="text-[11px] font-bold text-brand-300 hover:text-brand-200">{t('adm.openCrm')}</button>
           </div>
           <div className="flex flex-col gap-1.5">
             {recentUsers.map((u) => (
@@ -103,20 +106,20 @@ export default function DashboardPage({ go }: Props): JSX.Element {
                 <span className={cn('text-[10px] font-bold uppercase tracking-wider', u.role === 'teacher' ? 'text-violet-300' : 'text-brand-300')}>{u.role}</span>
               </div>
             ))}
-            {recentUsers.length === 0 && <p className="text-sm text-slate-500 py-4 text-center">No users yet.</p>}
+            {recentUsers.length === 0 && <p className="text-sm text-slate-500 py-4 text-center">{t('adm.noUsersYet')}</p>}
           </div>
         </div>
 
         {/* Triage */}
         <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold text-white">Needs attention</h2>
-            <button onClick={() => go('moderation')} className="text-[11px] font-bold text-brand-300 hover:text-brand-200">Moderation →</button>
+            <h2 className="text-sm font-bold text-white">{t('adm.needsAttention')}</h2>
+            <button onClick={() => go('moderation')} className="text-[11px] font-bold text-brand-300 hover:text-brand-200">{t('adm.moderationLink')}</button>
           </div>
           <ul className="text-sm text-slate-300 flex flex-col gap-2">
-            <li className="flex items-center justify-between"><span className="text-slate-400">Courses awaiting review</span><b className="text-white tabular-nums">{drafts}</b></li>
-            <li className="flex items-center justify-between"><span className="text-slate-400">Open moderation reports</span><b className="text-white tabular-nums">{reports.data.length}</b></li>
-            <li className="flex items-center justify-between"><span className="text-slate-400">Active featured slots</span><b className="text-white tabular-nums">{featured.data.filter((f) => f.active).length}</b></li>
+            <li className="flex items-center justify-between"><span className="text-slate-400">{t('adm.coursesAwaitingReview')}</span><b className="text-white tabular-nums">{drafts}</b></li>
+            <li className="flex items-center justify-between"><span className="text-slate-400">{t('adm.openModerationReports')}</span><b className="text-white tabular-nums">{reports.data.length}</b></li>
+            <li className="flex items-center justify-between"><span className="text-slate-400">{t('adm.activeFeaturedSlots')}</span><b className="text-white tabular-nums">{featured.data.filter((f) => f.active).length}</b></li>
           </ul>
         </div>
       </div>

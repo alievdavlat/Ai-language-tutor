@@ -10,6 +10,7 @@ import {
 import { characterAvatarUrl } from '@shared/utils/avatar'
 import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
+import { useT } from '../../../i18n'
 
 interface CharacterSectionProps {
   profile: UserProfile
@@ -25,6 +26,7 @@ export default function CharacterSection({
   onFavoritesChange
 }: CharacterSectionProps): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const favorites = useMemo(() => profile.favoriteCharacterIds ?? [], [profile.favoriteCharacterIds])
   const characters = useMemo(() => {
     const all = listAllCharacters(profile)
@@ -52,10 +54,9 @@ export default function CharacterSection({
       <Card>
         <div className="flex items-baseline justify-between mb-4">
           <div>
-            <h2 className="font-semibold text-base">Your companion</h2>
+            <h2 className="font-semibold text-base">{t('seta.yourCompanion')}</h2>
             <p className="text-xs text-slate-500">
-              Picking a character also sets the accent and avatar. Tap ✏️ Edit to open the
-              Avatar Studio, or “Create companion” to build a new one.
+              {t('seta.companionHint')}
             </p>
           </div>
         </div>
@@ -98,7 +99,7 @@ export default function CharacterSection({
                     )}
                     {active && (
                       <span className="absolute top-2 right-2 text-[10px] font-bold uppercase tracking-wider bg-brand-500 text-white rounded-pill px-2 py-0.5">
-                        Active
+                        {t('seta.active')}
                       </span>
                     )}
                   </div>
@@ -109,13 +110,13 @@ export default function CharacterSection({
                       {c.name}
                       {isCustom && (
                         <span
-                          title="Custom character"
+                          title={t('seta.customCharacter')}
                           className={cn(
                             'text-[9px] font-semibold uppercase tracking-wider rounded-full px-1.5 py-0.5',
                             active ? 'bg-white/25 text-white' : 'bg-emerald-500/20 text-emerald-200'
                           )}
                         >
-                          custom
+                          {t('seta.custom')}
                         </span>
                       )}
                     </div>
@@ -134,7 +135,7 @@ export default function CharacterSection({
                       )}
                     </div>
                     <div className={cn('text-[11px] leading-snug mt-1.5 line-clamp-2', active ? 'text-white/90' : 'text-slate-400')}>
-                      {c.headline || <span className="italic text-slate-500">No headline yet.</span>}
+                      {c.headline || <span className="italic text-slate-500">{t('seta.noHeadline')}</span>}
                     </div>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {(c.traits ?? []).map((t) => (
@@ -156,7 +157,7 @@ export default function CharacterSection({
                 <button
                   type="button"
                   aria-pressed={isFav}
-                  title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                  title={isFav ? t('seta.removeFavorite') : t('seta.addFavorite')}
                   onClick={(e) => {
                     e.stopPropagation()
                     toggleFavorite(c.id)
@@ -178,7 +179,7 @@ export default function CharacterSection({
                   }}
                   className="absolute bottom-2 right-2 z-10 text-[10px] font-semibold rounded-pill px-2 py-1 bg-black/40 backdrop-blur text-white/90 hover:bg-black/60 transition"
                 >
-                  ✏️ Edit
+                  ✏️ {t('seta.edit')}
                 </button>
               </div>
             )
@@ -191,9 +192,9 @@ export default function CharacterSection({
             className="flex flex-col items-center justify-center text-center rounded-card p-4 min-h-[180px] bg-white/[0.02] border border-dashed border-white/15 hover:bg-white/[0.06] hover:border-brand-400/50 text-slate-400 hover:text-slate-200 transition"
           >
             <div className="text-4xl mb-2">➕</div>
-            <div className="font-semibold text-sm">Create companion</div>
+            <div className="font-semibold text-sm">{t('seta.createCompanion')}</div>
             <div className="text-[11px] text-slate-500 mt-1 px-2">
-              Avatar Studio — pick 2D / 3D / VRM, upload a model, set the personality.
+              {t('seta.createCompanionHint')}
             </div>
           </button>
         </div>

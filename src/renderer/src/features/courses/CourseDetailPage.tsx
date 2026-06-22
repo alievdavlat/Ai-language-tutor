@@ -30,6 +30,7 @@ import PaywallOverlay from './PaywallOverlay'
 import CommentsSection from '../../components/CommentsSection'
 import { studio } from '../../services/studio/store'
 import { courseAccess } from '../../services/access/entitlement'
+import { useT } from '../../i18n'
 
 const FALLBACK_COURSE = 'c_everyday'
 const FINAL_PASS = 65
@@ -46,6 +47,7 @@ function Stars({ n, className }: { n: number; className?: string }): JSX.Element
 
 export default function CourseDetailPage(): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const { courseId: param } = useParams()
   const courseId = param ?? FALLBACK_COURSE
   const userId = backend.currentUserId()
@@ -211,8 +213,8 @@ export default function CourseDetailPage(): JSX.Element {
   if (!course) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3">
-        <p className="text-slate-400">Course not found.</p>
-        <button onClick={() => navigate('/courses')} className="btn-primary px-5 py-2">Back to courses</button>
+        <p className="text-slate-400">{t('crs.courseNotFound')}</p>
+        <button onClick={() => navigate('/courses')} className="btn-primary px-5 py-2">{t('crs.backToCourses')}</button>
       </div>
     )
   }
@@ -220,10 +222,10 @@ export default function CourseDetailPage(): JSX.Element {
   const cert = getCertificate(courseId)
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : course.rating
   const learnPoints = [
-    `Work through ${view.totalCount} lessons at ${course.level} level`,
-    'Practise with video, exercises and checkpoints',
-    course.capstone ? course.capstone : 'Build real, usable skills you can apply right away',
-    'Earn a certificate when you pass the final exam'
+    `${t('crs.learnWorkThrough')} ${view.totalCount} ${t('crs.learnLessonsAt')} ${course.level} ${t('crs.learnLevel')}`,
+    t('crs.learnPractise'),
+    course.capstone ? course.capstone : t('crs.learnBuildSkills'),
+    t('crs.learnEarnCert')
   ]
 
   return (
@@ -244,12 +246,12 @@ export default function CourseDetailPage(): JSX.Element {
             <span className="text-[10px] font-bold uppercase tracking-wider bg-black/30 text-white rounded-full px-2 py-1">{course.level}</span>
             {view.hasFinal && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-400/90 text-black rounded-full px-2 py-1">
-                <IconTrophy className="w-3 h-3" /> Ends with exam
+                <IconTrophy className="w-3 h-3" /> {t('crs.endsWithExam')}
               </span>
             )}
             {view.completed && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-400/90 text-black rounded-full px-2 py-1">
-                <IconCheck className="w-3 h-3" /> Completed
+                <IconCheck className="w-3 h-3" /> {t('crs.completed')}
               </span>
             )}
           </div>
@@ -258,9 +260,9 @@ export default function CourseDetailPage(): JSX.Element {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-white/85">
             {reviews.length > 0
               ? <span className="inline-flex items-center gap-1.5"><Stars n={Math.round(avgRating)} /> {avgRating.toFixed(1)} ({reviews.length})</span>
-              : <span className="font-semibold text-emerald-200">New course</span>}
-            {course.enrollmentCount > 0 && <span>{course.enrollmentCount.toLocaleString()} learners</span>}
-            <span>{view.totalCount} lessons · {course.hours}h</span>
+              : <span className="font-semibold text-emerald-200">{t('crs.newCourse')}</span>}
+            {course.enrollmentCount > 0 && <span>{course.enrollmentCount.toLocaleString()} {t('crs.learners')}</span>}
+            <span>{view.totalCount} {t('crs.lessons')} · {course.hours}h</span>
           </div>
           {teacher && (
             <button onClick={() => navigate('/channel')} className="flex items-center gap-2 mt-3 hover:opacity-90">
@@ -277,26 +279,26 @@ export default function CourseDetailPage(): JSX.Element {
           {!unlocked ? (
             course.pricing.kind === 'free' ? (
               <button onClick={handleEnrollFree} disabled={buying} className="btn-primary px-8 py-3 disabled:opacity-60">
-                {buying ? 'Enrolling…' : 'Enroll free →'}
+                {buying ? t('crs.enrolling') : `${t('crs.enrollFree')} →`}
               </button>
             ) : (
               <button onClick={() => setShowPaywall(true)} className="btn-primary px-8 py-3">
                 {access?.status === 'expired'
-                  ? `Renew · $${course.pricing.kind === 'sub' ? `${course.pricing.usdPerMo}/mo` : ''} →`
+                  ? `${t('crs.renew')} · $${course.pricing.kind === 'sub' ? `${course.pricing.usdPerMo}/mo` : ''} →`
                   : course.pricing.kind === 'one-off'
-                    ? `Buy · $${course.pricing.usd} →`
-                    : `Subscribe · $${course.pricing.usdPerMo}/mo →`}
+                    ? `${t('crs.buy')} · $${course.pricing.usd} →`
+                    : `${t('crs.subscribe')} · $${course.pricing.usdPerMo}/mo →`}
               </button>
             )
           ) : view.next ? (
-            <button onClick={handleContinue} className="btn-primary px-8 py-3">Continue learning →</button>
+            <button onClick={handleContinue} className="btn-primary px-8 py-3">{t('crs.continueLearning')} →</button>
           ) : view.hasFinal && !view.finalPassed ? (
             <button onClick={() => setShowFinal(true)} className="btn-primary px-8 py-3 inline-flex items-center gap-2">
-              <IconTrophy className="w-4 h-4" /> Take final exam
+              <IconTrophy className="w-4 h-4" /> {t('crs.takeFinalExam')}
             </button>
           ) : (
             <button onClick={() => cert && downloadCertificate(cert)} className="btn-primary px-8 py-3 inline-flex items-center gap-2">
-              <IconDownload className="w-4 h-4" /> Download certificate
+              <IconDownload className="w-4 h-4" /> {t('crs.downloadCertificate')}
             </button>
           )}
           <button onClick={async () => { if (userId) { const r = await backend.like(userId, `course_${courseId}`); setLiked(r.liked) } }} className={cn('w-11 h-11 rounded-full border flex items-center justify-center transition', liked ? 'bg-rose-500/15 border-rose-400/40 text-rose-300' : 'border-white/15 text-slate-300 hover:bg-white/5')} title="Like">

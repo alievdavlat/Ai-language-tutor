@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom'
+import { useT } from '../../i18n'
 import { cn } from '../../lib/classnames'
 import { PageHeader, ProgressBar } from '../../components/ui'
 import { IconCheck, IconLock } from '../../components/icons'
@@ -6,6 +7,7 @@ import { buildChallenge } from './curriculum'
 import { getChallengeProgress, nextUnlockedDay } from '../../services/study/grammarProgress'
 
 export default function GrammarChallengePage(): JSX.Element {
+  const t = useT()
   const { topic } = useParams<{ topic: string }>()
   const navigate = useNavigate()
   const built = topic ? buildChallenge(topic) : undefined
@@ -14,8 +16,8 @@ export default function GrammarChallengePage(): JSX.Element {
     return (
       <div className="h-full overflow-y-auto">
         <div className="px-6 py-6 w-full">
-          <PageHeader eyebrow="Challenge" title="Challenge not found" back="/grammar" crumbs={[{ label: 'Grammar', to: '/grammar' }, { label: 'Challenge' }]} />
-          <p className="text-sm text-slate-400 mt-4">That challenge doesn’t exist. Pick one from the Grammar page.</p>
+          <PageHeader eyebrow={t('gr.challengeEyebrow')} title={t('gr.challengeNotFound')} back="/grammar" crumbs={[{ label: t('gr.grammar'), to: '/grammar' }, { label: t('gr.challengeEyebrow') }]} />
+          <p className="text-sm text-slate-400 mt-4">{t('gr.challengeNotFoundBody')}</p>
         </div>
       </div>
     )
@@ -31,26 +33,26 @@ export default function GrammarChallengePage(): JSX.Element {
     <div className="h-full overflow-y-auto">
       <div className="px-6 py-6 w-full flex flex-col gap-6">
         <PageHeader
-          eyebrow="30-day challenge"
-          title={`${built.unit.title} challenge`}
-          subtitle="One short drill set each day. Affirmatives → negatives → questions → mixed review, on a 4-day cycle."
+          eyebrow={t('gr.challenge30Day')}
+          title={`${built.unit.title} ${t('gr.challengeWord')}`}
+          subtitle={t('gr.challengeSubtitle')}
           back="/grammar"
-          crumbs={[{ label: 'Grammar', to: '/grammar' }, { label: built.unit.title }]}
+          crumbs={[{ label: t('gr.grammar'), to: '/grammar' }, { label: built.unit.title }]}
         />
 
         {/* Progress hero */}
         <div className="rounded-card border border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-brand-500/10 p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-3xl font-black text-white">{completed.size}<span className="text-base text-slate-400 font-bold">/30 days</span></p>
-              <p className="text-sm text-slate-300 mt-1">Keep your streak going — come back each day.</p>
+              <p className="text-3xl font-black text-white">{completed.size}<span className="text-base text-slate-400 font-bold">/30 {t('gr.daysWord')}</span></p>
+              <p className="text-sm text-slate-300 mt-1">{t('gr.keepStreak')}</p>
             </div>
             {todayDay && (
               <button
                 onClick={() => navigate(`/learn/exercise?challenge=${topic}&day=${todayDay.day}`)}
                 className="btn-primary px-5 py-2.5 text-sm font-bold"
               >
-                {completed.has(todayDay.day) ? `Replay day ${todayDay.day}` : `Start day ${unlocked} →`}
+                {completed.has(todayDay.day) ? `${t('gr.replayDay')} ${todayDay.day}` : `${t('gr.startDay')} ${unlocked} →`}
               </button>
             )}
           </div>
@@ -78,14 +80,14 @@ export default function GrammarChallengePage(): JSX.Element {
                 )}
               >
                 {isDone ? <IconCheck className="w-4 h-4" /> : !isUnlocked ? <IconLock className="w-3.5 h-3.5" /> : <span className="text-sm font-black">{d.day}</span>}
-                <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">Day {d.day}</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">{t('gr.dayWord')} {d.day}</span>
               </button>
             )
           })}
         </div>
 
         <p className="text-[11px] text-slate-500 text-center">
-          One new day unlocks every 24 hours. Completed days stay replayable any time.
+          {t('gr.unlockNote')}
         </p>
       </div>
     </div>

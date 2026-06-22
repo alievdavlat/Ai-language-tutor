@@ -1,4 +1,5 @@
 import { Button, Card } from '../../../components/ui'
+import { useT } from '../../../i18n'
 
 interface SpeakingRateSectionProps {
   current: number
@@ -11,9 +12,10 @@ export default function SpeakingRateSection({
   current,
   onChange
 }: SpeakingRateSectionProps): JSX.Element {
+  const t = useT()
   return (
     <Card>
-      <h2 className="font-semibold mb-3">Speaking rate</h2>
+      <h2 className="font-semibold mb-3">{t('seta.speakingRate')}</h2>
       <input
         type="range"
         min="0.5"
@@ -36,7 +38,7 @@ export default function SpeakingRateSection({
         <span className="ml-auto text-xs text-slate-400">{current.toFixed(2)}×</span>
       </div>
       <p className="text-[11px] text-slate-500 mt-2">
-        0.5× for learners, 2× for power listeners. TTS accepts up to 10×, but anything past 2× is hard to follow.
+        {t('seta.speakingRateHint')}
       </p>
     </Card>
   )

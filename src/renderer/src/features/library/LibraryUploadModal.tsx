@@ -9,11 +9,13 @@ import { contentKey, hashFile } from '../../services/dedup'
 import { Input } from '../../components/ui'
 import LevelSelect from '../../components/ui/LevelSelect'
 import { IconBook, IconCheck, IconChevronRight, IconHeadphones, IconPlus, IconX, IconYouTube } from '../../components/icons'
+import { useT } from '../../i18n'
+import type { StringKey } from '../../i18n/strings'
 
-const KINDS: { id: LibraryKind; label: string; sub: string; Icon: (p: { className?: string }) => JSX.Element }[] = [
-  { id: 'book', label: 'Book', sub: 'PDF', Icon: IconBook },
-  { id: 'video', label: 'Video', sub: 'YouTube / file', Icon: IconYouTube },
-  { id: 'audio', label: 'Audio', sub: 'podcast / track', Icon: IconHeadphones }
+const KINDS: { id: LibraryKind; Icon: (p: { className?: string }) => JSX.Element }[] = [
+  { id: 'book', Icon: IconBook },
+  { id: 'video', Icon: IconYouTube },
+  { id: 'audio', Icon: IconHeadphones }
 ]
 
 function parseYouTubeId(s: string): string | null {
@@ -25,6 +27,7 @@ function parseYouTubeId(s: string): string | null {
 
 /** A polished upload dropzone that shows its filled state. */
 function DropZone({ label, filled, accept, onPick, icon }: { label: string; filled: boolean; accept: string; onPick: (f?: File) => void; icon?: string }): JSX.Element {
+  const t = useT()
   const ref = useRef<HTMLInputElement>(null)
   return (
     <div>
@@ -33,13 +36,14 @@ function DropZone({ label, filled, accept, onPick, icon }: { label: string; fill
         className={cn('w-full rounded-xl border border-dashed px-4 py-3 text-sm flex items-center gap-2.5 transition',
           filled ? 'border-emerald-400/40 bg-emerald-500/[0.07] text-emerald-200' : 'border-white/15 bg-white/[0.02] text-slate-300 hover:bg-white/[0.05] hover:border-white/25')}>
         {filled ? <IconCheck className="w-4 h-4 shrink-0" /> : <span className="text-base leading-none shrink-0">{icon ?? '＋'}</span>}
-        <span className="font-medium">{filled ? `${label} attached` : label}</span>
+        <span className="font-medium">{filled ? `${label} ${t('lib.attached')}` : label}</span>
       </button>
     </div>
   )
 }
 
 export default function LibraryUploadModal({ language, onClose, onSaved }: { language: TargetLanguage; onClose: () => void; onSaved: (item: import('@shared/types').LibraryItem) => void }): JSX.Element {
+  const t = useT()
   const navigate = useNavigate()
   const [kind, setKind] = useState<LibraryKind>('book')
   const [title, setTitle] = useState('')
@@ -72,7 +76,7 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
     setErr(null)
     setExactDup(null); setNearDup(null); setAllowNear(false)
     if (!file) return
-    if (file.size > max * 1024 * 1024) { setErr(`File must be under ${max} MB (offline storage limit).`); return }
+    if (file.size > max * 1024 * 1024) { setErr(`${t('lib.fileTooBigPre')} ${max} ${t('lib.fileTooBigPost')}`); return }
     if (setHash) setHash(await hashFile(file))
     set(await uploadUrl(file, 'library'))
   }
@@ -88,7 +92,7 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
   }
 
   const save = async (): Promise<void> => {
-    if (!canSave) { setErr('Fill the title and attach the required file.'); return }
+    if (!canSave) { setErr(t('lib.fillTitleFile')); return }
     setBusy(true)
     const ytId = kind === 'video' ? parseYouTubeId(videoLink) : null
     const contentHash = buildContentHash(ytId)
@@ -130,8 +134,8 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
       <div className="bg-gradient-to-b from-slate-850 to-slate-900 border border-white/10 rounded-3xl shadow-2xl w-full max-w-xl max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} style={{ background: 'linear-gradient(to bottom, #14182a, #0c0f1a)' }}>
         <header className="sticky top-0 z-10 bg-[#0c0f1a]/90 backdrop-blur px-6 py-4 border-b border-white/[0.07] flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-black tracking-tight text-white">Add to Library</h2>
-            <p className="text-xs text-slate-400">Upload a book, video or audio — it appears instantly.</p>
+            <h2 className="text-lg font-black tracking-tight text-white">{t('lib.addToLibrary')}</h2>
+            <p className="text-xs text-slate-400">{t('lib.uploadHint')}</p>
           </div>
           <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-slate-400"><IconX className="w-5 h-5" /></button>
         </header>
@@ -147,8 +151,8 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
                   <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 transition', kind === k.id ? 'bg-brand-500/25 text-brand-200' : 'bg-white/[0.06] text-slate-300')}>
                     <Icon className="w-5 h-5" />
                   </span>
-                  <p className="text-sm font-bold text-white">{k.label}</p>
-                  <p className="text-[10px] text-slate-400">{k.sub}</p>
+                  <p className="text-sm font-bold text-white">{t(`lib.kind_${k.id}` as StringKey)}</p>
+                  <p className="text-[10px] text-slate-400">{t(`lib.kindSub_${k.id}` as StringKey)}</p>
                 </button>
               )
             })}
@@ -162,59 +166,59 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
                 <div className="relative w-24 h-24 rounded-2xl overflow-hidden ring-1 ring-white/15 group">
                   <img src={thumb} alt="thumbnail" className="w-full h-full object-cover" />
                   <button onClick={() => setThumb('')} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><IconX className="w-3.5 h-3.5" /></button>
-                  <button onClick={() => thumbRef.current?.click()} className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] font-semibold py-1 opacity-0 group-hover:opacity-100 transition">Replace</button>
+                  <button onClick={() => thumbRef.current?.click()} className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] font-semibold py-1 opacity-0 group-hover:opacity-100 transition">{t('lib.replace')}</button>
                 </div>
               ) : (
                 <button onClick={() => thumbRef.current?.click()} className="w-24 h-24 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.05] flex flex-col items-center justify-center gap-1 text-slate-400">
                   <IconPlus className="w-5 h-5" />
-                  <span className="text-[10px]">Thumbnail</span>
+                  <span className="text-[10px]">{t('lib.thumbnail')}</span>
                 </button>
               )}
             </div>
             <div className="flex-1 min-w-0 flex flex-col gap-3">
-              <Input value={title} onChange={(e) => { setTitle(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder="Title *" />
-              <Input value={author} onChange={(e) => { setAuthor(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder="Author / channel" />
+              <Input value={title} onChange={(e) => { setTitle(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder={t('lib.titlePlaceholder')} />
+              <Input value={author} onChange={(e) => { setAuthor(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder={t('lib.authorPlaceholder')} />
             </div>
           </div>
 
           {/* Level — dynamic registry (custom levels supported) */}
           <div className="space-y-2">
-            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Level</p>
+            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">{t('lib.level')}</p>
             <LevelSelect value={level} onChange={setLevel} />
           </div>
 
           {/* Per-kind fields */}
           {kind === 'book' && (
             <div className="space-y-3">
-              <DropZone label="PDF file *" filled={!!pdf} accept="application/pdf" onPick={(f) => void readFile(f, setPdf, 8, setPdfHash)} icon="📄" />
+              <DropZone label={t('lib.pdfFile')} filled={!!pdf} accept="application/pdf" onPick={(f) => void readFile(f, setPdf, 8, setPdfHash)} icon="📄" />
               <div>
-                <p className="text-[11px] text-slate-500 mb-2">Optional whole-book read-along (plays on pages without their own media — you can also attach media per page inside the reader):</p>
+                <p className="text-[11px] text-slate-500 mb-2">{t('lib.readAlongHint')}</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <DropZone label="Full audio" filled={!!fullAudio} accept="audio/*" onPick={(f) => void readFile(f, setFullAudio, 8)} icon="🎧" />
-                  <DropZone label="Full video" filled={!!fullVideo} accept="video/*" onPick={(f) => void readFile(f, setFullVideo, 8)} icon="🎬" />
+                  <DropZone label={t('lib.fullAudio')} filled={!!fullAudio} accept="audio/*" onPick={(f) => void readFile(f, setFullAudio, 8)} icon="🎧" />
+                  <DropZone label={t('lib.fullVideo')} filled={!!fullVideo} accept="video/*" onPick={(f) => void readFile(f, setFullVideo, 8)} icon="🎬" />
                 </div>
               </div>
             </div>
           )}
           {kind === 'video' && (
             <div className="space-y-3">
-              <Input value={videoLink} onChange={(e) => { setVideoLink(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder="YouTube link or ID" />
-              <p className="text-[11px] text-slate-500">…or upload a video file:</p>
-              <DropZone label="Video file" filled={!!fullVideo} accept="video/*" onPick={(f) => void readFile(f, setFullVideo, 8, setVideoHash)} icon="🎬" />
+              <Input value={videoLink} onChange={(e) => { setVideoLink(e.target.value); setExactDup(null); setNearDup(null); setAllowNear(false) }} placeholder={t('lib.youtubePlaceholder')} />
+              <p className="text-[11px] text-slate-500">{t('lib.orUploadVideo')}</p>
+              <DropZone label={t('lib.videoFile')} filled={!!fullVideo} accept="video/*" onPick={(f) => void readFile(f, setFullVideo, 8, setVideoHash)} icon="🎬" />
             </div>
           )}
           {kind === 'audio' && (
-            <DropZone label="Audio file *" filled={!!audio} accept="audio/*" onPick={(f) => void readFile(f, setAudio, 8, setAudioHash)} icon="🎧" />
+            <DropZone label={t('lib.audioFile')} filled={!!audio} accept="audio/*" onPick={(f) => void readFile(f, setAudio, 8, setAudioHash)} icon="🎧" />
           )}
 
           {/* Exact duplicate — block + link to the original (#A65). */}
           {exactDup && (
             <div className="rounded-2xl border border-rose-400/30 bg-rose-500/[0.07] p-4">
-              <p className="text-sm font-bold text-rose-100 flex items-center gap-2"><IconX className="w-4 h-4" /> This already exists in the library</p>
-              <p className="text-[12px] text-rose-200/80 mt-1">“{exactDup.title}”{exactDup.author ? ` · ${exactDup.author}` : ''} is already here — no need to upload it again.</p>
+              <p className="text-sm font-bold text-rose-100 flex items-center gap-2"><IconX className="w-4 h-4" /> {t('lib.alreadyExists')}</p>
+              <p className="text-[12px] text-rose-200/80 mt-1">“{exactDup.title}”{exactDup.author ? ` · ${exactDup.author}` : ''} {t('lib.alreadyHere')}</p>
               <div className="flex gap-2 mt-3">
-                <button onClick={() => openExisting(exactDup)} className="rounded-xl bg-white/10 hover:bg-white/15 text-white px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1.5"><IconChevronRight className="w-3.5 h-3.5" /> Open the original</button>
-                <button onClick={() => void saveExisting(exactDup)} className="rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1.5"><IconCheck className="w-3.5 h-3.5" /> Add to my library</button>
+                <button onClick={() => openExisting(exactDup)} className="rounded-xl bg-white/10 hover:bg-white/15 text-white px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1.5"><IconChevronRight className="w-3.5 h-3.5" /> {t('lib.openOriginal')}</button>
+                <button onClick={() => void saveExisting(exactDup)} className="rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1.5"><IconCheck className="w-3.5 h-3.5" /> {t('lib.addToMyLibrary')}</button>
               </div>
             </div>
           )}
@@ -222,11 +226,11 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
           {/* Near duplicate — soft warning, overridable (#A65). */}
           {nearDup && !exactDup && (
             <div className="rounded-2xl border border-amber-400/30 bg-amber-500/[0.07] p-4">
-              <p className="text-sm font-bold text-amber-100">⚠ Looks similar to something you already have</p>
-              <p className="text-[12px] text-amber-200/80 mt-1">“{nearDup.title}”{nearDup.author ? ` · ${nearDup.author}` : ''} is already in the library. Add this anyway?</p>
+              <p className="text-sm font-bold text-amber-100">⚠ {t('lib.looksSimilar')}</p>
+              <p className="text-[12px] text-amber-200/80 mt-1">“{nearDup.title}”{nearDup.author ? ` · ${nearDup.author}` : ''} {t('lib.alreadyInLibrary')}</p>
               <div className="flex gap-2 mt-3">
-                <button onClick={() => openExisting(nearDup)} className="rounded-xl bg-white/10 hover:bg-white/15 text-white px-3 py-1.5 text-xs font-bold">View existing</button>
-                <button onClick={() => { setAllowNear(true); setNearDup(null); void save() }} className="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-100 px-3 py-1.5 text-xs font-bold">Add anyway</button>
+                <button onClick={() => openExisting(nearDup)} className="rounded-xl bg-white/10 hover:bg-white/15 text-white px-3 py-1.5 text-xs font-bold">{t('lib.viewExisting')}</button>
+                <button onClick={() => { setAllowNear(true); setNearDup(null); void save() }} className="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-100 px-3 py-1.5 text-xs font-bold">{t('lib.addAnyway')}</button>
               </div>
             </div>
           )}
@@ -235,8 +239,8 @@ export default function LibraryUploadModal({ language, onClose, onSaved }: { lan
         </div>
 
         <footer className="sticky bottom-0 bg-[#0c0f1a]/90 backdrop-blur px-6 py-4 border-t border-white/[0.07] flex justify-end gap-2">
-          <button onClick={onClose} className="btn-ghost px-4 py-2 text-sm">Cancel</button>
-          <button onClick={() => void save()} disabled={!canSave || busy || !!exactDup} className="btn-primary px-5 py-2 text-sm disabled:opacity-50">{busy ? 'Saving…' : 'Add to Library'}</button>
+          <button onClick={onClose} className="btn-ghost px-4 py-2 text-sm">{t('lib.cancel')}</button>
+          <button onClick={() => void save()} disabled={!canSave || busy || !!exactDup} className="btn-primary px-5 py-2 text-sm disabled:opacity-50">{busy ? t('lib.saving') : t('lib.addToLibrary')}</button>
         </footer>
       </div>
     </div>

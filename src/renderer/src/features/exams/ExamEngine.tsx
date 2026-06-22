@@ -4,6 +4,7 @@ import type { SectionResult } from '@shared/types/study.types'
 import { cn } from '../../lib/classnames'
 import { ProgressBar } from '../../components/ui'
 import { IconCheck, IconHeadphones, IconMic, IconSearch, IconX } from '../../components/icons'
+import { useT } from '../../i18n'
 import { useAppStore } from '../../store/useAppStore'
 import { useChatStream } from '../../hooks/useChatStream'
 import { useTargetLanguage } from '../../lib/language'
@@ -51,6 +52,7 @@ function getRecognition(lang: string): SpeechRec | null {
 
 export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element {
   const navigate = useNavigate()
+  const t = useT()
   const [params] = useSearchParams()
   // Resolve from the editable store first (authored edits + custom exams),
   // falling back to the built-in bank.
@@ -119,8 +121,8 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
   if (!bank) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-center px-6">
-        <p className="text-lg font-bold">Unknown exam</p>
-        <button onClick={() => navigate('/exams')} className="btn-primary mt-4 px-6 py-2">Back to exams</button>
+        <p className="text-lg font-bold">{t('exm.unknownExam')}</p>
+        <button onClick={() => navigate('/exams')} className="btn-primary mt-4 px-6 py-2">{t('exm.backToExams')}</button>
       </div>
     )
   }
@@ -150,19 +152,19 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
         // substantive content but the grader is unreachable.
         if (words < 20) {
           res = { id: sec.id, label: sec.label, score: bank.kind === 'toefl' ? '0' : '1.0', numeric: bank.kind === 'toefl' ? 0 : 1, pct: 0 }
-          fb.push('Writing — no substantive response submitted (write the required word count for a real band).')
+          fb.push(t('exm.fbWritingNoResponse'))
         } else if (llmKind) {
           const graded = await scoreWriting(llmKind, essay, send)
           if (graded) {
             res = { id: sec.id, label: sec.label, score: graded.score, numeric: Number(graded.score), pct: graded.pct, aiGraded: true }
-            graded.feedback.forEach((f) => fb.push(`Writing — ${f.replace(/^[✓!]\s*/, '')}`))
+            graded.feedback.forEach((f) => fb.push(`${t('exm.writing')} — ${f.replace(/^[✓!]\s*/, '')}`))
           }
         }
         if (!res) {
           // Substantive content but grader unreachable → neutral estimate, flagged.
           const numeric = bank.kind === 'toefl' ? 18 : 5
           res = { id: sec.id, label: sec.label, score: bank.kind === 'toefl' ? '18' : '5.0', numeric, pct: bank.kind === 'toefl' ? 60 : 56 }
-          fb.push('Writing — estimated band (AI grader was unavailable).')
+          fb.push(t('exm.fbWritingEstimated'))
         }
         out.push(res)
       } else if (sec.kind === 'speaking') {
@@ -171,25 +173,25 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
         let res: SectionResult | null = null
         if (words < 15) {
           res = { id: sec.id, label: sec.label, score: bank.kind === 'toefl' ? '0' : '1.0', numeric: bank.kind === 'toefl' ? 0 : 1, pct: 0 }
-          fb.push('Speaking — no substantive response captured (speak or type a few sentences for a real band).')
+          fb.push(t('exm.fbSpeakingNoResponse'))
         } else if (llmKind) {
           const graded = await scoreSpeaking(llmKind, transcript, send)
           if (graded) {
             res = { id: sec.id, label: sec.label, score: graded.score, numeric: graded.numeric, pct: graded.pct, aiGraded: true }
-            graded.feedback.forEach((f) => fb.push(`Speaking — ${f.replace(/^[✓!]\s*/, '')}`))
+            graded.feedback.forEach((f) => fb.push(`${t('exm.speaking')} — ${f.replace(/^[✓!]\s*/, '')}`))
           }
         }
         if (!res) {
           const numeric = bank.kind === 'toefl' ? 18 : 5
           res = { id: sec.id, label: sec.label, score: bank.kind === 'toefl' ? '18' : '5.0', numeric, pct: bank.kind === 'toefl' ? 60 : 56 }
-          fb.push('Speaking — estimated band (AI grader was unavailable).')
+          fb.push(t('exm.fbSpeakingEstimated'))
         }
         out.push(res)
       }
     }
 
     const scored = scoreExam(bank, out)
-    if (fb.length === 0) fb.push('Solid work — review the sections where you lost the most marks.')
+    if (fb.length === 0) fb.push(t('exm.fbSolidWork'))
 
     setResults(scored.sections)
     setOverall({ overall: scored.overall, scaleLabel: scored.scaleLabel, numeric: scored.overallNumeric })
@@ -254,15 +256,15 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
     return (
       <div className="h-full flex flex-col items-center justify-center px-6 text-center max-w-md mx-auto">
         <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest mb-3', practice ? 'bg-emerald-500/15 text-emerald-300' : 'bg-brand-500/15 text-brand-300')}>
-          {practice ? 'Practice mode' : 'Exam mode'}
+          {practice ? t('exm.practiceMode') : t('exm.examMode')}
         </span>
         <h1 className="text-3xl font-bold tracking-tight">{bank.title}</h1>
         <p className="text-slate-400 mt-2">
           {practice
-            ? 'Practice mode — answers and explanations are revealed as you go. Relaxed, learning-first.'
+            ? t('exm.introPractice')
             : focused
-              ? `Section practice · ${bank.sections[0]?.label} · timed.`
-              : `Full mock · ${bank.sections.length} sections · timed. Complete each section in order.`}
+              ? `${t('exm.sectionPractice')} · ${bank.sections[0]?.label} · ${t('exm.timed')}.`
+              : `${t('exm.fullMock')} · ${bank.sections.length} ${t('exm.sectionsWord')} · ${t('exm.introFullMockSuffix')}`}
         </p>
         <div className="w-full mt-6 flex flex-col gap-2">
           {bank.sections.map((s) => (
@@ -273,8 +275,8 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
             </div>
           ))}
         </div>
-        <button onClick={() => { startedAt.current = Date.now(); setPhase('running') }} className="btn-primary px-10 py-3 mt-7">Start exam</button>
-        <button onClick={() => navigate(-1)} className="text-xs text-slate-500 hover:text-slate-300 mt-4">Cancel</button>
+        <button onClick={() => { startedAt.current = Date.now(); setPhase('running') }} className="btn-primary px-10 py-3 mt-7">{t('exm.startExam')}</button>
+        <button onClick={() => navigate(-1)} className="text-xs text-slate-500 hover:text-slate-300 mt-4">{t('exm.cancel')}</button>
       </div>
     )
   }
@@ -284,8 +286,8 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
     return (
       <div className="h-full flex flex-col items-center justify-center px-6 text-center">
         <div className="w-14 h-14 rounded-full border-2 border-brand-400/30 border-t-brand-400 animate-spin" />
-        <p className="text-base font-semibold text-white mt-5">Grading your answers…</p>
-        <p className="text-sm text-slate-400 mt-1">Objective sections scored from the answer key; writing & speaking graded by the AI examiner.</p>
+        <p className="text-base font-semibold text-white mt-5">{t('exm.gradingAnswers')}</p>
+        <p className="text-sm text-slate-400 mt-1">{t('exm.gradingDesc')}</p>
       </div>
     )
   }
@@ -305,8 +307,8 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
                 <div className="flex justify-between text-sm mb-1.5">
                   <span className="text-slate-200 font-medium">
                     {b.label}
-                    {typeof b.correct === 'number' && <span className="text-[11px] text-slate-500 ml-2">{b.correct}/{b.total} correct</span>}
-                    {b.aiGraded && <span className="text-[10px] text-emerald-300 ml-2">AI-graded</span>}
+                    {typeof b.correct === 'number' && <span className="text-[11px] text-slate-500 ml-2">{b.correct}/{b.total} {t('exm.correctWord')}</span>}
+                    {b.aiGraded && <span className="text-[10px] text-emerald-300 ml-2">{t('exm.aiGraded')}</span>}
                   </span>
                   <span className="font-bold text-white">{b.score}</span>
                 </div>
@@ -316,7 +318,7 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
           </div>
 
           <div className="w-full mt-7 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left">
-            <p className="text-xs uppercase tracking-widest text-brand-300 font-semibold mb-2">Examiner feedback</p>
+            <p className="text-xs uppercase tracking-widest text-brand-300 font-semibold mb-2">{t('exm.examinerFeedback')}</p>
             <ul className="flex flex-col gap-2">
               {feedback.map((f, i) => (
                 <li key={i} className="text-sm text-slate-300 flex gap-2"><span className="text-brand-400">•</span>{f}</li>
@@ -329,7 +331,7 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
               onClick={() => setShowReview((v) => !v)}
               className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-white/[0.06] transition flex items-center justify-between"
             >
-              <span>Review answers & transcripts</span>
+              <span>{t('exm.reviewAnswersTranscripts')}</span>
               <span className="text-slate-500">{showReview ? '−' : '+'}</span>
             </button>
             {showReview && (
@@ -341,13 +343,13 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
 
           {bank.sections.some((s) => s.kind === 'mcq') && (
             <button onClick={() => setPhase('review')} className="w-full mt-3 rounded-2xl border border-brand-400/30 bg-brand-500/10 px-4 py-3 text-sm font-semibold text-brand-200 inline-flex items-center justify-center gap-2 hover:bg-brand-500/20 transition">
-              <IconSearch className="w-4 h-4" /> Review answers — Locate &amp; Explain
+              <IconSearch className="w-4 h-4" /> {t('exm.reviewLocateExplain')}
             </button>
           )}
 
           <div className="flex items-center gap-3 mt-4 w-full">
-            <button onClick={() => navigate('/exams')} className="btn-ghost flex-1 py-3">Back to exams</button>
-            <button onClick={() => { setPhase('intro'); setSecIdx(0); setItemIdx(0); setMcqAnswers({}); setEssays({}); setTranscripts({}); setResults([]); setShowReview(false) }} className="btn-primary flex-1 py-3">Retake</button>
+            <button onClick={() => navigate('/exams')} className="btn-ghost flex-1 py-3">{t('exm.backToExams')}</button>
+            <button onClick={() => { setPhase('intro'); setSecIdx(0); setItemIdx(0); setMcqAnswers({}); setEssays({}); setTranscripts({}); setResults([]); setShowReview(false) }} className="btn-primary flex-1 py-3">{t('exm.retake')}</button>
           </div>
         </div>
       </div>
@@ -370,14 +372,14 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
           onClick={() => {
             // #B17 — confirm before abandoning a timed mock; one accidental
             // click shouldn't destroy an in-progress attempt with no warning.
-            if (window.confirm('Leave the exam? Your answers will be lost.')) navigate(-1)
+            if (window.confirm(t('exm.leaveConfirm'))) navigate(-1)
           }}
           className="text-slate-500 hover:text-white transition shrink-0"
-          title="Exit exam"
+          title={t('exm.exitExam')}
         ><IconX className="w-6 h-6" /></button>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold truncate">{section.label}</p>
-          <p className="text-[11px] text-slate-400">Section {secIdx + 1} of {bank.sections.length}</p>
+          <p className="text-[11px] text-slate-400">{t('exm.section')} {secIdx + 1} {t('exm.of')} {bank.sections.length}</p>
         </div>
         <span className={cn('font-mono font-bold tabular-nums px-3 py-1 rounded-lg', secs < 60 ? 'text-rose-300 bg-rose-500/10' : 'text-slate-200 bg-white/[0.06]')}>{fmt(secs)}</span>
       </div>
@@ -421,7 +423,7 @@ export default function ExamEngine({ bankId }: { bankId: string }): JSX.Element 
       </div>
 
       <button onClick={nextSection} className="btn-primary w-full py-3 mt-5">
-        {isLast ? 'Finish & see score' : `Next: ${bank.sections[secIdx + 1].label}`}
+        {isLast ? t('exm.finishSeeScore') : `${t('exm.next')}: ${bank.sections[secIdx + 1].label}`}
       </button>
     </div>
   )
@@ -445,6 +447,7 @@ function McqBody({
   reveal: boolean
   onAnswer: (id: string, opt: number) => void
 }): JSX.Element {
+  const t = useT()
   const item = section.items[itemIdx]
   const answered = section.items.filter((it) => answers[it.id] !== undefined).length
   const chosen = answers[item.id]
