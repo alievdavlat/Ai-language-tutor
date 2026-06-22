@@ -18,7 +18,8 @@ import {
   clipsByGenre,
   clipsByIds,
   genreTiles,
-  playlistUnlocked
+  playlistUnlocked,
+  playlistCover
 } from '../../services/clips/store'
 import { userClipStats } from './leaderboard'
 import { KIND_LABEL, clipThumb, type Clip, type ClipKind, type Playlist } from './data'
@@ -33,11 +34,7 @@ const KIND_TABS: { id: ClipKind | 'all'; label: string }[] = [
 ]
 
 function ClipCover({ clip, className }: { clip: Clip; className?: string }): JSX.Element {
-  const thumb = clipThumb(clip)
-  if (thumb) {
-    return <img src={thumb} alt="" loading="lazy" className={cn('absolute inset-0 w-full h-full object-cover', className)} />
-  }
-  return <div className={cn('absolute inset-0 bg-gradient-to-br', clip.cover, className)} />
+  return <img src={clipThumb(clip)} alt="" loading="lazy" className={cn('absolute inset-0 w-full h-full object-cover bg-slate-900', className)} />
 }
 
 function ClipCard({ clip, onOpen }: { clip: Clip; onOpen: () => void }): JSX.Element {
@@ -263,11 +260,12 @@ export default function ClipsPage(): JSX.Element {
                     <button
                       key={g.id}
                       onClick={() => { setGenre(g.label); setShowSearch(false) }}
-                      className={cn('relative h-20 rounded-2xl overflow-hidden bg-gradient-to-br ring-1 ring-white/10 flex flex-col items-center justify-center group', g.cover)}
+                      className="relative h-20 rounded-2xl overflow-hidden ring-1 ring-white/10 flex flex-col items-center justify-center group bg-slate-900"
                     >
-                      <div className="absolute inset-0 bg-black/25 group-hover:bg-black/40 transition" />
+                      <img src={g.cover} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/45 group-hover:bg-black/55 transition" />
                       <span className="relative text-white font-extrabold text-lg">{g.label}</span>
-                      <span className="relative text-white/70 text-[11px] font-semibold">{g.count} clip{g.count === 1 ? '' : 's'}</span>
+                      <span className="relative text-white/80 text-[11px] font-semibold">{g.count} clip{g.count === 1 ? '' : 's'}</span>
                     </button>
                   ))}
                 </div>
@@ -313,8 +311,9 @@ function PlaylistCard({ playlist, unlocked, onOpen }: { playlist: Playlist; unlo
       disabled={!unlocked}
       className={cn('group w-56 shrink-0 text-left', !unlocked && 'cursor-not-allowed')}
     >
-      <div className={cn('relative aspect-video rounded-2xl overflow-hidden bg-gradient-to-br ring-1 ring-white/10 flex items-center justify-center', playlist.cover)}>
-        <div className={cn('absolute inset-0 transition', unlocked ? 'bg-black/30 group-hover:bg-black/45' : 'bg-black/60')} />
+      <div className="relative aspect-video rounded-2xl overflow-hidden ring-1 ring-white/10 flex items-center justify-center bg-slate-900">
+        <img src={playlistCover(playlist)} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+        <div className={cn('absolute inset-0 transition', unlocked ? 'bg-black/40 group-hover:bg-black/50' : 'bg-black/65')} />
         <span className="relative text-white font-extrabold text-lg drop-shadow text-center px-3">{playlist.title}</span>
         <span className="absolute top-2 left-2 rounded-md bg-black/45 text-white text-[10px] font-bold px-1.5 py-0.5">PLAYLIST</span>
         {!unlocked && (

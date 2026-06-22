@@ -111,15 +111,32 @@ export const KIND_LABEL: Record<ClipKind, string> = {
   talk: 'Talks'
 }
 
+/** Stable non-negative hash of a string (no Math.random — keeps covers deterministic). */
+function seedOf(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0
+  return Math.abs(h)
+}
+
 /**
- * The image to show for a clip: an explicit uploaded/remote thumbnail if set,
- * otherwise the real YouTube thumbnail derived from the video id. Returns null
- * only when neither exists (then callers fall back to the gradient `cover`).
+ * A generated cover image for content that ships no artwork — a real picture,
+ * never a flat gradient. Deterministic per seed so the same item always gets
+ * the same cover.
  */
-export function clipThumb(clip: Pick<Clip, 'thumbnailUrl' | 'youtubeId'>): string | null {
+export function generatedCover(seed: string): string {
+  const prompt = 'abstract dark music cover art, glowing sound waves, deep navy and violet, cinematic, no text, minimal'
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=640&height=360&nologo=true&model=flux&seed=${seedOf(seed)}`
+}
+
+/**
+ * The image to show for a clip — ALWAYS a real picture, never a gradient:
+ * an explicit uploaded/remote cover, else the YouTube thumbnail, else a
+ * deterministic generated cover.
+ */
+export function clipThumb(clip: { thumbnailUrl?: string; youtubeId?: string; id?: string; title?: string }): string {
   if (clip.thumbnailUrl) return clip.thumbnailUrl
   if (clip.youtubeId) return `https://img.youtube.com/vi/${clip.youtubeId}/hqdefault.jpg`
-  return null
+  return generatedCover(clip.id || clip.title || 'clip')
 }
 
 /**

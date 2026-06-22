@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react'
 import { CEFR_ORDER, type CEFRLevel } from '@shared/types'
 import { createId } from '../../lib/ids'
 import type { Clip, ClipKind, LyricLine, Playlist } from '../../features/clips/data'
+import { clipThumb, generatedCover } from '../../features/clips/data'
 
 // v2: seed rebuilt to real, embeddable YouTube videos only (the v1 seed had
 // placeholder rows with no youtubeId → empty video player). Bumping the key
@@ -97,17 +98,7 @@ function writeList<T>(key: string, list: T[]): void {
   try { window.localStorage?.setItem(key, JSON.stringify(list)) } catch { /* quota / unavailable */ }
 }
 
-// ─── Genre tiles (derived from the catalog + a gradient map) ──────────────────
-
-const GENRE_GRADIENT: Record<string, string> = {
-  Pop: 'from-amber-500 to-orange-600',
-  Rock: 'from-sky-500 to-blue-700',
-  Drama: 'from-slate-600 to-slate-900',
-  Comedy: 'from-orange-500 to-red-700',
-  Talks: 'from-red-500 to-rose-800',
-  Hip_hop: 'from-fuchsia-500 to-purple-700'
-}
-const GENRE_FALLBACK = ['from-indigo-500 to-blue-900', 'from-emerald-500 to-teal-700', 'from-cyan-500 to-blue-700']
+// ─── Genre tiles (derived from the catalog; covers are real clip images) ──────
 
 export interface GenreTile {
   id: string
@@ -186,6 +177,12 @@ export function clipsByIds(ids: string[]): Clip[] {
   return ids.map((id) => list.find((c) => c.id === id)).filter((c): c is Clip => Boolean(c))
 }
 
+/** A real cover image for a playlist — its first clip's artwork, never a gradient. */
+export function playlistCover(playlist: Playlist): string {
+  const first = clipsByIds(playlist.clipIds)[0]
+  return first ? clipThumb(first) : generatedCover(playlist.id || playlist.title)
+}
+
 /** Newest first (Recently added). */
 export function recentClips(limit = 8): Clip[] {
   return [...clips.list()].sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '')).slice(0, limit)
@@ -224,19 +221,21 @@ export function clipsByKind(kind: ClipKind): Clip[] {
   return clips.list().filter((c) => c.kind === kind)
 }
 
-/** Distinct genres present in the catalog, as tiles with a gradient + count. */
+/** Distinct genres present in the catalog, each tile covered by a real clip image. */
 export function genreTiles(): GenreTile[] {
   const counts = new Map<string, number>()
+  const sample = new Map<string, Clip>()
   for (const c of clips.list()) {
     if (!c.genre) continue
     counts.set(c.genre, (counts.get(c.genre) ?? 0) + 1)
+    if (!sample.has(c.genre)) sample.set(c.genre, c)
   }
-  let fb = 0
   return [...counts.entries()].map(([label, count]) => ({
     id: label.toLowerCase(),
     label,
     count,
-    cover: GENRE_GRADIENT[label] ?? GENRE_FALLBACK[fb++ % GENRE_FALLBACK.length]
+    // A real picture from a clip in this genre — never a gradient.
+    cover: clipThumb(sample.get(label) ?? { id: label, title: label })
   }))
 }
 

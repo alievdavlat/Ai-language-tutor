@@ -370,13 +370,9 @@ export default function ClipPlayPage(): JSX.Element {
       {/* Video */}
       <div className="shrink-0 flex justify-center bg-black/40 py-3">
         <div className="relative w-full max-w-3xl aspect-video rounded-xl overflow-hidden ring-1 ring-white/10">
-          {/* Cover poster — always behind, so the area is never an empty black box
-              (while the YouTube player loads, or when a clip ships no video). */}
-          {clipThumb(clip) ? (
-            <img src={clipThumb(clip) as string} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          ) : (
-            <div className={cn('absolute inset-0 bg-gradient-to-br', clip.cover)} />
-          )}
+          {/* Cover poster (a real image) — always behind, so the area is never an
+              empty black box while the YouTube player loads. */}
+          <img src={clipThumb(clip)} alt="" className="absolute inset-0 w-full h-full object-cover bg-slate-900" />
           {clip.youtubeId ? (
             <>
               {/* The IFrame API replaces this div with the real player iframe. */}

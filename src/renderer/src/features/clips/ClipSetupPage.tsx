@@ -76,10 +76,8 @@ export default function ClipSetupPage(): JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       {/* Hero */}
-      <div className={cn('relative overflow-hidden bg-gradient-to-br', clip.cover)}>
-        {clipThumb(clip) && (
-          <img src={clipThumb(clip) as string} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        )}
+      <div className="relative overflow-hidden bg-slate-900">
+        <img src={clipThumb(clip)} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/55" />
         <div className="relative px-6 pt-6 pb-8 w-full">
           <PageHeader

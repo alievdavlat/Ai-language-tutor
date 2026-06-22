@@ -4,20 +4,12 @@ import { cn } from '../../lib/classnames'
 import { IconBolt, IconRefresh, IconX, IconYouTube } from '../../components/icons'
 import LevelSelect from '../../components/ui/LevelSelect'
 import { clips } from '../../services/clips/store'
-import { type Clip, type ClipKind, KIND_LABEL, countBlankableWords } from './data'
+import { type Clip, type ClipKind, KIND_LABEL, countBlankableWords, clipThumb } from './data'
 import { fetchVideoMeta, thumbnailFor, parseYouTubeId } from '../../services/studio/youtube'
+import { uploadUrl } from '../../services/backend'
 import { fetchSyncedLyrics, parseLRC, formatLRC, autoTimeLines } from './lrclib'
 
 const KINDS: ClipKind[] = ['song', 'movie', 'tv', 'talk']
-const COVERS = [
-  'from-sky-500 to-blue-700',
-  'from-pink-500 to-rose-700',
-  'from-fuchsia-500 to-purple-700',
-  'from-amber-500 to-orange-700',
-  'from-indigo-500 to-violet-700',
-  'from-emerald-500 to-teal-700',
-  'from-red-500 to-rose-800'
-]
 
 interface ClipEditorProps {
   initial?: Clip
@@ -40,12 +32,19 @@ export default function ClipEditor({ initial, authorId, onClose, onSaved }: Clip
   const [genre, setGenre] = useState(initial?.genre ?? '')
   const [accent, setAccent] = useState(initial?.accent ?? '🇬🇧')
   const [duration, setDuration] = useState(initial?.duration ?? '')
-  const [cover, setCover] = useState(initial?.cover ?? COVERS[0])
+  const [cover] = useState(initial?.cover ?? '')
 
   const [linkInput, setLinkInput] = useState(initial?.youtubeId ?? '')
   const [youtubeId, setYoutubeId] = useState(initial?.youtubeId ?? '')
   const [thumbnailUrl, setThumbnailUrl] = useState(initial?.thumbnailUrl ?? '')
   const [fetchingYt, setFetchingYt] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
+
+  const uploadCover = async (file: File | undefined): Promise<void> => {
+    if (!file) return
+    setUploadingCover(true)
+    try { setThumbnailUrl(await uploadUrl(file, 'covers')) } finally { setUploadingCover(false) }
+  }
 
   const [startSec, setStartSec] = useState(initial?.startSec ?? 0)
   const [endSec, setEndSec] = useState(initial?.endSec ?? 0)
@@ -169,9 +168,22 @@ export default function ClipEditor({ initial, authorId, onClose, onSaved }: Clip
               <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Level</p>
               <LevelSelect value={level} onChange={setLevel} />
             </div>
-            <div className="flex gap-2 items-center">
-              <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mr-1">Cover</p>
-              {COVERS.map((c) => <button key={c} onClick={() => setCover(c)} className={cn('h-7 w-10 rounded-lg bg-gradient-to-br ring-2', c, cover === c ? 'ring-white' : 'ring-transparent')} title="cover" />)}
+            <div className="space-y-2">
+              <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Cover image</p>
+              <div className="flex items-center gap-3">
+                <img src={clipThumb({ thumbnailUrl, youtubeId, title })} alt="" className="w-28 aspect-video object-cover rounded-lg ring-1 ring-white/10 bg-slate-900" />
+                <div className="flex flex-col gap-1.5">
+                  <label className="btn-ghost px-3 py-1.5 text-xs cursor-pointer inline-flex items-center gap-1.5 w-fit">
+                    {uploadingCover ? 'Uploading…' : 'Upload cover'}
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => void uploadCover(e.target.files?.[0])} />
+                  </label>
+                  {thumbnailUrl && (
+                    <button onClick={() => setThumbnailUrl('')} className="text-[11px] text-slate-400 hover:text-white text-left">
+                      {youtubeId ? 'Use the video thumbnail instead' : 'Remove'}
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
