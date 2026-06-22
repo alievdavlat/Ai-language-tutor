@@ -392,6 +392,16 @@ export type StringKey =
   | 'ob.interest.gaming' | 'ob.interest.books' | 'ob.interest.fashion' | 'ob.interest.health'
   | 'ob.dg.casual.l' | 'ob.dg.casual.b' | 'ob.dg.regular.l' | 'ob.dg.regular.b'
   | 'ob.dg.serious.l' | 'ob.dg.serious.b' | 'ob.dg.intense.l' | 'ob.dg.intense.b'
+  // ── Auth (sign in / role select) ─────────────────────────────────────
+  | 'auth.brandTagline' | 'auth.heroPre' | 'auth.heroHi' | 'auth.heroPost' | 'auth.heroSub'
+  | 'auth.vp1' | 'auth.vp2' | 'auth.vp3'
+  | 'auth.welcomeBack' | 'auth.createAccount' | 'auth.signinSub' | 'auth.signupSub'
+  | 'auth.loadingSignin' | 'auth.fullName' | 'auth.email' | 'auth.password'
+  | 'auth.forgot' | 'auth.pleaseWait' | 'auth.createAccountBtn'
+  | 'auth.noAccount' | 'auth.bySigningUp' | 'auth.terms' | 'auth.privacy' | 'auth.and'
+  | 'auth.role.eyebrow' | 'auth.role.title' | 'auth.role.subtitle'
+  | 'auth.role.learner' | 'auth.role.learnerDesc' | 'auth.role.teacher' | 'auth.role.teacherDesc'
+  | 'auth.role.changeNote'
 
 type Table = Record<StringKey, string>
 
@@ -1445,7 +1455,40 @@ const en: Table = {
   'ob.dg.casual.l': 'Casual', 'ob.dg.casual.b': '5 min a day — easy to keep up.',
   'ob.dg.regular.l': 'Regular', 'ob.dg.regular.b': '10 min a day — steady progress.',
   'ob.dg.serious.l': 'Serious', 'ob.dg.serious.b': '15 min a day — real momentum.',
-  'ob.dg.intense.l': 'Intense', 'ob.dg.intense.b': '30 min a day — fluent fast.'
+  'ob.dg.intense.l': 'Intense', 'ob.dg.intense.b': '30 min a day — fluent fast.',
+  // Auth
+  'auth.brandTagline': 'Your coach',
+  'auth.heroPre': 'Learn languages by',
+  'auth.heroHi': 'speaking',
+  'auth.heroPost': ', not just studying.',
+  'auth.heroSub': 'AI tutors. Native conversation partners. Real teachers. All in one app.',
+  'auth.vp1': 'AI tutor available 24/7 — practice speaking any time',
+  'auth.vp2': 'Adaptive level test places you on the right CEFR level',
+  'auth.vp3': 'Real teachers, courses, and a learning community',
+  'auth.welcomeBack': 'Welcome back',
+  'auth.createAccount': 'Create your account',
+  'auth.signinSub': 'Pick up where you left off.',
+  'auth.signupSub': 'Start learning in 30 seconds — free forever for the basics.',
+  'auth.loadingSignin': 'Loading sign-in…',
+  'auth.fullName': 'Full name',
+  'auth.email': 'Email',
+  'auth.password': 'Password',
+  'auth.forgot': 'Forgot password?',
+  'auth.pleaseWait': 'Please wait…',
+  'auth.createAccountBtn': 'Create account',
+  'auth.noAccount': "Don't have an account?",
+  'auth.bySigningUp': 'By signing up you agree to our',
+  'auth.terms': 'Terms',
+  'auth.privacy': 'Privacy',
+  'auth.and': 'and',
+  'auth.role.eyebrow': 'Set up your account',
+  'auth.role.title': 'How will you use SpeakAI?',
+  'auth.role.subtitle': 'Choose how you want to start — your role is set once and shapes the whole interface.',
+  'auth.role.learner': "I'm a learner",
+  'auth.role.learnerDesc': 'Take courses, practice speaking, sit mock exams and join the community.',
+  'auth.role.teacher': "I'm a teacher",
+  'auth.role.teacherDesc': 'Open a channel, publish courses, go live and grow your audience.',
+  'auth.role.changeNote': "Need to change later? Contact support — your role isn't a toggle."
 }
 
 const uz: Table = {
@@ -2498,7 +2541,40 @@ const uz: Table = {
   'ob.dg.casual.l': 'Yengil', 'ob.dg.casual.b': 'Kuniga 5 daqiqa — oson davom etadi.',
   'ob.dg.regular.l': 'Oddiy', 'ob.dg.regular.b': 'Kuniga 10 daqiqa — barqaror o‘sish.',
   'ob.dg.serious.l': 'Jiddiy', 'ob.dg.serious.b': 'Kuniga 15 daqiqa — haqiqiy sur’at.',
-  'ob.dg.intense.l': 'Jadal', 'ob.dg.intense.b': 'Kuniga 30 daqiqa — tez ravonlik.'
+  'ob.dg.intense.l': 'Jadal', 'ob.dg.intense.b': 'Kuniga 30 daqiqa — tez ravonlik.',
+  // Auth
+  'auth.brandTagline': 'Sizning murabbiyingiz',
+  'auth.heroPre': 'Tillarni',
+  'auth.heroHi': 'gapirib',
+  'auth.heroPost': ' o‘rganing, shunchaki o‘qib emas.',
+  'auth.heroSub': 'AI repetitorlar. Ona tili suhbatdoshlari. Haqiqiy o‘qituvchilar. Hammasi bitta ilovada.',
+  'auth.vp1': 'AI repetitor 24/7 — istalgan vaqt gapirishni mashq qiling',
+  'auth.vp2': 'Moslashuvchan daraja testi sizni to‘g‘ri CEFR darajasiga joylaydi',
+  'auth.vp3': 'Haqiqiy o‘qituvchilar, kurslar va o‘quv hamjamiyati',
+  'auth.welcomeBack': 'Qaytib kelganingizdan xursandmiz',
+  'auth.createAccount': 'Hisob yarating',
+  'auth.signinSub': 'To‘xtagan joyingizdan davom eting.',
+  'auth.signupSub': '30 soniyada o‘rganishni boshlang — asoslar abadiy bepul.',
+  'auth.loadingSignin': 'Kirish yuklanmoqda…',
+  'auth.fullName': 'To‘liq ism',
+  'auth.email': 'Email',
+  'auth.password': 'Parol',
+  'auth.forgot': 'Parolni unutdingizmi?',
+  'auth.pleaseWait': 'Iltimos, kuting…',
+  'auth.createAccountBtn': 'Hisob yaratish',
+  'auth.noAccount': 'Hisobingiz yo‘qmi?',
+  'auth.bySigningUp': 'Ro‘yxatdan o‘tish orqali siz',
+  'auth.terms': 'Shartlar',
+  'auth.privacy': 'Maxfiylik',
+  'auth.and': 'va',
+  'auth.role.eyebrow': 'Hisobingizni sozlang',
+  'auth.role.title': 'SpeakAI’dan qanday foydalanasiz?',
+  'auth.role.subtitle': 'Qanday boshlashni tanlang — rolingiz bir marta belgilanadi va butun interfeysni shakllantiradi.',
+  'auth.role.learner': 'Men o‘quvchiman',
+  'auth.role.learnerDesc': 'Kurslar oling, gapirishni mashq qiling, sinov imtihonlari topshiring va hamjamiyatga qo‘shiling.',
+  'auth.role.teacher': 'Men o‘qituvchiman',
+  'auth.role.teacherDesc': 'Kanal oching, kurslar nashr eting, jonli efirga chiqing va auditoriyangizni o‘stiring.',
+  'auth.role.changeNote': 'Keyin o‘zgartirish kerakmi? Qo‘llab-quvvatlashga murojaat qiling — rol almashtirgich emas.'
 }
 
 const ru: Table = {
@@ -3551,7 +3627,40 @@ const ru: Table = {
   'ob.dg.casual.l': 'Лёгкий', 'ob.dg.casual.b': '5 минут в день — легко поддерживать.',
   'ob.dg.regular.l': 'Обычный', 'ob.dg.regular.b': '10 минут в день — стабильный прогресс.',
   'ob.dg.serious.l': 'Серьёзный', 'ob.dg.serious.b': '15 минут в день — реальный импульс.',
-  'ob.dg.intense.l': 'Интенсивный', 'ob.dg.intense.b': '30 минут в день — быстрая беглость.'
+  'ob.dg.intense.l': 'Интенсивный', 'ob.dg.intense.b': '30 минут в день — быстрая беглость.',
+  // Auth
+  'auth.brandTagline': 'Ваш тренер',
+  'auth.heroPre': 'Учите языки',
+  'auth.heroHi': 'говоря',
+  'auth.heroPost': ', а не просто зубря.',
+  'auth.heroSub': 'ИИ-репетиторы. Носители языка для общения. Живые преподаватели. Всё в одном приложении.',
+  'auth.vp1': 'ИИ-репетитор доступен 24/7 — практикуйте речь в любое время',
+  'auth.vp2': 'Адаптивный тест определит ваш уровень CEFR',
+  'auth.vp3': 'Живые преподаватели, курсы и учебное сообщество',
+  'auth.welcomeBack': 'С возвращением',
+  'auth.createAccount': 'Создайте аккаунт',
+  'auth.signinSub': 'Продолжите с того места, где остановились.',
+  'auth.signupSub': 'Начните учиться за 30 секунд — базовые функции бесплатны навсегда.',
+  'auth.loadingSignin': 'Загрузка входа…',
+  'auth.fullName': 'Полное имя',
+  'auth.email': 'Email',
+  'auth.password': 'Пароль',
+  'auth.forgot': 'Забыли пароль?',
+  'auth.pleaseWait': 'Подождите…',
+  'auth.createAccountBtn': 'Создать аккаунт',
+  'auth.noAccount': 'Нет аккаунта?',
+  'auth.bySigningUp': 'Регистрируясь, вы соглашаетесь с нашими',
+  'auth.terms': 'Условиями',
+  'auth.privacy': 'Конфиденциальностью',
+  'auth.and': 'и',
+  'auth.role.eyebrow': 'Настройте аккаунт',
+  'auth.role.title': 'Как вы будете использовать SpeakAI?',
+  'auth.role.subtitle': 'Выберите, как начать — роль задаётся один раз и определяет весь интерфейс.',
+  'auth.role.learner': 'Я ученик',
+  'auth.role.learnerDesc': 'Проходите курсы, практикуйте речь, сдавайте пробные экзамены и присоединяйтесь к сообществу.',
+  'auth.role.teacher': 'Я преподаватель',
+  'auth.role.teacherDesc': 'Откройте канал, публикуйте курсы, ведите эфиры и растите аудиторию.',
+  'auth.role.changeNote': 'Нужно изменить позже? Обратитесь в поддержку — роль не переключатель.'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

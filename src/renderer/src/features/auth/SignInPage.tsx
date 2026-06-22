@@ -7,6 +7,7 @@ import { backend } from '../../services/backend'
 import * as auth from '../../services/auth'
 import { homeForRole } from '@shared/constants'
 import { IconMic } from '../../components/icons'
+import { useT } from '../../i18n'
 
 type Mode = 'signin' | 'signup'
 
@@ -35,6 +36,7 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const t = useT()
   const authenticated = useAppStore((s) => s.authenticated)
   // If Clerk's script never initialises (region-blocked), fall back to the
   // always-visible Supabase form so the user is never stuck on a blank panel.
@@ -140,24 +142,20 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
           </div>
           <div className="leading-tight">
             <p className="text-xl font-black tracking-tight text-white">SpeakAI</p>
-            <p className="text-xs text-slate-400">Your coach</p>
+            <p className="text-xs text-slate-400">{t('auth.brandTagline')}</p>
           </div>
         </div>
 
         <div className="max-w-md">
           <p className="text-3xl font-black text-white leading-tight">
-            Learn languages by <span className="bg-gradient-to-r from-brand-300 to-violet-300 bg-clip-text text-transparent">speaking</span>, not just studying.
+            {t('auth.heroPre')} <span className="bg-gradient-to-r from-brand-300 to-violet-300 bg-clip-text text-transparent">{t('auth.heroHi')}</span>{t('auth.heroPost')}
           </p>
-          <p className="text-sm text-slate-300 mt-4">AI tutors. Native conversation partners. Real teachers. All in one app.</p>
+          <p className="text-sm text-slate-300 mt-4">{t('auth.heroSub')}</p>
         </div>
 
         {/* Honest value props (no fabricated learner/teacher counts). */}
         <div className="grid grid-cols-1 gap-2 max-w-md">
-          {[
-            'AI tutor available 24/7 — practice speaking any time',
-            'Adaptive level test places you on the right CEFR level',
-            'Real teachers, courses, and a learning community'
-          ].map((line) => (
+          {[t('auth.vp1'), t('auth.vp2'), t('auth.vp3')].map((line) => (
             <div key={line} className="flex items-center gap-2.5 text-sm text-slate-300">
               <span className="w-5 h-5 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center text-[11px] shrink-0">✓</span>
               {line}
@@ -184,16 +182,16 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
                   mode === m ? 'bg-grad-brand text-white shadow-glow' : 'text-slate-400 hover:text-white'
                 )}
               >
-                {m === 'signin' ? 'Sign in' : 'Sign up'}
+                {m === 'signin' ? t('common.signIn') : t('common.signUp')}
               </button>
             ))}
           </div>
 
           <h1 className="text-2xl font-black tracking-tight text-white">
-            {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+            {mode === 'signin' ? t('auth.welcomeBack') : t('auth.createAccount')}
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            {mode === 'signin' ? 'Pick up where you left off.' : 'Start learning in 30 seconds — free forever for the basics.'}
+            {mode === 'signin' ? t('auth.signinSub') : t('auth.signupSub')}
           </p>
 
           {/* Real Clerk component when wired. Shown behind ClerkLoaded; while
@@ -203,7 +201,7 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
           {showClerk && (
             <div className="mt-6">
               <ClerkLoading>
-                <div className="py-12 text-center text-sm text-slate-400">Loading sign-in…</div>
+                <div className="py-12 text-center text-sm text-slate-400">{t('auth.loadingSignin')}</div>
               </ClerkLoading>
               <ClerkLoaded>
                 {mode === 'signin' ? (
@@ -226,25 +224,25 @@ export default function SignInPage({ mode: defaultMode = 'signin' }: { mode?: Mo
             onSubmit={(e) => { e.preventDefault(); void submitEmail() }}
           >
             {mode === 'signup' && (
-              <input type="text" placeholder="Full name" className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+              <input type="text" placeholder={t('auth.fullName')} className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
             )}
-            <input type="email" placeholder="Email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
-            <input type="password" placeholder="Password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} />
+            <input type="email" placeholder={t('auth.email')} className="input" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+            <input type="password" placeholder={t('auth.password')} className="input" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} />
             {mode === 'signin' && (
-              <button type="button" className="text-[11px] font-semibold text-brand-300 hover:text-brand-200 self-end -mt-1">Forgot password?</button>
+              <button type="button" className="text-[11px] font-semibold text-brand-300 hover:text-brand-200 self-end -mt-1">{t('auth.forgot')}</button>
             )}
             {error && <p className="text-[12px] text-rose-400 font-medium">{error}</p>}
             <button type="submit" disabled={busy} className="btn-primary py-2.5 mt-2 disabled:opacity-60">
-              {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+              {busy ? t('auth.pleaseWait') : mode === 'signin' ? t('common.signIn') : t('auth.createAccountBtn')}
             </button>
           </form>
           </>)}
 
           <p className="text-[11px] text-slate-500 text-center mt-6">
             {mode === 'signin' ? (
-              <>Don't have an account? <button onClick={() => setMode('signup')} className="text-brand-300 font-semibold hover:text-brand-200">Sign up</button></>
+              <>{t('auth.noAccount')} <button onClick={() => setMode('signup')} className="text-brand-300 font-semibold hover:text-brand-200">{t('common.signUp')}</button></>
             ) : (
-              <>By signing up you agree to our <a className="text-brand-300 hover:text-brand-200">Terms</a> and <a className="text-brand-300 hover:text-brand-200">Privacy</a>.</>
+              <>{t('auth.bySigningUp')} <a className="text-brand-300 hover:text-brand-200">{t('auth.terms')}</a> {t('auth.and')} <a className="text-brand-300 hover:text-brand-200">{t('auth.privacy')}</a>.</>
             )}
           </p>
         </div>
