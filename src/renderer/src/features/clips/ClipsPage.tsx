@@ -21,7 +21,7 @@ import {
   playlistUnlocked
 } from '../../services/clips/store'
 import { userClipStats } from './leaderboard'
-import { KIND_LABEL, type Clip, type ClipKind, type Playlist } from './data'
+import { KIND_LABEL, clipThumb, type Clip, type ClipKind, type Playlist } from './data'
 import ClipEditor from './ClipEditor'
 
 const KIND_TABS: { id: ClipKind | 'all'; label: string }[] = [
@@ -33,8 +33,9 @@ const KIND_TABS: { id: ClipKind | 'all'; label: string }[] = [
 ]
 
 function ClipCover({ clip, className }: { clip: Clip; className?: string }): JSX.Element {
-  if (clip.thumbnailUrl) {
-    return <img src={clip.thumbnailUrl} alt="" className={cn('absolute inset-0 w-full h-full object-cover', className)} />
+  const thumb = clipThumb(clip)
+  if (thumb) {
+    return <img src={thumb} alt="" loading="lazy" className={cn('absolute inset-0 w-full h-full object-cover', className)} />
   }
   return <div className={cn('absolute inset-0 bg-gradient-to-br', clip.cover, className)} />
 }

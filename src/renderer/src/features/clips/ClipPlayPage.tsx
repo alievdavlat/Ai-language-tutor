@@ -6,6 +6,7 @@ import { IconPlay, IconYouTube } from '../../components/icons'
 import {
   DIFFICULTIES,
   pickBlanks,
+  clipThumb,
   type GameMode,
   type Difficulty,
   type LyricLine
@@ -371,8 +372,8 @@ export default function ClipPlayPage(): JSX.Element {
         <div className="relative w-full max-w-3xl aspect-video rounded-xl overflow-hidden ring-1 ring-white/10">
           {/* Cover poster — always behind, so the area is never an empty black box
               (while the YouTube player loads, or when a clip ships no video). */}
-          {clip.thumbnailUrl ? (
-            <img src={clip.thumbnailUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          {clipThumb(clip) ? (
+            <img src={clipThumb(clip) as string} alt="" className="absolute inset-0 w-full h-full object-cover" />
           ) : (
             <div className={cn('absolute inset-0 bg-gradient-to-br', clip.cover)} />
           )}

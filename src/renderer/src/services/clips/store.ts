@@ -13,8 +13,11 @@ import { CEFR_ORDER, type CEFRLevel } from '@shared/types'
 import { createId } from '../../lib/ids'
 import type { Clip, ClipKind, LyricLine, Playlist } from '../../features/clips/data'
 
-const CLIPS_KEY = 'speakai.clips.v1'
-const PLAYLISTS_KEY = 'speakai.clips.playlists.v1'
+// v2: seed rebuilt to real, embeddable YouTube videos only (the v1 seed had
+// placeholder rows with no youtubeId → empty video player). Bumping the key
+// drops the cached mock seed so every install picks up the real catalog.
+const CLIPS_KEY = 'speakai.clips.v2'
+const PLAYLISTS_KEY = 'speakai.clips.playlists.v2'
 const FAV_KEY = 'speakai.clips.fav.v1'
 
 // ─── Seed lyrics (Justin Bieber — Baby) ──────────────────────────────────────
@@ -35,15 +38,21 @@ const BABY_LINES: LyricLine[] = [
 // stay fully editable. Real `playCount`/`createdAt` drive Hot / Recently rails.
 
 function seedClips(): Clip[] {
+  // Real, public, embeddable YouTube music videos (each id verified live +
+  // embeddable). The card thumbnail is derived from the youtubeId, so no clip
+  // ever falls back to a bare gradient. Lyrics are fetched from LRCLIB at play
+  // time (baby ships authored lines as a guaranteed fallback).
   const base: Omit<Clip, 'createdAt' | 'playCount' | 'lang' | 'authorId' | 'builtIn' | 'visibility'>[] = [
-    { id: 'baby', title: 'Baby', artist: 'Justin Bieber ft. Ludacris', kind: 'song', cover: 'from-sky-500 to-blue-700', youtubeId: 'kffacxfA7G4', plays: '396K', ago: '14 years ago', accent: '🇨🇦', level: 'A2', duration: '3:35', genre: 'Pop', lines: BABY_LINES },
-    { id: 'dinner', title: 'Dinner For One', artist: 'Mollie Elizabeth', kind: 'song', cover: 'from-pink-500 to-rose-700', youtubeId: '', plays: '579', ago: '2 days ago', accent: '🇺🇸', level: 'B1', duration: '3:12', genre: 'Pop' },
-    { id: 'dance', title: 'Dance All Nite', artist: 'Anja', kind: 'song', cover: 'from-fuchsia-500 to-purple-700', youtubeId: '', plays: '1.7K', ago: '2 days ago', accent: '🇬🇧', level: 'A2', duration: '2:58', genre: 'Pop' },
-    { id: 'perfect', title: 'Perfect', artist: 'Ed Sheeran', kind: 'song', cover: 'from-amber-500 to-orange-700', youtubeId: '', plays: '8.2M', ago: '9 years ago', accent: '🇬🇧', level: 'B1', duration: '4:23', genre: 'Pop' },
-    { id: 'billie', title: 'Billie Jean', artist: 'Michael Jackson', kind: 'song', cover: 'from-indigo-500 to-violet-700', youtubeId: '', plays: '234K', ago: '14 years ago', accent: '🇺🇸', level: 'B2', duration: '4:54', genre: 'Pop' },
-    { id: 'devil', title: 'The Devil Wears Prada — clip', artist: 'Movie scene', kind: 'movie', cover: 'from-slate-500 to-slate-800', youtubeId: '', plays: '92K', ago: '1 month ago', accent: '🇺🇸', level: 'B2', duration: '2:10', genre: 'Drama' },
-    { id: 'friends', title: 'Friends — intro scene', artist: 'TV scene', kind: 'tv', cover: 'from-orange-500 to-red-700', youtubeId: '', plays: '120K', ago: '3 weeks ago', accent: '🇺🇸', level: 'B1', duration: '1:45', genre: 'Comedy' },
-    { id: 'talk-grit', title: 'The power of grit', artist: 'Inspirational talk', kind: 'talk', cover: 'from-red-500 to-rose-800', youtubeId: '', plays: '3M', ago: '5 years ago', accent: '🇺🇸', level: 'C1', duration: '6:12', genre: 'Talks' }
+    { id: 'baby', title: 'Baby', artist: 'Justin Bieber ft. Ludacris', kind: 'song', cover: 'from-sky-500 to-blue-700', youtubeId: 'kffacxfA7G4', plays: '', ago: '', accent: '🇨🇦', level: 'A2', duration: '3:35', genre: 'Pop', lines: BABY_LINES },
+    { id: 'shape', title: 'Shape of You', artist: 'Ed Sheeran', kind: 'song', cover: 'from-rose-500 to-pink-700', youtubeId: 'JGwWNGJdvx8', plays: '', ago: '', accent: '🇬🇧', level: 'A2', duration: '3:54', genre: 'Pop' },
+    { id: 'perfect', title: 'Perfect', artist: 'Ed Sheeran', kind: 'song', cover: 'from-amber-500 to-orange-700', youtubeId: '2Vv-BfVoq4g', plays: '', ago: '', accent: '🇬🇧', level: 'B1', duration: '4:23', genre: 'Pop' },
+    { id: 'uptownfunk', title: 'Uptown Funk', artist: 'Mark Ronson ft. Bruno Mars', kind: 'song', cover: 'from-fuchsia-500 to-purple-700', youtubeId: 'OPf0YbXqDm0', plays: '', ago: '', accent: '🇺🇸', level: 'B1', duration: '4:31', genre: 'Funk' },
+    { id: 'hello', title: 'Hello', artist: 'Adele', kind: 'song', cover: 'from-slate-500 to-slate-800', youtubeId: 'YQHsXMglC9A', plays: '', ago: '', accent: '🇬🇧', level: 'B1', duration: '6:07', genre: 'Pop' },
+    { id: 'someonelikeyou', title: 'Someone Like You', artist: 'Adele', kind: 'song', cover: 'from-cyan-500 to-blue-700', youtubeId: 'hLQl3WQQoQ0', plays: '', ago: '', accent: '🇬🇧', level: 'B2', duration: '4:45', genre: 'Soul' },
+    { id: 'billie', title: 'Billie Jean', artist: 'Michael Jackson', kind: 'song', cover: 'from-indigo-500 to-violet-700', youtubeId: 'Zi_XLOBDo_Y', plays: '', ago: '', accent: '🇺🇸', level: 'B2', duration: '4:54', genre: 'Pop' },
+    { id: 'allofme', title: 'All of Me', artist: 'John Legend', kind: 'song', cover: 'from-emerald-500 to-teal-700', youtubeId: '450p7goxZqg', plays: '', ago: '', accent: '🇺🇸', level: 'B1', duration: '4:30', genre: 'Soul' },
+    { id: 'countingstars', title: 'Counting Stars', artist: 'OneRepublic', kind: 'song', cover: 'from-orange-500 to-red-700', youtubeId: 'hT_nvWreIhg', plays: '', ago: '', accent: '🇺🇸', level: 'B1', duration: '4:43', genre: 'Rock' },
+    { id: 'vivalavida', title: 'Viva la Vida', artist: 'Coldplay', kind: 'song', cover: 'from-blue-500 to-indigo-800', youtubeId: 'dvgZkm1xWPE', plays: '', ago: '', accent: '🇬🇧', level: 'B2', duration: '4:01', genre: 'Rock' }
   ]
   // Deterministic descending createdAt so "Recently added" has a stable order
   // without Date.now() (keeps the seed pure / SSR-safe).
@@ -63,10 +72,10 @@ function seedClips(): Clip[] {
 
 function seedPlaylists(): Playlist[] {
   return [
-    { id: 'queens', title: 'Queens of Music', cover: 'from-pink-500 to-rose-700', dots: ['#10b981', '#10b981', '#f59e0b', '#fb923c'], clipIds: ['baby', 'dance', 'dinner'], minLevel: 'A1', builtIn: true, authorId: 'system' },
-    { id: 'theme', title: 'Theme Songs', cover: 'from-amber-500 to-orange-700', dots: ['#10b981', '#f59e0b', '#fb923c', '#f43f5e'], clipIds: ['friends', 'perfect'], minLevel: 'A2', builtIn: true, authorId: 'system' },
-    { id: 'fearless', title: 'Fearless Femme', cover: 'from-fuchsia-500 to-purple-700', dots: ['#10b981', '#10b981', '#f59e0b', '#fb923c'], clipIds: ['billie', 'perfect', 'dance'], minLevel: 'B1', builtIn: true, authorId: 'system' },
-    { id: 'essence', title: 'Cinema & Talks', cover: 'from-violet-500 to-indigo-700', dots: ['#10b981', '#f59e0b', '#fb923c', '#f43f5e'], clipIds: ['devil', 'talk-grit'], minLevel: 'B2', builtIn: true, authorId: 'system' }
+    { id: 'starter', title: 'Easy Singalongs', cover: 'from-pink-500 to-rose-700', dots: ['#10b981', '#10b981', '#f59e0b', '#fb923c'], clipIds: ['shape', 'baby', 'perfect'], minLevel: 'A1', builtIn: true, authorId: 'system' },
+    { id: 'soul', title: 'Soul & Heart', cover: 'from-amber-500 to-orange-700', dots: ['#10b981', '#f59e0b', '#fb923c', '#f43f5e'], clipIds: ['allofme', 'someonelikeyou', 'hello'], minLevel: 'A2', builtIn: true, authorId: 'system' },
+    { id: 'rock', title: 'Stadium Rock', cover: 'from-blue-500 to-indigo-800', dots: ['#10b981', '#10b981', '#f59e0b', '#fb923c'], clipIds: ['countingstars', 'vivalavida'], minLevel: 'B1', builtIn: true, authorId: 'system' },
+    { id: 'legends', title: 'Legends', cover: 'from-violet-500 to-indigo-700', dots: ['#10b981', '#f59e0b', '#fb923c', '#f43f5e'], clipIds: ['billie', 'uptownfunk'], minLevel: 'B2', builtIn: true, authorId: 'system' }
   ]
 }
 

@@ -112,6 +112,17 @@ export const KIND_LABEL: Record<ClipKind, string> = {
 }
 
 /**
+ * The image to show for a clip: an explicit uploaded/remote thumbnail if set,
+ * otherwise the real YouTube thumbnail derived from the video id. Returns null
+ * only when neither exists (then callers fall back to the gradient `cover`).
+ */
+export function clipThumb(clip: Pick<Clip, 'thumbnailUrl' | 'youtubeId'>): string | null {
+  if (clip.thumbnailUrl) return clip.thumbnailUrl
+  if (clip.youtubeId) return `https://img.youtube.com/vi/${clip.youtubeId}/hqdefault.jpg`
+  return null
+}
+
+/**
  * Count the blankable words in a set of synced lyric lines — the real "words"
  * total a clip offers (skips 1–2 letter words, matching `pickBlanks`). Used for
  * the setup-page word count instead of a hardcoded number.
