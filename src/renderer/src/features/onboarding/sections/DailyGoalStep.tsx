@@ -2,6 +2,8 @@ import { Button, Card } from '../../../components/ui'
 import { DAILY_GOALS } from '../../../services/progress/catalog'
 import type { DailyGoalId } from '../../../services/progress/types'
 import { cn } from '../../../lib/classnames'
+import { useT } from '../../../i18n'
+import type { StringKey } from '../../../i18n/strings'
 
 interface DailyGoalStepProps {
   value: DailyGoalId
@@ -16,11 +18,12 @@ export default function DailyGoalStep({
   onNext,
   onBack
 }: DailyGoalStepProps): JSX.Element {
+  const t = useT()
   return (
     <Card>
-      <h2 className="text-2xl font-bold mb-2">Set your daily goal</h2>
+      <h2 className="text-2xl font-bold mb-2">{t('ob.daily.title')}</h2>
       <p className="text-slate-400 mb-6 text-sm">
-        How much do you want to practice each day? You can change this later.
+        {t('ob.daily.subtitle')}
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
@@ -38,10 +41,10 @@ export default function DailyGoalStep({
               )}
             >
               <div className="flex items-baseline justify-between mb-1">
-                <span className="font-semibold text-lg">{goal.label}</span>
+                <span className="font-semibold text-lg">{t(`ob.dg.${goal.id}.l` as StringKey)}</span>
                 <span className="text-xs text-brand-300">{goal.xp} XP</span>
               </div>
-              <p className="text-xs text-slate-400">{goal.blurb}</p>
+              <p className="text-xs text-slate-400">{t(`ob.dg.${goal.id}.b` as StringKey)}</p>
             </button>
           )
         })}
@@ -49,9 +52,9 @@ export default function DailyGoalStep({
 
       <div className="flex justify-between">
         <Button variant="ghost" onClick={onBack}>
-          ← Back
+          ← {t('common.back')}
         </Button>
-        <Button onClick={onNext}>Continue →</Button>
+        <Button onClick={onNext}>{t('common.continue')} →</Button>
       </div>
     </Card>
   )

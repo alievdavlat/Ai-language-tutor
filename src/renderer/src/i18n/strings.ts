@@ -371,6 +371,27 @@ export type StringKey =
   | 'meet.finding' | 'meet.searchingNow' | 'meet.cancel' | 'meet.waitingGroup'
   | 'meet.connecting' | 'meet.talkAbout' | 'meet.you' | 'meet.partner' | 'meet.guest'
   | 'meet.mute' | 'meet.unmute' | 'meet.next' | 'meet.nextPartner' | 'meet.end'
+  // ── Onboarding ───────────────────────────────────────────────────────
+  | 'ob.welcome.eyebrow' | 'ob.welcome.title1' | 'ob.welcome.title2' | 'ob.welcome.subtitle'
+  | 'ob.welcome.hlTutor' | 'ob.welcome.hlLive' | 'ob.welcome.hlCourses' | 'ob.welcome.hlGamified'
+  | 'ob.welcome.nameLabel' | 'ob.welcome.namePh' | 'ob.welcome.begin' | 'ob.welcome.takes'
+  | 'ob.lang.eyebrow' | 'ob.lang.title' | 'ob.lang.subtitle' | 'ob.lang.changeLater'
+  | 'ob.native.eyebrow' | 'ob.native.title' | 'ob.native.subtitle' | 'ob.native.changeLater'
+  | 'ob.goals.title' | 'ob.goals.subtitle'
+  | 'ob.interests.title' | 'ob.interests.subtitle'
+  | 'ob.daily.title' | 'ob.daily.subtitle'
+  | 'ob.placement.title' | 'ob.placement.subtitle'
+  | 'ob.teacher.title' | 'ob.teacher.subtitle' | 'ob.teacher.toDashboard'
+  | 'ob.complete.yourLevel' | 'ob.complete.focusAreas' | 'ob.complete.adjust' | 'ob.complete.start'
+  | 'ob.goal.travel.t' | 'ob.goal.travel.d' | 'ob.goal.work.t' | 'ob.goal.work.d'
+  | 'ob.goal.ielts.t' | 'ob.goal.ielts.d' | 'ob.goal.toefl.t' | 'ob.goal.toefl.d'
+  | 'ob.goal.immigration.t' | 'ob.goal.immigration.d' | 'ob.goal.school.t' | 'ob.goal.school.d'
+  | 'ob.goal.hobby.t' | 'ob.goal.hobby.d' | 'ob.goal.general.t' | 'ob.goal.general.d'
+  | 'ob.interest.tech' | 'ob.interest.sports' | 'ob.interest.movies' | 'ob.interest.music'
+  | 'ob.interest.business' | 'ob.interest.travel' | 'ob.interest.food' | 'ob.interest.science'
+  | 'ob.interest.gaming' | 'ob.interest.books' | 'ob.interest.fashion' | 'ob.interest.health'
+  | 'ob.dg.casual.l' | 'ob.dg.casual.b' | 'ob.dg.regular.l' | 'ob.dg.regular.b'
+  | 'ob.dg.serious.l' | 'ob.dg.serious.b' | 'ob.dg.intense.l' | 'ob.dg.intense.b'
 
 type Table = Record<StringKey, string>
 
@@ -1373,7 +1394,58 @@ const en: Table = {
   'meet.unmute': 'Unmute',
   'meet.next': 'Next',
   'meet.nextPartner': 'Next partner',
-  'meet.end': 'End'
+  'meet.end': 'End',
+  // Onboarding
+  'ob.welcome.eyebrow': 'Welcome',
+  'ob.welcome.title1': 'Speak.',
+  'ob.welcome.title2': "Don't just study.",
+  'ob.welcome.subtitle': 'A personal English coach in your pocket — AI tutors, real teachers, and conversation partners ready 24/7.',
+  'ob.welcome.hlTutor': 'AI conversation tutor',
+  'ob.welcome.hlLive': 'Live partners & teachers',
+  'ob.welcome.hlCourses': 'Real courses with certs',
+  'ob.welcome.hlGamified': 'Gamified daily lessons',
+  'ob.welcome.nameLabel': 'What should we call you?',
+  'ob.welcome.namePh': 'Your name (optional)',
+  'ob.welcome.begin': "Let's begin →",
+  'ob.welcome.takes': 'Takes 2 minutes · skip anything you want',
+  'ob.lang.eyebrow': 'Step 1 — Language',
+  'ob.lang.title': 'Which language are you learning?',
+  'ob.lang.subtitle': 'Your placement test, courses, library, vocabulary decks and AI tutor will all be in this language.',
+  'ob.lang.changeLater': 'You can change this later from the sidebar language switcher.',
+  'ob.native.eyebrow': 'Step 2 — Your language',
+  'ob.native.title': "What's your native language?",
+  'ob.native.subtitle': 'Word meanings are translated into this language. Menus and page text follow it where a translation exists (more interface languages are on the way).',
+  'ob.native.changeLater': 'You can change this later in Settings.',
+  'ob.goals.title': 'Why are you learning English?',
+  'ob.goals.subtitle': "Pick one or more. I'll tailor our conversations.",
+  'ob.interests.title': 'What topics do you enjoy?',
+  'ob.interests.subtitle': "I'll suggest conversation topics from these. Pick 2+ for best results.",
+  'ob.daily.title': 'Set your daily goal',
+  'ob.daily.subtitle': 'How much do you want to practice each day? You can change this later.',
+  'ob.placement.title': "Let's find your level",
+  'ob.placement.subtitle': 'A few adaptive questions — they get easier or harder as you go.',
+  'ob.teacher.title': "You're all set!",
+  'ob.teacher.subtitle': 'Your teaching workspace is ready. Set up your channel, create a course, and reach learners.',
+  'ob.teacher.toDashboard': 'Go to my dashboard',
+  'ob.complete.yourLevel': 'Your level',
+  'ob.complete.focusAreas': 'Areas to focus on',
+  'ob.complete.adjust': 'Not quite right? Adjust your level:',
+  'ob.complete.start': 'Start learning →',
+  'ob.goal.travel.t': 'Travel', 'ob.goal.travel.d': 'Order food, ask directions, small talk',
+  'ob.goal.work.t': 'Work / Career', 'ob.goal.work.d': 'Meetings, emails, job interviews',
+  'ob.goal.ielts.t': 'IELTS', 'ob.goal.ielts.d': 'Test prep, all 4 skills',
+  'ob.goal.toefl.t': 'TOEFL', 'ob.goal.toefl.d': 'Academic English, test prep',
+  'ob.goal.immigration.t': 'Immigration', 'ob.goal.immigration.d': 'Visa, interviews, daily life abroad',
+  'ob.goal.school.t': 'School / Studies', 'ob.goal.school.d': 'Classroom, assignments, essays',
+  'ob.goal.hobby.t': 'Hobby / Fun', 'ob.goal.hobby.d': 'Movies, music, casual chats',
+  'ob.goal.general.t': 'General fluency', 'ob.goal.general.d': 'Overall speaking confidence',
+  'ob.interest.tech': 'Tech', 'ob.interest.sports': 'Sports', 'ob.interest.movies': 'Movies', 'ob.interest.music': 'Music',
+  'ob.interest.business': 'Business', 'ob.interest.travel': 'Travel', 'ob.interest.food': 'Food', 'ob.interest.science': 'Science',
+  'ob.interest.gaming': 'Gaming', 'ob.interest.books': 'Books', 'ob.interest.fashion': 'Fashion', 'ob.interest.health': 'Health',
+  'ob.dg.casual.l': 'Casual', 'ob.dg.casual.b': '5 min a day — easy to keep up.',
+  'ob.dg.regular.l': 'Regular', 'ob.dg.regular.b': '10 min a day — steady progress.',
+  'ob.dg.serious.l': 'Serious', 'ob.dg.serious.b': '15 min a day — real momentum.',
+  'ob.dg.intense.l': 'Intense', 'ob.dg.intense.b': '30 min a day — fluent fast.'
 }
 
 const uz: Table = {
@@ -2375,7 +2447,58 @@ const uz: Table = {
   'meet.unmute': 'Ovozni yoqish',
   'meet.next': 'Keyingi',
   'meet.nextPartner': 'Keyingi hamroh',
-  'meet.end': 'Tugatish'
+  'meet.end': 'Tugatish',
+  // Onboarding
+  'ob.welcome.eyebrow': 'Xush kelibsiz',
+  'ob.welcome.title1': 'Gapiring.',
+  'ob.welcome.title2': 'Shunchaki o‘rganmang.',
+  'ob.welcome.subtitle': 'Cho‘ntagingizdagi shaxsiy ingliz tili murabbiyi — AI repetitorlar, haqiqiy o‘qituvchilar va suhbatdoshlar 24/7 tayyor.',
+  'ob.welcome.hlTutor': 'AI suhbat repetitori',
+  'ob.welcome.hlLive': 'Jonli hamrohlar va o‘qituvchilar',
+  'ob.welcome.hlCourses': 'Sertifikatli haqiqiy kurslar',
+  'ob.welcome.hlGamified': 'O‘yinlashtirilgan kunlik darslar',
+  'ob.welcome.nameLabel': 'Sizni qanday chaqiraylik?',
+  'ob.welcome.namePh': 'Ismingiz (ixtiyoriy)',
+  'ob.welcome.begin': 'Boshlaylik →',
+  'ob.welcome.takes': '2 daqiqa vaqt oladi · xohlaganingizni o‘tkazib yuboring',
+  'ob.lang.eyebrow': '1-qadam — Til',
+  'ob.lang.title': 'Qaysi tilni o‘rganyapsiz?',
+  'ob.lang.subtitle': 'Daraja testi, kurslar, kutubxona, lug‘at to‘plamlari va AI repetitor — barchasi shu tilda bo‘ladi.',
+  'ob.lang.changeLater': 'Buni keyinroq yon paneldagi til almashtirgichidan o‘zgartirishingiz mumkin.',
+  'ob.native.eyebrow': '2-qadam — Sizning tilingiz',
+  'ob.native.title': 'Ona tilingiz qaysi?',
+  'ob.native.subtitle': 'So‘z ma’nolari shu tilga tarjima qilinadi. Menyu va sahifa matni tarjima mavjud bo‘lganda shu tilga moslashadi (yana interfeys tillari yo‘lda).',
+  'ob.native.changeLater': 'Buni keyinroq Sozlamalarda o‘zgartirishingiz mumkin.',
+  'ob.goals.title': 'Nega ingliz tilini o‘rganyapsiz?',
+  'ob.goals.subtitle': 'Bir yoki bir nechtasini tanlang. Suhbatlarimizni shunga moslayman.',
+  'ob.interests.title': 'Qaysi mavzular sizga yoqadi?',
+  'ob.interests.subtitle': 'Shulardan suhbat mavzularini taklif qilaman. Eng yaxshi natija uchun 2+ tanlang.',
+  'ob.daily.title': 'Kunlik maqsadingizni belgilang',
+  'ob.daily.subtitle': 'Har kuni qancha mashq qilmoqchisiz? Buni keyinroq o‘zgartirishingiz mumkin.',
+  'ob.placement.title': 'Darajangizni aniqlaylik',
+  'ob.placement.subtitle': 'Bir nechta moslashuvchan savol — javoblaringizga qarab osonlashadi yoki qiyinlashadi.',
+  'ob.teacher.title': 'Hammasi tayyor!',
+  'ob.teacher.subtitle': 'O‘qituvchilik makoningiz tayyor. Kanalingizni sozlang, kurs yarating va o‘quvchilarga yeting.',
+  'ob.teacher.toDashboard': 'Boshqaruv paneliga o‘tish',
+  'ob.complete.yourLevel': 'Sizning darajangiz',
+  'ob.complete.focusAreas': 'E’tibor qaratish kerak bo‘lgan sohalar',
+  'ob.complete.adjust': 'To‘g‘ri kelmadimi? Darajangizni o‘zgartiring:',
+  'ob.complete.start': 'O‘rganishni boshlash →',
+  'ob.goal.travel.t': 'Sayohat', 'ob.goal.travel.d': 'Ovqat buyurtma berish, yo‘l so‘rash, yengil suhbat',
+  'ob.goal.work.t': 'Ish / Karyera', 'ob.goal.work.d': 'Yig‘ilishlar, xatlar, ish suhbatlari',
+  'ob.goal.ielts.t': 'IELTS', 'ob.goal.ielts.d': 'Imtihonga tayyorgarlik, 4 ko‘nikma',
+  'ob.goal.toefl.t': 'TOEFL', 'ob.goal.toefl.d': 'Akademik ingliz tili, imtihonga tayyorgarlik',
+  'ob.goal.immigration.t': 'Immigratsiya', 'ob.goal.immigration.d': 'Viza, suhbatlar, chet eldagi kundalik hayot',
+  'ob.goal.school.t': 'Maktab / O‘qish', 'ob.goal.school.d': 'Sinf, topshiriqlar, insholar',
+  'ob.goal.hobby.t': 'Hobbi / Ko‘ngilochar', 'ob.goal.hobby.d': 'Filmlar, musiqa, erkin suhbatlar',
+  'ob.goal.general.t': 'Umumiy ravonlik', 'ob.goal.general.d': 'Umumiy gapirishga ishonch',
+  'ob.interest.tech': 'Texnologiya', 'ob.interest.sports': 'Sport', 'ob.interest.movies': 'Filmlar', 'ob.interest.music': 'Musiqa',
+  'ob.interest.business': 'Biznes', 'ob.interest.travel': 'Sayohat', 'ob.interest.food': 'Ovqat', 'ob.interest.science': 'Fan',
+  'ob.interest.gaming': 'O‘yinlar', 'ob.interest.books': 'Kitoblar', 'ob.interest.fashion': 'Moda', 'ob.interest.health': 'Salomatlik',
+  'ob.dg.casual.l': 'Yengil', 'ob.dg.casual.b': 'Kuniga 5 daqiqa — oson davom etadi.',
+  'ob.dg.regular.l': 'Oddiy', 'ob.dg.regular.b': 'Kuniga 10 daqiqa — barqaror o‘sish.',
+  'ob.dg.serious.l': 'Jiddiy', 'ob.dg.serious.b': 'Kuniga 15 daqiqa — haqiqiy sur’at.',
+  'ob.dg.intense.l': 'Jadal', 'ob.dg.intense.b': 'Kuniga 30 daqiqa — tez ravonlik.'
 }
 
 const ru: Table = {
@@ -3377,7 +3500,58 @@ const ru: Table = {
   'meet.unmute': 'Включить микрофон',
   'meet.next': 'Далее',
   'meet.nextPartner': 'Следующий партнёр',
-  'meet.end': 'Завершить'
+  'meet.end': 'Завершить',
+  // Onboarding
+  'ob.welcome.eyebrow': 'Добро пожаловать',
+  'ob.welcome.title1': 'Говорите.',
+  'ob.welcome.title2': 'А не просто учите.',
+  'ob.welcome.subtitle': 'Личный тренер по английскому в кармане — ИИ-репетиторы, живые преподаватели и собеседники готовы 24/7.',
+  'ob.welcome.hlTutor': 'ИИ-репетитор для разговора',
+  'ob.welcome.hlLive': 'Живые партнёры и преподаватели',
+  'ob.welcome.hlCourses': 'Реальные курсы с сертификатами',
+  'ob.welcome.hlGamified': 'Игровые ежедневные уроки',
+  'ob.welcome.nameLabel': 'Как к вам обращаться?',
+  'ob.welcome.namePh': 'Ваше имя (необязательно)',
+  'ob.welcome.begin': 'Начнём →',
+  'ob.welcome.takes': 'Займёт 2 минуты · можно пропустить что угодно',
+  'ob.lang.eyebrow': 'Шаг 1 — Язык',
+  'ob.lang.title': 'Какой язык вы изучаете?',
+  'ob.lang.subtitle': 'Тест на уровень, курсы, библиотека, наборы слов и ИИ-репетитор — всё будет на этом языке.',
+  'ob.lang.changeLater': 'Это можно изменить позже через переключатель языка на боковой панели.',
+  'ob.native.eyebrow': 'Шаг 2 — Ваш язык',
+  'ob.native.title': 'Какой ваш родной язык?',
+  'ob.native.subtitle': 'Значения слов переводятся на этот язык. Меню и текст страниц следуют за ним там, где есть перевод (другие языки интерфейса в разработке).',
+  'ob.native.changeLater': 'Это можно изменить позже в настройках.',
+  'ob.goals.title': 'Зачем вы учите английский?',
+  'ob.goals.subtitle': 'Выберите один или несколько. Я подстрою наши разговоры.',
+  'ob.interests.title': 'Какие темы вам нравятся?',
+  'ob.interests.subtitle': 'Я буду предлагать темы для разговора из них. Для лучшего результата выберите 2+.',
+  'ob.daily.title': 'Установите дневную цель',
+  'ob.daily.subtitle': 'Сколько вы хотите заниматься каждый день? Это можно изменить позже.',
+  'ob.placement.title': 'Определим ваш уровень',
+  'ob.placement.subtitle': 'Несколько адаптивных вопросов — они становятся легче или сложнее по ходу.',
+  'ob.teacher.title': 'Всё готово!',
+  'ob.teacher.subtitle': 'Ваше преподавательское пространство готово. Настройте канал, создайте курс и найдите учеников.',
+  'ob.teacher.toDashboard': 'Перейти в панель',
+  'ob.complete.yourLevel': 'Ваш уровень',
+  'ob.complete.focusAreas': 'Над чем поработать',
+  'ob.complete.adjust': 'Не совсем верно? Измените уровень:',
+  'ob.complete.start': 'Начать обучение →',
+  'ob.goal.travel.t': 'Путешествия', 'ob.goal.travel.d': 'Заказ еды, вопросы о дороге, лёгкая беседа',
+  'ob.goal.work.t': 'Работа / Карьера', 'ob.goal.work.d': 'Встречи, письма, собеседования',
+  'ob.goal.ielts.t': 'IELTS', 'ob.goal.ielts.d': 'Подготовка к тесту, все 4 навыка',
+  'ob.goal.toefl.t': 'TOEFL', 'ob.goal.toefl.d': 'Академический английский, подготовка к тесту',
+  'ob.goal.immigration.t': 'Иммиграция', 'ob.goal.immigration.d': 'Виза, собеседования, жизнь за рубежом',
+  'ob.goal.school.t': 'Школа / Учёба', 'ob.goal.school.d': 'Занятия, задания, эссе',
+  'ob.goal.hobby.t': 'Хобби / Развлечения', 'ob.goal.hobby.d': 'Фильмы, музыка, неформальное общение',
+  'ob.goal.general.t': 'Общая беглость', 'ob.goal.general.d': 'Общая уверенность в речи',
+  'ob.interest.tech': 'Технологии', 'ob.interest.sports': 'Спорт', 'ob.interest.movies': 'Фильмы', 'ob.interest.music': 'Музыка',
+  'ob.interest.business': 'Бизнес', 'ob.interest.travel': 'Путешествия', 'ob.interest.food': 'Еда', 'ob.interest.science': 'Наука',
+  'ob.interest.gaming': 'Игры', 'ob.interest.books': 'Книги', 'ob.interest.fashion': 'Мода', 'ob.interest.health': 'Здоровье',
+  'ob.dg.casual.l': 'Лёгкий', 'ob.dg.casual.b': '5 минут в день — легко поддерживать.',
+  'ob.dg.regular.l': 'Обычный', 'ob.dg.regular.b': '10 минут в день — стабильный прогресс.',
+  'ob.dg.serious.l': 'Серьёзный', 'ob.dg.serious.b': '15 минут в день — реальный импульс.',
+  'ob.dg.intense.l': 'Интенсивный', 'ob.dg.intense.b': '30 минут в день — быстрая беглость.'
 }
 
 // ── Additional native languages ───────────────────────────────────────────────

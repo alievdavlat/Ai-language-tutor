@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { CEFRLevel, PlacementResult } from '@shared/types'
 import { CEFR_ORDER } from '@shared/types'
 import { Button, Card, Chip } from '../../../components/ui'
+import { useT } from '../../../i18n'
 
 interface CompleteStepProps {
   result: PlacementResult
@@ -38,11 +39,12 @@ function friendlyArea(raw: string): string {
 
 export default function CompleteStep({ result, onConfirm }: CompleteStepProps): JSX.Element {
   const [level, setLevel] = useState<CEFRLevel>(result.level)
+  const t = useT()
 
   return (
     <Card className="text-center">
       <div className="text-6xl mb-4">🎉</div>
-      <h2 className="text-3xl font-bold mb-2">Your level: {result.level}</h2>
+      <h2 className="text-3xl font-bold mb-2">{t('ob.complete.yourLevel')}: {result.level}</h2>
       <p className="text-slate-400 mb-2 max-w-sm mx-auto text-sm">
         {CEFR_DESCRIPTIONS[result.level]}
       </p>
@@ -50,7 +52,7 @@ export default function CompleteStep({ result, onConfirm }: CompleteStepProps): 
       {result.weakAreas.length > 0 && (
         <div className="rounded-xl bg-white/[0.04] border border-white/10 p-4 mb-5 text-left max-w-sm mx-auto">
           <p className="text-xs font-semibold text-slate-400 mb-2">
-            Areas to focus on
+            {t('ob.complete.focusAreas')}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {result.weakAreas.map((area) => (
@@ -64,7 +66,7 @@ export default function CompleteStep({ result, onConfirm }: CompleteStepProps): 
 
       <div className="mb-6 max-w-sm mx-auto">
         <p className="text-xs text-slate-500 mb-3">
-          Not quite right? Adjust your level:
+          {t('ob.complete.adjust')}
         </p>
         <div className="flex gap-2 justify-center flex-wrap">
           {CEFR_ORDER.map((l) => (
@@ -76,7 +78,7 @@ export default function CompleteStep({ result, onConfirm }: CompleteStepProps): 
       </div>
 
       <Button fullWidth onClick={() => onConfirm(level)} className="!px-8">
-        Start learning →
+        {t('ob.complete.start')}
       </Button>
     </Card>
   )

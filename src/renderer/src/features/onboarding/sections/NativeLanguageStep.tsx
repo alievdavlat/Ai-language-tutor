@@ -1,6 +1,7 @@
 import { SUPPORTED_LANGUAGES } from '@shared/constants'
 import { Button } from '../../../components/ui'
 import { cn } from '../../../lib/classnames'
+import { useT } from '../../../i18n'
 
 interface NativeLanguageStepProps {
   value: string
@@ -21,15 +22,15 @@ export default function NativeLanguageStep({
   onNext,
   onBack
 }: NativeLanguageStepProps): JSX.Element {
+  const t = useT()
   return (
     <div className="rounded-card border border-white/10 bg-white/[0.025] p-8 sm:p-10">
       <div className="text-center mb-6">
         <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-grad-brand shadow-glow mb-3 text-2xl">🗣️</span>
-        <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">Step 2 — Your language</p>
-        <h1 className="text-3xl font-black tracking-tight text-white mt-1">What&apos;s your native language?</h1>
+        <p className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">{t('ob.native.eyebrow')}</p>
+        <h1 className="text-3xl font-black tracking-tight text-white mt-1">{t('ob.native.title')}</h1>
         <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
-          Word meanings are translated into this language. Menus and page text follow it
-          where a translation exists (more interface languages are on the way).
+          {t('ob.native.subtitle')}
         </p>
       </div>
 
@@ -58,12 +59,12 @@ export default function NativeLanguageStep({
       </div>
 
       <p className="text-[11px] text-slate-500 text-center mt-5">
-        You can change this later in Settings.
+        {t('ob.native.changeLater')}
       </p>
 
       <div className="flex items-center justify-between mt-6 gap-3">
-        <Button onClick={onBack} className="!bg-white/[0.05] !text-slate-300 hover:!bg-white/[0.08]">← Back</Button>
-        <Button onClick={onNext} className="!px-8">Continue →</Button>
+        <Button onClick={onBack} className="!bg-white/[0.05] !text-slate-300 hover:!bg-white/[0.08]">← {t('common.back')}</Button>
+        <Button onClick={onNext} className="!px-8">{t('common.continue')} →</Button>
       </div>
     </div>
   )

@@ -14,7 +14,7 @@ import { ONBOARDING_STEPS } from './constants/steps'
 import { ProgressBar } from '../../components/ui'
 import { useOnboardingFlow } from './hooks/useOnboardingFlow'
 import { buildEmptyProfile } from './constants/defaultProfile'
-import { useUILanguage, type UILanguage } from '../../i18n'
+import { useUILanguage, useT, type UILanguage } from '../../i18n'
 import WelcomeStep from './sections/WelcomeStep'
 import LanguageStep from './sections/LanguageStep'
 import NativeLanguageStep from './sections/NativeLanguageStep'
@@ -45,6 +45,7 @@ export default function OnboardingPage(): JSX.Element {
   )
   const flow = useOnboardingFlow('welcome', steps)
   const [uiLang, setUILang] = useUILanguage()
+  const t = useT()
 
   // Seed from existing profile so a returning user (e.g. coming back via
   // DangerZone reset → re-onboarding) doesn't have to re-pick everything.
@@ -150,9 +151,9 @@ export default function OnboardingPage(): JSX.Element {
         {flow.step === 'placement' && (
           <div>
             <div className="mb-6 text-center">
-              <h2 className="text-2xl font-bold">Let's find your level</h2>
+              <h2 className="text-2xl font-bold">{t('ob.placement.title')}</h2>
               <p className="text-slate-400 text-sm mt-1">
-                A few adaptive questions — they get easier or harder as you go.
+                {t('ob.placement.subtitle')}
               </p>
             </div>
             <AdaptiveQuiz onComplete={onPlacementComplete} onExit={flow.back} />
@@ -167,15 +168,15 @@ export default function OnboardingPage(): JSX.Element {
         {flow.step === 'complete' && !placementResult && (
           <div className="text-center py-8">
             <div className="text-5xl mb-4">🎓</div>
-            <h2 className="text-2xl font-bold">You're all set{name ? `, ${name}` : ''}!</h2>
+            <h2 className="text-2xl font-bold">{t('ob.teacher.title')}</h2>
             <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
-              Your teaching workspace is ready. Set up your channel, create a course, and reach learners.
+              {t('ob.teacher.subtitle')}
             </p>
             <button
               className="mt-6 px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 font-medium"
               onClick={() => void saveAndEnter()}
             >
-              Go to my dashboard
+              {t('ob.teacher.toDashboard')}
             </button>
           </div>
         )}
