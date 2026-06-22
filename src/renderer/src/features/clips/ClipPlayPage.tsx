@@ -369,16 +369,31 @@ export default function ClipPlayPage(): JSX.Element {
       {/* Video */}
       <div className="shrink-0 flex justify-center bg-black/40 py-3">
         <div className="relative w-full max-w-3xl aspect-video rounded-xl overflow-hidden ring-1 ring-white/10">
-          {clip.youtubeId ? (
-            <div id={YT_ELEMENT_ID} className="w-full h-full" />
+          {/* Cover poster — always behind, so the area is never an empty black box
+              (while the YouTube player loads, or when a clip ships no video). */}
+          {clip.thumbnailUrl ? (
+            <img src={clip.thumbnailUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
           ) : (
-            <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center', clip.cover)}>
-              <span className="w-16 h-16 rounded-full bg-white/20 ring-2 ring-white/40 flex items-center justify-center">
-                <IconPlay className="w-7 h-7 ml-1" />
+            <div className={cn('absolute inset-0 bg-gradient-to-br', clip.cover)} />
+          )}
+          {clip.youtubeId ? (
+            <>
+              {/* The IFrame API replaces this div with the real player iframe. */}
+              <div id={YT_ELEMENT_ID} className="absolute inset-0 w-full h-full" />
+              {!player.ready && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+                  <span className="inline-flex items-center gap-2 text-white/85 text-sm font-medium animate-pulse">
+                    <IconYouTube className="w-4 h-4" /> Loading video…
+                  </span>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/30">
+              <span className="w-14 h-14 rounded-full bg-white/20 ring-2 ring-white/40 flex items-center justify-center">
+                <IconPlay className="w-6 h-6 ml-1" />
               </span>
-              <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded bg-red-600/90 text-[10px] font-bold px-2 py-1">
-                <IconYouTube className="w-3 h-3" /> YouTube
-              </span>
+              <span className="text-white/85 text-xs font-semibold">Lyrics practice — no video for this clip</span>
             </div>
           )}
         </div>
